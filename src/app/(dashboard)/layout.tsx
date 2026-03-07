@@ -1,14 +1,13 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <SidebarProvider>
-      <AppSidebar />
+    return (
+        <div className="flex min-h-screen bg-white">
+            <AppSidebar />
 
-      <SidebarInset className="bg-slate-100">
-        <div className="mx-auto w-full max-w-7xl">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+            <main className="min-w-0 flex-1 bg-white px-8 py-6">
+                <div className="mx-auto w-full max-w-7xl">{children}</div>
+            </main>
+        </div>
+    );
 }

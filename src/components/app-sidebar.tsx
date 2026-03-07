@@ -26,264 +26,132 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  useSidebar,
-} from "@/components/ui/sidebar";
+    BarChart3,
+    Boxes,
+    FileStack,
+    FolderKanban,
+    LayoutGrid,
+    Package,
+    Settings,
+    ShoppingCart,
+    UserCircle2,
+    UserRound,
+    Users,
+    Workflow,
+  } from "lucide-react";
+  import type { LucideIcon } from "lucide-react";
+  import { cn } from "@/lib/utils";
 
-type SidebarLeafItem = {
-  title: string;
-  href: string;
-  icon: LucideIcon;
-};
-
-type SidebarBranchItem = {
-  title: string;
-  icon: LucideIcon;
-  children: SidebarLeafItem[];
-};
-
-type SidebarItem = SidebarLeafItem | SidebarBranchItem;
-
-type SidebarGroup = {
-  title: string;
-  items: SidebarItem[];
-};
-
-const sidebarGroups: SidebarGroup[] = [
-  {
-    title: "Tổng quan",
-    items: [
-      { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { title: "Báo cáo", href: "/reports", icon: BadgePercent },
-    ],
-  },
-  {
-    title: "Quản lý kho",
-    items: [
-      {
-        title: "Sản phẩm",
-        icon: Boxes,
-        children: [
-          { title: "Danh sách sản phẩm", href: "/products", icon: Box },
-          { title: "Kiểm kho", href: "/inventory/audit", icon: ClipboardCheck },
-        ],
-      },
-      { title: "Tồn kho", href: "/inventory", icon: Warehouse },
-      { title: "Nhập kho", href: "/stock-in", icon: PackagePlus },
-      { title: "Xuất kho", href: "/stock-out", icon: Truck },
-    ],
-  },
-  {
-    title: "Đối tác",
-    items: [
-      { title: "Khách hàng", href: "/customers", icon: Users },
-      { title: "Nhà cung cấp", href: "/suppliers", icon: Truck },
-    ],
-  },
-  {
-    title: "Cấu hình",
-    items: [
-      { title: "Cài đặt hệ thống", href: "/settings", icon: Settings },
-      { title: "Phân quyền", href: "/permissions", icon: ShieldCheck },
-    ],
-  },
-];
-
-function isBranchItem(item: SidebarItem): item is SidebarBranchItem {
-  return "children" in item;
-}
-
-function getBranchKey(groupTitle: string, itemTitle: string): string {
-  return `${groupTitle}::${itemTitle}`;
-}
-
-export function AppSidebar() {
-  const pathname = usePathname();
-  const { collapsed, setCollapsed } = useSidebar();
-  const [openedBranches, setOpenedBranches] = useState<Record<string, boolean>>({});
-
-  const isPathActive = (href: string): boolean => {
-    return pathname === href || pathname.startsWith(`${href}/`);
+  type MenuItem = {
+    label: string;
+    href: string;
+    icon: LucideIcon;
   };
 
-  const defaultOpenedBranches = useMemo(() => {
-    const result: Record<string, boolean> = {};
+  const primaryMenu: MenuItem[] = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+    { label: "Landing Pages", href: "/landing-pages", icon: FileStack },
+    { label: "Don hang", href: "/orders", icon: ShoppingCart },
+    { label: "San pham", href: "/products", icon: Package },
+    { label: "Khach hang", href: "/customers", icon: Users },
+    { label: "Segments", href: "/segments", icon: Workflow },
+    { label: "Bao cao", href: "/reports", icon: BarChart3 },
+    { label: "Cai dat", href: "/settings", icon: Settings },
+  ];
 
-    for (const group of sidebarGroups) {
-      for (const item of group.items) {
-        if (isBranchItem(item)) {
-          result[getBranchKey(group.title, item.title)] = item.children.some((child) =>
-            isPathActive(child.href)
-          );
-        }
-      }
-    }
+  const appMenu: MenuItem[] = [
+    { label: "CRM", href: "/apps/crm", icon: UserCircle2 },
+    { label: "Kho", href: "/apps/warehouse", icon: Boxes },
+    { label: "Cong viec", href: "/apps/tasks", icon: FolderKanban },
+  ];
 
-    return result;
-  }, [pathname]);
+  function isActivePath(pathname: string, href: string): boolean {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
-  useEffect(() => {
-    setOpenedBranches((current) => ({ ...defaultOpenedBranches, ...current }));
-  }, [defaultOpenedBranches]);
+  export function AppSidebar() {
+    const pathname = usePathname();
 
-  return (
-    <Sidebar>
-      <SidebarHeader className="h-16">
-        <div className="flex h-full items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-900">
-              <Warehouse className="h-5 w-5" />
+    return (
+      <aside className="flex h-screen w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-4">
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#6366F1]/10 text-[#5B5BD6]">
+              <UserRound className="h-5 w-5" />
             </div>
-            {!collapsed && (
-              <div className="truncate">
-                <p className="truncate text-sm font-semibold">WMS Enterprise</p>
-                <p className="truncate text-xs text-slate-400">Warehouse Operations</p>
-              </div>
-            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">Nguyen Van Admin</p>
+              <p className="truncate text-xs text-slate-500">Warehouse Manager</p>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setCollapsed((prev) => !prev)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-            aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
         </div>
-      </SidebarHeader>
 
-      <SidebarContent>
-        {sidebarGroups.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+        <nav className="flex-1 px-3 py-4">
+          <ul className="space-y-1">
+            {primaryMenu.map((item) => {
+              const active = isActivePath(pathname, item.href);
+              const Icon = item.icon;
 
-            <SidebarMenu>
-              {group.items.map((item) => {
-                if (isBranchItem(item)) {
-                  const key = getBranchKey(group.title, item.title);
-                  const branchActive = item.children.some((child) => isPathActive(child.href));
-                  const opened = openedBranches[key] ?? false;
-                  const Icon = item.icon;
-
-                  return (
-                    <SidebarMenuItem key={key}>
-                      <SidebarMenuButton
-                        type="button"
-                        onClick={() => {
-                          if (collapsed) {
-                            setCollapsed(false);
-                            setOpenedBranches((current) => ({ ...current, [key]: true }));
-                            return;
-                          }
-
-                          setOpenedBranches((current) => ({ ...current, [key]: !opened }));
-                        }}
-                        active={branchActive}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {!collapsed && (
-                          <>
-                            <span className="ml-3 flex-1 truncate text-left">{item.title}</span>
-                            <ChevronRight
-                              className={cn(
-                                "h-4 w-4 transition-transform",
-                                opened ? "rotate-90" : "rotate-0"
-                              )}
-                            />
-                          </>
-                        )}
-                      </SidebarMenuButton>
-
-                      {!collapsed && opened && (
-                        <SidebarMenuSub>
-                          {item.children.map((child) => {
-                            const childActive = isPathActive(child.href);
-                            const ChildIcon = child.icon;
-
-                            return (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className={cn(
-                                  "flex h-9 items-center rounded-md px-2 text-sm transition-colors",
-                                  childActive
-                                    ? "bg-slate-700 text-white"
-                                    : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
-                                )}
-                              >
-                                <ChildIcon className="h-4 w-4 shrink-0" />
-                                <span className="ml-2 truncate">{child.title}</span>
-                              </Link>
-                            );
-                          })}
-                        </SidebarMenuSub>
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "group flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-[#EEF0FF] text-[#5B5BD6]"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        active ? "text-[#5B5BD6]" : "text-slate-500 group-hover:text-slate-700"
                       )}
-                    </SidebarMenuItem>
-                  );
-                }
+                    />
+                    <span className="ml-3 truncate">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
+          <div className="mt-8 border-t border-slate-200 pt-4">
+            <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+              Ung dung
+            </p>
+            <ul className="space-y-1">
+              {appMenu.map((item) => {
+                const active = isActivePath(pathname, item.href);
                 const Icon = item.icon;
-                const active = isPathActive(item.href);
 
                 return (
-                  <SidebarMenuItem key={item.href}>
+                  <li key={item.href}>
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex h-10 items-center rounded-md px-2 text-sm transition-colors",
+                        "group flex h-9 items-center rounded-lg px-2.5 text-xs font-medium transition-colors",
                         active
-                          ? "bg-slate-800 text-white"
-                          : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                          ? "bg-[#EEF0FF] text-[#5B5BD6]"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       )}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="ml-3 truncate">{item.title}</span>}
+                      <Icon
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          active ? "text-[#5B5BD6]" : "text-slate-400 group-hover:text-slate-600"
+                        )}
+                      />
+                      <span className="ml-2 truncate">{item.label}</span>
                     </Link>
-                  </SidebarMenuItem>
+                  </li>
                 );
               })}
-            </SidebarMenu>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-
-      <SidebarFooter>
-        <div
-          className={cn(
-            "flex items-center rounded-lg bg-slate-800/70 p-2",
-            collapsed ? "justify-center" : "justify-between"
-          )}
-        >
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-900">
-              AD
-            </div>
-
-            {!collapsed && (
-              <div className="truncate">
-                <p className="truncate text-sm font-medium text-white">Admin WMS</p>
-                <p className="truncate text-xs text-slate-400">admin@wms.local</p>
-              </div>
-            )}
+            </ul>
           </div>
-
-          {!collapsed && (
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-              aria-label="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </SidebarFooter>
-    </Sidebar>
-  );
-}
+        </nav>
+      </aside>
+    );
+  }
+          </button>
