@@ -18,6 +18,7 @@ import {
   CircleHelp,
   ChevronLeft,
   ChevronRight,
+  Building2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -44,13 +45,16 @@ type MenuItem = {
 const mainItems: MenuItem[] = [
   { label: "Bảng điều khiển", href: "/dashboard", icon: LayoutGrid },
   { label: "Quản lý tồn kho", href: "/inventory", icon: Boxes },
+  { label: "Quản lý kho hàng", href: "/warehouses", icon: Warehouse },
   { label: "Danh mục sản phẩm", href: "/products", icon: Package },
+  { label: "Phân loại hàng", href: "/categories", icon: Boxes },
   { label: "Đơn hàng & Vận chuyển", href: "/orders", icon: Truck },
   { label: "Nhập hàng", href: "/inbound", icon: ClipboardList },
 ];
 
 const secondaryItems: MenuItem[] = [
   { label: "Khách hàng", href: "/customers", icon: Users2 },
+  { label: "Nhà cung cấp", href: "/suppliers", icon: Building2 },
   { label: "Lịch sử hoạt động", href: "/history", icon: History },
   { label: "Báo cáo thống kê", href: "/reports", icon: BarChart3 },
 ];
