@@ -22,6 +22,12 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${inter.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        >
+          Bỏ qua đến nội dung chính
+        </a>
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
         </Providers>

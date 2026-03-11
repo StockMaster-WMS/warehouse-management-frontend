@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -34,19 +35,19 @@ export function Navbar() {
       <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
-          
+
           <div className="hidden items-center gap-2 md:flex">
-             <div className="relative flex items-center">
-                <Search className="absolute left-3 h-4 w-4 text-indigo-200" />
-                <Input
-                  type="search"
-                  placeholder="Tìm kiếm nhanh... (Ctrl+K)"
-                  className="h-9 w-64 rounded-full border-transparent bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-indigo-200 focus-visible:bg-white/20 focus-visible:ring-0 lg:w-80"
-                />
-                <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 opacity-100 sm:flex">
-                  <span className="text-xs">⌘</span>K
-                </kbd>
-             </div>
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 h-4 w-4 text-indigo-200" />
+              <Input
+                type="search"
+                placeholder="Tìm kiếm nhanh... (Ctrl+K)"
+                className="h-9 w-64 rounded-full border-transparent bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-indigo-200 focus-visible:bg-white/20 focus-visible:ring-0 lg:w-80"
+              />
+              <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 opacity-100 sm:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
           </div>
         </div>
 
@@ -60,12 +61,15 @@ export function Navbar() {
 
           <div className="flex items-center gap-1">
             <Button
+              asChild
               variant="ghost"
               size="icon-sm"
               className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
               aria-label="Hỗ trợ"
             >
-              <CircleHelp className="h-5 w-5" />
+              <Link href="/settings">
+                <CircleHelp className="h-5 w-5" />
+              </Link>
             </Button>
 
             <Button
@@ -158,4 +162,3 @@ export function Navbar() {
     </header>
   );
 }
-

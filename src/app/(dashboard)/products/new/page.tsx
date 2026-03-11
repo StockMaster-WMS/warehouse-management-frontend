@@ -1,19 +1,19 @@
 "use client";
 
-import { 
-  ArrowLeft, 
-  Save, 
-  Package, 
-  Info, 
-  Settings2, 
+import {
+  ArrowLeft,
+  Save,
+  Package,
+  Info,
+  Settings2,
   Boxes,
   Ruler,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,7 +26,11 @@ export default function NewProductPage() {
     <div className="mx-auto max-w-4xl space-y-6 pb-20">
       <div className="flex items-center gap-4">
         <Link href="/products">
-          <Button variant="ghost" size="icon-sm" className="rounded-full hover:bg-slate-100">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full hover:bg-slate-100"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -46,26 +50,57 @@ export default function NewProductPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Info className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Thông tin định danh</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Thông tin định danh
+              </h3>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Mã SKU <span className="text-rose-500">*</span></label>
-                  <Input placeholder="VD: IPH15-BLK-256" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                  <label
+                    htmlFor="sku"
+                    className="text-xs font-bold text-slate-500 uppercase"
+                  >
+                    Mã SKU <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    id="sku"
+                    placeholder="VD: IPH15-BLK-256"
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Barcode (EAN/UPC)</label>
-                  <Input placeholder="0123456789012" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                  <label
+                    htmlFor="barcode"
+                    className="text-xs font-bold text-slate-500 uppercase"
+                  >
+                    Barcode (EAN/UPC)
+                  </label>
+                  <Input
+                    id="barcode"
+                    placeholder="0123456789012"
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">Tên sản phẩm <span className="text-rose-500">*</span></label>
-                <Input placeholder="Nhập tên đầy đủ của mặt hàng..." className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                <label
+                  htmlFor="product-name"
+                  className="text-xs font-bold text-slate-500 uppercase"
+                >
+                  Tên sản phẩm <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  id="product-name"
+                  placeholder="Nhập tên đầy đủ của mặt hàng..."
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Nhóm hàng</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">
+                    Nhóm hàng
+                  </label>
                   <Select>
                     <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30">
                       <SelectValue placeholder="Chọn nhóm hàng..." />
@@ -78,7 +113,9 @@ export default function NewProductPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Đơn vị tính</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">
+                    Đơn vị tính
+                  </label>
                   <Select defaultValue="cai">
                     <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30">
                       <SelectValue placeholder="Chọn ĐVT..." />
@@ -98,24 +135,66 @@ export default function NewProductPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Ruler className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Quy cách & Vận chuyển</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Quy cách & Vận chuyển
+              </h3>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Dài (cm)</label>
-                <Input type="number" placeholder="0" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                <label
+                  htmlFor="length-cm"
+                  className="text-[10px] font-bold text-slate-500 uppercase"
+                >
+                  Dài (cm)
+                </label>
+                <Input
+                  id="length-cm"
+                  type="number"
+                  placeholder="0"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Rộng (cm)</label>
-                <Input type="number" placeholder="0" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                <label
+                  htmlFor="width-cm"
+                  className="text-[10px] font-bold text-slate-500 uppercase"
+                >
+                  Rộng (cm)
+                </label>
+                <Input
+                  id="width-cm"
+                  type="number"
+                  placeholder="0"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Cao (cm)</label>
-                <Input type="number" placeholder="0" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                <label
+                  htmlFor="height-cm"
+                  className="text-[10px] font-bold text-slate-500 uppercase"
+                >
+                  Cao (cm)
+                </label>
+                <Input
+                  id="height-cm"
+                  type="number"
+                  placeholder="0"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Nặng (gr)</label>
-                <Input type="number" placeholder="0" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
+                <label
+                  htmlFor="weight-gram"
+                  className="text-[10px] font-bold text-slate-500 uppercase"
+                >
+                  Nặng (gr)
+                </label>
+                <Input
+                  id="weight-gram"
+                  type="number"
+                  placeholder="0"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </div>
             </div>
           </div>
@@ -126,32 +205,63 @@ export default function NewProductPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <AlertCircle className="h-4 w-4 text-amber-500" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Ngưỡng báo động</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Ngưỡng báo động
+              </h3>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">Tồn tối thiểu</label>
-                <Input type="number" defaultValue="5" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
-                <p className="text-[10px] font-medium text-slate-400 italic italic">Cảnh báo khi kho thấp hơn mức này.</p>
+                <label
+                  htmlFor="min-stock"
+                  className="text-xs font-bold text-slate-500 uppercase"
+                >
+                  Tồn tối thiểu
+                </label>
+                <Input
+                  id="min-stock"
+                  type="number"
+                  defaultValue="5"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+                <p className="text-[10px] font-medium text-slate-400 italic">
+                  Cảnh báo khi kho thấp hơn mức này.
+                </p>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">Tồn tối đa</label>
-                <Input type="number" defaultValue="100" className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30" />
-                <p className="text-[10px] font-medium text-slate-400 italic">Dùng để tính tỷ lệ lấp đầy kho.</p>
+                <label
+                  htmlFor="max-stock"
+                  className="text-xs font-bold text-slate-500 uppercase"
+                >
+                  Tồn tối đa
+                </label>
+                <Input
+                  id="max-stock"
+                  type="number"
+                  defaultValue="100"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+                <p className="text-[10px] font-medium text-slate-400 italic">
+                  Dùng để tính tỷ lệ lấp đầy kho.
+                </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-             <div className="flex flex-col gap-4">
-               <Button className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none">
-                 <Save className="mr-2 h-4 w-4" />
-                 Lưu sản phẩm
-               </Button>
-               <Link href="/products" className="w-full">
-                 <Button variant="outline" className="w-full border-slate-200 bg-white">Hủy bỏ</Button>
-               </Link>
-             </div>
+            <div className="flex flex-col gap-4">
+              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none">
+                <Save className="mr-2 h-4 w-4" />
+                Lưu sản phẩm
+              </Button>
+              <Link href="/products" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full border-slate-200 bg-white"
+                >
+                  Hủy bỏ
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
