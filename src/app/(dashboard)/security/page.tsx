@@ -62,12 +62,13 @@ export default function SecurityPage() {
                 {item.desc}
               </p>
               <Button
-                asChild
+                render={<Link href={item.href} />}
+                nativeButton={false}
                 variant="link"
                 size="sm"
                 className="h-auto justify-start p-0 text-indigo-600"
               >
-                <Link href={item.href}>Thiết lập ngay</Link>
+                Thiết lập ngay
               </Button>
             </div>
           </div>

@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import {
   Select,
   SelectContent,
@@ -23,26 +24,22 @@ import {
 
 export default function NewProductPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-20">
-      <div className="flex items-center gap-4">
-        <Link href="/products">
+    <div className="w-full space-y-6 pb-20">
+      <PageHeader
+        title="Tạo mới SKU sản phẩm"
+        description="Thiết lập thông tin định danh và cấu hình vận hành cho mặt hàng mới."
+        actions={
           <Button
+            render={<Link href="/products" />}
+            nativeButton={false}
             variant="ghost"
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Tạo mới SKU sản phẩm
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Thiết lập thông tin định danh và cấu hình vận hành cho mặt hàng mới.
-          </p>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
@@ -253,14 +250,14 @@ export default function NewProductPage() {
                 <Save className="mr-2 h-4 w-4" />
                 Lưu sản phẩm
               </Button>
-              <Link href="/products" className="w-full">
-                <Button
-                  variant="outline"
-                  className="w-full border-slate-200 bg-white"
-                >
-                  Hủy bỏ
-                </Button>
-              </Link>
+              <Button
+                render={<Link href="/products" />}
+                nativeButton={false}
+                variant="outline"
+                className="w-full border-slate-200 bg-white"
+              >
+                Hủy bỏ
+              </Button>
             </div>
           </div>
         </div>

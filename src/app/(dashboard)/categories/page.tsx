@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -61,23 +62,17 @@ const categories = [
 export default function CategoriesPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Phân loại hàng hóa
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Quản lý cây danh mục và nhóm sản phẩm trong hệ thống.
-          </p>
-        </div>
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
-          <Plus className="mr-2 h-4 w-4" />
-          Thêm phân loại mới
-        </Button>
-      </div>
+      <PageHeader
+        title="Phân loại hàng hóa"
+        description="Quản lý cây danh mục và nhóm sản phẩm trong hệ thống."
+        actions={
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm phân loại mới
+          </Button>
+        }
+      />
 
-      {/* Info Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Tổng nhóm hàng", value: "24", icon: FolderTree, color: "text-indigo-500" },
@@ -95,7 +90,6 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      {/* Search & List */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="border-b border-slate-100 p-4 dark:border-slate-800">
           <div className="relative max-w-sm">

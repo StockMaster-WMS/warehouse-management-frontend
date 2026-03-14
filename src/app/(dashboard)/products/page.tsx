@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,28 +76,27 @@ const products = [
 export default function ProductsPage() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Danh mục sản phẩm
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200">
-            <Download className="mr-2 h-4 w-4" />
-            Nhập/Xuất Excel
-          </Button>
-          <Link href="/products/new">
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+      <PageHeader
+        title="Danh mục sản phẩm"
+        description="Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200">
+              <Download className="mr-2 h-4 w-4" />
+              Nhập/Xuất Excel
+            </Button>
+            <Button
+              render={<Link href="/products/new" />}
+              nativeButton={false}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Tạo mới SKU
             </Button>
-          </Link>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

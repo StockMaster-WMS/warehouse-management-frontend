@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -70,23 +71,17 @@ const suppliers = [
 export default function SuppliersPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Nhà cung cấp
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Quản lý thông tin đối tác cung ứng và lịch sử giao dịch.
-          </p>
-        </div>
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
-          <Plus className="mr-2 h-4 w-4" />
-          Thêm đối tác mới
-        </Button>
-      </div>
+      <PageHeader
+        title="Nhà cung cấp"
+        description="Quản lý thông tin đối tác cung ứng và lịch sử giao dịch."
+        actions={
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm đối tác mới
+          </Button>
+        }
+      />
 
-      {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Tổng đối tác", value: "48", icon: Building2, color: "text-indigo-500" },
@@ -104,7 +99,6 @@ export default function SuppliersPage() {
         ))}
       </div>
 
-      {/* Search & List */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="border-b border-slate-100 p-4 dark:border-slate-800">
           <div className="relative max-w-sm">

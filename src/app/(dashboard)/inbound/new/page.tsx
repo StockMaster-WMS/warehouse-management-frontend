@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import {
   Select,
   SelectContent,
@@ -26,40 +27,32 @@ import {
 
 export default function NewInboundPage() {
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/inbound">
+    <div className="w-full space-y-6 pb-20">
+      <PageHeader
+        title="Tạo phiếu nhập hàng"
+        description="Khởi tạo chứng từ nhập kho và quản lý danh sách mặt hàng thực nhập."
+        actions={
+          <div className="flex items-center gap-2">
             <Button
+              render={<Link href="/inbound" />}
+              nativeButton={false}
               variant="ghost"
               size="icon-sm"
               className="rounded-full hover:bg-slate-100"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Tạo phiếu nhập hàng
-            </h1>
-            <p className="text-sm font-medium text-slate-500">
-              Khởi tạo chứng từ nhập kho và quản lý danh sách mặt hàng thực
-              nhập.
-            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+            >
+              <FileUp className="mr-2 h-4 w-4" />
+              Nhập từ File (Excel/CSV)
+            </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            Nhập từ File (Excel/CSV)
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
@@ -303,14 +296,14 @@ export default function NewInboundPage() {
                 <Save className="mr-2 h-4 w-4" />
                 Lưu kế hoạch nhập
               </Button>
-              <Link href="/inbound" className="w-full">
-                <Button
-                  variant="outline"
-                  className="w-full border-slate-200 bg-white"
-                >
-                  Hủy phiếu
-                </Button>
-              </Link>
+              <Button
+                render={<Link href="/inbound" />}
+                nativeButton={false}
+                variant="outline"
+                className="w-full border-slate-200 bg-white"
+              >
+                Hủy phiếu
+              </Button>
             </div>
           </div>
         </div>

@@ -1,11 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Bell,
   ChevronDown,
-  Command,
   CircleHelp,
+  Home,
   Languages,
   LogOut,
   Search,
@@ -27,14 +29,59 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
+
+function toTitle(segment: string): string {
+  const map: Record<string, string> = {
+    dashboard: "Bảng điều khiển",
+    inventory: "Quản lý tồn kho",
+    warehouses: "Quản lý kho hàng",
+    products: "Danh mục sản phẩm",
+    categories: "Phân loại hàng",
+    orders: "Đơn hàng & Vận chuyển",
+    inbound: "Nhập hàng",
+    customers: "Khách hàng",
+    suppliers: "Nhà cung cấp",
+    history: "Lịch sử hoạt động",
+    reports: "Báo cáo thống kê",
+    settings: "Cài đặt hệ thống",
+    security: "Bảo mật & Phân quyền",
+    new: "Tạo mới",
+  };
+
+  return map[segment] ?? segment.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+}
 
 export function Navbar() {
+  const pathname = usePathname();
+  const pathSegments = useMemo(
+    () => pathname.split("/").filter(Boolean),
+    [pathname]
+  );
+
+  const pageTitle = useMemo(() => {
+    const current = pathSegments[pathSegments.length - 1] ?? "dashboard";
+    return toTitle(current);
+  }, [pathSegments]);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-indigo-500/20 bg-indigo-600 text-white shadow-sm transition-all duration-300 dark:border-indigo-500/20 dark:bg-indigo-950">
       <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
+
+          <div className="hidden min-w-0 md:flex md:flex-col md:gap-0.5">
+            <div className="flex min-w-0 items-center gap-1 text-[11px] text-indigo-100">
+              <Home className="h-3.5 w-3.5" />
+              <span className="truncate">StockMaster</span>
+              {pathSegments.map((segment) => (
+                <div key={segment} className="flex min-w-0 items-center gap-1">
+                  <span>/</span>
+                  <span className="truncate">{toTitle(segment)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="truncate text-sm font-semibold text-white">{pageTitle}</p>
+          </div>
 
           <div className="hidden items-center gap-2 md:flex">
             <div className="relative flex items-center">
@@ -61,15 +108,14 @@ export function Navbar() {
 
           <div className="flex items-center gap-1">
             <Button
-              asChild
+              render={<Link href="/settings" />}
+              nativeButton={false}
               variant="ghost"
               size="icon-sm"
               className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
               aria-label="Hỗ trợ"
             >
-              <Link href="/settings">
-                <CircleHelp className="h-5 w-5" />
-              </Link>
+              <CircleHelp className="h-5.5 w-5.5" />
             </Button>
 
             <Button
@@ -78,7 +124,7 @@ export function Navbar() {
               className="relative rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
               aria-label="Thông báo"
             >
-              <Bell className="h-5 w-5" />
+              <Bell className="h-5.5 w-5.5" />
               <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>

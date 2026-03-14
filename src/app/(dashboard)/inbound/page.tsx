@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -57,29 +58,27 @@ const inboundSlips = [
 export default function InboundPage() {
   return (
     <div className="space-y-6">
-      {/* Header & Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Quản lý nhập hàng
-          </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Điều phối hàng về, kiểm đếm chất lượng và phân phối vị trí lưu kho.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-           <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200">
+      <PageHeader
+        title="Quản lý nhập hàng"
+        description="Điều phối hàng về, kiểm đếm chất lượng và phân phối vị trí lưu kho."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200">
             <ClipboardCheck className="mr-2 h-4 w-4" />
             Kiểm hàng nhanh
-          </Button>
-          <Link href="/inbound/new">
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+            </Button>
+            <Button
+              render={<Link href="/inbound/new" />}
+              nativeButton={false}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Tạo phiếu nhập
             </Button>
-          </Link>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

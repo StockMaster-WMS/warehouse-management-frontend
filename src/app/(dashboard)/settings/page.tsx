@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { UserCog, Database, Bell, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 
@@ -72,11 +73,7 @@ export default function SettingsPage() {
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {item}
               </span>
-              <input
-                type="checkbox"
-                defaultChecked
-                className="h-4 w-4 accent-indigo-600"
-              />
+              <Checkbox defaultChecked aria-label={item} />
             </label>
           ))}
         </div>
