@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { 
   Plus, 
-  Filter, 
   Truck, 
   ClipboardCheck, 
   Clock, 
@@ -12,14 +11,13 @@ import {
   ChevronRight,
   ArrowDownLeft,
   Calendar,
-  Building2,
-  X
+  Building2
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { FilterSelect } from "@/components/ui/filter-select";
+import { FilterGroup } from "@/components/features/FilterGroup";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -116,43 +114,32 @@ export default function InboundPage() {
         value={query}
         onValueChange={setQuery}
         filters={
-          <>
-            <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
-            <FilterSelect
-              value={type}
-              onChange={setType}
-              placeholder="Dòng hàng"
-              options={["Nhập khẩu", "Nội địa"]}
-              allLabel="Tất cả dòng hàng"
-              widthClass="sm:w-[180px]"
+            <FilterGroup
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
+                setQuery("");
+                setStatus("Tất cả trạng thái");
+                setType("Tất cả dòng hàng");
+              }}
+              filters={[
+                {
+                  label: "dòng hàng",
+                  placeholder: "Dòng hàng",
+                  value: type,
+                  onChange: setType,
+                  options: ["Nhập khẩu", "Nội địa"],
+                  width: "sm:w-[180px]"
+                },
+                {
+                  label: "trạng thái",
+                  placeholder: "Trạng thái",
+                  value: status,
+                  onChange: setStatus,
+                  options: ["Hoàn thành", "Đang nhận hàng", "Đang chờ"],
+                  width: "sm:w-[180px]"
+                }
+              ]}
             />
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              placeholder="Trạng thái"
-              options={["Hoàn thành", "Đang nhận hàng", "Đang chờ"]}
-              allLabel="Tất cả trạng thái"
-              widthClass="sm:w-[180px]"
-            />
-            {hasAnyFilter && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={() => {
-                  setQuery("");
-                  setStatus("Tất cả trạng thái");
-                  setType("Tất cả dòng hàng");
-                }}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
-            )}
-          </>
         }
       />
         

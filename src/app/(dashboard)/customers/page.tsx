@@ -2,17 +2,15 @@
 
 import { useState } from "react";
 import {
-  Filter,
   UserPlus,
   Mail,
-  ChevronRight,
-  X
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { FilterSelect } from "@/components/ui/filter-select";
+import { FilterGroup } from "@/components/features/FilterGroup";
 
 export default function CustomersPage() {
   const [query, setQuery] = useState("");
@@ -54,34 +52,23 @@ export default function CustomersPage() {
         value={query}
         onValueChange={setQuery}
         filters={
-          <>
-            <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
-            <FilterSelect
-              value={category}
-              onChange={setCategory}
-              placeholder="Phân loại"
-              options={["Cá nhân", "Nhà buôn"]}
-              allLabel="Tất cả phân loại"
-              widthClass="sm:w-[180px]"
+            <FilterGroup
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
+                setQuery("");
+                setCategory("Tất cả phân loại");
+              }}
+              filters={[
+                {
+                  label: "phân loại",
+                  placeholder: "Phân loại",
+                  value: category,
+                  onChange: setCategory,
+                  options: ["Cá nhân", "Nhà buôn"],
+                  width: "sm:w-[180px]"
+                }
+              ]}
             />
-            {hasAnyFilter && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={() => {
-                  setQuery("");
-                  setCategory("Tất cả phân loại");
-                }}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
-            )}
-          </>
         }
       />
 
