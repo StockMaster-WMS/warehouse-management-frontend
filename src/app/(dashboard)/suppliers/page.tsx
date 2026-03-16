@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { 
   Building2, 
@@ -13,11 +14,13 @@ import {
   ExternalLink,
   Edit2,
   Trash2,
-  PackageCheck
+  PackageCheck,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -68,6 +71,8 @@ const suppliers = [
 
 export default function SuppliersPage() {
   const [query, setQuery] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState("");
 
   return (
     <div className="space-y-6">
@@ -75,7 +80,12 @@ export default function SuppliersPage() {
         title="Nhà cung cấp"
         description="Quản lý thông tin đối tác cung ứng và lịch sử giao dịch."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+          <Button
+            render={<Link href="/suppliers/new" />}
+            nativeButton={false} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Thêm đối tác mới
           </Button>
@@ -103,6 +113,19 @@ export default function SuppliersPage() {
         placeholder="Tìm kiếm nhà cung cấp..." 
         value={query}
         onValueChange={setQuery}
+        filters={
+          query.trim().length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+              onClick={() => setQuery("")}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Xoá lọc
+            </Button>
+          )
+        }
       />
         
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
@@ -170,7 +193,10 @@ export default function SuppliersPage() {
                         <DropdownMenuGroup>
                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                         </DropdownMenuGroup>
-                        <DropdownMenuItem className="rounded-lg">
+                        <DropdownMenuItem 
+                          className="rounded-lg"
+                          render={<Link href={`/suppliers/${sup.id}/edit`} />}
+                        >
                            <Edit2 className="mr-2 h-4 w-4" />
                            Sửa thông tin
                         </DropdownMenuItem>
@@ -178,9 +204,15 @@ export default function SuppliersPage() {
                            <ExternalLink className="mr-2 h-4 w-4" />
                            Lịch sử nhập hàng
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-lg text-rose-600 focus:text-rose-600">
+                        <DropdownMenuItem 
+                          className="rounded-lg text-rose-600 focus:text-rose-600"
+                          onClick={() => {
+                            setItemToDelete(sup.name);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
                            <Trash2 className="mr-2 h-4 w-4" />
-                           Ngưng hợp tác
+                           Xóa đối tác
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -191,6 +223,17 @@ export default function SuppliersPage() {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => {
+          console.log("Deleted", itemToDelete);
+        }}
+        itemName={itemToDelete}
+        title="Xóa nhà cung cấp"
+        description="Bạn có chắc muốn xóa nhà cung cấp này? Mọi dữ liệu liên quan sẽ bị ảnh hưởng."
+      />
     </div>
   );
 }

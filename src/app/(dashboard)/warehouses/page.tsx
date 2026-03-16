@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import {
   Building2,
@@ -11,12 +12,16 @@ import {
   MoreVertical,
   ChevronRight,
   User,
-  ThermometerSnowflake
+  ThermometerSnowflake,
+  X,
+  Edit2,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +72,8 @@ const warehouses = [
 
 export default function WarehousesPage() {
   const [query, setQuery] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState("");
 
   return (
     <div className="space-y-6">
@@ -74,7 +81,12 @@ export default function WarehousesPage() {
         title="Danh sách kho"
         description="Hệ thống quản lý không gian lưu trữ và mạng lưới kho bãi."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+          <Button
+            render={<Link href="/warehouses/new" />}
+            nativeButton={false} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Thêm kho mới
           </Button>
@@ -86,6 +98,19 @@ export default function WarehousesPage() {
         className="max-w-2xl"
         value={query}
         onValueChange={setQuery}
+        filters={
+          query.trim().length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+              onClick={() => setQuery("")}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Xoá lọc
+            </Button>
+          )
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
@@ -115,10 +140,25 @@ export default function WarehousesPage() {
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Quản lý kho</DropdownMenuLabel>
                       </DropdownMenuGroup>
-                      <DropdownMenuItem className="rounded-lg">Sửa thông tin</DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-lg">Xem bản đồ kho</DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-lg text-rose-600 focus:text-rose-600">Tạm dừng HĐ</DropdownMenuItem>
-                    </DropdownMenuContent>
+                       <DropdownMenuItem 
+                         className="rounded-lg"
+                         render={<Link href={`/warehouses/${wh.id}/edit`} />}
+                       >
+                         <Edit2 className="mr-2 h-4 w-4" />
+                         Sửa thông tin
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="rounded-lg">Xem bản đồ kho</DropdownMenuItem>
+                       <DropdownMenuItem 
+                         className="rounded-lg text-rose-600 focus:text-rose-600"
+                         onClick={() => {
+                           setItemToDelete(wh.name);
+                           setIsDeleteDialogOpen(true);
+                         }}
+                       >
+                         <Trash2 className="mr-2 h-4 w-4" />
+                         Xóa kho
+                       </DropdownMenuItem>
+                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </div>
@@ -192,6 +232,17 @@ export default function WarehousesPage() {
           <span className="mt-3 text-sm font-bold text-slate-500">Tạo khu vực kho mới</span>
         </button>
       </div>
+
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => {
+          console.log("Deleted", itemToDelete);
+        }}
+        itemName={itemToDelete}
+        title="Xóa kho hàng"
+        description="Xóa kho hàng sẽ gỡ bỏ mọi thông tin truy xuất. Hãy chắc chắn kho đã trống trước khi thực hiện."
+      />
     </div>
   );
 }

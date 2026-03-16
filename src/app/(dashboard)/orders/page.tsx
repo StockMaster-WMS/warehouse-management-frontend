@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { 
   Truck, 
   MapPin, 
@@ -22,7 +23,12 @@ export default function OrderPage() {
         title="Đơn hàng & giao nhận"
         description="Quản lý hành trình vận chuyển và trạng thái đơn xuất kho."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+          <Button
+            render={<Link href="/orders/new" />}
+            nativeButton={false} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
             Hành trình mới
           </Button>
         }

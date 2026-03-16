@@ -1,20 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   UserPlus,
   Mail,
-  ChevronRight
+  MoreHorizontal,
+  Edit2,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { FilterGroup } from "@/components/features/FilterGroup";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function CustomersPage() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả phân loại");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState("");
 
   const hasAnyFilter = query.trim().length > 0 || category !== "Tất cả phân loại";
   return (
@@ -23,7 +35,12 @@ export default function CustomersPage() {
         title="Khách hàng"
         description="Duy trì mối quan hệ và quản lý thông tin khách hàng/nhà cung cấp."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+          <Button
+            render={<Link href="/customers/new" />}
+            nativeButton={false} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
             <UserPlus className="mr-2 h-4 w-4" />
             Thêm mới
           </Button>
@@ -103,9 +120,34 @@ export default function CustomersPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon-sm">
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                    <DropdownMenuItem 
+                      className="rounded-lg"
+                      render={<Link href={`/customers/${user.email}/edit`} />}
+                    >
+                      <Edit2 className="mr-2 h-4 w-4" />
+                      Sửa hồ sơ
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="rounded-lg text-rose-600 focus:text-rose-600"
+                      onClick={() => {
+                        setItemToDelete(user.name);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Xóa khách hàng
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))}
@@ -115,6 +157,16 @@ export default function CustomersPage() {
           <Button variant="link" className="text-xs text-indigo-600">Xem tất cả khách hàng</Button>
         </div>
       </div>
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => {
+          console.log("Deleted", itemToDelete);
+        }}
+        itemName={itemToDelete}
+        title="Xóa hồ sơ khách hàng"
+        description="Xóa khách hàng sẽ gỡ bỏ lịch sử giao dịch liên quan. Hãy cân nhắc kỹ."
+      />
     </div>
   );
 }

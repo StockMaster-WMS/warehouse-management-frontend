@@ -10,12 +10,15 @@ import {
   AlertCircle,
   Hash,
   ArrowRightLeft,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { FilterGroup } from "@/components/features/FilterGroup";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,6 +118,9 @@ export default function ProductsPage() {
       return matchesQuery && matchesCategory && matchesWarehouse && matchesSupplier;
     });
   }, [category, query, supplier, warehouse]);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState("");
 
   const hasAnyFilter =
     query.trim().length > 0 ||
@@ -278,11 +284,25 @@ export default function ProductsPage() {
                           <ChevronRight className="mr-2 h-4 w-4" />
                           Xem chi tiết
                         </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="rounded-lg"
+                          render={<Link href={`/products/${product.sku}/edit`} />}
+                        >
+                          <Edit2 className="mr-2 h-4 w-4" />
+                          Chỉnh sửa
+                        </DropdownMenuItem>
                         <DropdownMenuItem className="rounded-lg">
                           <ArrowRightLeft className="mr-2 h-4 w-4" />
                           Chuyển kho
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-lg text-rose-600 focus:text-rose-600">
+                        <DropdownMenuItem 
+                          className="rounded-lg text-rose-600 focus:text-rose-600"
+                          onClick={() => {
+                            setItemToDelete(product.name);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
                           Xóa SKU
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -306,6 +326,16 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => {
+          console.log("Deleted", itemToDelete);
+          // Actual delete logic here
+        }}
+        itemName={itemToDelete}
+      />
     </div>
   );
 }

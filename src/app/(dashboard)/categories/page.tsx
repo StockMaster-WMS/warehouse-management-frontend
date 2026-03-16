@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { 
   Plus, 
@@ -11,11 +12,13 @@ import {
   FolderTree,
   Edit2,
   Trash2,
-  LayoutGrid
+  LayoutGrid,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -62,6 +65,8 @@ const categories = [
 
 export default function CategoriesPage() {
   const [query, setQuery] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState("");
 
   return (
     <div className="space-y-6">
@@ -69,7 +74,12 @@ export default function CategoriesPage() {
         title="Nhóm / loại hàng"
         description="Quản lý cây danh mục và nhóm sản phẩm trong hệ thống."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
+          <Button
+            render={<Link href="/categories/new" />}
+            nativeButton={false} 
+            size="sm" 
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Thêm phân loại mới
           </Button>
@@ -97,6 +107,19 @@ export default function CategoriesPage() {
         placeholder="Tìm kiếm nhóm hàng..." 
         value={query}
         onValueChange={setQuery}
+        filters={
+          query.trim().length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+              onClick={() => setQuery("")}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Xoá lọc
+            </Button>
+          )
+        }
       />
         
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
@@ -152,7 +175,10 @@ export default function CategoriesPage() {
                         <DropdownMenuGroup>
                            <DropdownMenuLabel>Quản lý nhóm</DropdownMenuLabel>
                         </DropdownMenuGroup>
-                        <DropdownMenuItem className="rounded-lg">
+                        <DropdownMenuItem 
+                          className="rounded-lg"
+                          render={<Link href={`/categories/${cat.id}/edit`} />}
+                        >
                            <Edit2 className="mr-2 h-4 w-4" />
                            Sửa thông tin
                         </DropdownMenuItem>
@@ -160,7 +186,13 @@ export default function CategoriesPage() {
                            <ChevronRight className="mr-2 h-4 w-4" />
                            Xem sản phẩm
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-lg text-rose-600 focus:text-rose-600">
+                        <DropdownMenuItem 
+                          className="rounded-lg text-rose-600 focus:text-rose-600"
+                          onClick={() => {
+                            setItemToDelete(cat.name);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
                            <Trash2 className="mr-2 h-4 w-4" />
                            Xóa nhóm hàng
                         </DropdownMenuItem>
@@ -173,6 +205,17 @@ export default function CategoriesPage() {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => {
+          console.log("Deleted", itemToDelete);
+        }}
+        itemName={itemToDelete}
+        title="Xóa nhóm hàng"
+        description="Xóa nhóm hàng sẽ ảnh hưởng đến việc phân loại các sản phẩm hiện có. Hãy kiểm tra kỹ trước khi thực hiện."
+      />
     </div>
   );
 }
