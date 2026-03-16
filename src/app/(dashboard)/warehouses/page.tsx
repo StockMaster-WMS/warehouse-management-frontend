@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Building2,
   MapPin,
@@ -8,11 +10,8 @@ import {
   LayoutDashboard,
   MoreVertical,
   ChevronRight,
-  Navigation,
-  Activity,
   User,
-  ThermometerSnowflake,
-  ShieldCheck
+  ThermometerSnowflake
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +66,8 @@ const warehouses = [
 ];
 
 export default function WarehousesPage() {
+  const [query, setQuery] = useState("");
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -83,6 +84,8 @@ export default function WarehousesPage() {
       <SearchToolbar
         placeholder="Tìm theo tên kho hoặc địa chỉ..."
         className="max-w-2xl"
+        value={query}
+        onValueChange={setQuery}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">

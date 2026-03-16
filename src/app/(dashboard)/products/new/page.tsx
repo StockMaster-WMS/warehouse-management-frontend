@@ -3,10 +3,7 @@
 import {
   ArrowLeft,
   Save,
-  Package,
   Info,
-  Settings2,
-  Boxes,
   Ruler,
   AlertCircle,
 } from "lucide-react";

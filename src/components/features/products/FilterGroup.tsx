@@ -30,7 +30,7 @@ export function FilterGroup({ filters, onClear, hasAnyFilter }: FilterGroupProps
                 <Filter className="h-4 w-4 text-slate-400" />
                 Bộ lọc
             </div>
-            {filters.map((filter, idx) => (
+            {filters.map((filter) => (
                 <Select
                     key={filter.label}
                     value={filter.value}

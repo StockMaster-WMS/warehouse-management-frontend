@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { 
   Plus, 
   MoreHorizontal, 
@@ -59,6 +61,8 @@ const categories = [
 ];
 
 export default function CategoriesPage() {
+  const [query, setQuery] = useState("");
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -89,7 +93,11 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      <SearchToolbar placeholder="Tìm kiếm nhóm hàng..." />
+      <SearchToolbar 
+        placeholder="Tìm kiếm nhóm hàng..." 
+        value={query}
+        onValueChange={setQuery}
+      />
         
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="overflow-x-auto">

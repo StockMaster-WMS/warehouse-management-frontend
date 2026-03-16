@@ -288,7 +288,7 @@ export default function NewInboundPage() {
                   i
                 </div>
                 <p className="text-[11px] font-medium text-indigo-700 dark:text-indigo-300">
-                  Sau khi "Lưu kế hoạch", phiếu sẽ ở trạng thái Chờ và có thể in
+                  Sau khi &quot;Lưu kế hoạch&quot;, phiếu sẽ ở trạng thái Chờ và có thể in
                   Phiếu soạn hàng cho NV kho.
                 </p>
               </div>

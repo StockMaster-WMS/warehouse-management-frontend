@@ -1,11 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 import { 
   Building2, 
-  MapPin, 
   Plus, 
   MoreHorizontal, 
-  ChevronRight, 
   Phone, 
   Mail, 
   Globe,
@@ -16,7 +16,6 @@ import {
   PackageCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { 
@@ -68,6 +67,8 @@ const suppliers = [
 ];
 
 export default function SuppliersPage() {
+  const [query, setQuery] = useState("");
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -98,7 +99,11 @@ export default function SuppliersPage() {
         ))}
       </div>
 
-      <SearchToolbar placeholder="Tìm kiếm nhà cung cấp..." />
+      <SearchToolbar 
+        placeholder="Tìm kiếm nhà cung cấp..." 
+        value={query}
+        onValueChange={setQuery}
+      />
         
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="overflow-x-auto">
