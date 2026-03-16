@@ -4,8 +4,6 @@ import {
   Plus,
   Download,
   Package,
-  ArrowUpRight,
-  ArrowDownRight,
   ChevronRight,
   MoreHorizontal,
   MapPin,
@@ -19,13 +17,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterSelect } from "@/components/ui/filter-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,9 +84,9 @@ const products = [
 
 export default function ProductsPage() {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string>("all");
-  const [warehouse, setWarehouse] = useState<string>("all");
-  const [supplier, setSupplier] = useState<string>("all");
+  const [category, setCategory] = useState<string>("Tất cả loại");
+  const [warehouse, setWarehouse] = useState<string>("Tất cả kho");
+  const [supplier, setSupplier] = useState<string>("Tất cả NCC");
 
   const categoryOptions = useMemo(
     () => Array.from(new Set(products.map((p) => p.category))).sort(),
@@ -119,18 +111,18 @@ export default function ProductsPage() {
         p.category.toLowerCase().includes(q) ||
         p.supplier.toLowerCase().includes(q) ||
         p.warehouse.toLowerCase().includes(q);
-      const matchesCategory = category === "all" || p.category === category;
-      const matchesWarehouse = warehouse === "all" || p.warehouse === warehouse;
-      const matchesSupplier = supplier === "all" || p.supplier === supplier;
+      const matchesCategory = category === "Tất cả loại" || p.category === category;
+      const matchesWarehouse = warehouse === "Tất cả kho" || p.warehouse === warehouse;
+      const matchesSupplier = supplier === "Tất cả NCC" || p.supplier === supplier;
       return matchesQuery && matchesCategory && matchesWarehouse && matchesSupplier;
     });
   }, [category, query, supplier, warehouse]);
 
   const hasAnyFilter =
     query.trim().length > 0 ||
-    category !== "all" ||
-    warehouse !== "all" ||
-    supplier !== "all";
+    category !== "Tất cả loại" ||
+    warehouse !== "Tất cả kho" ||
+    supplier !== "Tất cả NCC";
 
   return (
     <div className="space-y-6">
@@ -179,73 +171,50 @@ export default function ProductsPage() {
         onValueChange={setQuery}
         filters={
           <>
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <Filter className="h-4 w-4 text-indigo-500" />
               Bộ lọc
             </div>
-            <Select
+            <FilterSelect
               value={category}
-              onValueChange={(value) => setCategory(value ?? "all")}
-            >
-              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-56">
-                <SelectValue placeholder="Loại hàng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả loại</SelectItem>
-                {categoryOptions.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
+              onChange={setCategory}
+              placeholder="Loại hàng"
+              options={categoryOptions}
+              allLabel="Tất cả loại"
+              widthClass="sm:w-[160px]"
+            />
+            <FilterSelect
               value={warehouse}
-              onValueChange={(value) => setWarehouse(value ?? "all")}
-            >
-              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-56">
-                <SelectValue placeholder="Kho" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả kho</SelectItem>
-                {warehouseOptions.map((w) => (
-                  <SelectItem key={w} value={w}>
-                    {w}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
+              onChange={setWarehouse}
+              placeholder="Kho"
+              options={warehouseOptions}
+              allLabel="Tất cả kho"
+              widthClass="sm:w-[180px]"
+            />
+            <FilterSelect
               value={supplier}
-              onValueChange={(value) => setSupplier(value ?? "all")}
-            >
-              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-64">
-                <SelectValue placeholder="Nhà cung cấp" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả NCC</SelectItem>
-                {supplierOptions.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 border-slate-200"
-              onClick={() => {
-                setQuery("");
-                setCategory("all");
-                setWarehouse("all");
-                setSupplier("all");
-              }}
-              disabled={!hasAnyFilter}
-            >
-              <X className="mr-2 h-4 w-4" />
-              Xoá lọc
-            </Button>
+              onChange={setSupplier}
+              placeholder="Nhà cung cấp"
+              options={supplierOptions}
+              allLabel="Tất cả NCC"
+              widthClass="sm:w-[220px]"
+            />
+            {hasAnyFilter && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                onClick={() => {
+                  setQuery("");
+                  setCategory("Tất cả loại");
+                  setWarehouse("Tất cả kho");
+                  setSupplier("Tất cả NCC");
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Xoá lọc
+              </Button>
+            )}
           </>
         }
       />
