@@ -4,7 +4,6 @@ import {
   Building2, 
   MapPin, 
   Plus, 
-  Search, 
   MoreHorizontal, 
   ChevronRight, 
   Phone, 
@@ -17,9 +16,9 @@ import {
   PackageCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -99,17 +98,9 @@ export default function SuppliersPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <div className="border-b border-slate-100 p-4 dark:border-slate-800">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input 
-              placeholder="Tìm kiếm nhà cung cấp..." 
-              className="pl-10 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-            />
-          </div>
-        </div>
+      <SearchToolbar placeholder="Tìm kiếm nhà cung cấp..." />
         
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">

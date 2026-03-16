@@ -4,7 +4,6 @@ import {
   Building2,
   MapPin,
   Plus,
-  Search,
   Boxes,
   LayoutDashboard,
   MoreVertical,
@@ -16,9 +15,9 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +70,7 @@ export default function WarehousesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quản lý kho hàng"
+        title="Danh sách kho"
         description="Hệ thống quản lý không gian lưu trữ và mạng lưới kho bãi."
         actions={
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none">
@@ -81,13 +80,10 @@ export default function WarehousesPage() {
         }
       />
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <Input
-          placeholder="Tìm kiếm kho theo tên hoặc địa chỉ..."
-          className="pl-10 border-slate-200 bg-white focus-visible:ring-indigo-500/30"
-        />
-      </div>
+      <SearchToolbar
+        placeholder="Tìm theo tên kho hoặc địa chỉ..."
+        className="max-w-2xl"
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {warehouses.map((wh) => (

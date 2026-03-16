@@ -7,7 +7,7 @@ export default function SecurityPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Bảo mật và Phân quyền"
+        title="Bảo mật & Phân quyền"
         description="Quản lý quyền truy cập và bảo vệ dữ liệu kho an toàn tuyệt đối."
         actions={
           <Button

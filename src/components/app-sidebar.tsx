@@ -49,28 +49,28 @@ type MenuItem = {
 };
 
 const mainItems: MenuItem[] = [
-  { label: "Bảng điều khiển", href: "/dashboard", icon: LayoutGrid },
-  { label: "Quản lý tồn kho", href: "/inventory", icon: Boxes },
-  { label: "Quản lý kho hàng", href: "/warehouses", icon: Warehouse },
+  { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid },
+  { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes },
+  { label: "Danh sách kho", href: "/warehouses", icon: Warehouse },
   {
-    label: "Danh mục sản phẩm",
+    label: "Sản phẩm",
     href: "/products",
     icon: Package,
     children: [
-      { label: "Danh sách sản phẩm", href: "/products" },
-      { label: "Thêm sản phẩm", href: "/products/new" },
+      { label: "Tất cả sản phẩm", href: "/products" },
+      { label: "Tạo sản phẩm mới", href: "/products/new" },
+      { label: "Nhóm / loại hàng", href: "/categories" },
     ],
   },
-  { label: "Phân loại hàng", href: "/categories", icon: Boxes },
-  { label: "Đơn hàng & Vận chuyển", href: "/orders", icon: Truck },
+  { label: "Đơn hàng & giao nhận", href: "/orders", icon: Truck },
   {
     label: "Nhập hàng",
     href: "/inbound",
     icon: ClipboardList,
     tag: "Mới",
     children: [
-      { label: "Phiếu nhập", href: "/inbound" },
-      { label: "Tạo phiếu mới", href: "/inbound/new" },
+      { label: "Danh sách phiếu nhập", href: "/inbound" },
+      { label: "Tạo phiếu nhập", href: "/inbound/new" },
     ],
   },
 ];
@@ -78,8 +78,11 @@ const mainItems: MenuItem[] = [
 const secondaryItems: MenuItem[] = [
   { label: "Khách hàng", href: "/customers", icon: Users2 },
   { label: "Nhà cung cấp", href: "/suppliers", icon: Building2 },
-  { label: "Lịch sử hoạt động", href: "/history", icon: History },
-  { label: "Báo cáo thống kê", href: "/reports", icon: BarChart3, tag: "BI" },
+  { label: "Nhật ký hoạt động", href: "/history", icon: History },
+];
+
+const reportItems: MenuItem[] = [
+  { label: "Báo cáo", href: "/reports", icon: BarChart3, tag: "BI" },
 ];
 
 const systemItems: MenuItem[] = [
@@ -93,7 +96,7 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const allItems = [...mainItems, ...secondaryItems, ...systemItems];
+  const allItems = [...mainItems, ...secondaryItems, ...reportItems, ...systemItems];
   const [expandedHref, setExpandedHref] = useState<string | null>(
     () => allItems.find((item) => item.children && isActivePath(pathname, item.href))?.href ?? null
   );
@@ -131,7 +134,7 @@ export function AppSidebar() {
       <SidebarContent className="no-scrollbar gap-0 py-4">
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Quản trị chính
+            Tổng quan & tác nghiệp
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -144,11 +147,24 @@ export function AppSidebar() {
 
         <SidebarGroup className="mt-2">
           <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Dữ liệu & Báo cáo
+            Đối tác & nhật ký
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {secondaryItems.map((item) => (
+                <SidebarItem key={item.href} item={item} pathname={pathname} expandedHref={expandedHref} setExpandedHref={setExpandedHref} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-2">
+          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
+            Báo cáo & phân tích
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {reportItems.map((item) => (
                 <SidebarItem key={item.href} item={item} pathname={pathname} expandedHref={expandedHref} setExpandedHref={setExpandedHref} />
               ))}
             </SidebarMenu>
@@ -181,7 +197,7 @@ export function AppSidebar() {
             className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900"
           >
             <CircleHelp className="h-4 w-4" />
-            <span className="group-data-[collapsible=icon]:hidden">Trung tâm hỗ trợ</span>
+            <span className="group-data-[collapsible=icon]:hidden">Trợ giúp & hỗ trợ</span>
           </SidebarMenuButton>
         </div>
       </SidebarFooter>

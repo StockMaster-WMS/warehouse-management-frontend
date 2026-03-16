@@ -1,6 +1,5 @@
 import { 
   Plus, 
-  Search, 
   Filter, 
   Truck, 
   ClipboardCheck, 
@@ -14,8 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +58,7 @@ export default function InboundPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quản lý nhập hàng"
+        title="Nhập hàng"
         description="Điều phối hàng về, kiểm đếm chất lượng và phân phối vị trí lưu kho."
         actions={
           <div className="flex items-center gap-2">
@@ -101,26 +100,18 @@ export default function InboundPage() {
         ))}
       </div>
 
+      <SearchToolbar
+        placeholder="Tìm mã phiếu, nhà cung cấp..."
+        right={
+          <Button variant="outline" className="gap-2 border-slate-200">
+            <Filter className="h-4 w-4" />
+            Dòng hàng
+          </Button>
+        }
+      />
+        
       {/* Table Section */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <div className="border-b border-slate-100 p-4 dark:border-slate-800">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input 
-                placeholder="Tìm mã phiếu, nhà cung cấp..." 
-                className="pl-10 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="gap-2 border-slate-200">
-                <Filter className="h-4 w-4" />
-                Dòng hàng
-              </Button>
-            </div>
-          </div>
-        </div>
-        
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-900/50">

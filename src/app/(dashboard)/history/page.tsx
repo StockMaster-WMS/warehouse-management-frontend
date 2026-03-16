@@ -7,11 +7,11 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Lịch sử hoạt động"
+        title="Nhật ký hoạt động"
         description="Ghi lại mọi thay đổi và hoạt động trong hệ thống theo thời gian thực."
       />
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <EmptyState
           icon={History}
           title="Chưa có hoạt động nào"

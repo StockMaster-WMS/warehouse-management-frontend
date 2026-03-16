@@ -1,22 +1,21 @@
 import {
   Boxes,
-  Search,
   Filter,
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
 
 export default function InventoryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quản lý tồn kho"
+        title="Theo dõi tồn kho"
         description="Tổng quan tình trạng hàng hóa và biến động kho theo thời gian thực."
         actions={
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
@@ -52,31 +51,23 @@ export default function InventoryPage() {
             label={stat.label}
             value={stat.value}
             icon={stat.icon}
-            className="rounded-xl"
+            className="rounded-2xl"
             accentClassName="bg-indigo-500"
           />
         ))}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-100 p-4 dark:border-slate-800">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                placeholder="Tìm mã kho, tên khu vực..."
-                className="pl-10 focus-visible:ring-indigo-500/30"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Dãy kho
-              </Button>
-            </div>
-          </div>
-        </div>
+      <SearchToolbar
+        placeholder="Tìm mã kho, tên khu vực..."
+        right={
+          <Button variant="outline" className="gap-2 border-slate-200">
+            <Filter className="h-4 w-4" />
+            Dãy kho
+          </Button>
+        }
+      />
 
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <EmptyState
           icon={Boxes}
           title="Lịch sử tồn kho trống"

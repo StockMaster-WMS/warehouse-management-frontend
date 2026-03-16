@@ -7,7 +7,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Báo cáo thống kê"
+        title="Báo cáo"
         description="Dữ liệu phân tích giúp bạn đưa ra những quyết định quản lý kho hiệu quả hơn."
         actions={
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">

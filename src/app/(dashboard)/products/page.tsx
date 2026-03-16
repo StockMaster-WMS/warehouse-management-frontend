@@ -1,7 +1,7 @@
-import { 
-  Plus, 
-  Search, 
-  Filter, 
+"use client";
+import { useMemo, useState } from "react";
+import {
+  Plus,
   Download,
   Package,
   ArrowUpRight,
@@ -11,12 +11,21 @@ import {
   MapPin,
   AlertCircle,
   Hash,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Filter,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +40,8 @@ const products = [
     sku: "IPH15PM-BLK",
     name: "iPhone 15 Pro Max 256GB - Black Titanium",
     category: "Điện thoại",
+    warehouse: "Kho trung tâm",
+    supplier: "Apple Asia Distribution",
     location: "Khu A - Dãy 1 - Kệ 2",
     available: 12,
     onHand: 15,
@@ -42,6 +53,8 @@ const products = [
     sku: "MACM3-SIL",
     name: "MacBook Air M3 13 inch - Silver",
     category: "Laptop",
+    warehouse: "Kho trung tâm",
+    supplier: "Apple Asia Distribution",
     location: "Khu B - Dãy 4 - Kệ 1",
     available: 2,
     onHand: 2,
@@ -53,6 +66,8 @@ const products = [
     sku: "AIRPOD-PRO2",
     name: "AirPods Pro Gen 2 (USB-C)",
     category: "Phụ kiện",
+    warehouse: "Cơ sở Hà Nội",
+    supplier: "Logitech Global",
     location: "Khu A - Dãy 2 - Kệ 5",
     available: 45,
     onHand: 48,
@@ -64,6 +79,8 @@ const products = [
     sku: "IPAD-M2-11",
     name: "iPad Pro M2 11 inch Wi-Fi 128GB",
     category: "Máy tính bảng",
+    warehouse: "Kho trung tâm",
+    supplier: "Samsung Electronics VN",
     location: "Khu B - Dãy 1 - Kệ 3",
     available: 0,
     onHand: 0,
@@ -74,10 +91,51 @@ const products = [
 ];
 
 export default function ProductsPage() {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<string>("all");
+  const [warehouse, setWarehouse] = useState<string>("all");
+  const [supplier, setSupplier] = useState<string>("all");
+
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(products.map((p) => p.category))).sort(),
+    []
+  );
+  const warehouseOptions = useMemo(
+    () => Array.from(new Set(products.map((p) => p.warehouse))).sort(),
+    []
+  );
+  const supplierOptions = useMemo(
+    () => Array.from(new Set(products.map((p) => p.supplier))).sort(),
+    []
+  );
+
+  const filteredProducts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products.filter((p) => {
+      const matchesQuery =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.supplier.toLowerCase().includes(q) ||
+        p.warehouse.toLowerCase().includes(q);
+      const matchesCategory = category === "all" || p.category === category;
+      const matchesWarehouse = warehouse === "all" || p.warehouse === warehouse;
+      const matchesSupplier = supplier === "all" || p.supplier === supplier;
+      return matchesQuery && matchesCategory && matchesWarehouse && matchesSupplier;
+    });
+  }, [category, query, supplier, warehouse]);
+
+  const hasAnyFilter =
+    query.trim().length > 0 ||
+    category !== "all" ||
+    warehouse !== "all" ||
+    supplier !== "all";
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Danh mục sản phẩm"
+        title="Sản phẩm"
         description="Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ."
         actions={
           <div className="flex items-center gap-2">
@@ -115,25 +173,84 @@ export default function ProductsPage() {
         ))}
       </div>
 
+      <SearchToolbar
+        placeholder="Tìm theo tên, SKU hoặc nhóm hàng..."
+        value={query}
+        onValueChange={setQuery}
+        filters={
+          <>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <Filter className="h-4 w-4 text-slate-400" />
+              Bộ lọc
+            </div>
+            <Select
+              value={category}
+              onValueChange={(value) => setCategory(value ?? "all")}
+            >
+              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-56">
+                <SelectValue placeholder="Loại hàng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại</SelectItem>
+                {categoryOptions.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={warehouse}
+              onValueChange={(value) => setWarehouse(value ?? "all")}
+            >
+              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-56">
+                <SelectValue placeholder="Kho" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả kho</SelectItem>
+                {warehouseOptions.map((w) => (
+                  <SelectItem key={w} value={w}>
+                    {w}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={supplier}
+              onValueChange={(value) => setSupplier(value ?? "all")}
+            >
+              <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 sm:w-64">
+                <SelectValue placeholder="Nhà cung cấp" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả NCC</SelectItem>
+                {supplierOptions.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 border-slate-200"
+              onClick={() => {
+                setQuery("");
+                setCategory("all");
+                setWarehouse("all");
+                setSupplier("all");
+              }}
+              disabled={!hasAnyFilter}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Xoá lọc
+            </Button>
+          </>
+        }
+      />
+
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <div className="border-b border-slate-100 p-4 dark:border-slate-800">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input 
-                placeholder="Tìm hàng nhanh theo Tên, SKU hoặc Chủng loại..." 
-                className="pl-10 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="gap-2 border-slate-200">
-                <Filter className="h-4 w-4" />
-                Bộ lọc nâng cao
-              </Button>
-            </div>
-          </div>
-        </div>
-        
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
@@ -147,12 +264,14 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.sku} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{product.name}</span>
-                      <span className="text-[11px] font-medium text-slate-500 mt-0.5">{product.sku} • {product.category}</span>
+                      <span className="text-[11px] font-medium text-slate-500 mt-0.5">
+                        {product.sku} • {product.category} • {product.warehouse} • {product.supplier}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -173,13 +292,12 @@ export default function ProductsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      product.status === 'in-stock' 
-                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400' 
-                        : product.status === 'low-stock'
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${product.status === 'in-stock'
+                      ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                      : product.status === 'low-stock'
                         ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
                         : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400'
-                    }`}>
+                      }`}>
                       {product.status === 'in-stock' ? 'Đang sẵn hàng' : product.status === 'low-stock' ? 'Sắp hết hàng' : 'Hết hàng'}
                     </span>
                   </td>
@@ -187,9 +305,9 @@ export default function ProductsPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
-                          <Button 
-                            variant="ghost" 
-                            size="icon-sm" 
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
                             className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700"
                           >
                             <MoreHorizontal className="h-4 w-4" />
@@ -201,15 +319,15 @@ export default function ProductsPage() {
                           <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                         </DropdownMenuGroup>
                         <DropdownMenuItem className="rounded-lg">
-                           <ChevronRight className="mr-2 h-4 w-4" />
-                           Xem chi tiết
+                          <ChevronRight className="mr-2 h-4 w-4" />
+                          Xem chi tiết
                         </DropdownMenuItem>
                         <DropdownMenuItem className="rounded-lg">
-                           <ArrowRightLeft className="mr-2 h-4 w-4" />
-                           Chuyển kho
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          Chuyển kho
                         </DropdownMenuItem>
                         <DropdownMenuItem className="rounded-lg text-rose-600 focus:text-rose-600">
-                           Xóa SKU
+                          Xóa SKU
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -219,10 +337,12 @@ export default function ProductsPage() {
             </tbody>
           </table>
         </div>
-        
+
         <div className="border-t border-slate-100 p-4 dark:border-slate-800">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-slate-500">Đang hiển thị {products.length} trên 248 sản phẩm</p>
+            <p className="text-xs font-medium text-slate-500">
+              Đang hiển thị {filteredProducts.length} trên {products.length} sản phẩm
+            </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled className="h-8 px-3 text-xs border-slate-200">Trước</Button>
               <Button variant="outline" size="sm" className="h-8 px-3 text-xs border-slate-200">Tiếp theo</Button>

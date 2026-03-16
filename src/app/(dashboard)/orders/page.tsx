@@ -2,19 +2,18 @@ import {
   Truck, 
   MapPin, 
   MoreVertical, 
-  Search,
   Filter,
   History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
 
 export default function OrderPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Đơn hàng & Vận chuyển"
+        title="Đơn hàng & giao nhận"
         description="Quản lý hành trình vận chuyển và trạng thái đơn xuất kho."
         actions={
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
@@ -23,25 +22,19 @@ export default function OrderPage() {
         }
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Tìm theo mã đơn, điểm giao hàng..."
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" className="gap-2">
+      <SearchToolbar
+        placeholder="Tìm theo mã đơn, điểm giao hàng..."
+        right={
+          <Button variant="outline" className="gap-2 border-slate-200">
             <Filter className="h-4 w-4" />
             Bộ lọc trạng thái
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Trình trạng giao hàng</h3>
              </div>
@@ -79,7 +72,7 @@ export default function OrderPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center gap-2 mb-4">
               <History className="h-4 w-4 text-indigo-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Hoạt động mới nhất</h3>
