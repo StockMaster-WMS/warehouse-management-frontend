@@ -1,5 +1,6 @@
 "use client";
 
+import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -18,8 +19,110 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGetCategoriesQuery } from "@/store/services/category.service";
+
+type ProductFormValues = {
+  sku: string;
+  barcode: string;
+  name: string;
+  category: string;
+  baseUnit: string;
+  lengthCm: string;
+  widthCm: string;
+  heightCm: string;
+  weightGram: string;
+  minStock: string;
+  maxStock: string;
+};
+
+type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
+
+const initialValues: ProductFormValues = {
+  sku: "",
+  barcode: "",
+  name: "",
+  category: "",
+  baseUnit: "cai",
+  lengthCm: "",
+  widthCm: "",
+  heightCm: "",
+  weightGram: "",
+  minStock: "5",
+  maxStock: "100",
+};
 
 export default function NewProductPage() {
+  const [values, setValues] = useState<ProductFormValues>(initialValues);
+  const [errors, setErrors] = useState<ProductFormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+
+  const {
+    data: categoryData,
+    isLoading: isLoadingCategories,
+    error: categoryError,
+    refetch: refetchCategories,
+  } = useGetCategoriesQuery();
+
+  const isSaveDisabled = useMemo(
+    () => isSubmitting || !values.sku.trim() || !values.name.trim() || !values.category,
+    [isSubmitting, values.sku, values.name, values.category],
+  );
+
+  const validate = (data: ProductFormValues): ProductFormErrors => {
+    const nextErrors: ProductFormErrors = {};
+
+    if (!data.sku.trim()) nextErrors.sku = "SKU là bắt buộc.";
+    if (!data.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
+    if (!data.category) nextErrors.category = "Vui lòng chọn nhóm hàng.";
+    if (!data.baseUnit) nextErrors.baseUnit = "Vui lòng chọn đơn vị tính.";
+    if (data.barcode && !/^\d{8,13}$/.test(data.barcode)) {
+      nextErrors.barcode = "Barcode phải có từ 8 đến 13 chữ số.";
+    }
+
+    const numberFields: Array<keyof ProductFormValues> = [
+      "lengthCm",
+      "widthCm",
+      "heightCm",
+      "weightGram",
+      "minStock",
+      "maxStock",
+    ];
+
+    numberFields.forEach((fieldName) => {
+      const rawValue = data[fieldName];
+      if (!rawValue) return;
+      const numericValue = Number(rawValue);
+      if (Number.isNaN(numericValue) || numericValue < 0) {
+        nextErrors[fieldName] = "Giá trị phải là số không âm.";
+      }
+    });
+
+    return nextErrors;
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitMessage("");
+
+    const validationErrors = validate(values);
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    setIsSubmitting(false);
+    setSubmitMessage("Đã lưu thông tin sản phẩm ở mức giao diện. Bước tiếp theo: kết nối API tạo sản phẩm.");
+  };
+
+  const updateValue = (key: keyof ProductFormValues, value: string) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
@@ -38,7 +141,13 @@ export default function NewProductPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {submitMessage ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {submitMessage}
+        </div>
+      ) : null}
+
+      <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit} noValidate>
         <div className="md:col-span-2 space-y-6">
           {/* Section 1: Thông tin cơ bản */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -60,8 +169,14 @@ export default function NewProductPage() {
                   <Input
                     id="sku"
                     placeholder="VD: IPH15-BLK-256"
+                    value={values.sku}
+                    onChange={(event) => updateValue("sku", event.target.value)}
+                    aria-invalid={Boolean(errors.sku)}
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
+                  {errors.sku ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.sku}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <label
@@ -73,8 +188,14 @@ export default function NewProductPage() {
                   <Input
                     id="barcode"
                     placeholder="0123456789012"
+                    value={values.barcode}
+                    onChange={(event) => updateValue("barcode", event.target.value)}
+                    aria-invalid={Boolean(errors.barcode)}
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
+                  {errors.barcode ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.barcode}</p>
+                  ) : null}
                 </div>
               </div>
               <div className="space-y-2">
@@ -87,31 +208,76 @@ export default function NewProductPage() {
                 <Input
                   id="product-name"
                   placeholder="Nhập tên đầy đủ của mặt hàng..."
+                  value={values.name}
+                  onChange={(event) => updateValue("name", event.target.value)}
+                  aria-invalid={Boolean(errors.name)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.name ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.name}</p>
+                ) : null}
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
+                  <label htmlFor="category" className="text-xs font-bold text-slate-500 uppercase">
                     Nhóm hàng
                   </label>
-                  <Select>
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30">
-                      <SelectValue placeholder="Chọn nhóm hàng..." />
+                  <Select
+                    value={values.category}
+                    onValueChange={(value) => updateValue("category", value ?? "")}
+                  >
+                    <SelectTrigger
+                      id="category"
+                      aria-invalid={Boolean(errors.category)}
+                      className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                    >
+                      <SelectValue
+                        placeholder={
+                          isLoadingCategories
+                            ? "Đang tải danh mục..."
+                            : categoryError
+                              ? "Lỗi tải danh mục"
+                              : "Chọn nhóm hàng..."
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dt">Điện thoại</SelectItem>
-                      <SelectItem value="lt">Laptop</SelectItem>
-                      <SelectItem value="pk">Phụ kiện</SelectItem>
+                      {categoryError ? (
+                        <div className="px-2 py-1.5 text-xs text-rose-500">
+                          Không tải được danh mục.
+                          <button
+                            type="button"
+                            onClick={() => refetchCategories()}
+                            className="ml-1 underline"
+                          >
+                            Thử lại
+                          </button>
+                        </div>
+                      ) : null}
+                      {categoryData?.data?.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name} ({category.code})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {errors.category ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.category}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
+                  <label htmlFor="base-unit" className="text-xs font-bold text-slate-500 uppercase">
                     Đơn vị tính
                   </label>
-                  <Select defaultValue="cai">
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30">
+                  <Select
+                    value={values.baseUnit}
+                    onValueChange={(value) => updateValue("baseUnit", value ?? "")}
+                  >
+                    <SelectTrigger
+                      id="base-unit"
+                      aria-invalid={Boolean(errors.baseUnit)}
+                      className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                    >
                       <SelectValue placeholder="Chọn ĐVT..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -120,6 +286,9 @@ export default function NewProductPage() {
                       <SelectItem value="hop">Hộp</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.baseUnit ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.baseUnit}</p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -145,8 +314,14 @@ export default function NewProductPage() {
                   id="length-cm"
                   type="number"
                   placeholder="0"
+                  value={values.lengthCm}
+                  onChange={(event) => updateValue("lengthCm", event.target.value)}
+                  aria-invalid={Boolean(errors.lengthCm)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.lengthCm ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.lengthCm}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label
@@ -159,8 +334,14 @@ export default function NewProductPage() {
                   id="width-cm"
                   type="number"
                   placeholder="0"
+                  value={values.widthCm}
+                  onChange={(event) => updateValue("widthCm", event.target.value)}
+                  aria-invalid={Boolean(errors.widthCm)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.widthCm ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.widthCm}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label
@@ -173,8 +354,14 @@ export default function NewProductPage() {
                   id="height-cm"
                   type="number"
                   placeholder="0"
+                  value={values.heightCm}
+                  onChange={(event) => updateValue("heightCm", event.target.value)}
+                  aria-invalid={Boolean(errors.heightCm)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.heightCm ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.heightCm}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label
@@ -187,8 +374,14 @@ export default function NewProductPage() {
                   id="weight-gram"
                   type="number"
                   placeholder="0"
+                  value={values.weightGram}
+                  onChange={(event) => updateValue("weightGram", event.target.value)}
+                  aria-invalid={Boolean(errors.weightGram)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.weightGram ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.weightGram}</p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -214,9 +407,14 @@ export default function NewProductPage() {
                 <Input
                   id="min-stock"
                   type="number"
-                  defaultValue="5"
+                  value={values.minStock}
+                  onChange={(event) => updateValue("minStock", event.target.value)}
+                  aria-invalid={Boolean(errors.minStock)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.minStock ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.minStock}</p>
+                ) : null}
                 <p className="text-[10px] font-medium text-slate-400 italic">
                   Cảnh báo khi kho thấp hơn mức này.
                 </p>
@@ -231,9 +429,14 @@ export default function NewProductPage() {
                 <Input
                   id="max-stock"
                   type="number"
-                  defaultValue="100"
+                  value={values.maxStock}
+                  onChange={(event) => updateValue("maxStock", event.target.value)}
+                  aria-invalid={Boolean(errors.maxStock)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
+                {errors.maxStock ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.maxStock}</p>
+                ) : null}
                 <p className="text-[10px] font-medium text-slate-400 italic">
                   Dùng để tính tỷ lệ lấp đầy kho.
                 </p>
@@ -243,9 +446,13 @@ export default function NewProductPage() {
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
             <div className="flex flex-col gap-4">
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none">
+              <Button
+                type="submit"
+                disabled={isSaveDisabled}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:opacity-70 dark:shadow-none"
+              >
                 <Save className="mr-2 h-4 w-4" />
-                Lưu sản phẩm
+                {isSubmitting ? "Đang lưu..." : "Lưu sản phẩm"}
               </Button>
               <Button
                 render={<Link href="/products" />}
@@ -258,7 +465,7 @@ export default function NewProductPage() {
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
