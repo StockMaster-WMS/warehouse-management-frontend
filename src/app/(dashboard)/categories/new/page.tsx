@@ -109,8 +109,8 @@ export default function NewCategoryPage() {
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
-        title="Thêm nhóm hàng"
-        description="Tạo danh mục mới để phân loại và quản lý sản phẩm."
+        title="Thêm nhóm / loại"
+        description="Thêm nút trên cây phân loại — có thể là nhóm gốc hoặc loại thuộc nhóm cha."
         actions={
           <Button
             render={<Link href="/categories" />}
@@ -140,7 +140,7 @@ export default function NewCategoryPage() {
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Tag className="h-4 w-4 text-indigo-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin cơ bản phân loại
+                Thông tin nhóm / loại
               </h3>
             </div>
 
@@ -158,7 +158,7 @@ export default function NewCategoryPage() {
                   value={values.name}
                   onChange={(event) => updateValue("name", event.target.value)}
                   aria-invalid={Boolean(errors.name)}
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 font-bold"
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
                 {errors.name ? (
                   <p className="text-xs font-medium text-rose-600">{errors.name}</p>
@@ -202,7 +202,7 @@ export default function NewCategoryPage() {
                     <SelectContent className="max-h-80">
                       {categoriesError ? (
                         <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được danh mục.
+                          Không tải được nhóm hàng.
                           <button
                             type="button"
                             onClick={() => refetchCategories()}
@@ -248,10 +248,15 @@ export default function NewCategoryPage() {
                 </label>
                 <Input
                   id="path"
-                  value={"--"}
+                  value="—"
                   disabled
-                  className="border-slate-200 bg-slate-100 font-mono text-sm"
+                  readOnly
+                  title="Path do hệ thống sinh sau khi lưu"
+                  className="border-slate-200 bg-slate-100 font-mono text-sm text-slate-500"
                 />
+                <p className="text-[11px] text-slate-400">
+                  Đường dẫn (path) được gán tự động theo mã nhóm và cấu trúc cha — con.
+                </p>
               </div>
             </div>
           </div>
@@ -264,7 +269,7 @@ export default function NewCategoryPage() {
                 <Tag className="h-4 w-4" />
               </span>
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Hiển thị khi phân loại
+                Hiển thị & sử dụng
               </h3>
             </div>
 

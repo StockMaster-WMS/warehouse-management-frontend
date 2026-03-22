@@ -1,22 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { 
-  Plus, 
-  MoreHorizontal, 
-  ChevronRight, 
-  Package, 
-  Tag, 
+import {
+  Plus,
+  MoreHorizontal,
+  ChevronRight,
+  Package,
+  Tag,
   FolderTree,
   Edit2,
   Trash2,
-  LayoutGrid,
-  X
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
@@ -55,14 +54,8 @@ export default function CategoriesPage() {
       prev.push(cat);
       map.set(parentId, prev);
     });
-    // Optional: sort children by level then name for stable rendering
-    for (const [key, list] of map.entries()) {
-      list.sort((a, b) => {
-        const dl = (a.level ?? 0) - (b.level ?? 0);
-        if (dl !== 0) return dl;
-        return a.name.localeCompare(b.name, "vi");
-      });
-      map.set(key, list);
+    for (const [, list] of map.entries()) {
+      list.sort((a, b) => a.name.localeCompare(b.name, "vi"));
     }
     return map;
   }, [categories]);
@@ -107,46 +100,32 @@ export default function CategoriesPage() {
 
     const visibleSet = hasQuery ? new Set<string>([...matchedIds, ...ancestorIds]) : null;
 
-    const computeDepth = (cat: (typeof categories)[number]) => {
-      if (cat.level != null) return cat.level;
-      let depth = 0;
-      let cur: (typeof categories)[number] | undefined = cat;
-      while (cur?.parentId) {
-        depth += 1;
-        cur = categoriesById.get(cur.parentId);
-        if (!cur) break;
-        if (depth > 20) break;
-      }
-      return depth;
-    };
-
+    /** `treeDepth`: 0 = gốc, +1 mỗi lần đi xuống con trong cây UI (chỉ đệ quy, không đọc level API). */
     const visibleNodes: Array<{
       cat: (typeof categories)[number];
-      depth: number;
+      treeDepth: number;
       hasChildren: boolean;
     }> = [];
 
-    const walk = (cat: (typeof categories)[number]) => {
+    const walk = (cat: (typeof categories)[number], treeDepth: number) => {
       const shouldShow = !hasQuery || visibleSet!.has(cat.id);
-      const depth = computeDepth(cat);
       const children = childrenByParentId.get(cat.id) ?? [];
       const hasChildren = children.length > 0;
 
       if (shouldShow) {
-        visibleNodes.push({ cat, depth, hasChildren });
+        visibleNodes.push({ cat, treeDepth, hasChildren });
       }
 
       if (hasChildren && effectiveExpandedIds.has(cat.id)) {
-        for (const child of children) walk(child);
+        for (const child of children) walk(child, treeDepth + 1);
       }
     };
 
     if (!hasQuery) {
-      for (const root of roots) walk(root);
+      for (const root of roots) walk(root, 0);
     } else {
       for (const root of roots) {
-        // If query mode: still only traverse into branches that are expanded (auto expanded ancestors)
-        walk(root);
+        walk(root, 0);
       }
     }
 
@@ -179,7 +158,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Nhóm / loại hàng"
-        description="Quản lý cây danh mục và nhóm sản phẩm trong hệ thống."
+        description="Cây phân loại: nhóm gốc và loại con — dùng khi gán sản phẩm và báo cáo."
         actions={
           <Button
             render={<Link href="/categories/new" />}
@@ -205,8 +184,8 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      <SearchToolbar 
-        placeholder="Tìm kiếm nhóm hàng..." 
+      <SearchToolbar
+        placeholder="Tìm theo tên hoặc mã nhóm..."
         value={query}
         onValueChange={setQuery}
         filters={
@@ -231,143 +210,175 @@ export default function CategoriesPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
-              <tr>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên nhóm & Mô tả</th>
-                <th className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Số lượng SP</th>
-                <th className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</th>
-                <th className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, idx) => (
-                  <tr key={`category-skeleton-${idx}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-xl" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-56" />
-                          <Skeleton className="h-3 w-40" />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <Skeleton className="mx-auto h-6 w-20 rounded-lg" />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <Skeleton className="mx-auto h-5 w-24 rounded-full" />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Skeleton className="ml-auto h-8 w-8 rounded-lg" />
-                    </td>
-                  </tr>
-                ))
-              ) : error ? (
-                <tr>
-                  <td colSpan={4} className="p-0">
-                    <EmptyState
-                      icon={Tag}
-                      title="Không thể tải danh mục"
-                      description={
-                        (error as { data?: { message?: string } })?.data?.message ??
-                        "Đã xảy ra lỗi khi tải danh sách danh mục."
-                      }
-                      action={
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
-                          Thử lại
-                        </Button>
-                      }
-                      className="py-10"
-                    />
-                  </td>
-                </tr>
-              ) : treeModel.visibleNodes.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-0">
-                    <EmptyState
-                      icon={Tag}
-                      title={query ? "Không tìm thấy danh mục" : "Chưa có danh mục nào"}
-                      description={
-                        query
-                          ? "Thử từ khóa khác hoặc xóa bộ lọc tìm kiếm."
-                          : "Bắt đầu bằng cách tạo danh mục đầu tiên."
-                      }
-                      action={
-                        query ? (
-                          <Button variant="outline" size="sm" onClick={() => setQuery("")}>
-                            Xóa lọc
-                          </Button>
-                        ) : (
-                          <Button
-                            render={<Link href="/categories/new" />}
-                            nativeButton={false}
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700"
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Thêm phân loại mới
-                          </Button>
-                        )
-                      }
-                      className="py-10"
-                    />
-                  </td>
-                </tr>
-              ) : (
-                treeModel.visibleNodes.map(({ cat, depth, hasChildren }) => {
-                  const isExpanded = treeModel.effectiveExpandedIds.has(cat.id);
-                  return (
-                    <tr
-                      key={cat.id}
-                      className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
+          <div
+            role="tree"
+            aria-label="Cây nhóm và loại hàng"
+            className="min-w-[720px]"
+          >
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, idx) => (
+                <div
+                  key={`category-skeleton-${idx}`}
+                  className="grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 px-6 py-4 dark:border-slate-800"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                    <div className="min-w-0 space-y-2">
+                      <Skeleton className="h-4 w-56" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <Skeleton className="h-6 w-20 rounded-lg" />
+                  </div>
+                  <div className="flex justify-center">
+                    <Skeleton className="h-5 w-24 rounded-full" />
+                  </div>
+                  <div className="flex justify-end">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                </div>
+              ))
+            ) : error ? (
+              <EmptyState
+                icon={Tag}
+                title="Không thể tải nhóm hàng"
+                description={
+                  (error as { data?: { message?: string } })?.data?.message ??
+                  "Đã xảy ra lỗi khi tải cây phân loại."
+                }
+                action={
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    Thử lại
+                  </Button>
+                }
+                className="py-10"
+              />
+            ) : treeModel.visibleNodes.length === 0 ? (
+              <EmptyState
+                icon={Tag}
+                title={query ? "Không có nhóm khớp tìm kiếm" : "Chưa có nhóm / loại nào"}
+                description={
+                  query
+                    ? "Thử từ khóa khác hoặc xóa bộ lọc."
+                    : "Tạo nhóm gốc hoặc loại con để gán cho sản phẩm."
+                }
+                action={
+                  query ? (
+                    <Button variant="outline" size="sm" onClick={() => setQuery("")}>
+                      Xóa lọc
+                    </Button>
+                  ) : (
+                    <Button
+                      render={<Link href="/categories/new" />}
+                      nativeButton={false}
+                      size="sm"
+                      className="bg-indigo-600 hover:bg-indigo-700"
                     >
-                      <td className="px-6 py-4">
-                        <div
-                          className="flex items-center gap-3"
-                          style={{ paddingLeft: depth * 12 }}
-                        >
-                          {hasChildren ? (
-                            <button
-                              type="button"
-                              onClick={() => toggleExpanded(cat.id)}
-                              aria-label={isExpanded ? "Thu gọn nhánh" : "Mở rộng nhánh"}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-300"
+                      <Plus className="mr-2 h-4 w-4" />
+                      Thêm phân loại mới
+                    </Button>
+                  )
+                }
+                className="py-10"
+              />
+            ) : (
+              <>
+                <div
+                  className="grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+                  aria-hidden
+                >
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Nhóm / loại
+                  </div>
+                  <div className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Sản phẩm
+                  </div>
+                  <div className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Trạng thái
+                  </div>
+                  <div className="text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="sr-only">Thao tác</span>
+                  </div>
+                </div>
+                {treeModel.visibleNodes.map(({ cat, treeDepth, hasChildren }) => {
+                  const isExpanded = treeModel.effectiveExpandedIds.has(cat.id);
+
+                  return (
+                    <div
+                      key={cat.id}
+                      role="treeitem"
+                      aria-level={treeDepth + 1}
+                      aria-expanded={hasChildren ? isExpanded : undefined}
+                      className="group grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 px-6 py-4 transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/80 dark:border-slate-800 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/60"
+                    >
+                      <div className="flex min-w-0 items-stretch">
+                        {/* Mỗi cấp rộng bằng ô mũi tên (w-8); kẻ dọc giữa cột để thẳng hàng với chevron cha */}
+                        <div className="flex shrink-0 self-stretch" aria-hidden>
+                          {Array.from({ length: treeDepth }).map((_, railIdx) => (
+                            <div
+                              key={railIdx}
+                              className="flex w-8 shrink-0 justify-center self-stretch"
                             >
-                              <ChevronRight
-                                className={`h-4 w-4 transition-transform ${
-                                  isExpanded ? "rotate-90" : ""
-                                }`}
-                              />
-                            </button>
-                          ) : (
-                            <span className="inline-flex h-7 w-7" />
-                          )}
-
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800">
-                            <LayoutGrid className="h-5 w-5" />
+                              <span className="w-px shrink-0 self-stretch bg-slate-200 dark:bg-slate-600" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <div className="flex w-8 shrink-0 justify-center">
+                            {hasChildren ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleExpanded(cat.id)}
+                                aria-expanded={isExpanded}
+                                aria-label={
+                                  isExpanded ? "Thu gọn nhánh" : "Mở rộng nhánh"
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-slate-700"
+                              >
+                                <ChevronRight
+                                  className={cn(
+                                    "h-4 w-4 transition-transform",
+                                    isExpanded && "rotate-90",
+                                  )}
+                                />
+                              </button>
+                            ) : (
+                              <span className="block h-8 w-8" aria-hidden />
+                            )}
                           </div>
-
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-semibold leading-tight text-slate-900 dark:text-white">
                               {cat.name}
                             </span>
-                            <span className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-1">
-                              {cat.path ? `Path: ${cat.path}` : `Mã danh mục: ${cat.code}`}
-                            </span>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                              <span className="font-mono font-medium text-slate-600 dark:text-slate-300">
+                                Mã: {cat.code}
+                              </span>
+                              {cat.path ? (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600">·</span>
+                                  <span className="line-clamp-1 font-mono text-[10px] text-slate-400">
+                                    {cat.path}
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
-                      </td>
+                      </div>
 
-                      <td className="px-6 py-4 text-center">
-                        <div className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50/50 px-2.5 py-1 text-xs font-bold text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400">
-                          <Package className="h-3.5 w-3.5" />
-                          --
+                      <div className="flex justify-center">
+                        <div
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400"
+                          title="Thống kê theo nhóm — sắp cập nhật"
+                        >
+                          <Package className="h-3.5 w-3.5 opacity-70" />
+                          —
                         </div>
-                      </td>
+                      </div>
 
-                      <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             cat.isActive
@@ -377,9 +388,9 @@ export default function CategoriesPage() {
                         >
                           {cat.isActive ? "Đang hoạt động" : "Tạm dừng"}
                         </span>
-                      </td>
+                      </div>
 
-                      <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             render={
@@ -397,9 +408,7 @@ export default function CategoriesPage() {
                             className="w-48 rounded-xl"
                           >
                             <DropdownMenuGroup>
-                              <DropdownMenuLabel>
-                                Quản lý nhóm
-                              </DropdownMenuLabel>
+                              <DropdownMenuLabel>Nhóm / loại</DropdownMenuLabel>
                             </DropdownMenuGroup>
                             <DropdownMenuItem
                               className="rounded-lg"
@@ -408,9 +417,12 @@ export default function CategoriesPage() {
                               <Edit2 className="mr-2 h-4 w-4" />
                               Sửa thông tin
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-lg">
-                              <ChevronRight className="mr-2 h-4 w-4" />
-                              Xem sản phẩm
+                            <DropdownMenuItem
+                              className="rounded-lg"
+                              render={<Link href="/products" />}
+                            >
+                              <Package className="mr-2 h-4 w-4" />
+                              Sản phẩm
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="rounded-lg"
@@ -431,13 +443,13 @@ export default function CategoriesPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -445,7 +457,7 @@ export default function CategoriesPage() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={() => {
-          console.log("Deleted", itemToDelete);
+          setIsDeleteDialogOpen(false);
         }}
         itemName={itemToDelete}
         title="Xóa nhóm hàng"

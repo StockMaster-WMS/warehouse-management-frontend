@@ -190,7 +190,7 @@ export default function EditCategoryPage({
       <div className="rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
         <EmptyState
           icon={Tag}
-          title="Không thể tải danh mục"
+          title="Không thể tải nhóm hàng"
           description={
             (error as { data?: { message?: string } })?.data?.message ??
             "Dữ liệu không tồn tại hoặc đã bị xóa."
@@ -208,11 +208,13 @@ export default function EditCategoryPage({
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
-        title="Chỉnh sửa nhóm hàng"
-        description={`Cập nhật cấu hình danh mục ${data.data.name}.`}
+        title="Chỉnh sửa nhóm / loại"
+        description={`Mã ${data.data.code} · ${data.data.name}`}
         actions={
           <Button
-            render={<Link href={`/categories/${id}`} />}
+            render={
+              <Link href="/categories" aria-label="Quay lại danh sách nhóm hàng" />
+            }
             nativeButton={false}
             variant="ghost"
             size="icon-sm"
@@ -239,23 +241,25 @@ export default function EditCategoryPage({
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Tag className="h-4 w-4 text-indigo-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin cơ bản
+                Thông tin nhóm / loại
               </h3>
             </div>
 
             <div className="space-y-4">
-              <Field label="Mã nhóm hàng (tự sinh nếu bỏ trống)" htmlFor="code" error={errors.code}>
+              <Field label="Mã nhóm (code)" htmlFor="code" error={errors.code}>
                 <Input
                   id="code"
                   value={values.code}
                   onChange={(e) => updateValue("code", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 font-mono text-sm uppercase focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Tên nhóm hàng *" htmlFor="name" error={errors.name}>
+              <Field label="Tên hiển thị *" htmlFor="name" error={errors.name}>
                 <Input
                   id="name"
                   value={values.name}
                   onChange={(e) => updateValue("name", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
 
@@ -288,7 +292,7 @@ export default function EditCategoryPage({
                     <SelectContent className="max-h-80">
                       {categoriesError ? (
                         <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được danh mục.
+                          Không tải được nhóm hàng.
                           <button
                             type="button"
                             onClick={() => refetchCategories()}
@@ -380,7 +384,7 @@ export default function EditCategoryPage({
                 {isUpdating ? "Đang lưu..." : "Lưu cập nhật"}
               </Button>
               <Button
-                render={<Link href={`/categories/${id}`} />}
+                render={<Link href="/categories" />}
                 nativeButton={false}
                 variant="outline"
                 className="w-full border-slate-200 bg-white"

@@ -23,7 +23,6 @@ import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { getProductCategoryDisplayName } from "@/types/product";
 
 type ProductFormValues = {
-  sku: string;
   barcode: string;
   name: string;
   category: string;
@@ -39,7 +38,6 @@ type ProductFormValues = {
 type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
 
 const initialValues: ProductFormValues = {
-  sku: "",
   barcode: "",
   name: "",
   category: "",
@@ -77,7 +75,6 @@ export default function EditProductPage({
     if (!data?.data) return;
     const p = data.data;
     setValues({
-      sku: p.sku ?? "",
       barcode: p.barcodeEan13 ?? "",
       name: p.name ?? "",
       category: p.categoryId ?? "",
@@ -95,7 +92,6 @@ export default function EditProductPage({
     () =>
       isUpdating ||
       isLoading ||
-      !values.sku.trim() ||
       !values.name.trim() ||
       !values.category.trim() ||
       !values.baseUnit.trim(),
@@ -104,7 +100,6 @@ export default function EditProductPage({
 
   const validate = (form: ProductFormValues): ProductFormErrors => {
     const nextErrors: ProductFormErrors = {};
-    if (!form.sku.trim()) nextErrors.sku = "SKU là bắt buộc.";
     if (!form.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
     if (!form.category.trim()) nextErrors.category = "Vui lòng chọn nhóm hàng.";
     if (!form.baseUnit.trim()) nextErrors.baseUnit = "Đơn vị tính là bắt buộc.";
@@ -138,10 +133,13 @@ export default function EditProductPage({
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
+    const current = data?.data;
+    if (!current) return;
+
     try {
       await updateProduct({
         id,
-        sku: values.sku.trim(),
+        sku: current.sku,
         barcodeEan13: values.barcode.trim() || undefined,
         name: values.name.trim(),
         categoryId: values.category.trim(),
@@ -237,28 +235,16 @@ export default function EditProductPage({
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Mã SKU *" htmlFor="sku" error={errors.sku}>
-                  <Input
-                    id="sku"
-                    placeholder="VD: SP-0001"
-                    value={values.sku}
-                    onChange={(e) => updateValue("sku", e.target.value)}
-                    aria-invalid={Boolean(errors.sku)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                </Field>
-                <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode}>
-                  <Input
-                    id="barcode"
-                    placeholder="0123456789012"
-                    value={values.barcode}
-                    onChange={(e) => updateValue("barcode", e.target.value)}
-                    aria-invalid={Boolean(errors.barcode)}
-                    className="border-slate-200 bg-slate-50/50 font-mono text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                </Field>
-              </div>
+              <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode}>
+                <Input
+                  id="barcode"
+                  placeholder="0123456789012"
+                  value={values.barcode}
+                  onChange={(e) => updateValue("barcode", e.target.value)}
+                  aria-invalid={Boolean(errors.barcode)}
+                  className="border-slate-200 bg-slate-50/50 font-mono text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+              </Field>
               <Field label="Tên sản phẩm *" htmlFor="name" error={errors.name}>
                 <Input
                   id="name"

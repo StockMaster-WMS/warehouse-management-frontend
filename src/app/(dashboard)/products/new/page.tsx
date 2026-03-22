@@ -155,37 +155,24 @@ export default function NewProductPage() {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase">
-                    Mã SKU
-                  </span>
-                  <div
-                    className="rounded-lg border border-dashed border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm leading-snug text-slate-600 dark:border-slate-600 dark:bg-slate-900/50 dark:text-slate-400"
-                    role="note"
-                  >
-                    Được hệ thống tự tạo khi lưu (ví dụ <span className="font-mono font-medium text-slate-800 dark:text-slate-200">SP-0001</span>). Không cần nhập.
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="barcode"
-                    className="text-xs font-bold text-slate-500 uppercase"
-                  >
-                    Mã vạch (EAN/UPC)
-                  </label>
-                  <Input
-                    id="barcode"
-                    placeholder="0123456789012"
-                    value={values.barcode}
-                    onChange={(event) => updateValue("barcode", event.target.value)}
-                    aria-invalid={Boolean(errors.barcode)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                  {errors.barcode ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.barcode}</p>
-                  ) : null}
-                </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="barcode"
+                  className="text-xs font-bold text-slate-500 uppercase"
+                >
+                  Mã vạch (EAN/UPC)
+                </label>
+                <Input
+                  id="barcode"
+                  placeholder="0123456789012"
+                  value={values.barcode}
+                  onChange={(event) => updateValue("barcode", event.target.value)}
+                  aria-invalid={Boolean(errors.barcode)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+                {errors.barcode ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.barcode}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label
