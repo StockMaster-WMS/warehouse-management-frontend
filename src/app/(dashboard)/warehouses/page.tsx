@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { AxiosError } from "axios";
 
 import {
   Building2,
@@ -46,7 +45,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { useWarehouseListQuery } from "@/hooks/useWarehouseListQuery";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import type { SortDirection, WarehouseSortField } from "@/types/warehouse";
 
 const STATUS_LABEL_ALL = "Tất cả trạng thái";
@@ -69,14 +68,8 @@ const SORT_DIR_LABELS: Record<string, SortDirection> = {
 
 const SORT_DIR_OPTIONS = Object.keys(SORT_DIR_LABELS);
 
-function getErrorMessage(error: unknown) {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return (
-    axiosError?.response?.data?.message ??
-    axiosError?.message ??
-    "Đã xảy ra lỗi khi tải danh sách kho."
-  );
-}
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 350;
 
 function getCapacityWidthClass(capacity: number) {
   if (capacity >= 100) return "w-full";
@@ -97,30 +90,43 @@ function getCapacityWidthClass(capacity: number) {
 export default function WarehousesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<WarehouseSortField>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
 
-  const {
-    warehouses,
-    keyword,
-    setKeyword,
-    isActive,
-    setIsActive,
-    sort,
-    setSort,
-    sortDir,
-    setSortDir,
-    page,
-    setPage,
-    size,
-    setSize,
-    totalPages,
-    totalElements,
-    isPending,
-    isFetching,
-    isError,
-    error,
-    refetch,
-    resetFilters,
-  } = useWarehouseListQuery();
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDebouncedKeyword(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedKeyword, isActive, sort, sortDir]);
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      size,
+      sort,
+      sortDir,
+      keyword: debouncedKeyword || undefined,
+      isActive,
+    }),
+    [page, size, sort, sortDir, debouncedKeyword, isActive],
+  );
+
+  const { data, error, isLoading, isFetching, refetch } =
+    useGetWarehousesQuery(listParams);
+
+  const warehouses = useMemo(() => data?.data?.content ?? [], [data]);
+  const totalElements = data?.data?.total_elements ?? 0;
+  const totalPages = data?.data?.total_pages ?? 0;
 
   const statusValue =
     isActive === true
@@ -138,10 +144,20 @@ export default function WarehousesPage() {
     "Giảm dần";
 
   const hasAnyFilter =
-    keyword.trim().length > 0 ||
+    searchInput.trim().length > 0 ||
     typeof isActive === "boolean" ||
     sort !== "createdAt" ||
     sortDir !== "desc";
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setDebouncedKeyword("");
+    setIsActive(undefined);
+    setSort("createdAt");
+    setSortDir("desc");
+    setPage(0);
+    setSize(PAGE_SIZE);
+  };
 
   const paginationMeta = useMemo(() => {
     if (warehouses.length === 0) {
@@ -172,13 +188,13 @@ export default function WarehousesPage() {
 
       <SearchToolbar
         placeholder="Tìm theo tên kho hoặc địa chỉ..."
-        className="max-w-2xl"
-        value={keyword}
-        onValueChange={setKeyword}
+        className="max-w-full"
+        value={searchInput}
+        onValueChange={setSearchInput}
         filters={
           <FilterGroup
             hasAnyFilter={hasAnyFilter}
-            onClear={resetFilters}
+            onClear={clearFilters}
             filters={[
               {
                 label: "trạng thái",
@@ -222,13 +238,13 @@ export default function WarehousesPage() {
       />
 
       <div className="space-y-4">
-        {isFetching && !isPending ? (
+        {isFetching && !isLoading ? (
           <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
             Đang cập nhật dữ liệu...
           </p>
         ) : null}
 
-        {isPending ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
@@ -248,12 +264,15 @@ export default function WarehousesPage() {
               </div>
             ))}
           </div>
-        ) : isError ? (
+        ) : error ? (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <EmptyState
               icon={AlertCircle}
               title="Không thể tải danh sách kho"
-              description={getErrorMessage(error)}
+              description={
+                (error as { data?: { message?: string } })?.data?.message ??
+                "Đã xảy ra lỗi khi tải danh sách kho."
+              }
               action={
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
                   Thử lại
@@ -276,7 +295,7 @@ export default function WarehousesPage() {
               }
               action={
                 hasAnyFilter ? (
-                  <Button variant="outline" size="sm" onClick={resetFilters}>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
                     <X className="mr-2 h-4 w-4" />
                     Xóa bộ lọc
                   </Button>
@@ -301,7 +320,7 @@ export default function WarehousesPage() {
               {warehouses.map((wh) => {
                 const capacity = Math.max(
                   0,
-                  Math.min(100, Math.round(wh.capacityPercent ?? 0)),
+                  Math.min(100, Math.round(wh.fillRatePercent ?? 0)),
                 );
 
                 return (
@@ -383,7 +402,7 @@ export default function WarehousesPage() {
                         </h3>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                           <MapPin className="h-3.5 w-3.5" />
-                          {wh.location || wh.address || "Chưa cập nhật địa chỉ"}
+                          {wh.address || "Chưa cập nhật địa chỉ"}
                         </div>
                         <div className="text-[11px] font-semibold text-slate-400">
                           {wh.code || "--"}
@@ -455,7 +474,7 @@ export default function WarehousesPage() {
                               Quản lý
                             </span>
                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {wh.managerName || "--"}
+                              {wh.managerName ?? "--"}
                             </span>
                           </div>
                         </div>
@@ -505,7 +524,10 @@ export default function WarehousesPage() {
                   </span>
                   <Select
                     value={String(size)}
-                    onValueChange={(value) => setSize(Number(value))}
+                    onValueChange={(value) => {
+                      setSize(Number(value));
+                      setPage(0);
+                    }}
                   >
                     <SelectTrigger className="h-8 min-w-18 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
                       <SelectValue />

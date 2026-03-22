@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import type { AxiosError } from "axios";
+import { useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   TrendingUp,
@@ -34,8 +33,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useWarehouseListQuery } from "@/hooks/useWarehouseListQuery";
-import { useWarehouseSummaryQuery } from "@/hooks/useWarehouseSummaryQuery";
+import {
+  useGetWarehousesQuery,
+  useGetWarehouseSummaryQuery,
+} from "@/store/services/warehouse.service";
 import type { SortDirection, WarehouseSortField } from "@/types/warehouse";
 
 const STATUS_LABEL_ALL = "Tất cả trạng thái";
@@ -58,45 +59,55 @@ const SORT_DIR_LABELS: Record<string, SortDirection> = {
 
 const SORT_DIR_OPTIONS = Object.keys(SORT_DIR_LABELS);
 
-function getErrorMessage(error: unknown) {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return (
-    axiosError?.response?.data?.message ??
-    axiosError?.message ??
-    "Đã xảy ra lỗi khi tải dữ liệu tồn kho."
-  );
-}
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 350;
 
 export default function InventoryPage() {
   const {
-    data: summary,
-    isPending: isSummaryPending,
+    data: summaryResponse,
+    isLoading: isSummaryLoading,
     isError: isSummaryError,
-  } = useWarehouseSummaryQuery();
+  } = useGetWarehouseSummaryQuery();
 
-  const {
-    warehouses,
-    keyword,
-    setKeyword,
-    isActive,
-    setIsActive,
-    sort,
-    setSort,
-    sortDir,
-    setSortDir,
-    page,
-    setPage,
-    size,
-    setSize,
-    totalPages,
-    totalElements,
-    isPending,
-    isFetching,
-    isError,
-    error,
-    refetch,
-    resetFilters,
-  } = useWarehouseListQuery();
+  const summary = summaryResponse?.data;
+
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<WarehouseSortField>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDebouncedKeyword(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedKeyword, isActive, sort, sortDir]);
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      size,
+      sort,
+      sortDir,
+      keyword: debouncedKeyword || undefined,
+      isActive,
+    }),
+    [page, size, sort, sortDir, debouncedKeyword, isActive],
+  );
+
+  const { data, error, isLoading, isFetching, refetch } =
+    useGetWarehousesQuery(listParams);
+
+  const warehouses = useMemo(() => data?.data?.content ?? [], [data]);
+  const totalElements = data?.data?.total_elements ?? 0;
+  const totalPages = data?.data?.total_pages ?? 0;
 
   const statusValue =
     isActive === true
@@ -114,10 +125,20 @@ export default function InventoryPage() {
     "Giảm dần";
 
   const hasAnyFilter =
-    keyword.trim().length > 0 ||
+    searchInput.trim().length > 0 ||
     typeof isActive === "boolean" ||
     sort !== "createdAt" ||
     sortDir !== "desc";
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setDebouncedKeyword("");
+    setIsActive(undefined);
+    setSort("createdAt");
+    setSortDir("desc");
+    setPage(0);
+    setSize(PAGE_SIZE);
+  };
 
   const stats = useMemo(() => {
     return [
@@ -174,7 +195,7 @@ export default function InventoryPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat, i) => {
           const displayValue =
-            isSummaryPending || isSummaryError ? "--" : stat.value;
+            isSummaryLoading || isSummaryError ? "--" : stat.value;
 
           return (
             <StatCard
@@ -191,12 +212,12 @@ export default function InventoryPage() {
 
       <SearchToolbar
         placeholder="Tìm mã kho, tên khu vực..."
-        value={keyword}
-        onValueChange={setKeyword}
+        value={searchInput}
+        onValueChange={setSearchInput}
         filters={
           <FilterGroup
             hasAnyFilter={hasAnyFilter}
-            onClear={resetFilters}
+            onClear={clearFilters}
             filters={[
               {
                 label: "trạng thái",
@@ -240,7 +261,7 @@ export default function InventoryPage() {
       />
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        {isFetching && !isPending ? (
+        {isFetching && !isLoading ? (
           <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
             Đang cập nhật dữ liệu...
           </p>
@@ -271,7 +292,7 @@ export default function InventoryPage() {
           </TableHeader>
 
           <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {isPending ? (
+            {isLoading ? (
               Array.from({ length: 6 }).map((_, idx) => (
                 <TableRow key={`inventory-loading-${idx}`}>
                   <TableCell className="px-4 py-4 text-center">
@@ -297,13 +318,17 @@ export default function InventoryPage() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : isError ? (
+            ) : error ? (
               <TableRow>
                 <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải dữ liệu tồn kho"
-                    description={getErrorMessage(error)}
+                    description={
+                      (error as { data?: { message?: string } })?.data
+                        ?.message ??
+                      "Đã xảy ra lỗi khi tải dữ liệu tồn kho."
+                    }
                     action={
                       <Button
                         variant="outline"
@@ -337,7 +362,7 @@ export default function InventoryPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={resetFilters}
+                          onClick={clearFilters}
                         >
                           Xóa lọc
                         </Button>
@@ -369,10 +394,10 @@ export default function InventoryPage() {
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-sm text-slate-600 dark:text-slate-200">
-                    {warehouse.location || warehouse.address || "Chưa cập nhật"}
+                    {warehouse.address || "Chưa cập nhật"}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-sm text-slate-600 dark:text-slate-200">
-                    {warehouse.managerName || "--"}
+                    {warehouse.managerName ?? "--"}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-center">
                     <span
@@ -405,7 +430,7 @@ export default function InventoryPage() {
           </TableBody>
         </Table>
 
-        {!isPending && !isError ? (
+        {!isLoading && !error ? (
           <div className="flex flex-col gap-3 border-t border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
             <div className="text-sm text-slate-500">
               <span className="font-semibold text-slate-700 dark:text-slate-200">
@@ -421,7 +446,10 @@ export default function InventoryPage() {
                 </span>
                 <Select
                   value={String(size)}
-                  onValueChange={(value) => setSize(Number(value))}
+                  onValueChange={(value) => {
+                    setSize(Number(value));
+                    setPage(0);
+                  }}
                 >
                   <SelectTrigger className="h-8 min-w-18 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
                     <SelectValue />
