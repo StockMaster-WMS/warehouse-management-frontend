@@ -171,7 +171,7 @@ export default function NewCategoryPage() {
                     htmlFor="parentId"
                     className="text-xs font-bold text-slate-500 uppercase"
                   >
-                    Danh mục cha
+                    Nhóm / loại cha
                   </label>
                   <Select
                     value={values.parentId}
@@ -181,19 +181,25 @@ export default function NewCategoryPage() {
                   >
                     <SelectTrigger
                       id="parentId"
-                      className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
                     >
                       <SelectValue
                         placeholder={
                           isLoadingCategories
-                            ? "Đang tải..."
-                            : values.parentId
-                              ? "Đã chọn"
-                              : "Danh mục gốc"
+                            ? "Đang tải danh sách nhóm..."
+                            : "Chọn nhóm cha hoặc để gốc"
                         }
-                      />
+                      >
+                        {(val) => {
+                          if (val === "" || val == null) {
+                            return "Nhóm gốc (không thuộc nhóm cha)";
+                          }
+                          const c = categoriesById.get(val as string);
+                          return c ? formatOptionLabel(c) : "Đang tải tên nhóm…";
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       {categoriesError ? (
                         <div className="px-2 py-1.5 text-xs text-rose-500">
                           Không tải được danh mục.
@@ -207,7 +213,7 @@ export default function NewCategoryPage() {
                         </div>
                       ) : null}
 
-                      <SelectItem value="">Danh mục gốc</SelectItem>
+                      <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {formatOptionLabel(cat)}

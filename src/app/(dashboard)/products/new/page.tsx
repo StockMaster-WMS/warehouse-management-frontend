@@ -22,7 +22,6 @@ import {
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 
 type ProductFormValues = {
-  sku: string;
   barcode: string;
   name: string;
   category: string;
@@ -38,7 +37,6 @@ type ProductFormValues = {
 type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
 
 const initialValues: ProductFormValues = {
-  sku: "",
   barcode: "",
   name: "",
   category: "",
@@ -65,19 +63,18 @@ export default function NewProductPage() {
   } = useGetCategoriesQuery();
 
   const isSaveDisabled = useMemo(
-    () => isSubmitting || !values.sku.trim() || !values.name.trim() || !values.category,
-    [isSubmitting, values.sku, values.name, values.category],
+    () => isSubmitting || !values.name.trim() || !values.category,
+    [isSubmitting, values.name, values.category],
   );
 
   const validate = (data: ProductFormValues): ProductFormErrors => {
     const nextErrors: ProductFormErrors = {};
 
-    if (!data.sku.trim()) nextErrors.sku = "SKU là bắt buộc.";
     if (!data.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
     if (!data.category) nextErrors.category = "Vui lòng chọn nhóm hàng.";
     if (!data.baseUnit) nextErrors.baseUnit = "Vui lòng chọn đơn vị tính.";
     if (data.barcode && !/^\d{8,13}$/.test(data.barcode)) {
-      nextErrors.barcode = "Barcode phải có từ 8 đến 13 chữ số.";
+      nextErrors.barcode = "Mã vạch phải có từ 8 đến 13 chữ số.";
     }
 
     const numberFields: Array<keyof ProductFormValues> = [
@@ -160,30 +157,22 @@ export default function NewProductPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label
-                    htmlFor="sku"
-                    className="text-xs font-bold text-slate-500 uppercase"
+                  <span className="text-xs font-bold text-slate-500 uppercase">
+                    Mã SKU
+                  </span>
+                  <div
+                    className="rounded-lg border border-dashed border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm leading-snug text-slate-600 dark:border-slate-600 dark:bg-slate-900/50 dark:text-slate-400"
+                    role="note"
                   >
-                    Mã SKU <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    id="sku"
-                    placeholder="VD: IPH15-BLK-256"
-                    value={values.sku}
-                    onChange={(event) => updateValue("sku", event.target.value)}
-                    aria-invalid={Boolean(errors.sku)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                  {errors.sku ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.sku}</p>
-                  ) : null}
+                    Được hệ thống tự tạo khi lưu (ví dụ <span className="font-mono font-medium text-slate-800 dark:text-slate-200">SP-0001</span>). Không cần nhập.
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label
                     htmlFor="barcode"
                     className="text-xs font-bold text-slate-500 uppercase"
                   >
-                    Barcode (EAN/UPC)
+                    Mã vạch (EAN/UPC)
                   </label>
                   <Input
                     id="barcode"
@@ -229,22 +218,28 @@ export default function NewProductPage() {
                     <SelectTrigger
                       id="category"
                       aria-invalid={Boolean(errors.category)}
-                      className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
                     >
                       <SelectValue
                         placeholder={
                           isLoadingCategories
-                            ? "Đang tải danh mục..."
+                            ? "Đang tải nhóm hàng..."
                             : categoryError
-                              ? "Lỗi tải danh mục"
+                              ? "Lỗi tải nhóm hàng"
                               : "Chọn nhóm hàng..."
                         }
-                      />
+                      >
+                        {(val) => {
+                          if (!val) return null;
+                          const c = categoryData?.data?.find((x) => x.id === val);
+                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       {categoryError ? (
                         <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được danh mục.
+                          Không tải được nhóm hàng.
                           <button
                             type="button"
                             onClick={() => refetchCategories()}
@@ -276,11 +271,21 @@ export default function NewProductPage() {
                     <SelectTrigger
                       id="base-unit"
                       aria-invalid={Boolean(errors.baseUnit)}
-                      className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
                     >
-                      <SelectValue placeholder="Chọn ĐVT..." />
+                      <SelectValue placeholder="Chọn ĐVT...">
+                        {(val) => {
+                          if (!val) return null;
+                          const map: Record<string, string> = {
+                            cai: "Cái / Chiếc",
+                            hop: "Hộp",
+                            thung: "Thùng",
+                          };
+                          return map[val] ?? val;
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       <SelectItem value="cai">Cái / Chiếc</SelectItem>
                       <SelectItem value="thung">Thùng</SelectItem>
                       <SelectItem value="hop">Hộp</SelectItem>

@@ -4,6 +4,7 @@ export interface Product {
   barcodeEan13: string;
   name: string;
   categoryId: string;
+  categoryName?: string | null;
   primarySupplierId: string | null;
   baseUnit: string;
   weightKg: number;
@@ -39,7 +40,7 @@ export interface UpdateProductPayload {
 }
 
 export interface CreateProductPayload {
-  sku: string;
+  sku?: string;
   barcodeEan13: string;
   name: string;
   categoryId: string;
@@ -49,4 +50,8 @@ export interface CreateProductPayload {
   lengthCm: number;
   widthCm: number;
   heightCm: number;
+}
+
+export function getProductCategoryDisplayName(product: Product): string {
+  return product.categoryName?.trim() ?? "";
 }

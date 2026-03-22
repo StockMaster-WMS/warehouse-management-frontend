@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useGetProductsQuery } from "@/store/services/product.service";
+import { getProductCategoryDisplayName } from "@/types/product";
 
 
 export default function ProductsPage() {
@@ -50,7 +51,14 @@ export default function ProductsPage() {
     return products.filter((p) => {
       const name = p.name?.toLowerCase() ?? "";
       const sku = p.sku?.toLowerCase() ?? "";
-      return name.includes(q) || sku.includes(q);
+      const category = getProductCategoryDisplayName(p).toLowerCase();
+      const barcode = p.barcodeEan13?.toLowerCase() ?? "";
+      return (
+        name.includes(q) ||
+        sku.includes(q) ||
+        category.includes(q) ||
+        barcode.includes(q)
+      );
     });
   }, [products, query]);
 
@@ -147,7 +155,7 @@ export default function ProductsPage() {
       </div>
 
       <SearchToolbar
-        placeholder="Tìm theo tên hoặc SKU..."
+        placeholder="Tìm theo tên, SKU, mã vạch hoặc nhóm hàng..."
         value={query}
         onValueChange={setQuery}
         filters={
@@ -167,64 +175,81 @@ export default function ProductsPage() {
             Đang cập nhật dữ liệu...
           </p>
         ) : null}
-        <Table className="text-left">
+        <div className="overflow-x-auto">
+        <Table className="min-w-[1040px] text-left">
           <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
             <TableRow>
-              <TableHead className="w-14 px-4 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 STT
               </TableHead>
-              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Sản phẩm
+              <TableHead className="w-[120px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Mã SKU
               </TableHead>
-              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="min-w-[200px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Tên sản phẩm
+              </TableHead>
+              <TableHead className="w-[132px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Mã vạch
+              </TableHead>
+              <TableHead className="min-w-[140px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Nhóm hàng
               </TableHead>
-              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Nhà cung cấp
+              <TableHead className="w-16 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                ĐVT
               </TableHead>
-              <TableHead className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-[100px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                NCC chính
+              </TableHead>
+              <TableHead className="w-[120px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Trạng thái
               </TableHead>
-              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-[108px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Cập nhật
               </TableHead>
-              <TableHead className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400" />
+              <TableHead className="w-12 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="sr-only">Thao tác</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, rowIndex) => (
                 <TableRow key={`product-skeleton-${rowIndex}`}>
-                  <TableCell className="px-4 py-4 text-center">
+                  <TableCell className="px-3 py-3 text-center">
                     <Skeleton className="mx-auto h-5 w-6 rounded" />
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-56" />
-                      <Skeleton className="h-3 w-40" />
-                      <Skeleton className="h-3 w-32" />
-                    </div>
+                  <TableCell className="px-3 py-3">
+                    <Skeleton className="h-4 w-20" />
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Skeleton className="h-3 w-32" />
+                  <TableCell className="px-3 py-3">
+                    <Skeleton className="h-4 w-full max-w-[240px]" />
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Skeleton className="h-3 w-32" />
+                  <TableCell className="px-3 py-3">
+                    <Skeleton className="h-4 w-28" />
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-center">
-                    <Skeleton className="mx-auto h-5 w-24 rounded-full" />
+                  <TableCell className="px-3 py-3">
+                    <Skeleton className="h-4 w-24" />
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Skeleton className="h-3 w-24" />
+                  <TableCell className="px-3 py-3 text-center">
+                    <Skeleton className="mx-auto h-4 w-8" />
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-3 py-3 text-center">
+                    <Skeleton className="mx-auto h-4 w-10" />
+                  </TableCell>
+                  <TableCell className="px-3 py-3 text-center">
+                    <Skeleton className="mx-auto h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell className="px-3 py-3">
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="px-3 py-3 text-right">
                     <Skeleton className="ml-auto h-8 w-8 rounded-lg" />
                   </TableCell>
                 </TableRow>
               ))
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={7} className="p-0">
+                <TableCell colSpan={10} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải dữ liệu sản phẩm"
@@ -243,7 +268,7 @@ export default function ProductsPage() {
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="p-0">
+                <TableCell colSpan={10} className="p-0">
                   <EmptyState
                     icon={Package}
                     title={
@@ -282,71 +307,67 @@ export default function ProductsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map((product, index) => (
+              filteredProducts.map((product, index) => {
+                const categoryName = getProductCategoryDisplayName(product);
+                const categoryLabel =
+                  categoryName || (product.categoryId ? "—" : "Chưa gán danh mục");
+                const categorySubline =
+                  !categoryName && product.categoryId
+                    ? `ID: ${product.categoryId}`
+                    : "";
+
+                return (
                 <TableRow
-                  key={product.sku}
+                  key={product.id}
                   className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70"
                 >
-                  <TableCell className="px-4 py-4 text-center">
-                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                  <TableCell className="px-3 py-3 text-center align-middle">
+                    <span className="tabular-nums text-xs font-medium text-slate-500 dark:text-slate-400">
                       {index + 1}
                     </span>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                        {(product.name || product.sku || "?")
-                          .toString()
-                          .trim()
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
-                      <div className="flex flex-1 flex-col">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="max-w-[280px] truncate text-sm font-semibold text-slate-900 dark:text-white">
-                            {product.name}
-                          </span>
-                          <span className="hidden text-[10px] font-medium text-slate-400 sm:inline">
-                            {product.createdAt
-                              ? new Date(product.createdAt).toLocaleDateString("vi-VN")
-                              : "--"}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500">
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                            SKU: {product.sku}
-                          </span>
-                          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-300">
-                            ĐVT: {product.baseUnit || "--"}
-                          </span>
-                          <span className="hidden text-[11px] text-slate-400 sm:inline">
-                            Mã vạch: {product.barcodeEan13 || "--"}
-                          </span>
-                        </div>
-                      </div>
+                  <TableCell className="px-3 py-3 align-middle">
+                    <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-100">
+                      {product.sku}
+                    </span>
+                  </TableCell>
+                  <TableCell className="max-w-[280px] px-3 py-3 align-middle">
+                    <span className="line-clamp-2 text-sm font-medium text-slate-900 dark:text-white">
+                      {product.name}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle">
+                    <span className="font-mono text-xs text-slate-600 dark:text-slate-300">
+                      {product.barcodeEan13?.trim() || "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="max-w-[200px] px-3 py-3 align-middle">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="truncate text-sm text-slate-700 dark:text-slate-200">
+                        {categoryLabel}
+                      </span>
+                      {categorySubline ? (
+                        <span className="truncate font-mono text-[10px] text-slate-400">
+                          {categorySubline}
+                        </span>
+                      ) : null}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 align-middle text-sm text-slate-600 dark:text-slate-200">
-                    <div className="flex flex-col gap-1">
-                      <span className="truncate text-xs font-medium">
-                        {product.categoryId ? "Đã gán danh mục" : "Chưa gán danh mục"}
-                      </span>
-                      <span className="truncate text-[11px] text-slate-400">
-                        ID: {product.categoryId}
-                      </span>
-                    </div>
+                  <TableCell className="px-3 py-3 text-center align-middle">
+                    <span className="text-xs font-medium uppercase text-slate-600 dark:text-slate-300">
+                      {product.baseUnit?.trim() || "—"}
+                    </span>
                   </TableCell>
-                  <TableCell className="px-6 py-4 align-middle text-sm text-slate-600 dark:text-slate-200">
-                    <div className="flex flex-col gap-1">
-                      <span className="truncate text-xs font-medium">
-                        {product.primarySupplierId ? "Đã chọn NCC chính" : "Chưa chọn NCC chính"}
+                  <TableCell className="px-3 py-3 text-center align-middle">
+                    {product.primarySupplierId ? (
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        Đã gán
                       </span>
-                      <span className="truncate text-[11px] text-slate-400">
-                        ID: {product.primarySupplierId || "--"}
-                      </span>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">Chưa gán</span>
+                    )}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-center">
+                  <TableCell className="px-3 py-3 text-center align-middle">
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${product.status === "ACTIVE"
                           ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
@@ -356,15 +377,15 @@ export default function ProductsPage() {
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {product.status === "ACTIVE"
                         ? "Hoạt động"
-                        : "Không hoạt động"}
+                        : "Ngưng"}
                     </span>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-300">
+                  <TableCell className="px-3 py-3 align-middle whitespace-nowrap">
+                    <span className="text-xs text-slate-600 dark:text-slate-300">
                       {formatDate(product.updatedAt)}
                     </span>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-3 py-3 text-right align-middle">
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
@@ -415,10 +436,12 @@ export default function ProductsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
+        </div>
 
         <div className="border-t border-slate-100 p-4 dark:border-slate-800">
           <div className="flex items-center justify-between">

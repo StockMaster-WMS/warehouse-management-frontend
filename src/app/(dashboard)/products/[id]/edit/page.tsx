@@ -20,6 +20,7 @@ import {
   useUpdateProductMutation,
 } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { getProductCategoryDisplayName } from "@/types/product";
 
 type ProductFormValues = {
   sku: string;
@@ -105,10 +106,10 @@ export default function EditProductPage({
     const nextErrors: ProductFormErrors = {};
     if (!form.sku.trim()) nextErrors.sku = "SKU là bắt buộc.";
     if (!form.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
-    if (!form.category.trim()) nextErrors.category = "Danh mục là bắt buộc.";
+    if (!form.category.trim()) nextErrors.category = "Vui lòng chọn nhóm hàng.";
     if (!form.baseUnit.trim()) nextErrors.baseUnit = "Đơn vị tính là bắt buộc.";
     if (form.barcode && !/^\d{8,13}$/.test(form.barcode)) {
-      nextErrors.barcode = "Barcode phải có từ 8 đến 13 chữ số.";
+      nextErrors.barcode = "Mã vạch phải có từ 8 đến 13 chữ số.";
     }
 
     (["lengthCm", "widthCm", "heightCm", "weightKg", "minStock"] as const).forEach(
@@ -200,7 +201,7 @@ export default function EditProductPage({
     <div className="w-full space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa sản phẩm"
-        description={`Cập nhật thông tin cho sản phẩm ${data.data.sku}.`}
+        description={`SKU ${data.data.sku} · ${data.data.name}`}
         actions={
           <Button
             render={<Link href={`/products/${id}`} />}
@@ -238,36 +239,72 @@ export default function EditProductPage({
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Mã SKU *" htmlFor="sku" error={errors.sku}>
-                  <Input id="sku" value={values.sku} onChange={(e) => updateValue("sku", e.target.value)} />
+                  <Input
+                    id="sku"
+                    placeholder="VD: SP-0001"
+                    value={values.sku}
+                    onChange={(e) => updateValue("sku", e.target.value)}
+                    aria-invalid={Boolean(errors.sku)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
                 </Field>
-                <Field label="Barcode" htmlFor="barcode" error={errors.barcode}>
-                  <Input id="barcode" value={values.barcode} onChange={(e) => updateValue("barcode", e.target.value)} />
+                <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode}>
+                  <Input
+                    id="barcode"
+                    placeholder="0123456789012"
+                    value={values.barcode}
+                    onChange={(e) => updateValue("barcode", e.target.value)}
+                    aria-invalid={Boolean(errors.barcode)}
+                    className="border-slate-200 bg-slate-50/50 font-mono text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
                 </Field>
               </div>
               <Field label="Tên sản phẩm *" htmlFor="name" error={errors.name}>
-                <Input id="name" value={values.name} onChange={(e) => updateValue("name", e.target.value)} />
+                <Input
+                  id="name"
+                  placeholder="Nhập tên đầy đủ của mặt hàng..."
+                  value={values.name}
+                  onChange={(e) => updateValue("name", e.target.value)}
+                  aria-invalid={Boolean(errors.name)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Danh mục *" htmlFor="category" error={errors.category}>
+                <Field label="Nhóm hàng *" htmlFor="category" error={errors.category}>
                   <Select
                     value={values.category}
                     onValueChange={(v) => updateValue("category", v ?? "")}
                   >
-                    <SelectTrigger id="category">
+                    <SelectTrigger
+                      id="category"
+                      aria-invalid={Boolean(errors.category)}
+                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                    >
                       <SelectValue
                         placeholder={
                           isLoadingCategories
-                            ? "Đang tải danh mục..."
+                            ? "Đang tải nhóm hàng..."
                             : categoryError
-                              ? "Lỗi tải danh mục"
-                              : "Chọn danh mục"
+                              ? "Lỗi tải nhóm hàng"
+                              : "Chọn nhóm hàng..."
                         }
-                      />
+                      >
+                        {(val) => {
+                          if (!val) return null;
+                          const c = categoryData?.data?.find((x) => x.id === val);
+                          if (c) return `${c.name} (${c.code})`;
+                          if (data?.data && val === data.data.categoryId) {
+                            const n = getProductCategoryDisplayName(data.data);
+                            if (n) return `${n}`;
+                          }
+                          return "Đang tải nhóm hàng…";
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       {categoryError ? (
                         <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được danh mục.
+                          Không tải được nhóm hàng.
                           <button
                             type="button"
                             onClick={() => refetchCategories()}
@@ -285,17 +322,15 @@ export default function EditProductPage({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Đơn vị tính *" htmlFor="base-unit" error={errors.baseUnit}>
-                  <Select value={values.baseUnit} onValueChange={(v) => updateValue("baseUnit", v ?? "")}>
-                    <SelectTrigger id="base-unit">
-                      <SelectValue placeholder="Chọn đơn vị tính" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cai">Cái / Chiếc</SelectItem>
-                      <SelectItem value="hop">Hộp</SelectItem>
-                      <SelectItem value="thung">Thùng</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <Field label="Đơn vị tính (ĐVT) *" htmlFor="base-unit" error={errors.baseUnit}>
+                  <Input
+                    id="base-unit"
+                    placeholder="VD: goi, thung, kg..."
+                    value={values.baseUnit}
+                    onChange={(e) => updateValue("baseUnit", e.target.value)}
+                    aria-invalid={Boolean(errors.baseUnit)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
                 </Field>
               </div>
             </div>
@@ -305,21 +340,49 @@ export default function EditProductPage({
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Ruler className="h-4 w-4 text-indigo-600" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Quy cách vận hành
+                Quy cách & Vận chuyển
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Field label="Dài (cm)" htmlFor="length" error={errors.lengthCm}>
-                <Input id="length" type="number" value={values.lengthCm} onChange={(e) => updateValue("lengthCm", e.target.value)} />
+                <Input
+                  id="length"
+                  type="number"
+                  placeholder="0"
+                  value={values.lengthCm}
+                  onChange={(e) => updateValue("lengthCm", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
               <Field label="Rộng (cm)" htmlFor="width" error={errors.widthCm}>
-                <Input id="width" type="number" value={values.widthCm} onChange={(e) => updateValue("widthCm", e.target.value)} />
+                <Input
+                  id="width"
+                  type="number"
+                  placeholder="0"
+                  value={values.widthCm}
+                  onChange={(e) => updateValue("widthCm", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
               <Field label="Cao (cm)" htmlFor="height" error={errors.heightCm}>
-                <Input id="height" type="number" value={values.heightCm} onChange={(e) => updateValue("heightCm", e.target.value)} />
+                <Input
+                  id="height"
+                  type="number"
+                  placeholder="0"
+                  value={values.heightCm}
+                  onChange={(e) => updateValue("heightCm", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
               <Field label="Nặng (kg)" htmlFor="weight" error={errors.weightKg}>
-                <Input id="weight" type="number" value={values.weightKg} onChange={(e) => updateValue("weightKg", e.target.value)} />
+                <Input
+                  id="weight"
+                  type="number"
+                  placeholder="0"
+                  value={values.weightKg}
+                  onChange={(e) => updateValue("weightKg", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
             </div>
           </div>
@@ -332,19 +395,33 @@ export default function EditProductPage({
             </h3>
             <div className="space-y-4">
               <Field label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock}>
-                <Input id="min-stock" type="number" value={values.minStock} onChange={(e) => updateValue("minStock", e.target.value)} />
+                <Input
+                  id="min-stock"
+                  type="number"
+                  placeholder="0"
+                  value={values.minStock}
+                  onChange={(e) => updateValue("minStock", e.target.value)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
               </Field>
               <Field label="Trạng thái" htmlFor="status" error={errors.status}>
                 <Select
                   value={values.status}
                   onValueChange={(v) => updateValue("status", (v as "ACTIVE" | "INACTIVE") ?? "ACTIVE")}
                 >
-                  <SelectTrigger id="status">
-                    <SelectValue />
+                  <SelectTrigger
+                    id="status"
+                    className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                  >
+                    <SelectValue>
+                      {(val) =>
+                        val === "INACTIVE" ? "Ngưng" : val === "ACTIVE" ? "Hoạt động" : null
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                    <SelectItem value="INACTIVE">Không hoạt động</SelectItem>
+                    <SelectItem value="INACTIVE">Ngưng</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
