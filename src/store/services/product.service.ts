@@ -38,9 +38,17 @@ const productApi = baseApi.injectEndpoints({
         method: "GET",
         params: buildProductsQueryParams(params),
       }),
+      providesTags: (result) =>
+        result?.data?.content?.length
+          ? [
+              ...result.data.content.map((p) => ({ type: "Product" as const, id: p.id })),
+              { type: "Product" as const, id: "LIST" },
+            ]
+          : [{ type: "Product" as const, id: "LIST" }],
     }),
     getProductById: builder.query<ApiResponse<Product>, string>({
       query: (id) => ({ url: `/products/${id}`, method: "GET" }),
+      providesTags: (_result, _err, id) => [{ type: "Product" as const, id }],
     }),
     updateProduct: builder.mutation<ApiResponse<Product>, UpdateProductPayload>({
       query: ({ id, ...body }) => ({
@@ -48,6 +56,10 @@ const productApi = baseApi.injectEndpoints({
         method: "PUT",
         data: body,
       }),
+      invalidatesTags: (_result, _err, { id }) => [
+        { type: "Product", id },
+        { type: "Product", id: "LIST" },
+      ],
     }),
   }),
 });
