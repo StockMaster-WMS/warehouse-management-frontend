@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
+import type { AxiosError } from "axios";
 import {
   Boxes,
   TrendingUp,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -13,12 +18,146 @@ import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { FilterGroup } from "@/components/features/FilterGroup";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useWarehouseListQuery } from "@/hooks/useWarehouseListQuery";
+import { useWarehouseSummaryQuery } from "@/hooks/useWarehouseSummaryQuery";
+import type { SortDirection, WarehouseSortField } from "@/types/warehouse";
+
+const STATUS_LABEL_ALL = "Tất cả trạng thái";
+const STATUS_LABEL_ACTIVE = "Đang hoạt động";
+const STATUS_LABEL_INACTIVE = "Ngừng hoạt động";
+
+const SORT_FIELD_LABELS: Record<string, WarehouseSortField> = {
+  "Ngày tạo": "createdAt",
+  "Tên kho": "name",
+  "Mã kho": "code",
+  "Trạng thái": "isActive",
+};
+
+const SORT_FIELD_OPTIONS = Object.keys(SORT_FIELD_LABELS);
+
+const SORT_DIR_LABELS: Record<string, SortDirection> = {
+  "Tăng dần": "asc",
+  "Giảm dần": "desc",
+};
+
+const SORT_DIR_OPTIONS = Object.keys(SORT_DIR_LABELS);
+
+function getErrorMessage(error: unknown) {
+  const axiosError = error as AxiosError<{ message?: string }>;
+  return (
+    axiosError?.response?.data?.message ??
+    axiosError?.message ??
+    "Đã xảy ra lỗi khi tải dữ liệu tồn kho."
+  );
+}
 
 export default function InventoryPage() {
-  const [query, setQuery] = useState("");
-  const [zone, setZone] = useState("Tất cả dãy kho");
+  const {
+    data: summary,
+    isPending: isSummaryPending,
+    isError: isSummaryError,
+  } = useWarehouseSummaryQuery();
 
-  const hasAnyFilter = query.trim().length > 0 || zone !== "Tất cả dãy kho";
+  const {
+    warehouses,
+    keyword,
+    setKeyword,
+    isActive,
+    setIsActive,
+    sort,
+    setSort,
+    sortDir,
+    setSortDir,
+    page,
+    setPage,
+    size,
+    setSize,
+    totalPages,
+    totalElements,
+    isPending,
+    isFetching,
+    isError,
+    error,
+    refetch,
+    resetFilters,
+  } = useWarehouseListQuery();
+
+  const statusValue =
+    isActive === true
+      ? STATUS_LABEL_ACTIVE
+      : isActive === false
+        ? STATUS_LABEL_INACTIVE
+        : STATUS_LABEL_ALL;
+
+  const sortValue =
+    SORT_FIELD_OPTIONS.find((label) => SORT_FIELD_LABELS[label] === sort) ??
+    "Ngày tạo";
+
+  const sortDirValue =
+    SORT_DIR_OPTIONS.find((label) => SORT_DIR_LABELS[label] === sortDir) ??
+    "Giảm dần";
+
+  const hasAnyFilter =
+    keyword.trim().length > 0 ||
+    typeof isActive === "boolean" ||
+    sort !== "createdAt" ||
+    sortDir !== "desc";
+
+  const stats = useMemo(() => {
+    return [
+      {
+        label: "Tổng số kho",
+        value: String(summary?.totalWarehouses ?? 0),
+        icon: CheckCircle2,
+      },
+      {
+        label: "Kho đang hoạt động",
+        value: String(summary?.activeWarehouses ?? 0),
+        icon: Boxes,
+      },
+      {
+        label: "Kho ngừng hoạt động",
+        value: String(summary?.inactiveWarehouses ?? 0),
+        icon: AlertTriangle,
+      },
+      {
+        label: "Kho có tồn hàng",
+        value: String(summary?.warehousesWithStock ?? 0),
+        icon: Boxes,
+      },
+      {
+        label: "Kho lấp đầy cao",
+        value: String(summary?.highFillRateWarehouses ?? 0),
+        icon: AlertTriangle,
+      },
+    ];
+  }, [summary]);
+
+  const paginationMeta = useMemo(() => {
+    if (warehouses.length === 0) {
+      return { from: 0, to: 0 };
+    }
+    const from = page * size + 1;
+    const to = page * size + warehouses.length;
+    return { from, to };
+  }, [page, size, warehouses.length]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -32,70 +171,302 @@ export default function InventoryPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Vị trí đã sử dụng",
-            value: "85%",
-            icon: CheckCircle2,
-            color: "text-emerald-500",
-          },
-          {
-            label: "Cảnh báo lưu kho",
-            value: "12",
-            icon: AlertTriangle,
-            color: "text-amber-500",
-          },
-          {
-            label: "Sản phẩm luân chuyển",
-            value: "450",
-            icon: Boxes,
-            color: "text-indigo-500",
-          },
-        ].map((stat, i) => (
-          <StatCard
-            key={i}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            className="rounded-2xl"
-            accentClassName="bg-indigo-500"
-          />
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {stats.map((stat, i) => {
+          const displayValue =
+            isSummaryPending || isSummaryError ? "--" : stat.value;
+
+          return (
+            <StatCard
+              key={i}
+              label={stat.label}
+              value={displayValue}
+              icon={stat.icon}
+              className="rounded-2xl"
+              accentClassName="bg-indigo-500"
+            />
+          );
+        })}
       </div>
 
       <SearchToolbar
         placeholder="Tìm mã kho, tên khu vực..."
-        value={query}
-        onValueChange={setQuery}
+        value={keyword}
+        onValueChange={setKeyword}
         filters={
-            <FilterGroup
-              hasAnyFilter={hasAnyFilter}
-              onClear={() => {
-                setQuery("");
-                setZone("Tất cả dãy kho");
-              }}
-              filters={[
-                {
-                  label: "dãy kho",
-                  placeholder: "Dãy kho",
-                  value: zone,
-                  onChange: setZone,
-                  options: ["Khu A - Thiết bị điện tử", "Khu B - Linh kiện", "Khu C - Phụ kiện"],
-                  width: "sm:w-[220px]"
-                }
-              ]}
-            />
+          <FilterGroup
+            hasAnyFilter={hasAnyFilter}
+            onClear={resetFilters}
+            filters={[
+              {
+                label: "trạng thái",
+                placeholder: "Trạng thái",
+                value: statusValue,
+                onChange: (value) => {
+                  if (value === STATUS_LABEL_ACTIVE) {
+                    setIsActive(true);
+                    return;
+                  }
+                  if (value === STATUS_LABEL_INACTIVE) {
+                    setIsActive(false);
+                    return;
+                  }
+                  setIsActive(undefined);
+                },
+                options: [STATUS_LABEL_ACTIVE, STATUS_LABEL_INACTIVE],
+                width: "sm:w-[180px]",
+              },
+              {
+                label: "sắp xếp",
+                placeholder: "Sắp xếp",
+                value: sortValue,
+                onChange: (value) =>
+                  setSort(SORT_FIELD_LABELS[value] ?? "createdAt"),
+                options: SORT_FIELD_OPTIONS,
+                width: "sm:w-[170px]",
+              },
+              {
+                label: "thứ tự",
+                placeholder: "Thứ tự",
+                value: sortDirValue,
+                onChange: (value) =>
+                  setSortDir(SORT_DIR_LABELS[value] ?? "desc"),
+                options: SORT_DIR_OPTIONS,
+                width: "sm:w-[150px]",
+              },
+            ]}
+          />
         }
       />
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <EmptyState
-          icon={Boxes}
-          title="Lịch sử tồn kho trống"
-          description="Hiện chưa có dữ liệu biến động kho nào được ghi lại gần đây."
-          className="h-64 sm:h-80"
-        />
+        {isFetching && !isPending ? (
+          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            Đang cập nhật dữ liệu...
+          </p>
+        ) : null}
+
+        <Table className="text-left">
+          <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+            <TableRow>
+              <TableHead className="w-14 px-4 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                STT
+              </TableHead>
+              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Kho
+              </TableHead>
+              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Địa chỉ
+              </TableHead>
+              <TableHead className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Quản lý
+              </TableHead>
+              <TableHead className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Trạng thái
+              </TableHead>
+              <TableHead className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Cập nhật
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {isPending ? (
+              Array.from({ length: 6 }).map((_, idx) => (
+                <TableRow key={`inventory-loading-${idx}`}>
+                  <TableCell className="px-4 py-4 text-center">
+                    <Skeleton className="mx-auto h-5 w-6 rounded" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-52" />
+                      <Skeleton className="h-3 w-36" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Skeleton className="h-3 w-44" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Skeleton className="h-3 w-28" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <Skeleton className="mx-auto h-5 w-24 rounded-full" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Skeleton className="ml-auto h-3 w-20" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={AlertCircle}
+                    title="Không thể tải dữ liệu tồn kho"
+                    description={getErrorMessage(error)}
+                    action={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetch()}
+                      >
+                        Thử lại
+                      </Button>
+                    }
+                    className="py-10"
+                  />
+                </TableCell>
+              </TableRow>
+            ) : warehouses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={Boxes}
+                    title={
+                      hasAnyFilter
+                        ? "Không có dữ liệu phù hợp"
+                        : "Lịch sử tồn kho trống"
+                    }
+                    description={
+                      hasAnyFilter
+                        ? "Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                        : "Hiện chưa có dữ liệu tồn kho nào được ghi nhận."
+                    }
+                    action={
+                      hasAnyFilter ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={resetFilters}
+                        >
+                          Xóa lọc
+                        </Button>
+                      ) : null
+                    }
+                    className="h-64 sm:h-80"
+                  />
+                </TableCell>
+              </TableRow>
+            ) : (
+              warehouses.map((warehouse, idx) => (
+                <TableRow
+                  key={warehouse.id}
+                  className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70"
+                >
+                  <TableCell className="px-4 py-4 text-center">
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                      {page * size + idx + 1}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="max-w-65 truncate text-sm font-semibold text-slate-900 dark:text-white">
+                        {warehouse.name}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500">
+                        Mã kho: {warehouse.code || "--"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-slate-600 dark:text-slate-200">
+                    {warehouse.location || warehouse.address || "Chưa cập nhật"}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-slate-600 dark:text-slate-200">
+                    {warehouse.managerName || "--"}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        warehouse.isActive
+                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                      {warehouse.isActive
+                        ? "Đang hoạt động"
+                        : "Ngừng hoạt động"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right text-xs font-medium text-slate-500">
+                    {warehouse.updatedAt
+                      ? new Date(warehouse.updatedAt).toLocaleDateString(
+                          "vi-VN",
+                        )
+                      : warehouse.createdAt
+                        ? new Date(warehouse.createdAt).toLocaleDateString(
+                            "vi-VN",
+                          )
+                        : "--"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+
+        {!isPending && !isError ? (
+          <div className="flex flex-col gap-3 border-t border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+            <div className="text-sm text-slate-500">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                {paginationMeta.from}-{paginationMeta.to}
+              </span>{" "}
+              / {totalElements} kho
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-900">
+                <span className="text-xs font-medium text-slate-500">
+                  Số dòng
+                </span>
+                <Select
+                  value={String(size)}
+                  onValueChange={(value) => setSize(Number(value))}
+                >
+                  <SelectTrigger className="h-8 min-w-18 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {[10, 20, 50, 100].map((value) => (
+                      <SelectItem key={value} value={String(value)}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3"
+                  onClick={() => setPage(Math.max(0, page - 1))}
+                  disabled={page <= 0 || totalPages === 0 || isFetching}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                  {totalPages === 0 ? 0 : page + 1}/{totalPages}
+                  {isFetching ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : null}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-3"
+                  onClick={() => setPage(page + 1)}
+                  disabled={
+                    totalPages === 0 || page + 1 >= totalPages || isFetching
+                  }
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
