@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetCategoriesQuery, useCreateCategoryMutation } from "@/store/services/category.service";
+import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 
 type CategoryFormValues = {
   name: string;
@@ -97,13 +98,6 @@ export default function NewCategoryPage() {
           "Không thể tạo nhóm hàng. Vui lòng thử lại.",
       );
     }
-  };
-
-  const formatOptionLabel = (cat: (typeof categories)[number]) => {
-    const depth = typeof cat.level === "number" ? cat.level : 0;
-    const safeDepth = Math.max(0, Math.min(depth, 8));
-    const prefix = safeDepth > 0 ? `${"-".repeat(safeDepth)} ` : "";
-    return `${prefix}${cat.name} (${cat.code})`;
   };
 
   return (
@@ -195,7 +189,7 @@ export default function NewCategoryPage() {
                             return "Nhóm gốc (không thuộc nhóm cha)";
                           }
                           const c = categoriesById.get(val as string);
-                          return c ? formatOptionLabel(c) : "Đang tải tên nhóm…";
+                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
                         }}
                       </SelectValue>
                     </SelectTrigger>
@@ -214,11 +208,7 @@ export default function NewCategoryPage() {
                       ) : null}
 
                       <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {formatOptionLabel(cat)}
-                        </SelectItem>
-                      ))}
+                      <CategoryTreeSelectItems categories={categories} />
                     </SelectContent>
                   </Select>
                 </div>

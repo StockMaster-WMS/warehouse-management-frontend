@@ -6,7 +6,9 @@ import Link from "next/link";
 import {
   Plus,
   MoreHorizontal,
+  ChevronDown,
   ChevronRight,
+  CornerDownRight,
   Package,
   Tag,
   FolderTree,
@@ -336,10 +338,10 @@ export default function CategoriesPage() {
                                 }
                                 className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-slate-700"
                               >
-                                <ChevronRight
+                                <ChevronDown
                                   className={cn(
                                     "h-4 w-4 transition-transform",
-                                    isExpanded && "rotate-90",
+                                    isExpanded ? "rotate-0" : "-rotate-90",
                                   )}
                                 />
                               </button>

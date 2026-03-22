@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/select";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { getProductCategoryDisplayName } from "@/types/product";
 
 const PAGE_SIZE = 20;
@@ -190,7 +191,7 @@ export default function ProductsPage() {
       </div>
 
       <SearchToolbar
-        placeholder="Tìm kiếm trên server (tên, SKU, mã vạch... — tùy cấu hình BE)"
+        placeholder="Tìm kiếm sản phẩm"
         value={searchInput}
         onValueChange={setSearchInput}
         filters={
@@ -262,11 +263,12 @@ export default function ProductsPage() {
                 <SelectItem value="" className="rounded-lg">
                   Tất cả nhóm hàng
                 </SelectItem>
-                {categoryOptionsData?.data?.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="rounded-lg">
-                    {c.name} ({c.code})
-                  </SelectItem>
-                ))}
+                {categoryOptionsData?.data ? (
+                  <CategoryTreeSelectItems
+                    categories={categoryOptionsData.data}
+                    itemClassName="rounded-lg"
+                  />
+                ) : null}
               </SelectContent>
             </Select>
             {hasAnyFilter ? (

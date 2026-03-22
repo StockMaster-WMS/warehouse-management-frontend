@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 
 type ProductFormValues = {
   barcode: string;
@@ -236,11 +237,9 @@ export default function NewProductPage() {
                           </button>
                         </div>
                       ) : null}
-                      {categoryData?.data?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name} ({category.code})
-                        </SelectItem>
-                      ))}
+                      {categoryData?.data ? (
+                        <CategoryTreeSelectItems categories={categoryData.data} />
+                      ) : null}
                     </SelectContent>
                   </Select>
                   {errors.category ? (

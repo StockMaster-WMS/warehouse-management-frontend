@@ -22,6 +22,7 @@ import {
   useGetCategoryByIdQuery,
   useUpdateCategoryMutation,
 } from "@/store/services/category.service";
+import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 
 type CategoryFormValues = {
   code: string;
@@ -118,6 +119,12 @@ export default function EditCategoryPage({
     return out;
   }, [allCategories, id]);
 
+  const parentSelectExcludeIds = useMemo(() => {
+    const s = new Set<string>([id]);
+    for (const x of descendantIds) s.add(x);
+    return s;
+  }, [id, descendantIds]);
+
   const isSaveDisabled = useMemo(() => {
     return isUpdating || !values.name.trim();
   }, [isUpdating, values.name]);
@@ -164,13 +171,6 @@ export default function EditCategoryPage({
           "Không thể cập nhật nhóm hàng. Vui lòng thử lại.",
       );
     }
-  };
-
-  const formatOptionLabel = (cat: (typeof allCategories)[number]) => {
-    const depth = typeof cat.level === "number" ? cat.level : 0;
-    const safeDepth = Math.max(0, Math.min(depth, 8));
-    const prefix = safeDepth > 0 ? `${"-".repeat(safeDepth)} ` : "";
-    return `${prefix}${cat.name} (${cat.code})`;
   };
 
   if (isLoading) {
@@ -285,7 +285,7 @@ export default function EditCategoryPage({
                             return "Nhóm gốc (không thuộc nhóm cha)";
                           }
                           const c = categoriesById.get(val as string);
-                          return c ? formatOptionLabel(c) : "Đang tải tên nhóm…";
+                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
                         }}
                       </SelectValue>
                     </SelectTrigger>
@@ -303,13 +303,10 @@ export default function EditCategoryPage({
                         </div>
                       ) : null}
                       <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
-                      {allCategories
-                        .filter((c) => c.id !== id && !descendantIds.has(c.id))
-                        .map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {formatOptionLabel(cat)}
-                          </SelectItem>
-                        ))}
+                      <CategoryTreeSelectItems
+                        categories={allCategories}
+                        excludeIds={parentSelectExcludeIds}
+                      />
                     </SelectContent>
                   </Select>
                 </Field>

@@ -20,6 +20,7 @@ import {
   useUpdateProductMutation,
 } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { getProductCategoryDisplayName } from "@/types/product";
 
 type ProductFormValues = {
@@ -300,11 +301,9 @@ export default function EditProductPage({
                           </button>
                         </div>
                       ) : null}
-                      {categoryData?.data?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name} ({category.code})
-                        </SelectItem>
-                      ))}
+                      {categoryData?.data ? (
+                        <CategoryTreeSelectItems categories={categoryData.data} />
+                      ) : null}
                     </SelectContent>
                   </Select>
                 </Field>
