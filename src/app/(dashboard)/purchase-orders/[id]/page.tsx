@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { use, useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, Loader2, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -38,9 +37,12 @@ const receiveSchema = z.object({
   suggestedLocationId: z.string().optional(),
 });
 
-export default function PurchaseOrderDetailPage() {
-  const params = useParams();
-  const id = typeof params.id === "string" ? params.id : "";
+export default function PurchaseOrderDetailPage({
+  params: paramsPromise,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(paramsPromise);
 
   const { data: poRes, isLoading: poLoading, isError: poError } = useGetPurchaseOrderByIdQuery(id, { skip: !id });
   const { data: itemsRes, isFetching: itemsLoading } = useGetPoItemsQuery(

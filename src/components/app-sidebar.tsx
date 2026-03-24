@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -212,7 +212,7 @@ export function AppSidebar() {
   );
 }
 
-function SidebarItem({
+const SidebarItem = memo(function SidebarItem({
   item,
   pathname,
   expandedHref,
@@ -232,8 +232,7 @@ function SidebarItem({
     if (active && hasChildren) {
       setExpandedHref(item.href);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, hasChildren, setExpandedHref, item.href]);
 
   const showChildren = hasChildren && expanded;
 
@@ -325,4 +324,4 @@ function SidebarItem({
       )}
     </SidebarMenuItem>
   );
-}
+});

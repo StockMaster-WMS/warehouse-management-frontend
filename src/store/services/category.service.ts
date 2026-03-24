@@ -1,31 +1,8 @@
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
+import type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/types/category";
 
-export interface Category {
-  id: string;
-  code: string;
-  name: string;
-  parentId?: string | null;
-  path?: string;
-  level?: number;
-  isActive?: boolean;
-  createdAt?: string;
-}
-
-export type CategoryCreatePayload = {
-  name: string;
-  parentId?: string | null;
-  isActive?: boolean;
-};
-
-export type CategoryUpdatePayload = {
-  code: string;
-  name: string;
-  parentId?: string | null;
-  path?: string;
-  level?: number;
-  isActive?: boolean;
-};
+export type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/types/category";
 
 const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

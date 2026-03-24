@@ -1,6 +1,6 @@
 
 import { baseApi } from "@/store/services/api";
-import { ApiResponse, PagedResponse } from "@/types/api";
+import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
 import type { Warehouse, WarehouseSummary } from "@/types/warehouse";
 
 export type GetWarehousesParams = {
@@ -49,6 +49,7 @@ const warehouseApi = baseApi.injectEndpoints({
         method: "GET",
         params: buildWarehousesQueryParams(params),
       }),
+      transformResponse: (r: ApiResponse<Warehouse[] | PagedResponse<Warehouse>>) => normalizeApiResponsePaged(r),
       providesTags: (result) =>
         result?.data?.content?.length
           ? [

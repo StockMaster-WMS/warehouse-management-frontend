@@ -1,6 +1,12 @@
 import type { ApiResponse, PagedResponse } from "@/types/api";
 
-export type PurchaseOrderStatus = string;
+export type PurchaseOrderStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "APPROVED"
+  | "RECEIVING"
+  | "COMPLETED"
+  | "CANCELLED";
 
 export interface PurchaseOrder {
   id: string;
@@ -21,7 +27,7 @@ export interface CreatePurchaseOrderPayload {
   warehouseId: string;
   orderDate: string;
   expectedDate?: string;
-  status?: string;
+  status?: PurchaseOrderStatus;
   totalAmount?: number;
 }
 
@@ -52,7 +58,7 @@ export interface ReceivePoItemPayload {
   body: { qty: number; suggestedLocationId?: string };
 }
 
-export type PutawayTaskStatus = "PENDING" | "IN_PROGRESS" | "CANCELLED" | string;
+export type PutawayTaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 export interface PutawayTask {
   id: string;

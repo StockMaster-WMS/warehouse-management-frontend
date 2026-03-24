@@ -1,8 +1,8 @@
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { Supplier } from "@/types/supplier";
+import type { Order } from "@/types/order";
 
-export type GetSuppliersParams = {
+export type GetOrdersParams = {
   page?: number;
   size?: number;
   sort?: string;
@@ -11,7 +11,7 @@ export type GetSuppliersParams = {
   status?: string;
 };
 
-function buildSuppliersQueryParams(params: GetSuppliersParams) {
+function buildOrdersQueryParams(params: GetOrdersParams) {
   const { page = 0, size = 20, sort = "createdAt", sortDir = "desc", keyword, status } = params;
 
   const query: Record<string, string | number> = {
@@ -27,24 +27,23 @@ function buildSuppliersQueryParams(params: GetSuppliersParams) {
   return query;
 }
 
-const supplierApi = baseApi.injectEndpoints({
+const orderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    /** Sau `transformResponse`, `data` luôn là `PagedResponse<Supplier>` (`content` + meta). */
-    getSuppliers: builder.query<ApiResponse<PagedResponse<Supplier>>, GetSuppliersParams>({
+    getOrders: builder.query<ApiResponse<PagedResponse<Order>>, GetOrdersParams>({
       query: (params) => ({
-        url: "/suppliers",
+        url: "/orders",
         method: "GET",
-        params: buildSuppliersQueryParams(params),
+        params: buildOrdersQueryParams(params),
       }),
-      transformResponse: (r: ApiResponse<Supplier[] | PagedResponse<Supplier>>) => normalizeApiResponsePaged(r),
+      transformResponse: (r: ApiResponse<Order[] | PagedResponse<Order>>) => normalizeApiResponsePaged(r),
       providesTags: (result) => {
         const rows = result?.data?.content ?? [];
         return rows.length
-          ? [...rows.map((s) => ({ type: "Supplier" as const, id: s.id })), { type: "Supplier" as const, id: "LIST" }]
-          : [{ type: "Supplier" as const, id: "LIST" }];
+          ? [...rows.map((o) => ({ type: "Order" as const, id: o.id })), { type: "Order" as const, id: "LIST" }]
+          : [{ type: "Order" as const, id: "LIST" }];
       },
     }),
   }),
 });
 
-export const { useGetSuppliersQuery } = supplierApi;
+export const { useGetOrdersQuery } = orderApi;

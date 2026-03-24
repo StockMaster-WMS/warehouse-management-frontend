@@ -21,7 +21,7 @@ import {
   useGetCategoriesQuery,
   useGetCategoryByIdQuery,
 } from "@/store/services/category.service";
-import type { Category } from "@/store/services/category.service";
+import type { Category } from "@/types/category";
 
 export default function CategoryDetailPage({
   params: paramsPromise,

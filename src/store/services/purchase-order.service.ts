@@ -20,7 +20,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWarehousesForPo: builder.query<ApiResponse<PagedResponse<Warehouse>>, { size?: number }>({
       query: ({ size = 50 }) => ({
-        url: "warehouses",
+        url: "/warehouses",
         method: "GET",
         params: { page: 0, size, sort: "createdAt", sortDir: "desc" },
       }),
@@ -29,7 +29,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     getProductsForPo: builder.query<ApiResponse<PagedResponse<Product>>, { size?: number; keyword?: string }>({
       query: ({ size = 50, keyword }) => ({
-        url: "products",
+        url: "/products",
         method: "GET",
         params: {
           page: 0,
@@ -46,7 +46,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       { page?: number; size?: number }
     >({
       query: ({ page = 0, size = 20 } = {}) => ({
-        url: "purchase-orders",
+        url: "/purchase-orders",
         method: "GET",
         params: { page, size },
       }),
@@ -61,7 +61,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
     }),
 
     getPurchaseOrderById: builder.query<ApiResponse<PurchaseOrder>, string>({
-      query: (id) => ({ url: `purchase-orders/${id}`, method: "GET" }),
+      query: (id) => ({ url: `/purchase-orders/${id}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "PurchaseOrder", id }],
     }),
 
@@ -76,14 +76,14 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         if (body.expectedDate?.trim()) payload.expectedDate = body.expectedDate.trim();
         if (body.status?.trim()) payload.status = body.status.trim();
         if (body.totalAmount != null && !Number.isNaN(body.totalAmount)) payload.totalAmount = body.totalAmount;
-        return { url: "purchase-orders", method: "POST", data: payload };
+        return { url: "/purchase-orders", method: "POST", data: payload };
       },
       invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
     }),
 
     getPoItems: builder.query<ApiResponse<PagedResponse<PoItem>>, GetPoItemsArgs>({
       query: ({ purchaseOrderId }) => ({
-        url: "po-items",
+        url: "/po-items",
         method: "GET",
         params: { purchaseOrderId },
       }),
@@ -108,19 +108,19 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         };
         if (body.receivedQty != null) payload.receivedQty = body.receivedQty;
         if (body.unitPrice != null && !Number.isNaN(body.unitPrice)) payload.unitPrice = body.unitPrice;
-        return { url: "po-items", method: "POST", data: payload };
+        return { url: "/po-items", method: "POST", data: payload };
       },
       invalidatesTags: (_r, _e, arg) => [{ type: "PoItem", id: `PO-${arg.purchaseOrderId}` }],
     }),
 
     deletePoItem: builder.mutation<ApiResponse<unknown>, { id: string; purchaseOrderId: string }>({
-      query: ({ id }) => ({ url: `po-items/${id}`, method: "DELETE" }),
+      query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
       invalidatesTags: (_r, _e, arg) => [{ type: "PoItem", id: `PO-${arg.purchaseOrderId}` }],
     }),
 
     receivePoItem: builder.mutation<ApiResponse<unknown>, ReceivePoItemPayload>({
       query: ({ poItemId, body }) => ({
-        url: `po-items/${poItemId}/receive`,
+        url: `/po-items/${poItemId}/receive`,
         method: "POST",
         data: {
           qty: body.qty,
@@ -135,7 +135,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     getPutawayTasks: builder.query<ApiResponse<PagedResponse<PutawayTask>>, GetPutawayTasksArgs>({
       query: (params) => ({
-        url: "putaway-tasks",
+        url: "/putaway-tasks",
         method: "GET",
         params: {
           ...(params.poItemId?.trim() ? { poItemId: params.poItemId.trim() } : {}),
@@ -154,7 +154,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     patchPutawayTask: builder.mutation<ApiResponse<PutawayTask>, PatchPutawayTaskPayload>({
       query: ({ id, body }) => ({
-        url: `putaway-tasks/${id}`,
+        url: `/putaway-tasks/${id}`,
         method: "PATCH",
         data: body,
       }),
@@ -166,7 +166,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     completePutawayTask: builder.mutation<ApiResponse<unknown>, CompletePutawayPayload>({
       query: ({ id, body }) => ({
-        url: `putaway-tasks/${id}/complete`,
+        url: `/putaway-tasks/${id}/complete`,
         method: "POST",
         data: body,
       }),

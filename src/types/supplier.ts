@@ -1,5 +1,4 @@
-/** Trạng thái NCC từ API (GET /api/suppliers — `data` là mảng). */
-export type SupplierStatus = "ACTIVE" | "INACTIVE" | string;
+export type SupplierStatus = "ACTIVE" | "INACTIVE";
 
 /** Một bản ghi nhà cung cấp (khớp JSON backend). */
 export interface Supplier {

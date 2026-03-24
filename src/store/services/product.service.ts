@@ -5,7 +5,7 @@ import {
   UpdateProductPayload,
   normalizeProductImportResponse,
 } from "@/types/product";
-import { ApiResponse, PagedResponse } from "@/types/api";
+import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
 
 export type GetProductsParams = {
   page?: number;
@@ -42,6 +42,7 @@ const productApi = baseApi.injectEndpoints({
         method: "GET",
         params: buildProductsQueryParams(params),
       }),
+      transformResponse: (r: ApiResponse<Product[] | PagedResponse<Product>>) => normalizeApiResponsePaged(r),
       providesTags: (result) =>
         result?.data?.content?.length
           ? [

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Plus,
@@ -15,9 +16,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
-import { ProductImportExportMenu } from "@/components/features/ProductImportExportMenu";
 import { ProductTableRow } from "@/components/features/ProductTableRow";
+
+const DeleteConfirmDialog = dynamic(
+  () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
+  { ssr: false },
+);
+const ProductImportExportMenu = dynamic(
+  () => import("@/components/features/ProductImportExportMenu").then((m) => m.ProductImportExportMenu),
+  { ssr: false },
+);
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

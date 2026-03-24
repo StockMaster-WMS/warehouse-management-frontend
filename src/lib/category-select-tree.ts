@@ -1,4 +1,4 @@
-import type { Category } from "@/store/services/category.service";
+import type { Category } from "@/types/category";
 
 /** Cùng bước thụt với `CategoryTreeSelectItems` (dropdown chọn nhóm). */
 export const CATEGORY_TREE_INDENT_STEP_PX = 14;

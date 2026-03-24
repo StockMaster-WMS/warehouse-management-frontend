@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -23,38 +26,54 @@ import {
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 
-type ProductFormValues = {
-  barcode: string;
-  name: string;
-  category: string;
-  baseUnit: string;
-  lengthCm: string;
-  widthCm: string;
-  heightCm: string;
-  weightGram: string;
-  minStock: string;
-  maxStock: string;
-};
+const nonNegativeNumericString = z
+  .string()
+  .optional()
+  .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) >= 0), {
+    message: "Giá trị phải là số không âm.",
+  });
 
-type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
+const productSchema = z.object({
+  barcode: z
+    .string()
+    .regex(/^(\d{8,13})?$/, "Mã vạch phải có từ 8 đến 13 chữ số.")
+    .optional()
+    .or(z.literal("")),
+  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
+  category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
+  baseUnit: z.string().min(1, "Vui lòng chọn đơn vị tính."),
+  lengthCm: nonNegativeNumericString,
+  widthCm: nonNegativeNumericString,
+  heightCm: nonNegativeNumericString,
+  weightGram: nonNegativeNumericString,
+  minStock: nonNegativeNumericString,
+  maxStock: nonNegativeNumericString,
+});
 
-const initialValues: ProductFormValues = {
-  barcode: "",
-  name: "",
-  category: "",
-  baseUnit: "cai",
-  lengthCm: "",
-  widthCm: "",
-  heightCm: "",
-  weightGram: "",
-  minStock: "5",
-  maxStock: "100",
-};
+type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function NewProductPage() {
-  const [values, setValues] = useState<ProductFormValues>(initialValues);
-  const [errors, setErrors] = useState<ProductFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      barcode: "",
+      name: "",
+      category: "",
+      baseUnit: "cai",
+      lengthCm: "",
+      widthCm: "",
+      heightCm: "",
+      weightGram: "",
+      minStock: "5",
+      maxStock: "100",
+    },
+  });
+
   const [submitMessage, setSubmitMessage] = useState("");
 
   const {
@@ -64,66 +83,19 @@ export default function NewProductPage() {
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
 
-  const isSaveDisabled = useMemo(
-    () => isSubmitting || !values.name.trim() || !values.category,
-    [isSubmitting, values.name, values.category],
-  );
-
-  const validate = (data: ProductFormValues): ProductFormErrors => {
-    const nextErrors: ProductFormErrors = {};
-
-    if (!data.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
-    if (!data.category) nextErrors.category = "Vui lòng chọn nhóm hàng.";
-    if (!data.baseUnit) nextErrors.baseUnit = "Vui lòng chọn đơn vị tính.";
-    if (data.barcode && !/^\d{8,13}$/.test(data.barcode)) {
-      nextErrors.barcode = "Mã vạch phải có từ 8 đến 13 chữ số.";
-    }
-
-    const numberFields: Array<keyof ProductFormValues> = [
-      "lengthCm",
-      "widthCm",
-      "heightCm",
-      "weightGram",
-      "minStock",
-      "maxStock",
-    ];
-
-    numberFields.forEach((fieldName) => {
-      const rawValue = data[fieldName];
-      if (!rawValue) return;
-      const numericValue = Number(rawValue);
-      if (Number.isNaN(numericValue) || numericValue < 0) {
-        nextErrors[fieldName] = "Giá trị phải là số không âm.";
-      }
-    });
-
-    return nextErrors;
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onValid = async (_data: ProductFormValues) => {
     setSubmitMessage("");
-
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length > 0) {
-      toast.error("Kiểm tra lại thông tin đã nhập.");
-      return;
-    }
-
-    setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 700));
-    setIsSubmitting(false);
-    setSubmitMessage("Đã lưu thông tin sản phẩm ở mức giao diện. Bước tiếp theo: kết nối API tạo sản phẩm.");
+    setSubmitMessage(
+      "Đã lưu thông tin sản phẩm ở mức giao diện. Bước tiếp theo: kết nối API tạo sản phẩm.",
+    );
     toast.success("Đã lưu bản nháp", {
       description: "Kết nối API tạo sản phẩm sẽ bật ở bước sau.",
     });
   };
 
-  const updateValue = (key: keyof ProductFormValues, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  const onInvalid = () => {
+    toast.error("Kiểm tra lại thông tin đã nhập.");
   };
 
   return (
@@ -150,7 +122,7 @@ export default function NewProductPage() {
         </div>
       ) : null}
 
-      <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit} noValidate>
+      <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit(onValid, onInvalid)} noValidate>
         <div className="md:col-span-2 space-y-6">
           {/* Section 1: Thông tin cơ bản */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -171,13 +143,12 @@ export default function NewProductPage() {
                 <Input
                   id="barcode"
                   placeholder="0123456789012"
-                  value={values.barcode}
-                  onChange={(event) => updateValue("barcode", event.target.value)}
-                  aria-invalid={Boolean(errors.barcode)}
+                  {...register("barcode")}
+                  aria-invalid={!!errors.barcode}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.barcode ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.barcode}</p>
+                {errors.barcode?.message ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.barcode.message}</p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -190,13 +161,12 @@ export default function NewProductPage() {
                 <Input
                   id="product-name"
                   placeholder="Nhập tên đầy đủ của mặt hàng..."
-                  value={values.name}
-                  onChange={(event) => updateValue("name", event.target.value)}
-                  aria-invalid={Boolean(errors.name)}
+                  {...register("name")}
+                  aria-invalid={!!errors.name}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.name ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.name}</p>
+                {errors.name?.message ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.name.message}</p>
                 ) : null}
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -204,86 +174,98 @@ export default function NewProductPage() {
                   <label htmlFor="category" className="text-xs font-bold text-slate-500 uppercase">
                     Nhóm hàng
                   </label>
-                  <Select
-                    value={values.category}
-                    onValueChange={(value) => updateValue("category", value ?? "")}
-                  >
-                    <SelectTrigger
-                      id="category"
-                      aria-invalid={Boolean(errors.category)}
-                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoadingCategories
-                            ? "Đang tải nhóm hàng..."
-                            : categoryError
-                              ? "Lỗi tải nhóm hàng"
-                              : "Chọn nhóm hàng..."
-                        }
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        {(val) => {
-                          if (!val) return null;
-                          const c = categoryData?.data?.content?.find((x) => x.id === val);
-                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {categoryError ? (
-                        <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được nhóm hàng.
-                          <button
-                            type="button"
-                            onClick={() => refetchCategories()}
-                            className="ml-1 underline"
+                        <SelectTrigger
+                          id="category"
+                          aria-invalid={!!errors.category}
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingCategories
+                                ? "Đang tải nhóm hàng..."
+                                : categoryError
+                                  ? "Lỗi tải nhóm hàng"
+                                  : "Chọn nhóm hàng..."
+                            }
                           >
-                            Thử lại
-                          </button>
-                        </div>
-                      ) : null}
-                      {categoryData?.data?.content?.length ? (
-                        <CategoryTreeSelectItems categories={categoryData.data.content} />
-                      ) : null}
-                    </SelectContent>
-                  </Select>
-                  {errors.category ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.category}</p>
+                            {(val) => {
+                              if (!val) return null;
+                              const c = categoryData?.data?.content?.find((x) => x.id === val);
+                              return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {categoryError ? (
+                            <div className="px-2 py-1.5 text-xs text-rose-500">
+                              Không tải được nhóm hàng.
+                              <button
+                                type="button"
+                                onClick={() => refetchCategories()}
+                                className="ml-1 underline"
+                              >
+                                Thử lại
+                              </button>
+                            </div>
+                          ) : null}
+                          {categoryData?.data?.content?.length ? (
+                            <CategoryTreeSelectItems categories={categoryData.data.content} />
+                          ) : null}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.category?.message ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.category.message}</p>
                   ) : null}
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="base-unit" className="text-xs font-bold text-slate-500 uppercase">
                     Đơn vị tính
                   </label>
-                  <Select
-                    value={values.baseUnit}
-                    onValueChange={(value) => updateValue("baseUnit", value ?? "")}
-                  >
-                    <SelectTrigger
-                      id="base-unit"
-                      aria-invalid={Boolean(errors.baseUnit)}
-                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                    >
-                      <SelectValue placeholder="Chọn ĐVT...">
-                        {(val) => {
-                          if (!val) return null;
-                          const map: Record<string, string> = {
-                            cai: "Cái / Chiếc",
-                            hop: "Hộp",
-                            thung: "Thùng",
-                          };
-                          return map[val] ?? val;
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      <SelectItem value="cai">Cái / Chiếc</SelectItem>
-                      <SelectItem value="thung">Thùng</SelectItem>
-                      <SelectItem value="hop">Hộp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.baseUnit ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.baseUnit}</p>
+                  <Controller
+                    name="baseUnit"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          id="base-unit"
+                          aria-invalid={!!errors.baseUnit}
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue placeholder="Chọn ĐVT...">
+                            {(val) => {
+                              if (!val) return null;
+                              const map: Record<string, string> = {
+                                cai: "Cái / Chiếc",
+                                hop: "Hộp",
+                                thung: "Thùng",
+                              };
+                              return map[val] ?? val;
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          <SelectItem value="cai">Cái / Chiếc</SelectItem>
+                          <SelectItem value="thung">Thùng</SelectItem>
+                          <SelectItem value="hop">Hộp</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.baseUnit?.message ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.baseUnit.message}</p>
                   ) : null}
                 </div>
               </div>
@@ -310,13 +292,12 @@ export default function NewProductPage() {
                   id="length-cm"
                   type="number"
                   placeholder="0"
-                  value={values.lengthCm}
-                  onChange={(event) => updateValue("lengthCm", event.target.value)}
-                  aria-invalid={Boolean(errors.lengthCm)}
+                  {...register("lengthCm")}
+                  aria-invalid={!!errors.lengthCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.lengthCm ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.lengthCm}</p>
+                {errors.lengthCm?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.lengthCm.message}</p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -330,13 +311,12 @@ export default function NewProductPage() {
                   id="width-cm"
                   type="number"
                   placeholder="0"
-                  value={values.widthCm}
-                  onChange={(event) => updateValue("widthCm", event.target.value)}
-                  aria-invalid={Boolean(errors.widthCm)}
+                  {...register("widthCm")}
+                  aria-invalid={!!errors.widthCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.widthCm ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.widthCm}</p>
+                {errors.widthCm?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.widthCm.message}</p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -350,13 +330,12 @@ export default function NewProductPage() {
                   id="height-cm"
                   type="number"
                   placeholder="0"
-                  value={values.heightCm}
-                  onChange={(event) => updateValue("heightCm", event.target.value)}
-                  aria-invalid={Boolean(errors.heightCm)}
+                  {...register("heightCm")}
+                  aria-invalid={!!errors.heightCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.heightCm ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.heightCm}</p>
+                {errors.heightCm?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.heightCm.message}</p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -370,13 +349,12 @@ export default function NewProductPage() {
                   id="weight-gram"
                   type="number"
                   placeholder="0"
-                  value={values.weightGram}
-                  onChange={(event) => updateValue("weightGram", event.target.value)}
-                  aria-invalid={Boolean(errors.weightGram)}
+                  {...register("weightGram")}
+                  aria-invalid={!!errors.weightGram}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.weightGram ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.weightGram}</p>
+                {errors.weightGram?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.weightGram.message}</p>
                 ) : null}
               </div>
             </div>
@@ -403,13 +381,12 @@ export default function NewProductPage() {
                 <Input
                   id="min-stock"
                   type="number"
-                  value={values.minStock}
-                  onChange={(event) => updateValue("minStock", event.target.value)}
-                  aria-invalid={Boolean(errors.minStock)}
+                  {...register("minStock")}
+                  aria-invalid={!!errors.minStock}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.minStock ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.minStock}</p>
+                {errors.minStock?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.minStock.message}</p>
                 ) : null}
                 <p className="text-[10px] font-medium text-slate-400 italic">
                   Cảnh báo khi kho thấp hơn mức này.
@@ -425,13 +402,12 @@ export default function NewProductPage() {
                 <Input
                   id="max-stock"
                   type="number"
-                  value={values.maxStock}
-                  onChange={(event) => updateValue("maxStock", event.target.value)}
-                  aria-invalid={Boolean(errors.maxStock)}
+                  {...register("maxStock")}
+                  aria-invalid={!!errors.maxStock}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.maxStock ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.maxStock}</p>
+                {errors.maxStock?.message ? (
+                  <p className="text-[10px] font-medium text-rose-600">{errors.maxStock.message}</p>
                 ) : null}
                 <p className="text-[10px] font-medium text-slate-400 italic">
                   Dùng để tính tỷ lệ lấp đầy kho.
@@ -444,7 +420,7 @@ export default function NewProductPage() {
             <div className="flex flex-col gap-4">
               <Button
                 type="submit"
-                disabled={isSaveDisabled}
+                disabled={isSubmitting}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:opacity-70 dark:shadow-none"
               >
                 <Save className="mr-2 h-4 w-4" />

@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, FileText, AlertCircle } from "lucide-react";
+import { Plus, FileText, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -16,16 +17,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useGetPurchaseOrdersQuery } from "@/store/services/purchase-order.service";
-import { apiErrMessage } from "@/types/api";
+import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 
 export default function PurchaseOrdersPage() {
+  const [page, setPage] = useState(0);
+
   const { data, isLoading, isFetching, isError, error, refetch } = useGetPurchaseOrdersQuery({
-    page: 0,
-    size: 50,
+    page,
+    size: 20,
   });
 
   const rows = data?.data?.content ?? [];
+  const pagedBody = data?.data;
+
+  const paged = useMemo((): Pick<
+    PagedResponse<PurchaseOrder>,
+    "page" | "size" | "total_elements" | "total_pages"
+  > | null => {
+    if (!pagedBody || typeof pagedBody.page !== "number" || typeof pagedBody.total_pages !== "number") return null;
+    return {
+      page: pagedBody.page,
+      size: pagedBody.size,
+      total_elements: pagedBody.total_elements,
+      total_pages: pagedBody.total_pages,
+    };
+  }, [pagedBody]);
+
+  const canGoPrev = page > 0;
+  const canGoNext = paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
 
   return (
     <div className="space-y-6">
@@ -158,6 +178,51 @@ export default function PurchaseOrdersPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              {isLoading ? (
+                <span>Đang tải danh sách…</span>
+              ) : isError ? (
+                <span className="text-rose-600 dark:text-rose-400">Không tải được dữ liệu.</span>
+              ) : paged ? (
+                <span>
+                  Hiển thị {rows.length}/{paged.total_elements} đơn nhập
+                  {paged.total_pages > 1
+                    ? ` · Trang ${paged.page + 1}/${paged.total_pages}`
+                    : ""}
+                </span>
+              ) : (
+                <span>{rows.length} bản ghi</span>
+              )}
+            </div>
+            {paged && paged.total_pages > 1 ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canGoPrev || isFetching}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Trước
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canGoNext || isFetching}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Sau
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

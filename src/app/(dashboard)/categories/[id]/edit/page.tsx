@@ -1,6 +1,9 @@
 "use client";
 
-import { FormEvent, ReactNode, use, useEffect, useMemo, useState } from "react";
+import { ReactNode, use, useEffect, useMemo, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import Link from "next/link";
 import { ArrowLeft, Save, Tag } from "lucide-react";
 import { toast } from "sonner";
@@ -26,14 +29,13 @@ import {
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { apiErrMessage } from "@/types/api";
 
-type CategoryFormValues = {
-  code: string;
-  name: string;
-  parentId: string; // "" => root
-  isActive: boolean;
-};
-
-type CategoryFormErrors = Partial<Record<keyof CategoryFormValues, string>>;
+const categoryEditSchema = z.object({
+  code: z.string(),
+  name: z.string().trim().min(1, "Tên nhóm hàng là bắt buộc."),
+  parentId: z.string(),
+  isActive: z.boolean(),
+});
+type CategoryEditFormData = z.infer<typeof categoryEditSchema>;
 
 export default function EditCategoryPage({
   params: paramsPromise,
@@ -54,32 +56,41 @@ export default function EditCategoryPage({
 
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
 
-  const [values, setValues] = useState<CategoryFormValues>({
-    code: "",
-    name: "",
-    parentId: "",
-    isActive: true,
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CategoryEditFormData>({
+    resolver: zodResolver(categoryEditSchema),
+    defaultValues: { code: "", name: "", parentId: "", isActive: true },
   });
-  const [errors, setErrors] = useState<CategoryFormErrors>({});
+
   const [submitMessage, setSubmitMessage] = useState("");
 
   useEffect(() => {
     if (!data?.data) return;
     const c = data.data;
-    setValues({
+    reset({
       code: c.code ?? "",
       name: c.name ?? "",
       parentId: c.parentId ?? "",
       isActive: Boolean(c.isActive),
     });
-  }, [data]);
+  }, [data, reset]);
 
   const categoriesById = useMemo(() => {
     return new Map(allCategories.map((c) => [c.id, c] as const));
   }, [allCategories]);
 
-  const codeUpper = useMemo(() => values.code.trim().toUpperCase(), [values.code]);
-  const parentCategory = values.parentId ? categoriesById.get(values.parentId) ?? null : null;
+  const watchedCode = watch("code");
+  const watchedParentId = watch("parentId");
+  const watchedName = watch("name");
+
+  const codeUpper = useMemo(() => watchedCode.trim().toUpperCase(), [watchedCode]);
+  const parentCategory = watchedParentId ? categoriesById.get(watchedParentId) ?? null : null;
 
   const computedLevel = useMemo(() => {
     if (!parentCategory) return 0;
@@ -93,7 +104,6 @@ export default function EditCategoryPage({
     return parentPath ? `${parentPath}/${codeUpper}` : codeUpper;
   }, [codeUpper, parentCategory]);
 
-  // Prevent selecting the category itself or its descendants as parent.
   const descendantIds = useMemo(() => {
     if (!id) return new Set<string>();
     const childrenByParentId = new Map<string, typeof allCategories>();
@@ -128,44 +138,22 @@ export default function EditCategoryPage({
   }, [id, descendantIds]);
 
   const isSaveDisabled = useMemo(() => {
-    return isUpdating || !values.name.trim();
-  }, [isUpdating, values.name]);
+    return isUpdating || !watchedName.trim();
+  }, [isUpdating, watchedName]);
 
-  const validate = (form: CategoryFormValues): CategoryFormErrors => {
-    const nextErrors: CategoryFormErrors = {};
-    if (!form.name.trim()) nextErrors.name = "Tên nhóm hàng là bắt buộc.";
-    return nextErrors;
-  };
-
-  const updateValue = <K extends keyof CategoryFormValues>(
-    key: K,
-    value: CategoryFormValues[K],
-  ) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onValid = async (formData: CategoryEditFormData) => {
     setSubmitMessage("");
-
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) {
-      toast.error("Kiểm tra lại thông tin đã nhập.");
-      return;
-    }
 
     try {
       await updateCategory({
         id,
         body: {
           code: codeUpper,
-          name: values.name.trim(),
-          parentId: values.parentId ? values.parentId : null,
+          name: formData.name.trim(),
+          parentId: formData.parentId ? formData.parentId : null,
           path: computedPath,
           level: computedLevel,
-          isActive: values.isActive,
+          isActive: formData.isActive,
         },
       }).unwrap();
 
@@ -238,7 +226,7 @@ export default function EditCategoryPage({
 
       <form
         className="grid grid-cols-1 gap-6 md:grid-cols-3"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onValid)}
         noValidate
       >
         <div className="space-y-6 md:col-span-2">
@@ -251,69 +239,73 @@ export default function EditCategoryPage({
             </div>
 
             <div className="space-y-4">
-              <Field label="Mã nhóm (code)" htmlFor="code" error={errors.code}>
+              <Field label="Mã nhóm (code)" htmlFor="code" error={errors.code?.message}>
                 <Input
                   id="code"
-                  value={values.code}
-                  onChange={(e) => updateValue("code", e.target.value)}
+                  {...register("code")}
                   className="border-slate-200 bg-slate-50/50 font-mono text-sm uppercase focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Tên hiển thị *" htmlFor="name" error={errors.name}>
+              <Field label="Tên hiển thị *" htmlFor="name" error={errors.name?.message}>
                 <Input
                   id="name"
-                  value={values.name}
-                  onChange={(e) => updateValue("name", e.target.value)}
+                  {...register("name")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Nhóm / loại cha" htmlFor="parentId">
-                  <Select
-                    value={values.parentId}
-                    onValueChange={(v) => updateValue("parentId", v ?? "")}
-                  >
-                    <SelectTrigger
-                      id="parentId"
-                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoadingCategories
-                            ? "Đang tải danh sách nhóm..."
-                            : "Chọn nhóm cha hoặc để gốc"
-                        }
+                  <Controller
+                    name="parentId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        {(val) => {
-                          if (val === "" || val == null) {
-                            return "Nhóm gốc (không thuộc nhóm cha)";
-                          }
-                          const c = categoriesById.get(val as string);
-                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {categoriesError ? (
-                        <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được nhóm hàng.
-                          <button
-                            type="button"
-                            onClick={() => refetchCategories()}
-                            className="ml-1 underline"
+                        <SelectTrigger
+                          id="parentId"
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingCategories
+                                ? "Đang tải danh sách nhóm..."
+                                : "Chọn nhóm cha hoặc để gốc"
+                            }
                           >
-                            Thử lại
-                          </button>
-                        </div>
-                      ) : null}
-                      <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
-                      <CategoryTreeSelectItems
-                        categories={allCategories}
-                        excludeIds={parentSelectExcludeIds}
-                      />
-                    </SelectContent>
-                  </Select>
+                            {(val) => {
+                              if (val === "" || val == null) {
+                                return "Nhóm gốc (không thuộc nhóm cha)";
+                              }
+                              const c = categoriesById.get(val as string);
+                              return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {categoriesError ? (
+                            <div className="px-2 py-1.5 text-xs text-rose-500">
+                              Không tải được nhóm hàng.
+                              <button
+                                type="button"
+                                onClick={() => refetchCategories()}
+                                className="ml-1 underline"
+                              >
+                                Thử lại
+                              </button>
+                            </div>
+                          ) : null}
+                          <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
+                          <CategoryTreeSelectItems
+                            categories={allCategories}
+                            excludeIds={parentSelectExcludeIds}
+                          />
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </Field>
 
                 <Field label="Cấp độ (read-only)" htmlFor="level">
@@ -349,30 +341,36 @@ export default function EditCategoryPage({
               </h3>
             </div>
 
-            <button
-              type="button"
-              className={`flex h-10 w-full items-center justify-between rounded-xl border px-4 ${
-                values.isActive
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border-slate-300 bg-slate-100 text-slate-600"
-              }`}
-              onClick={() => updateValue("isActive", !values.isActive)}
-            >
-              <span className="text-sm font-bold">
-                {values.isActive ? "Đang hoạt động" : "Tạm dừng"}
-              </span>
-              <div
-                className={`relative inline-flex h-5 w-9 items-center rounded-full ${
-                  values.isActive ? "bg-emerald-500" : "bg-slate-400"
-                }`}
-              >
-                <div
-                  className={`absolute left-1 h-3.5 w-3.5 rounded-full bg-white shadow transition ${
-                    values.isActive ? "translate-x-3.5" : ""
+            <Controller
+              name="isActive"
+              control={control}
+              render={({ field }) => (
+                <button
+                  type="button"
+                  className={`flex h-10 w-full items-center justify-between rounded-xl border px-4 ${
+                    field.value
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-slate-300 bg-slate-100 text-slate-600"
                   }`}
-                />
-              </div>
-            </button>
+                  onClick={() => field.onChange(!field.value)}
+                >
+                  <span className="text-sm font-bold">
+                    {field.value ? "Đang hoạt động" : "Tạm dừng"}
+                  </span>
+                  <div
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full ${
+                      field.value ? "bg-emerald-500" : "bg-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`absolute left-1 h-3.5 w-3.5 rounded-full bg-white shadow transition ${
+                        field.value ? "translate-x-3.5" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
+              )}
+            />
           </div>
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
@@ -422,4 +420,3 @@ function Field({
     </div>
   );
 }
-

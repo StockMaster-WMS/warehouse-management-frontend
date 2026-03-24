@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   UserPlus,
   Mail,
   MoreHorizontal,
   Edit2,
-  Trash2
+  Trash2,
+  AlertCircle,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,20 +21,82 @@ import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useGetCustomersQuery, useDeleteCustomerMutation } from "@/store/services/customer.service";
+import { apiErrMessage, type PagedResponse } from "@/types/api";
+import type { Customer } from "@/types/customer";
+import { customerCategoryLabel } from "@/types/customer";
+
+const PAGE_SIZE = 20;
+
+const CATEGORY_API_MAP: Record<string, string> = {
+  "Cá nhân": "INDIVIDUAL",
+  "Nhà buôn": "WHOLESALE",
+};
+
+const ALL_CATEGORY = "Tất cả phân loại";
 
 export default function CustomersPage() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Tất cả phân loại");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedKeyword = useDebouncedValue(searchInput.trim());
+  const [page, setPage] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORY);
 
-  const hasAnyFilter = query.trim().length > 0 || category !== "Tất cả phân loại";
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const categoryApiValue = CATEGORY_API_MAP[categoryFilter];
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useGetCustomersQuery({
+    page,
+    size: PAGE_SIZE,
+    keyword: debouncedKeyword || undefined,
+    category: categoryApiValue,
+  });
+
+  const [deleteCustomer] = useDeleteCustomerMutation();
+
+  const pagedBody = data?.data;
+  const rows = useMemo(() => pagedBody?.content ?? [], [pagedBody]);
+
+  const paged = useMemo((): Pick<
+    PagedResponse<Customer>,
+    "page" | "size" | "total_elements" | "total_pages"
+  > | null => {
+    if (!pagedBody || typeof pagedBody.page !== "number" || typeof pagedBody.total_pages !== "number") return null;
+    return {
+      page: pagedBody.page,
+      size: pagedBody.size,
+      total_elements: pagedBody.total_elements,
+      total_pages: pagedBody.total_pages,
+    };
+  }, [pagedBody]);
+
+  const canGoPrev = page > 0;
+  const canGoNext = paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
+
+  const hasAnyFilter = searchInput.trim().length > 0 || categoryFilter !== ALL_CATEGORY;
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteCustomer(deleteTarget.id).unwrap();
+      toast.success(`Đã xóa khách hàng "${deleteTarget.name}"`);
+    } catch (err) {
+      toast.error(apiErrMessage(err));
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -37,8 +105,8 @@ export default function CustomersPage() {
         actions={
           <Button
             render={<Link href="/customers/new" />}
-            nativeButton={false} 
-            size="sm" 
+            nativeButton={false}
+            size="sm"
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             <UserPlus className="mr-2 h-4 w-4" />
@@ -49,15 +117,14 @@ export default function CustomersPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Tổng khách hàng", value: "1,248", change: "+12%" },
-          { label: "Khách mới tháng này", value: "48", change: "+5%" },
-          { label: "Khách hàng VIP", value: "85", change: "+2%" },
-          { label: "Tỷ lệ quay lại", value: "42%", change: "+3%" },
+          { label: "Tổng khách hàng", value: "—" },
+          { label: "Khách mới tháng này", value: "—" },
+          { label: "Khách hàng VIP", value: "—" },
+          { label: "Tỷ lệ quay lại", value: "—" },
         ].map((stat, i) => (
           <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{stat.label}</span>
-              <span className="text-[10px] font-bold text-emerald-500">{stat.change}</span>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</div>
           </div>
@@ -66,104 +133,192 @@ export default function CustomersPage() {
 
       <SearchToolbar
         placeholder="Tìm theo tên, email, số điện thoại..."
-        value={query}
-        onValueChange={setQuery}
+        value={searchInput}
+        onValueChange={setSearchInput}
         filters={
-            <FilterGroup
-              hasAnyFilter={hasAnyFilter}
-              onClear={() => {
-                setQuery("");
-                setCategory("Tất cả phân loại");
-              }}
-              filters={[
-                {
-                  label: "phân loại",
-                  placeholder: "Phân loại",
-                  value: category,
-                  onChange: setCategory,
-                  options: ["Cá nhân", "Nhà buôn"],
-                  width: "sm:w-[180px]"
-                }
-              ]}
-            />
+          <FilterGroup
+            hasAnyFilter={hasAnyFilter}
+            onClear={() => {
+              setSearchInput("");
+              setCategoryFilter(ALL_CATEGORY);
+              setPage(0);
+            }}
+            filters={[
+              {
+                label: "phân loại",
+                placeholder: "Phân loại",
+                value: categoryFilter,
+                onChange: (v) => {
+                  setCategoryFilter(v);
+                  setPage(0);
+                },
+                options: ["Cá nhân", "Nhà buôn"],
+                width: "sm:w-[180px]",
+              },
+            ]}
+          />
         }
       />
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+        {isFetching && !isLoading ? (
+          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            Đang cập nhật dữ liệu…
+          </p>
+        ) : null}
+
         <div className="divide-y divide-slate-50 dark:divide-slate-800">
-          {[
-            { name: "Nguyen Van A", email: "a.nguyen@example.com", phone: "0901234567", category: "Nhà buôn" },
-            { name: "Nguyen Van B", email: "b.nguyen@example.com", phone: "0907654321", category: "Cá nhân" },
-            { name: "Nguyen Van C", email: "c.nguyen@example.com", phone: "0902223334", category: "Nhà buôn" },
-          ].map((user, i) => (
-            <div key={i} className="flex items-center justify-between p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800 transition-colors">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold">{user.name[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">{user.name}</span>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                    <Mail className="h-3 w-3" />
-                    <span>{user.email}</span>
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-44" />
                   </div>
                 </div>
-              </div>
-              <div className="hidden md:flex items-center gap-8">
-                <div className="flex flex-col items-start min-w-30">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số điện thoại</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{user.phone}</span>
+                <div className="hidden md:flex items-center gap-8">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
-                <div className="flex flex-col items-start min-w-30">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phân loại</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{user.category}</span>
+                <Skeleton className="h-8 w-8 rounded-lg" />
+              </div>
+            ))
+          ) : isError ? (
+            <EmptyState
+              icon={AlertCircle}
+              title="Không tải được danh sách"
+              description={apiErrMessage(error)}
+              action={
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Thử lại
+                </Button>
+              }
+              className="py-10"
+            />
+          ) : rows.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Chưa có khách hàng"
+              description={
+                hasAnyFilter
+                  ? "Không có kết quả khớp tìm kiếm. Thử từ khóa khác."
+                  : "Thêm khách hàng mới hoặc kiểm tra dữ liệu trên server."
+              }
+              className="py-10"
+            />
+          ) : (
+            rows.map((customer: Customer) => (
+              <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800 transition-colors">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold">{customer.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{customer.name}</span>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <Mail className="h-3 w-3" />
+                      <span>{customer.email ?? "—"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden md:flex items-center gap-8">
+                  <div className="flex flex-col items-start min-w-30">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số điện thoại</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{customer.phone ?? "—"}</span>
+                  </div>
+                  <div className="flex flex-col items-start min-w-30">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phân loại</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{customerCategoryLabel(customer.category)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                      <DropdownMenuItem
+                        className="rounded-lg"
+                        render={<Link href={`/customers/${customer.id}/edit`} />}
+                      >
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Sửa hồ sơ
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="rounded-lg text-rose-600 focus:text-rose-600"
+                        onClick={() => {
+                          setDeleteTarget({ id: customer.id, name: customer.name });
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Xóa khách hàng
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                    <DropdownMenuItem 
-                      className="rounded-lg"
-                      render={<Link href={`/customers/${user.email}/edit`} />}
-                    >
-                      <Edit2 className="mr-2 h-4 w-4" />
-                      Sửa hồ sơ
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="rounded-lg text-rose-600 focus:text-rose-600"
-                      onClick={() => {
-                        setItemToDelete(user.name);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Xóa khách hàng
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 text-center">
-          <Button variant="link" className="text-xs text-indigo-600">Xem tất cả khách hàng</Button>
+        <div className="border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              {isLoading ? (
+                <span>Đang tải danh sách…</span>
+              ) : isError ? (
+                <span className="text-rose-600 dark:text-rose-400">Không tải được dữ liệu trang này.</span>
+              ) : paged ? (
+                <span>
+                  Hiển thị {rows.length}/{paged.total_elements} khách hàng
+                  {paged.total_pages > 1
+                    ? ` · Trang ${paged.page + 1}/${paged.total_pages} (size ${paged.size})`
+                    : ""}
+                </span>
+              ) : (
+                <span>{rows.length} bản ghi</span>
+              )}
+            </div>
+            {paged && paged.total_pages > 1 ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canGoPrev || isFetching}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Trước
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canGoNext || isFetching}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Sau
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
+
       <DeleteConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={() => {
-          console.log("Deleted", itemToDelete);
-        }}
-        itemName={itemToDelete}
+        onConfirm={handleDelete}
+        itemName={deleteTarget?.name ?? ""}
         title="Xóa hồ sơ khách hàng"
         description="Xóa khách hàng sẽ gỡ bỏ lịch sử giao dịch liên quan. Hãy cân nhắc kỹ."
       />

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { CornerDownRight } from "lucide-react";
 
-import type { Category } from "@/store/services/category.service";
+import type { Category } from "@/types/category";
 import { SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
