@@ -71,6 +71,9 @@ const mainItems: MenuItem[] = [
     children: [
       { label: "Danh sách phiếu nhập", href: "/inbound" },
       { label: "Tạo phiếu nhập", href: "/inbound/new" },
+      { label: "Đơn nhập hàng (PO)", href: "/purchase-orders" },
+      { label: "Tạo đơn nhập", href: "/purchase-orders/new" },
+      { label: "Putaway", href: "/putaway" },
     ],
   },
 ];
