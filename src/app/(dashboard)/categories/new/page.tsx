@@ -1,8 +1,12 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { ArrowLeft, Save, Tag } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,22 +20,28 @@ import {
 } from "@/components/ui/select";
 import { useGetCategoriesQuery, useCreateCategoryMutation } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import { apiErrMessage } from "@/types/api";
 
-type CategoryFormValues = {
-  name: string;
-  parentId: string; // "" => root
-  isActive: boolean;
-};
-
-type CategoryFormErrors = Partial<Record<keyof CategoryFormValues, string>>;
+const categorySchema = z.object({
+  name: z.string().trim().min(1, "Tên nhóm hàng là bắt buộc."),
+  parentId: z.string(),
+  isActive: z.boolean(),
+});
+type CategoryFormData = z.infer<typeof categorySchema>;
 
 export default function NewCategoryPage() {
-  const [values, setValues] = useState<CategoryFormValues>({
-    name: "",
-    parentId: "",
-    isActive: true,
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CategoryFormData>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: { name: "", parentId: "", isActive: true },
   });
-  const [errors, setErrors] = useState<CategoryFormErrors>({});
+
   const [submitMessage, setSubmitMessage] = useState("");
 
   const {
@@ -40,14 +50,15 @@ export default function NewCategoryPage() {
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
-  const categories = categoriesData?.data ?? [];
+  const categories = categoriesData?.data?.content ?? [];
 
   const categoriesById = useMemo(() => {
     return new Map(categories.map((c) => [c.id, c] as const));
   }, [categories]);
 
-  const parentCategory = values.parentId
-    ? categoriesById.get(values.parentId) ?? null
+  const watchedParentId = watch("parentId");
+  const parentCategory = watchedParentId
+    ? categoriesById.get(watchedParentId) ?? null
     : null;
 
   const computedLevel = useMemo(() => {
@@ -57,46 +68,28 @@ export default function NewCategoryPage() {
 
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
 
+  const watchedName = watch("name");
   const isSaveDisabled = useMemo(() => {
-    return isCreating || !values.name.trim();
-  }, [isCreating, values.name]);
+    return isCreating || !watchedName.trim();
+  }, [isCreating, watchedName]);
 
-  const validate = (form: CategoryFormValues): CategoryFormErrors => {
-    const nextErrors: CategoryFormErrors = {};
-    if (!form.name.trim()) nextErrors.name = "Tên nhóm hàng là bắt buộc.";
-    return nextErrors;
-  };
-
-  const updateValue = <K extends keyof CategoryFormValues>(
-    key: K,
-    value: CategoryFormValues[K],
-  ) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onValid = async (data: CategoryFormData) => {
     setSubmitMessage("");
-
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
 
     try {
       await createCategory({
-        name: values.name.trim(),
-        parentId: values.parentId ? values.parentId : null,
-        isActive: values.isActive,
+        name: data.name.trim(),
+        parentId: data.parentId ? data.parentId : null,
+        isActive: data.isActive,
       }).unwrap();
 
       setSubmitMessage("Tạo nhóm hàng thành công.");
-      setValues({ name: "", parentId: "", isActive: true });
+      toast.success("Đã tạo nhóm hàng");
+      reset();
     } catch (submitError) {
-      setSubmitMessage(
-        (submitError as { data?: { message?: string } })?.data?.message ??
-          "Không thể tạo nhóm hàng. Vui lòng thử lại.",
-      );
+      const msg = apiErrMessage(submitError, "Không thể tạo nhóm hàng. Vui lòng thử lại.");
+      setSubmitMessage(msg);
+      toast.error(msg);
     }
   };
 
@@ -126,7 +119,7 @@ export default function NewCategoryPage() {
 
       <form
         className="grid grid-cols-1 gap-6 md:grid-cols-3"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onValid)}
         noValidate
       >
         <div className="md:col-span-2 space-y-6">
@@ -149,13 +142,12 @@ export default function NewCategoryPage() {
                 <Input
                   id="name"
                   placeholder="Điện thoại, Tivi, Tủ Lạnh..."
-                  value={values.name}
-                  onChange={(event) => updateValue("name", event.target.value)}
+                  {...register("name")}
                   aria-invalid={Boolean(errors.name)}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.name ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.name}</p>
+                {errors.name?.message ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.name.message}</p>
                 ) : null}
               </div>
 
@@ -167,50 +159,54 @@ export default function NewCategoryPage() {
                   >
                     Nhóm / loại cha
                   </label>
-                  <Select
-                    value={values.parentId}
-                    onValueChange={(v) =>
-                      updateValue("parentId", (v ?? "") as string)
-                    }
-                  >
-                    <SelectTrigger
-                      id="parentId"
-                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoadingCategories
-                            ? "Đang tải danh sách nhóm..."
-                            : "Chọn nhóm cha hoặc để gốc"
-                        }
+                  <Controller
+                    name="parentId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        {(val) => {
-                          if (val === "" || val == null) {
-                            return "Nhóm gốc (không thuộc nhóm cha)";
-                          }
-                          const c = categoriesById.get(val as string);
-                          return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {categoriesError ? (
-                        <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được nhóm hàng.
-                          <button
-                            type="button"
-                            onClick={() => refetchCategories()}
-                            className="ml-1 underline"
+                        <SelectTrigger
+                          id="parentId"
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingCategories
+                                ? "Đang tải danh sách nhóm..."
+                                : "Chọn nhóm cha hoặc để gốc"
+                            }
                           >
-                            Thử lại
-                          </button>
-                        </div>
-                      ) : null}
+                            {(val) => {
+                              if (val === "" || val == null) {
+                                return "Nhóm gốc (không thuộc nhóm cha)";
+                              }
+                              const c = categoriesById.get(val as string);
+                              return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {categoriesError ? (
+                            <div className="px-2 py-1.5 text-xs text-rose-500">
+                              Không tải được nhóm hàng.
+                              <button
+                                type="button"
+                                onClick={() => refetchCategories()}
+                                className="ml-1 underline"
+                              >
+                                Thử lại
+                              </button>
+                            </div>
+                          ) : null}
 
-                      <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
-                      <CategoryTreeSelectItems categories={categories} />
-                    </SelectContent>
-                  </Select>
+                          <SelectItem value="">Nhóm gốc (không thuộc nhóm cha)</SelectItem>
+                          <CategoryTreeSelectItems categories={categories} />
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -264,23 +260,29 @@ export default function NewCategoryPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex h-10 items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4">
-                <span className="text-sm font-bold text-emerald-800">Trạng thái</span>
-                <button
-                  type="button"
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition ${
-                    values.isActive ? "bg-emerald-500" : "bg-slate-300"
-                  }`}
-                  onClick={() => updateValue("isActive", !values.isActive)}
-                  aria-label="Bật tắt hiển thị phân loại"
-                >
-                  <div
-                    className={`absolute left-1 h-3.5 w-3.5 rounded-full bg-white shadow transition ${
-                      values.isActive ? "translate-x-3.5" : ""
-                    }`}
-                  />
-                </button>
-              </div>
+              <Controller
+                name="isActive"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex h-10 items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4">
+                    <span className="text-sm font-bold text-emerald-800">Trạng thái</span>
+                    <button
+                      type="button"
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition ${
+                        field.value ? "bg-emerald-500" : "bg-slate-300"
+                      }`}
+                      onClick={() => field.onChange(!field.value)}
+                      aria-label="Bật tắt hiển thị phân loại"
+                    >
+                      <div
+                        className={`absolute left-1 h-3.5 w-3.5 rounded-full bg-white shadow transition ${
+                          field.value ? "translate-x-3.5" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+              />
             </div>
           </div>
 
@@ -310,4 +312,3 @@ export default function NewCategoryPage() {
     </div>
   );
 }
-

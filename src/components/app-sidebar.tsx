@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -71,6 +71,9 @@ const mainItems: MenuItem[] = [
     children: [
       { label: "Danh sách phiếu nhập", href: "/inbound" },
       { label: "Tạo phiếu nhập", href: "/inbound/new" },
+      { label: "Đơn nhập hàng (PO)", href: "/purchase-orders" },
+      { label: "Tạo đơn nhập", href: "/purchase-orders/new" },
+      { label: "Putaway", href: "/putaway" },
     ],
   },
 ];
@@ -209,7 +212,7 @@ export function AppSidebar() {
   );
 }
 
-function SidebarItem({
+const SidebarItem = memo(function SidebarItem({
   item,
   pathname,
   expandedHref,
@@ -229,8 +232,7 @@ function SidebarItem({
     if (active && hasChildren) {
       setExpandedHref(item.href);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, hasChildren, setExpandedHref, item.href]);
 
   const showChildren = hasChildren && expanded;
 
@@ -322,4 +324,4 @@ function SidebarItem({
       )}
     </SidebarMenuItem>
   );
-}
+});

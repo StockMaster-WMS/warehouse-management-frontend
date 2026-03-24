@@ -1,7 +1,11 @@
-
 import { baseApi } from "@/store/services/api";
-import { Product, UpdateProductPayload } from "@/types/product";
-import { ApiResponse, PagedResponse } from "@/types/api";
+import {
+  Product,
+  ProductImportResponse,
+  UpdateProductPayload,
+  normalizeProductImportResponse,
+} from "@/types/product";
+import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
 
 export type GetProductsParams = {
   page?: number;
@@ -38,6 +42,7 @@ const productApi = baseApi.injectEndpoints({
         method: "GET",
         params: buildProductsQueryParams(params),
       }),
+      transformResponse: (r: ApiResponse<Product[] | PagedResponse<Product>>) => normalizeApiResponsePaged(r),
       providesTags: (result) =>
         result?.data?.content?.length
           ? [
@@ -61,6 +66,28 @@ const productApi = baseApi.injectEndpoints({
         { type: "Product", id: "LIST" },
       ],
     }),
+    importProductsXlsx: builder.mutation<
+      ApiResponse<ProductImportResponse>,
+      { file: File; createdBy?: string }
+    >({
+      query: ({ file, createdBy }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const trimmed = createdBy?.trim();
+        return {
+          url: "/products/import",
+          method: "POST",
+          data: formData,
+          ...(trimmed ? { params: { createdBy: trimmed } } : {}),
+          timeout: 120_000,
+        };
+      },
+      transformResponse: (r: ApiResponse<unknown>): ApiResponse<ProductImportResponse> => ({
+        ...r,
+        data: normalizeProductImportResponse(r.data),
+      }),
+      invalidatesTags: [{ type: "Product", id: "LIST" }],
+    }),
   }),
 });
 
@@ -68,4 +95,5 @@ export const {
   useGetProductsQuery,
   useGetProductByIdQuery,
   useUpdateProductMutation,
+  useImportProductsXlsxMutation,
 } = productApi;

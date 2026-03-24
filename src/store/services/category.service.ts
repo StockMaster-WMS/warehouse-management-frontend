@@ -1,43 +1,20 @@
 import { baseApi } from "@/store/services/api";
-import type { ApiResponse } from "@/types/api";
+import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
+import type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/types/category";
 
-export interface Category {
-  id: string;
-  code: string;
-  name: string;
-  parentId?: string | null;
-  path?: string;
-  level?: number;
-  isActive?: boolean;
-  createdAt?: string;
-}
-
-export type CategoryCreatePayload = {
-  name: string;
-  parentId?: string | null;
-  isActive?: boolean;
-};
-
-export type CategoryUpdatePayload = {
-  code: string;
-  name: string;
-  parentId?: string | null;
-  path?: string;
-  level?: number;
-  isActive?: boolean;
-};
+export type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/types/category";
 
 const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getCategories: builder.query<ApiResponse<Category[]>, void>({
+    getCategories: builder.query<ApiResponse<PagedResponse<Category>>, void>({
       query: () => ({ url: "/categories", method: "GET" }),
-      providesTags: (result) =>
-        result?.data?.length
-          ? [
-              ...result.data.map((c) => ({ type: "Category" as const, id: c.id })),
-              { type: "Category" as const, id: "LIST" },
-            ]
-          : [{ type: "Category" as const, id: "LIST" }],
+      transformResponse: (r: ApiResponse<Category[] | PagedResponse<Category>>) => normalizeApiResponsePaged(r),
+      providesTags: (result) => {
+        const rows = result?.data?.content ?? [];
+        return rows.length
+          ? [...rows.map((c) => ({ type: "Category" as const, id: c.id })), { type: "Category" as const, id: "LIST" }]
+          : [{ type: "Category" as const, id: "LIST" }];
+      },
     }),
     getCategoryById: builder.query<ApiResponse<Category>, string>({
       query: (id) => ({ url: `/categories/${id}`, method: "GET" }),

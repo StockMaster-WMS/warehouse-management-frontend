@@ -21,7 +21,7 @@ import {
   useGetCategoriesQuery,
   useGetCategoryByIdQuery,
 } from "@/store/services/category.service";
-import type { Category } from "@/store/services/category.service";
+import type { Category } from "@/types/category";
 
 export default function CategoryDetailPage({
   params: paramsPromise,
@@ -33,7 +33,7 @@ export default function CategoryDetailPage({
   const { data, error, isLoading, refetch } = useGetCategoryByIdQuery(id);
   const { data: allCategoriesData } = useGetCategoriesQuery();
   const category = data?.data;
-  const allCategories = allCategoriesData?.data ?? [];
+  const allCategories = allCategoriesData?.data?.content ?? [];
 
   const categoriesById = useMemo(
     () => new Map(allCategories.map((c) => [c.id, c] as const)),

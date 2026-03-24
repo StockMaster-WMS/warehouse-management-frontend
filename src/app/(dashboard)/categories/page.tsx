@@ -32,6 +32,7 @@ import {
   DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { apiErrMessage } from "@/types/api";
 
 export default function CategoriesPage() {
   const [query, setQuery] = useState("");
@@ -39,7 +40,7 @@ export default function CategoriesPage() {
   const [itemToDelete, setItemToDelete] = useState("");
   const { data, error, isLoading, isFetching, refetch } = useGetCategoriesQuery();
 
-  const categories = useMemo(() => data?.data ?? [], [data]);
+  const categories = useMemo(() => data?.data?.content ?? [], [data]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
@@ -245,10 +246,7 @@ export default function CategoriesPage() {
               <EmptyState
                 icon={Tag}
                 title="Không thể tải nhóm hàng"
-                description={
-                  (error as { data?: { message?: string } })?.data?.message ??
-                  "Đã xảy ra lỗi khi tải cây phân loại."
-                }
+                description={apiErrMessage(error, "Đã xảy ra lỗi khi tải cây phân loại.")}
                 action={
                   <Button variant="outline" size="sm" onClick={() => refetch()}>
                     Thử lại

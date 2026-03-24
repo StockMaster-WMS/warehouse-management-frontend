@@ -13,6 +13,8 @@ export const PRODUCT_IMPORT_TEMPLATE_HEADERS = [
   "name",
   "barcodeEan13",
   "categoryId",
+  "categoryCode",
+  "supplierCode",
   "baseUnit",
   "weightKg",
   "lengthCm",
@@ -44,12 +46,18 @@ export const PRODUCT_XLSX_SHEET_NAME = "SanPham";
 
 /** Dùng với `ImportExportXlsxMenu` / `buildImportPreviewFromXlsx(buf, PRODUCT_XLSX_IMPORT_CONFIG)`. */
 export const PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
-  expectedHeaders: PRODUCT_IMPORT_TEMPLATE_HEADERS,
-  requiredRowFields: ["name", "categoryId", "baseUnit"],
+  expectedHeaders: PRODUCT_IMPORT_TEMPLATE_HEADERS.filter(
+    (h) => h !== "categoryId" && h !== "categoryCode",
+  ),
+  requiredRowFields: ["name", "baseUnit"],
+  requireAnyHeaderInEachGroup: [["categoryId", "categoryCode"]],
+  requireAnyValueInEachRowGroup: [["categoryId", "categoryCode"]],
   fieldLabels: {
     name: "tên sản phẩm",
     barcodeEan13: "mã vạch (EAN/UPC)",
-    categoryId: "mã nhóm hàng",
+    categoryId: "UUID danh mục",
+    categoryCode: "mã danh mục (DM-…)",
+    supplierCode: "mã nhà cung cấp",
     baseUnit: "đơn vị tính",
     weightKg: "khối lượng (kg)",
     lengthCm: "chiều dài (cm)",
@@ -88,6 +96,8 @@ export function getProductImportTemplateAoA(): AoA {
     "Sản phẩm mẫu (xóa dòng này hoặc sửa)",
     "0123456789012",
     "thay-bang-uuid-nhom-hang",
+    "",
+    "",
     "cai",
     "0.5",
     "10",

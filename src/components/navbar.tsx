@@ -39,6 +39,8 @@ function toTitle(segment: string): string {
     categories: "Nhóm / loại hàng",
     orders: "Đơn hàng & giao nhận",
     inbound: "Nhập hàng",
+    "purchase-orders": "Đơn nhập hàng",
+    putaway: "Putaway",
     customers: "Khách hàng",
     suppliers: "Nhà cung cấp",
     history: "Nhật ký hoạt động",

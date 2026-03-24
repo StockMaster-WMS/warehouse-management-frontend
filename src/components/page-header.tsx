@@ -4,6 +4,8 @@ type PageHeaderProps = {
   title: string;
   description: string;
   className?: string;
+  /** Extra classes for the actions row (e.g. w-full justify-end on mobile). */
+  actionsClassName?: string;
   actions?: React.ReactNode;
 };
 
@@ -11,6 +13,7 @@ export function PageHeader({
   title,
   description,
   actions,
+  actionsClassName,
   className,
 }: PageHeaderProps) {
   return (
@@ -27,7 +30,7 @@ export function PageHeader({
         <p className="text-sm font-medium text-slate-500">{description}</p>
       </div>
       {actions ? (
-        <div className="flex items-center gap-2">{actions}</div>
+        <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div>
       ) : null}
     </div>
   );

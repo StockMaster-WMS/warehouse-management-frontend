@@ -1,313 +1,419 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   ArrowLeft,
   Save,
-  Plus,
-  Search,
-  Building2,
-  Calendar,
-  PackagePlus,
-  Trash2,
-  Info,
-  Truck,
   FileUp,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { Warehouse as WarehouseType } from "@/types/warehouse";
+import type { Product } from "@/types/product";
+import {
+  useGetProductsForPoQuery,
+  useGetWarehousesForPoQuery,
+} from "@/store/services/purchase-order.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
+import { getSupplierDisplayName } from "@/types/supplier";
+import type { InboundLine, FieldErrors, LineFormErrors } from "@/types/inbound";
+import { InboundGeneralForm } from "@/components/features/InboundGeneralForm";
+import { InboundLinesTable } from "@/components/features/InboundLinesTable";
+
+function todayIsoDate() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseDecimal(str: string) {
+  const n = Number(String(str).replace(",", ".").trim());
+  return Number.isFinite(n) ? n : NaN;
+}
 
 export default function NewInboundPage() {
+  const [supplierId, setSupplierId] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [inboundDate, setInboundDate] = useState(todayIsoDate);
+  const [note, setNote] = useState("");
+  const [transportMode, setTransportMode] = useState("road");
+
+  const [lines, setLines] = useState<InboundLine[]>([]);
+  const [lineProductId, setLineProductId] = useState("");
+  const [lineQtyStr, setLineQtyStr] = useState("1");
+  const [linePriceStr, setLinePriceStr] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim());
+
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [lineFormErrors, setLineFormErrors] = useState<LineFormErrors>({});
+  const [rowErrors, setRowErrors] = useState<Record<string, { qty?: string; price?: string }>>({});
+
+  const [removeTarget, setRemoveTarget] = useState<InboundLine | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+
+  const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } =
+    useGetSuppliersQuery({
+      page: 0,
+      size: 50,
+      sort: "createdAt",
+      sortDir: "desc",
+    });
+  const { data: warehousesRes, isError: warehousesErr, isFetching: warehousesLoading } =
+    useGetWarehousesForPoQuery({});
+  const {
+    data: productsRes,
+    isError: productsErr,
+    isFetching: productsLoading,
+  } = useGetProductsForPoQuery({
+    ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
+  });
+
+  const suppliers = useMemo(
+    () =>
+      (suppliersRes?.data?.content ?? []).map((s) => ({
+        id: s.id,
+        name: getSupplierDisplayName(s),
+      })),
+    [suppliersRes]
+  );
+
+  const supplierOptions = useMemo(
+    () => suppliers.map((s) => ({ value: String(s.id), label: s.name })),
+    [suppliers]
+  );
+
+  const warehouses = useMemo(
+    () =>
+      (warehousesRes?.data?.content ?? []).flatMap((raw) => {
+        const w = raw as Partial<WarehouseType>;
+        if (!w.id || !w.name) return [];
+        return [{ id: String(w.id), name: String(w.name) }];
+      }),
+    [warehousesRes]
+  );
+
+  const selectedWarehouseName = useMemo(() => {
+    if (!warehouseId) return undefined;
+    return warehouses.find((w) => String(w.id) === String(warehouseId))?.name;
+  }, [warehouseId, warehouses]);
+
+  const transportLabel =
+    transportMode === "sea" ? "Đường biển" : transportMode === "air" ? "Hàng không" : "Đường bộ";
+
+  const products = useMemo(
+    () =>
+      (productsRes?.data?.content ?? []).map((p: Product) => ({
+        id: String(p.id),
+        sku: p.sku,
+        name: p.name,
+      })),
+    [productsRes]
+  );
+
+  const productOptions = useMemo(
+    () =>
+      products.map((p) => ({
+        value: p.id,
+        label: p.name,
+        hint: p.sku,
+      })),
+    [products]
+  );
+
+  const selectedLineProduct = useMemo(
+    () => products.find((p) => p.id === lineProductId),
+    [products, lineProductId]
+  );
+
+  const totals = useMemo(() => {
+    let qtySum = 0;
+    let moneySum = 0;
+    let hasPrice = false;
+    for (const row of lines) {
+      const q = parseDecimal(row.qtyStr);
+      if (q > 0) qtySum += q;
+      const p = parseDecimal(row.unitPriceStr);
+      if (row.unitPriceStr.trim() !== "" && Number.isFinite(p)) {
+        hasPrice = true;
+        if (q > 0 && p >= 0) moneySum += q * p;
+      }
+    }
+    return { lineCount: lines.length, qtySum, moneySum, hasPrice };
+  }, [lines]);
+
+  function validateHeader(): FieldErrors {
+    const e: FieldErrors = {};
+    if (!supplierId) e.supplier = "Chọn nhà cung cấp";
+    if (!warehouseId) e.warehouse = "Chọn kho nhận";
+    if (!inboundDate) e.date = "Chọn ngày nhập";
+    if (lines.length === 0) e.lines = "Thêm ít nhất một dòng hàng";
+    return e;
+  }
+
+  function validateRow(row: InboundLine): { qty?: string; price?: string } {
+    const out: { qty?: string; price?: string } = {};
+    const q = parseDecimal(row.qtyStr);
+    if (!(q > 0) || Number.isNaN(q)) out.qty = "Số lượng phải lớn hơn 0";
+    if (row.unitPriceStr.trim() !== "") {
+      const p = parseDecimal(row.unitPriceStr);
+      if (Number.isNaN(p) || p < 0) out.price = "Đơn giá không hợp lệ";
+    }
+    return out;
+  }
+
+  function addLine(e: React.FormEvent) {
+    e.preventDefault();
+    const le: LineFormErrors = {};
+    if (!lineProductId) le.product = "Chọn sản phẩm";
+    const qty = parseDecimal(lineQtyStr);
+    if (!(qty > 0) || Number.isNaN(qty)) le.qty = "Nhập số lượng lớn hơn 0";
+    setLineFormErrors(le);
+    if (Object.keys(le).length) return;
+
+    if (lines.some((l) => l.productId === lineProductId)) {
+      toast.error("Sản phẩm đã có trong phiếu");
+      return;
+    }
+    const p = selectedLineProduct;
+    if (!p) {
+      toast.error("Không tìm thấy sản phẩm");
+      return;
+    }
+    setLines((prev) => [
+      ...prev,
+      {
+        rowId: crypto.randomUUID(),
+        productId: p.id,
+        sku: p.sku,
+        name: p.name,
+        qtyStr: String(qty),
+        unitPriceStr: linePriceStr.trim(),
+      },
+    ]);
+    setLineProductId("");
+    setLineQtyStr("1");
+    setLinePriceStr("");
+    setLineFormErrors({});
+    setFieldErrors((prev) => ({ ...prev, lines: undefined }));
+    toast.success("Đã thêm dòng");
+  }
+
+  function confirmRemoveLine() {
+    if (!removeTarget) return;
+    setLines((prev) => prev.filter((l) => l.rowId !== removeTarget.rowId));
+    setRowErrors((prev) => {
+      const next = { ...prev };
+      delete next[removeTarget.rowId];
+      return next;
+    });
+    toast.message("Đã xóa dòng", { description: "Có thể thêm lại bằng form phía trên." });
+    setRemoveTarget(null);
+  }
+
+  function updateLineQty(rowId: string, qtyStr: string) {
+    setLines((prev) => prev.map((l) => (l.rowId === rowId ? { ...l, qtyStr } : l)));
+    setRowErrors((prev) => {
+      const next = { ...prev };
+      if (next[rowId]) next[rowId] = { ...next[rowId], qty: undefined };
+      return next;
+    });
+  }
+
+  function updateLinePrice(rowId: string, unitPriceStr: string) {
+    setLines((prev) => prev.map((l) => (l.rowId === rowId ? { ...l, unitPriceStr } : l)));
+    setRowErrors((prev) => {
+      const next = { ...prev };
+      if (next[rowId]) next[rowId] = { ...next[rowId], price: undefined };
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    const headerErr = validateHeader();
+    const perRow: Record<string, { qty?: string; price?: string }> = {};
+    for (const row of lines) {
+      const re = validateRow(row);
+      if (re.qty || re.price) perRow[row.rowId] = re;
+    }
+    setFieldErrors(headerErr);
+    setRowErrors(perRow);
+
+    if (Object.keys(headerErr).length || Object.keys(perRow).length) {
+      toast.error("Kiểm tra lại thông tin", {
+        description: "Các ô chưa đúng được đánh dấu bên dưới.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await new Promise((r) => window.setTimeout(r, 500));
+      toast.success("Đã lưu phiếu", {
+        description: "Dữ liệu đã ghi nhận trên form. Kết nối máy chủ sẽ bật khi có API.",
+      });
+    } catch {
+      toast.error("Không lưu được", { description: "Thử lại sau giây lát." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const saveDisabled = isSubmitting || suppliersErr || warehousesErr;
+
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="flex min-h-[calc(100svh-10rem)] flex-col gap-8 pb-28">
       <PageHeader
         title="Tạo phiếu nhập hàng"
-        description="Khởi tạo chứng từ nhập kho và quản lý danh sách mặt hàng thực nhập."
+        description="Điền thông tin chung, thêm từng dòng hàng rồi bấm Lưu phiếu."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               render={<Link href="/inbound" />}
               nativeButton={false}
               variant="ghost"
               size="icon-sm"
-              className="rounded-full hover:bg-slate-100"
+              className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="Quay lại danh sách"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+              className="border-slate-200 dark:border-slate-700"
+              disabled
+              title="Tính năng đang phát triển"
             >
               <FileUp className="mr-2 h-4 w-4" />
-              Nhập từ File (Excel/CSV)
+              Nhập từ file
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Thông tin chung */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Info className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin chứng từ
-              </h3>
-            </div>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="inbound-code"
-                    className="text-xs font-bold text-slate-500 uppercase tracking-wider"
-                  >
-                    Mã phiếu nhập <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    id="inbound-code"
-                    placeholder="Hệ thống tự tạo nếu để trống..."
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="inbound-date"
-                    className="text-xs font-bold text-slate-500 uppercase tracking-wider"
-                  >
-                    Ngày nhập kho <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      id="inbound-date"
-                      type="date"
-                      className="pl-10 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                    />
-                  </div>
-                </div>
-              </div>
+      <InboundGeneralForm
+        supplierId={supplierId}
+        setSupplierId={setSupplierId}
+        warehouseId={warehouseId}
+        setWarehouseId={setWarehouseId}
+        inboundDate={inboundDate}
+        setInboundDate={setInboundDate}
+        note={note}
+        setNote={setNote}
+        transportMode={transportMode}
+        setTransportMode={setTransportMode}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+        supplierOptions={supplierOptions}
+        warehouses={warehouses}
+        selectedWarehouseName={selectedWarehouseName}
+        suppliersErr={suppliersErr}
+        suppliersLoading={suppliersLoading}
+        warehousesErr={warehousesErr}
+        warehousesLoading={warehousesLoading}
+        transportLabel={transportLabel}
+      />
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Nhà cung cấp <span className="text-rose-500">*</span>
-                  </label>
-                  <Select>
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30 text-left h-9">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Building2 className="h-4 w-4" />
-                        <SelectValue placeholder="Chọn nhà cung cấp..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apple">
-                        Apple Asia Distribution
-                      </SelectItem>
-                      <SelectItem value="samsung">
-                        Samsung Electronics VN
-                      </SelectItem>
-                      <SelectItem value="logitech">Logitech Global</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Kho hàng nhận <span className="text-rose-500">*</span>
-                  </label>
-                  <Select defaultValue="main">
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30 h-9">
-                      <SelectValue placeholder="Chọn kho..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="main">Kho tổng miền Nam</SelectItem>
-                      <SelectItem value="north">Cơ sở Hà Nội</SelectItem>
-                      <SelectItem value="cold">Kho lạnh - Zone C</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+      <InboundLinesTable
+        lines={lines}
+        onAddLine={addLine}
+        lineProductId={lineProductId}
+        setLineProductId={setLineProductId}
+        lineQtyStr={lineQtyStr}
+        setLineQtyStr={setLineQtyStr}
+        linePriceStr={linePriceStr}
+        setLinePriceStr={setLinePriceStr}
+        lineFormErrors={lineFormErrors}
+        setLineFormErrors={setLineFormErrors}
+        rowErrors={rowErrors}
+        updateLineQty={updateLineQty}
+        updateLinePrice={updateLinePrice}
+        setRemoveTarget={setRemoveTarget}
+        productOptions={productOptions}
+        selectedLineProduct={selectedLineProduct}
+        productsErr={productsErr}
+        productsLoading={productsLoading}
+        productSearch={productSearch}
+        setProductSearch={setProductSearch}
+        totals={totals}
+        fieldErrors={fieldErrors}
+      />
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="inbound-note"
-                  className="text-xs font-bold text-slate-500 uppercase tracking-wider"
-                >
-                  Ghi chú
-                </label>
-                <Input
-                  id="inbound-note"
-                  placeholder="Nhập ghi chú cho chứng từ này (nếu có)..."
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Chọn sản phẩm */}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-            <div className="flex flex-col gap-4 border-b border-slate-100 p-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <PackagePlus className="h-4 w-4 text-indigo-600" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  Danh sách sản phẩm
-                </h3>
-              </div>
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  placeholder="Tìm SKU hoặc tên sản phẩm để thêm..."
-                  className="pl-10 h-9 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="min-h-62.5 bg-slate-50/30 dark:bg-slate-900/50">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
-                      <th className="p-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Sản phẩm
-                      </th>
-                      <th className="p-4 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 w-32">
-                        Số lượng nhập
-                      </th>
-                      <th className="p-4 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 w-32">
-                        Đơn giá
-                      </th>
-                      <th className="p-4 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-slate-50 dark:border-slate-800">
-                      <td className="p-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            iPhone 15 Pro Max
-                          </span>
-                          <span className="text-[10px] font-medium text-slate-500">
-                            SKU: IPH15-BLK
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-center">
-                        <Input
-                          id="inbound-item-qty-1"
-                          type="number"
-                          defaultValue="1"
-                          className="h-8 text-center bg-white border-slate-200"
-                        />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Input
-                          id="inbound-item-price-1"
-                          type="text"
-                          placeholder="0 ₫"
-                          className="h-8 text-right bg-white border-slate-200"
-                        />
-                      </td>
-                      <td className="p-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className="text-rose-400 hover:text-rose-600 hover:bg-rose-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="p-8 flex flex-col items-center justify-center text-center opacity-40">
-                <Plus className="h-8 w-8 mb-2 text-slate-300" />
-                <p className="text-sm font-medium text-slate-400 italic">
-                  Nhập SKU hoặc tìm kiếm để thêm sản phẩm vào phiếu
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar chốt phiếu */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Truck className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Vận tải & Kho
-              </h3>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Kho đích
-                </label>
-                <Select defaultValue="main">
-                  <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                    <SelectValue placeholder="Chọn kho..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="main">Kho tổng miền Nam</SelectItem>
-                    <SelectItem value="north">Cơ sở Hà Nội</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Hình thức vận chuyển
-                </label>
-                <Select defaultValue="air">
-                  <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                    <SelectValue placeholder="Chọn hình thức..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="air">Hàng không</SelectItem>
-                    <SelectItem value="sea">Đường biển</SelectItem>
-                    <SelectItem value="road">Đường bộ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
-                  i
-                </div>
-                <p className="text-[11px] font-medium text-indigo-700 dark:text-indigo-300">
-                  Sau khi &quot;Lưu kế hoạch&quot;, phiếu sẽ ở trạng thái Chờ và có thể in
-                  Phiếu soạn hàng cho NV kho.
-                </p>
-              </div>
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none">
-                <Save className="mr-2 h-4 w-4" />
-                Lưu kế hoạch nhập
-              </Button>
-              <Button
-                render={<Link href="/inbound" />}
-                nativeButton={false}
-                variant="outline"
-                className="w-full border-slate-200 bg-white"
-              >
-                Hủy phiếu
-              </Button>
-            </div>
-          </div>
+      {/* Action bar */}
+      <div
+        className="sticky bottom-0 z-30 -mx-4 mt-auto border-t border-slate-200/90 bg-[#F8FAFC]/95 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#F8FAFC]/85 dark:border-slate-800 dark:bg-slate-950/90 lg:-mx-8 lg:px-8"
+        role="toolbar"
+        aria-label="Thao tác phiếu nhập"
+      >
+        <div className="mx-auto flex w-full max-w-8xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            render={<Link href="/inbound" />}
+            nativeButton={false}
+            variant="outline"
+            className="order-2 border-slate-200 sm:order-1 dark:border-slate-700"
+            disabled={isSubmitting}
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Quay lại / Huỷ
+          </Button>
+          <Button
+            type="button"
+            className="order-1 h-10 bg-indigo-600 px-6 hover:bg-indigo-700 sm:order-2 sm:min-w-[200px]"
+            disabled={saveDisabled}
+            onClick={handleSave}
+          >
+            {isSubmitting ? (
+              <>Đang lưu…</>
+            ) : (
+              <>
+                <Save className="mr-2 size-4" />
+                Lưu phiếu
+              </>
+            )}
+          </Button>
         </div>
       </div>
+
+      <Dialog open={Boolean(removeTarget)} onOpenChange={(o) => !o && setRemoveTarget(null)}>
+        <DialogContent className="max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Xóa dòng hàng?</DialogTitle>
+            <DialogDescription>
+              {removeTarget ? (
+                <>
+                  Sẽ bỏ <span className="font-medium text-foreground">{removeTarget.name}</span> khỏi phiếu. Thao tác
+                  này chỉ áp dụng trên form (chưa gửi máy chủ).
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setRemoveTarget(null)}>
+              Không
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmRemoveLine}>
+              Xóa dòng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

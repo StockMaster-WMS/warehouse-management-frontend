@@ -1,8 +1,12 @@
 "use client";
 
-import { FormEvent, ReactNode, use, useEffect, useMemo, useState } from "react";
+import { ReactNode, use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle, Info, Ruler, Save } from "lucide-react";
+import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -22,34 +26,33 @@ import {
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { getProductCategoryDisplayName } from "@/types/product";
+import { apiErrMessage } from "@/types/api";
 
-type ProductFormValues = {
-  barcode: string;
-  name: string;
-  category: string;
-  baseUnit: string;
-  lengthCm: string;
-  widthCm: string;
-  heightCm: string;
-  weightKg: string;
-  minStock: string;
-  status: "ACTIVE" | "INACTIVE";
-};
+const nonNegativeNumericString = z
+  .string()
+  .optional()
+  .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) >= 0), {
+    message: "Giá trị phải là số không âm.",
+  });
 
-type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
+const editProductSchema = z.object({
+  barcode: z
+    .string()
+    .regex(/^(\d{8,13})?$/, "Mã vạch phải có từ 8 đến 13 chữ số.")
+    .optional()
+    .or(z.literal("")),
+  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
+  category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
+  baseUnit: z.string().trim().min(1, "Đơn vị tính là bắt buộc."),
+  lengthCm: nonNegativeNumericString,
+  widthCm: nonNegativeNumericString,
+  heightCm: nonNegativeNumericString,
+  weightKg: nonNegativeNumericString,
+  minStock: nonNegativeNumericString,
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+});
 
-const initialValues: ProductFormValues = {
-  barcode: "",
-  name: "",
-  category: "",
-  baseUnit: "",
-  lengthCm: "",
-  widthCm: "",
-  heightCm: "",
-  weightKg: "",
-  minStock: "",
-  status: "ACTIVE",
-};
+type EditProductFormValues = z.infer<typeof editProductSchema>;
 
 export default function EditProductPage({
   params: paramsPromise,
@@ -59,12 +62,32 @@ export default function EditProductPage({
   const params = use(paramsPromise);
   const { id } = params;
 
-  const [values, setValues] = useState<ProductFormValues>(initialValues);
-  const [errors, setErrors] = useState<ProductFormErrors>({});
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<EditProductFormValues>({
+    resolver: zodResolver(editProductSchema),
+    defaultValues: {
+      barcode: "",
+      name: "",
+      category: "",
+      baseUnit: "",
+      lengthCm: "",
+      widthCm: "",
+      heightCm: "",
+      weightKg: "",
+      minStock: "",
+      status: "ACTIVE",
+    },
+  });
+
   const [submitMessage, setSubmitMessage] = useState("");
 
   const { data, error, isLoading, isFetching, refetch } = useGetProductByIdQuery(id);
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
   const {
     data: categoryData,
     isLoading: isLoadingCategories,
@@ -75,7 +98,7 @@ export default function EditProductPage({
   useEffect(() => {
     if (!data?.data) return;
     const p = data.data;
-    setValues({
+    reset({
       barcode: p.barcodeEan13 ?? "",
       name: p.name ?? "",
       category: p.categoryId ?? "",
@@ -87,53 +110,10 @@ export default function EditProductPage({
       minStock: p.minStockQty != null ? String(p.minStockQty) : "",
       status: p.status ?? "ACTIVE",
     });
-  }, [data]);
+  }, [data, reset]);
 
-  const isSaveDisabled = useMemo(
-    () =>
-      isUpdating ||
-      isLoading ||
-      !values.name.trim() ||
-      !values.category.trim() ||
-      !values.baseUnit.trim(),
-    [isUpdating, isLoading, values],
-  );
-
-  const validate = (form: ProductFormValues): ProductFormErrors => {
-    const nextErrors: ProductFormErrors = {};
-    if (!form.name.trim()) nextErrors.name = "Tên sản phẩm là bắt buộc.";
-    if (!form.category.trim()) nextErrors.category = "Vui lòng chọn nhóm hàng.";
-    if (!form.baseUnit.trim()) nextErrors.baseUnit = "Đơn vị tính là bắt buộc.";
-    if (form.barcode && !/^\d{8,13}$/.test(form.barcode)) {
-      nextErrors.barcode = "Mã vạch phải có từ 8 đến 13 chữ số.";
-    }
-
-    (["lengthCm", "widthCm", "heightCm", "weightKg", "minStock"] as const).forEach(
-      (field) => {
-        const raw = form[field];
-        if (!raw) return;
-        const n = Number(raw);
-        if (Number.isNaN(n) || n < 0) {
-          nextErrors[field] = "Giá trị phải là số không âm.";
-        }
-      },
-    );
-
-    return nextErrors;
-  };
-
-  const updateValue = (key: keyof ProductFormValues, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onValid = async (formValues: EditProductFormValues) => {
     setSubmitMessage("");
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
-
     const current = data?.data;
     if (!current) return;
 
@@ -141,24 +121,28 @@ export default function EditProductPage({
       await updateProduct({
         id,
         sku: current.sku,
-        barcodeEan13: values.barcode.trim() || undefined,
-        name: values.name.trim(),
-        categoryId: values.category.trim(),
-        baseUnit: values.baseUnit.trim(),
-        weightKg: values.weightKg ? Number(values.weightKg) : null,
-        lengthCm: values.lengthCm ? Number(values.lengthCm) : null,
-        widthCm: values.widthCm ? Number(values.widthCm) : null,
-        heightCm: values.heightCm ? Number(values.heightCm) : null,
-        minStockQty: values.minStock ? Number(values.minStock) : null,
-        status: values.status,
+        barcodeEan13: formValues.barcode?.trim() || undefined,
+        name: formValues.name.trim(),
+        categoryId: formValues.category.trim(),
+        baseUnit: formValues.baseUnit.trim(),
+        weightKg: formValues.weightKg ? Number(formValues.weightKg) : null,
+        lengthCm: formValues.lengthCm ? Number(formValues.lengthCm) : null,
+        widthCm: formValues.widthCm ? Number(formValues.widthCm) : null,
+        heightCm: formValues.heightCm ? Number(formValues.heightCm) : null,
+        minStockQty: formValues.minStock ? Number(formValues.minStock) : null,
+        status: formValues.status,
       }).unwrap();
       setSubmitMessage("Cập nhật sản phẩm thành công.");
+      toast.success("Đã cập nhật sản phẩm");
     } catch (submitError) {
-      const message =
-        (submitError as { data?: { message?: string } })?.data?.message ??
-        "Không thể cập nhật sản phẩm. Vui lòng thử lại.";
+      const message = apiErrMessage(submitError, "Không thể cập nhật sản phẩm. Vui lòng thử lại.");
       setSubmitMessage(message);
+      toast.error(message);
     }
+  };
+
+  const onInvalid = () => {
+    toast.error("Kiểm tra lại thông tin đã nhập.");
   };
 
   if (isLoading) {
@@ -226,7 +210,7 @@ export default function EditProductPage({
         </div>
       ) : null}
 
-      <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit} noValidate>
+      <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit(onValid, onInvalid)} noValidate>
         <div className="space-y-6 md:col-span-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
@@ -236,84 +220,87 @@ export default function EditProductPage({
               </h3>
             </div>
             <div className="space-y-4">
-              <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode}>
+              <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode?.message}>
                 <Input
                   id="barcode"
                   placeholder="0123456789012"
-                  value={values.barcode}
-                  onChange={(e) => updateValue("barcode", e.target.value)}
-                  aria-invalid={Boolean(errors.barcode)}
+                  {...register("barcode")}
+                  aria-invalid={!!errors.barcode}
                   className="border-slate-200 bg-slate-50/50 font-mono text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Tên sản phẩm *" htmlFor="name" error={errors.name}>
+              <Field label="Tên sản phẩm *" htmlFor="name" error={errors.name?.message}>
                 <Input
                   id="name"
                   placeholder="Nhập tên đầy đủ của mặt hàng..."
-                  value={values.name}
-                  onChange={(e) => updateValue("name", e.target.value)}
-                  aria-invalid={Boolean(errors.name)}
+                  {...register("name")}
+                  aria-invalid={!!errors.name}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Nhóm hàng *" htmlFor="category" error={errors.category}>
-                  <Select
-                    value={values.category}
-                    onValueChange={(v) => updateValue("category", v ?? "")}
-                  >
-                    <SelectTrigger
-                      id="category"
-                      aria-invalid={Boolean(errors.category)}
-                      className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoadingCategories
-                            ? "Đang tải nhóm hàng..."
-                            : categoryError
-                              ? "Lỗi tải nhóm hàng"
-                              : "Chọn nhóm hàng..."
-                        }
+                <Field label="Nhóm hàng *" htmlFor="category" error={errors.category?.message}>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        {(val) => {
-                          if (!val) return null;
-                          const c = categoryData?.data?.find((x) => x.id === val);
-                          if (c) return `${c.name} (${c.code})`;
-                          if (data?.data && val === data.data.categoryId) {
-                            const n = getProductCategoryDisplayName(data.data);
-                            if (n) return `${n}`;
-                          }
-                          return "Đang tải nhóm hàng…";
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {categoryError ? (
-                        <div className="px-2 py-1.5 text-xs text-rose-500">
-                          Không tải được nhóm hàng.
-                          <button
-                            type="button"
-                            onClick={() => refetchCategories()}
-                            className="ml-1 underline"
+                        <SelectTrigger
+                          id="category"
+                          aria-invalid={!!errors.category}
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingCategories
+                                ? "Đang tải nhóm hàng..."
+                                : categoryError
+                                  ? "Lỗi tải nhóm hàng"
+                                  : "Chọn nhóm hàng..."
+                            }
                           >
-                            Thử lại
-                          </button>
-                        </div>
-                      ) : null}
-                      {categoryData?.data ? (
-                        <CategoryTreeSelectItems categories={categoryData.data} />
-                      ) : null}
-                    </SelectContent>
-                  </Select>
+                            {(val) => {
+                              if (!val) return null;
+                              const c = categoryData?.data?.content?.find((x) => x.id === val);
+                              if (c) return `${c.name} (${c.code})`;
+                              if (data?.data && val === data.data.categoryId) {
+                                const n = getProductCategoryDisplayName(data.data);
+                                if (n) return `${n}`;
+                              }
+                              return "Đang tải nhóm hàng…";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {categoryError ? (
+                            <div className="px-2 py-1.5 text-xs text-rose-500">
+                              Không tải được nhóm hàng.
+                              <button
+                                type="button"
+                                onClick={() => refetchCategories()}
+                                className="ml-1 underline"
+                              >
+                                Thử lại
+                              </button>
+                            </div>
+                          ) : null}
+                          {categoryData?.data?.content?.length ? (
+                            <CategoryTreeSelectItems categories={categoryData.data.content} />
+                          ) : null}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </Field>
-                <Field label="Đơn vị tính (ĐVT) *" htmlFor="base-unit" error={errors.baseUnit}>
+                <Field label="Đơn vị tính (ĐVT) *" htmlFor="base-unit" error={errors.baseUnit?.message}>
                   <Input
                     id="base-unit"
                     placeholder="VD: goi, thung, kg..."
-                    value={values.baseUnit}
-                    onChange={(e) => updateValue("baseUnit", e.target.value)}
-                    aria-invalid={Boolean(errors.baseUnit)}
+                    {...register("baseUnit")}
+                    aria-invalid={!!errors.baseUnit}
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
                 </Field>
@@ -329,43 +316,39 @@ export default function EditProductPage({
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Field label="Dài (cm)" htmlFor="length" error={errors.lengthCm}>
+              <Field label="Dài (cm)" htmlFor="length" error={errors.lengthCm?.message}>
                 <Input
                   id="length"
                   type="number"
                   placeholder="0"
-                  value={values.lengthCm}
-                  onChange={(e) => updateValue("lengthCm", e.target.value)}
+                  {...register("lengthCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Rộng (cm)" htmlFor="width" error={errors.widthCm}>
+              <Field label="Rộng (cm)" htmlFor="width" error={errors.widthCm?.message}>
                 <Input
                   id="width"
                   type="number"
                   placeholder="0"
-                  value={values.widthCm}
-                  onChange={(e) => updateValue("widthCm", e.target.value)}
+                  {...register("widthCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Cao (cm)" htmlFor="height" error={errors.heightCm}>
+              <Field label="Cao (cm)" htmlFor="height" error={errors.heightCm?.message}>
                 <Input
                   id="height"
                   type="number"
                   placeholder="0"
-                  value={values.heightCm}
-                  onChange={(e) => updateValue("heightCm", e.target.value)}
+                  {...register("heightCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Nặng (kg)" htmlFor="weight" error={errors.weightKg}>
+              <Field label="Nặng (kg)" htmlFor="weight" error={errors.weightKg?.message}>
                 <Input
                   id="weight"
                   type="number"
                   placeholder="0"
-                  value={values.weightKg}
-                  onChange={(e) => updateValue("weightKg", e.target.value)}
+                  {...register("weightKg")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
@@ -379,45 +362,50 @@ export default function EditProductPage({
               Trạng thái & ngưỡng
             </h3>
             <div className="space-y-4">
-              <Field label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock}>
+              <Field label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock?.message}>
                 <Input
                   id="min-stock"
                   type="number"
                   placeholder="0"
-                  value={values.minStock}
-                  onChange={(e) => updateValue("minStock", e.target.value)}
+                  {...register("minStock")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </Field>
-              <Field label="Trạng thái" htmlFor="status" error={errors.status}>
-                <Select
-                  value={values.status}
-                  onValueChange={(v) => updateValue("status", (v as "ACTIVE" | "INACTIVE") ?? "ACTIVE")}
-                >
-                  <SelectTrigger
-                    id="status"
-                    className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
-                  >
-                    <SelectValue>
-                      {(val) =>
-                        val === "INACTIVE" ? "Ngưng" : val === "ACTIVE" ? "Hoạt động" : null
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                    <SelectItem value="INACTIVE">Ngưng</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Field label="Trạng thái" htmlFor="status" error={errors.status?.message}>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger
+                        id="status"
+                        className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                      >
+                        <SelectValue>
+                          {(val) =>
+                            val === "INACTIVE" ? "Ngưng" : val === "ACTIVE" ? "Hoạt động" : null
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Hoạt động</SelectItem>
+                        <SelectItem value="INACTIVE">Ngưng</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </Field>
             </div>
           </div>
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
             <div className="flex flex-col gap-4">
-              <Button type="submit" disabled={isSaveDisabled} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70">
+              <Button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70">
                 <Save className="mr-2 h-4 w-4" />
-                {isUpdating ? "Đang lưu..." : "Lưu cập nhật"}
+                {isSubmitting ? "Đang lưu..." : "Lưu cập nhật"}
               </Button>
               <Button render={<Link href={`/products/${id}`} />} nativeButton={false} variant="outline" className="w-full border-slate-200 bg-white">
                 Hủy bỏ

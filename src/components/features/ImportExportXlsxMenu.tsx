@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import { ChevronDown, Download, FileDown, FileUp } from "lucide-react";
+import { ChevronDown, Download, FileDown, FileUp, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -47,6 +48,10 @@ export type ImportExportXlsxMenuProps = {
   templateItemLabel?: string;
   importItemLabel?: string;
   triggerClassName?: string;
+  /** Gửi file .xlsx gốc lên API (multipart `file`). */
+  onUploadToServer?: (file: File) => Promise<void>;
+  serverUploadPending?: boolean;
+  uploadToServerLabel?: string;
 };
 
 const defaultDescription = (
@@ -72,27 +77,34 @@ export function ImportExportXlsxMenu({
   templateItemLabel = "Tải mẫu nhập",
   importItemLabel = "Nhập từ .xlsx…",
   triggerClassName = "hidden sm:inline-flex border-slate-200",
+  onUploadToServer,
+  serverUploadPending = false,
+  uploadToServerLabel = "Import lên máy chủ",
 }: ImportExportXlsxMenuProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importParseError, setImportParseError] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [selectedImportFile, setSelectedImportFile] = useState<File | null>(null);
 
   const closeImportDialog = (open: boolean) => {
     setImportDialogOpen(open);
     if (!open) {
       setImportParseError(null);
       setImportPreview(null);
+      setSelectedImportFile(null);
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const rows = getExportMatrix();
-    downloadAoAAsXlsx(getExportFilename(), sheetName, rows);
+    await downloadAoAAsXlsx(getExportFilename(), sheetName, rows);
+    toast.success("Đã tải file xuất");
   };
 
-  const handleTemplate = () => {
-    downloadAoAAsXlsx(`${templateBasename}.xlsx`, sheetName, getTemplateMatrix());
+  const handleTemplate = async () => {
+    await downloadAoAAsXlsx(`${templateBasename}.xlsx`, sheetName, getTemplateMatrix());
+    toast.success("Đã tải file mẫu");
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -100,11 +112,12 @@ export function ImportExportXlsxMenu({
     event.target.value = "";
     setImportParseError(null);
     setImportPreview(null);
+    setSelectedImportFile(file ?? null);
     if (!file) return;
 
     try {
       const buf = await file.arrayBuffer();
-      const preview = buildImportPreviewFromXlsx(buf, importConfig);
+      const preview = await buildImportPreviewFromXlsx(buf, importConfig);
       if (!preview) {
         setImportParseError("File trống hoặc không đọc được sheet / tiêu đề cột.");
         setImportDialogOpen(true);
@@ -241,10 +254,35 @@ export function ImportExportXlsxMenu({
             </div>
           ) : null}
 
-          <DialogFooter className="sm:justify-end">
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" size="default" onClick={() => closeImportDialog(false)}>
               Đóng
             </Button>
+            {onUploadToServer && selectedImportFile ? (
+              <Button
+                type="button"
+                size="default"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                disabled={serverUploadPending}
+                onClick={async () => {
+                  try {
+                    await onUploadToServer(selectedImportFile);
+                    closeImportDialog(false);
+                  } catch {
+                    /* lỗi đã xử lý ở callback (toast, v.v.) */
+                  }
+                }}
+              >
+                {serverUploadPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang gửi…
+                  </>
+                ) : (
+                  uploadToServerLabel
+                )}
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
