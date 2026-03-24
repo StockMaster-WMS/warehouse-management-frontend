@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -24,8 +25,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Warehouse } from "@/types/warehouse";
+import { useGetWarehousesForPoQuery } from "@/store/services/purchase-order.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
+import { getSupplierDisplayName } from "@/types/supplier";
 
 export default function NewInboundPage() {
+  const [supplierId, setSupplierId] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [inboundDate, setInboundDate] = useState("");
+  const [note, setNote] = useState("");
+
+  const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } = useGetSuppliersQuery({
+    page: 0,
+    size: 500,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
+  const { data: warehousesRes, isError: warehousesErr, isFetching: warehousesLoading } = useGetWarehousesForPoQuery({
+    size: 500,
+  });
+
+  const suppliers = useMemo(
+    () =>
+      (suppliersRes?.data?.content ?? []).map((s) => ({
+        id: s.id,
+        name: getSupplierDisplayName(s),
+      })),
+    [suppliersRes]
+  );
+
+  const warehouses = useMemo(
+    () =>
+      (warehousesRes?.data?.content ?? []).flatMap((raw) => {
+        const w = raw as Partial<Warehouse>;
+        if (!w.id || !w.name) return [];
+        return [{ id: String(w.id), name: String(w.name) }];
+      }),
+    [warehousesRes]
+  );
+
+  const selectedSupplierName = useMemo(() => {
+    if (!supplierId) return undefined;
+    return suppliers.find((s) => String(s.id) === String(supplierId))?.name;
+  }, [supplierId, suppliers]);
+
+  const selectedWarehouseName = useMemo(() => {
+    if (!warehouseId) return undefined;
+    return warehouses.find((w) => String(w.id) === String(warehouseId))?.name;
+  }, [warehouseId, warehouses]);
+
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
@@ -78,6 +127,8 @@ export default function NewInboundPage() {
                     <Input
                       id="inbound-date"
                       type="date"
+                      value={inboundDate}
+                      onChange={(e) => setInboundDate(e.target.value)}
                       className="pl-10 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                     />
                   </div>
@@ -89,38 +140,74 @@ export default function NewInboundPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Nhà cung cấp <span className="text-rose-500">*</span>
                   </label>
-                  <Select>
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30 text-left h-9">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Building2 className="h-4 w-4" />
-                        <SelectValue placeholder="Chọn nhà cung cấp..." />
-                      </div>
+                  <Select
+                    value={supplierId}
+                    onValueChange={(v) => setSupplierId(v ?? "")}
+                    disabled={suppliersErr || suppliersLoading}
+                  >
+                    <SelectTrigger className="h-9 border-slate-200 bg-slate-50/50 text-left focus:ring-indigo-500/30">
+                      <Building2 className="size-4 shrink-0 text-slate-600" />
+                      <SelectValue
+                        placeholder={
+                          suppliersErr
+                            ? "Lỗi tải NCC"
+                            : suppliersLoading
+                              ? "Đang tải NCC…"
+                              : "Chọn nhà cung cấp…"
+                        }
+                      >
+                        {selectedSupplierName ?? null}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="apple">
-                        Apple Asia Distribution
-                      </SelectItem>
-                      <SelectItem value="samsung">
-                        Samsung Electronics VN
-                      </SelectItem>
-                      <SelectItem value="logitech">Logitech Global</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={String(s.id)} value={String(s.id)}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {suppliersErr ? (
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      Không tải được danh sách nhà cung cấp. Kiểm tra API / gateway.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Kho hàng nhận <span className="text-rose-500">*</span>
                   </label>
-                  <Select defaultValue="main">
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30 h-9">
-                      <SelectValue placeholder="Chọn kho..." />
+                  <Select
+                    value={warehouseId}
+                    onValueChange={(v) => setWarehouseId(v ?? "")}
+                    disabled={warehousesErr || warehousesLoading}
+                  >
+                    <SelectTrigger className="h-9 border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30">
+                      <SelectValue
+                        placeholder={
+                          warehousesErr
+                            ? "Lỗi tải kho"
+                            : warehousesLoading
+                              ? "Đang tải kho…"
+                              : "Chọn kho…"
+                        }
+                      >
+                        {selectedWarehouseName ?? null}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="main">Kho tổng miền Nam</SelectItem>
-                      <SelectItem value="north">Cơ sở Hà Nội</SelectItem>
-                      <SelectItem value="cold">Kho lạnh - Zone C</SelectItem>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w.id} value={String(w.id)}>
+                          {w.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {warehousesErr ? (
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      Không tải được danh sách kho. Kiểm tra API / gateway.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -133,6 +220,8 @@ export default function NewInboundPage() {
                 </label>
                 <Input
                   id="inbound-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
                   placeholder="Nhập ghi chú cho chứng từ này (nếu có)..."
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
@@ -240,13 +329,30 @@ export default function NewInboundPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Kho đích
                 </label>
-                <Select defaultValue="main">
+                <Select
+                  value={warehouseId}
+                  onValueChange={(v) => setWarehouseId(v ?? "")}
+                  disabled={warehousesErr || warehousesLoading}
+                >
                   <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                    <SelectValue placeholder="Chọn kho..." />
+                    <SelectValue
+                      placeholder={
+                        warehousesErr
+                          ? "Lỗi tải kho"
+                          : warehousesLoading
+                            ? "Đang tải kho…"
+                            : "Chọn kho…"
+                      }
+                    >
+                      {selectedWarehouseName ?? null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="main">Kho tổng miền Nam</SelectItem>
-                    <SelectItem value="north">Cơ sở Hà Nội</SelectItem>
+                    {warehouses.map((w) => (
+                      <SelectItem key={w.id} value={String(w.id)}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

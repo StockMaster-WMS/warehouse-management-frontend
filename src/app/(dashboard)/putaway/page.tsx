@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -53,7 +55,7 @@ export default function PutawayPage() {
     [poItemFilter, statusFilter]
   );
 
-  const { data, isLoading, isError, error, refetch } = useGetPutawayTasksQuery(queryArgs);
+  const { data, isLoading, isFetching, isError, error, refetch } = useGetPutawayTasksQuery(queryArgs);
 
   const tasks = data?.data?.content ?? [];
 
@@ -176,36 +178,85 @@ export default function PutawayPage() {
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Đang tải…
-          </div>
-        ) : isError ? (
-          <div className="p-6 text-sm text-rose-600">
-            Lỗi GET /api/putaway-tasks. {apiErrMessage(error)}
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-center text-slate-500">
-            <MapPin className="h-10 w-10 opacity-30" />
-            <p className="text-sm">Không có task. Thử bỏ bộ lọc hoặc nhận hàng từ đơn PO trước.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Task</TableHead>
-                  <TableHead>poItemId</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Vị trí gợi ý</TableHead>
-                  <TableHead>Vị trí thực tế</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {isFetching && !isLoading ? (
+          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            Đang cập nhật dữ liệu…
+          </p>
+        ) : null}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Task</TableHead>
+                <TableHead>poItemId</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Vị trí gợi ý</TableHead>
+                <TableHead>Vị trí thực tế</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={`putaway-skel-${i}`}>
+                    <TableCell>
+                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-3 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-3 w-20" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Skeleton className="h-8 w-14 rounded-md" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={AlertCircle}
+                      title="Không tải được danh sách putaway"
+                      description={apiErrMessage(error)}
+                      action={
+                        <Button variant="outline" size="sm" onClick={() => refetch()}>
+                          Thử lại
+                        </Button>
+                      }
+                      className="py-10"
+                    />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tasks.map((t: PutawayTask) => (
+              ) : tasks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={MapPin}
+                      title="Không có task putaway"
+                      description="Thử bỏ bộ lọc hoặc nhận hàng từ đơn PO trước."
+                      action={
+                        <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
+                          Làm mới
+                        </Button>
+                      }
+                      className="py-10"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tasks.map((t: PutawayTask) => (
                   <TableRow key={t.id}>
                     <TableCell className="max-w-[120px] truncate font-mono text-xs">{t.id}</TableCell>
                     <TableCell className="max-w-[120px] truncate font-mono text-xs">{t.poItemId ?? "—"}</TableCell>
@@ -216,7 +267,7 @@ export default function PutawayPage() {
                     <TableCell className="max-w-[100px] truncate font-mono text-xs">
                       {t.actualLocationId ?? "—"}
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
+                    <TableCell className="space-x-1 text-right">
                       <Button type="button" variant="outline" size="sm" onClick={() => openEdit(t)} disabled={patching}>
                         Sửa
                       </Button>
@@ -225,11 +276,11 @@ export default function PutawayPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>

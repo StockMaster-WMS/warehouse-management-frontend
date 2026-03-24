@@ -49,6 +49,7 @@ import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { getProductCategoryDisplayName } from "@/types/product";
+import { apiErrMessage } from "@/types/api";
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -242,7 +243,7 @@ export default function ProductsPage() {
                 >
                   {(val) => {
                     if (!val) return "Tất cả nhóm hàng";
-                    const c = categoryOptionsData?.data?.find((x) => x.id === val);
+                    const c = categoryOptionsData?.data?.content?.find((x) => x.id === val);
                     return c ? `${c.name} (${c.code})` : "Đang tải…";
                   }}
                 </SelectValue>
@@ -263,9 +264,9 @@ export default function ProductsPage() {
                 <SelectItem value="" className="rounded-lg">
                   Tất cả nhóm hàng
                 </SelectItem>
-                {categoryOptionsData?.data ? (
+                {categoryOptionsData?.data?.content?.length ? (
                   <CategoryTreeSelectItems
-                    categories={categoryOptionsData.data}
+                    categories={categoryOptionsData.data.content}
                     itemClassName="rounded-lg"
                   />
                 ) : null}
@@ -370,10 +371,7 @@ export default function ProductsPage() {
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải dữ liệu sản phẩm"
-                    description={
-                      (error as { data?: { message?: string } })?.data?.message ??
-                      "Đã xảy ra lỗi khi tải danh sách sản phẩm."
-                    }
+                    description={apiErrMessage(error, "Đã xảy ra lỗi khi tải danh sách sản phẩm.")}
                     action={
                       <Button variant="outline" size="sm" onClick={() => refetch()}>
                         Thử lại

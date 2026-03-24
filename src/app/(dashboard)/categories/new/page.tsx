@@ -40,7 +40,7 @@ export default function NewCategoryPage() {
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
-  const categories = categoriesData?.data ?? [];
+  const categories = categoriesData?.data?.content ?? [];
 
   const categoriesById = useMemo(() => {
     return new Map(categories.map((c) => [c.id, c] as const));

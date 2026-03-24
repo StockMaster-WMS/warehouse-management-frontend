@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Loader2, Plus, FileText } from "lucide-react";
+import { Plus, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -13,16 +15,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { API_BASE_URL } from "@/lib/constants";
 import { useGetPurchaseOrdersQuery } from "@/store/services/purchase-order.service";
-import { apiErrMessage, apiErrStatus } from "@/types/api";
+import { apiErrMessage } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 
 export default function PurchaseOrdersPage() {
-  const { data, isLoading, isError, error } = useGetPurchaseOrdersQuery({ page: 0, size: 50 });
+  const { data, isLoading, isFetching, isError, error, refetch } = useGetPurchaseOrdersQuery({
+    page: 0,
+    size: 50,
+  });
 
   const rows = data?.data?.content ?? [];
-  const errStatus = isError ? apiErrStatus(error) : undefined;
 
   return (
     <div className="space-y-6">
@@ -53,58 +56,83 @@ export default function PurchaseOrdersPage() {
         }
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Đang tải danh sách…
-          </div>
-        ) : isError ? (
-          <div className="p-8 text-left text-sm">
-            <p className="font-semibold text-rose-700 dark:text-rose-400">Không tải được danh sách đơn nhập</p>
-            <p className="mt-2 text-slate-700 dark:text-slate-300">
-              {apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối yêu cầu.")}
-            </p>
-            {errStatus != null ? (
-              <p className="mt-1 text-xs text-slate-500">
-                Mã phản hồi: <span className="font-mono">{String(errStatus)}</span>
-              </p>
-            ) : null}
-            <p className="mt-2 text-xs text-slate-500">
-              Kiểm tra NEXT_PUBLIC_API_BASE / rewrite Next.js; tránh đường dẫn lặp /api/api/…
-            </p>
-            <pre className="mt-3 max-h-36 overflow-auto rounded border border-slate-100 bg-slate-50 p-2 text-left text-[11px] text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-              {(() => {
-                try {
-                  return JSON.stringify(error, null, 2);
-                } catch {
-                  return String(error);
-                }
-              })()}
-            </pre>
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center text-slate-500">
-            <FileText className="h-10 w-10 opacity-40" />
-            <p className="text-sm">Chưa có đơn nhập hoặc API trả về rỗng.</p>
-            <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm">
-              Tạo đơn đầu tiên
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Mã PO</TableHead>
-                  <TableHead>Ngày đặt</TableHead>
-                  <TableHead>Dự kiến</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {isFetching && !isLoading ? (
+          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            Đang cập nhật dữ liệu…
+          </p>
+        ) : null}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Mã PO</TableHead>
+                <TableHead>Ngày đặt</TableHead>
+                <TableHead>Dự kiến</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={`po-skel-${i}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="ml-auto h-8 w-16 rounded-lg" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={AlertCircle}
+                      title="Không tải được danh sách đơn nhập"
+                      description={apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối yêu cầu.")}
+                      action={
+                        <Button variant="outline" size="sm" onClick={() => refetch()}>
+                          Thử lại
+                        </Button>
+                      }
+                      className="py-10"
+                    />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((po: PurchaseOrder) => (
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={FileText}
+                      title="Chưa có đơn nhập"
+                      description="Chưa có đơn nhập hoặc API trả về rỗng."
+                      action={
+                        <Button
+                          render={<Link href="/purchase-orders/new" />}
+                          nativeButton={false}
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          Tạo đơn đầu tiên
+                        </Button>
+                      }
+                      className="py-10"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((po: PurchaseOrder) => (
                   <TableRow key={po.id}>
                     <TableCell className="font-medium">{po.poNumber}</TableCell>
                     <TableCell>{po.orderDate}</TableCell>
@@ -126,11 +154,11 @@ export default function PurchaseOrdersPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

@@ -278,7 +278,7 @@ export default function EditProductPage({
                       >
                         {(val) => {
                           if (!val) return null;
-                          const c = categoryData?.data?.find((x) => x.id === val);
+                          const c = categoryData?.data?.content?.find((x) => x.id === val);
                           if (c) return `${c.name} (${c.code})`;
                           if (data?.data && val === data.data.categoryId) {
                             const n = getProductCategoryDisplayName(data.data);
@@ -301,8 +301,8 @@ export default function EditProductPage({
                           </button>
                         </div>
                       ) : null}
-                      {categoryData?.data ? (
-                        <CategoryTreeSelectItems categories={categoryData.data} />
+                      {categoryData?.data?.content?.length ? (
+                        <CategoryTreeSelectItems categories={categoryData.data.content} />
                       ) : null}
                     </SelectContent>
                   </Select>

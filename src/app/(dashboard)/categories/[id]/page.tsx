@@ -33,7 +33,7 @@ export default function CategoryDetailPage({
   const { data, error, isLoading, refetch } = useGetCategoryByIdQuery(id);
   const { data: allCategoriesData } = useGetCategoriesQuery();
   const category = data?.data;
-  const allCategories = allCategoriesData?.data ?? [];
+  const allCategories = allCategoriesData?.data?.content ?? [];
 
   const categoriesById = useMemo(
     () => new Map(allCategories.map((c) => [c.id, c] as const)),

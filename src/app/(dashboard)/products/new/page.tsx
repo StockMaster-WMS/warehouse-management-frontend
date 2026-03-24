@@ -219,7 +219,7 @@ export default function NewProductPage() {
                       >
                         {(val) => {
                           if (!val) return null;
-                          const c = categoryData?.data?.find((x) => x.id === val);
+                          const c = categoryData?.data?.content?.find((x) => x.id === val);
                           return c ? `${c.name} (${c.code})` : "Đang tải tên nhóm…";
                         }}
                       </SelectValue>
@@ -237,8 +237,8 @@ export default function NewProductPage() {
                           </button>
                         </div>
                       ) : null}
-                      {categoryData?.data ? (
-                        <CategoryTreeSelectItems categories={categoryData.data} />
+                      {categoryData?.data?.content?.length ? (
+                        <CategoryTreeSelectItems categories={categoryData.data.content} />
                       ) : null}
                     </SelectContent>
                   </Select>

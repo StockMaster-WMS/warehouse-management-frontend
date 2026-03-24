@@ -38,6 +38,7 @@ import {
   useGetWarehouseSummaryQuery,
 } from "@/store/services/warehouse.service";
 import type { SortDirection, WarehouseSortField } from "@/types/warehouse";
+import { apiErrMessage } from "@/types/api";
 
 const STATUS_LABEL_ALL = "Tất cả trạng thái";
 const STATUS_LABEL_ACTIVE = "Đang hoạt động";
@@ -324,11 +325,7 @@ export default function InventoryPage() {
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải dữ liệu tồn kho"
-                    description={
-                      (error as { data?: { message?: string } })?.data
-                        ?.message ??
-                      "Đã xảy ra lỗi khi tải dữ liệu tồn kho."
-                    }
+                    description={apiErrMessage(error, "Đã xảy ra lỗi khi tải dữ liệu tồn kho.")}
                     action={
                       <Button
                         variant="outline"

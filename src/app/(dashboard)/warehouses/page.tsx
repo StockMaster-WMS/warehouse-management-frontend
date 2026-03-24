@@ -29,6 +29,7 @@ import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { EmptyState } from "@/components/ui/empty-state";
+import { apiErrMessage } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -269,10 +270,7 @@ export default function WarehousesPage() {
             <EmptyState
               icon={AlertCircle}
               title="Không thể tải danh sách kho"
-              description={
-                (error as { data?: { message?: string } })?.data?.message ??
-                "Đã xảy ra lỗi khi tải danh sách kho."
-              }
+              description={apiErrMessage(error, "Đã xảy ra lỗi khi tải danh sách kho.")}
               action={
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
                   Thử lại

@@ -48,7 +48,7 @@ export default function EditCategoryPage({
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
-  const allCategories = allCategoriesData?.data ?? [];
+  const allCategories = allCategoriesData?.data?.content ?? [];
 
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
 
