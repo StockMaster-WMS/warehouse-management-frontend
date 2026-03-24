@@ -55,3 +55,32 @@ export interface CreateProductPayload {
 export function getProductCategoryDisplayName(product: Product): string {
   return product.categoryName?.trim() ?? "";
 }
+
+export interface ProductImportRowError {
+  rowNumber: number;
+  message: string;
+}
+
+export interface ProductImportResponse {
+  attempted: number;
+  success: number;
+  failureCount: number;
+  errors: ProductImportRowError[];
+}
+
+export function normalizeProductImportResponse(raw: unknown): ProductImportResponse {
+  const r = raw as Record<string, unknown>;
+  const errList = Array.isArray(r.errors) ? r.errors : [];
+  return {
+    attempted: Number(r.attempted ?? 0),
+    success: Number(r.success ?? 0),
+    failureCount: Number(r.failureCount ?? r.failure_count ?? 0),
+    errors: errList.map((e) => {
+      const x = e as Record<string, unknown>;
+      return {
+        rowNumber: Number(x.rowNumber ?? x.row_number ?? 0),
+        message: String(x.message ?? ""),
+      };
+    }),
+  };
+}

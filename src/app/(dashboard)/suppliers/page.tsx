@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Link from "next/link";
 
 import {
@@ -44,24 +45,14 @@ import {
   supplierStatusLabel,
 } from "@/types/supplier";
 
-const SEARCH_DEBOUNCE_MS = 350;
 const PAGE_SIZE = 20;
 
 export default function SuppliersPage() {
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState("");
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedKeyword(searchInput.trim()), SEARCH_DEBOUNCE_MS);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedKeyword]);
 
   const { data, isLoading, isFetching, isError, error, refetch } = useGetSuppliersQuery({
     page,

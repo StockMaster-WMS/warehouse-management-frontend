@@ -12,6 +12,10 @@ export type XlsxImportPreviewConfig = {
   expectedHeaders: readonly string[];
   /** Mỗi dòng dữ liệu: các cột này không được để trống. */
   requiredRowFields?: readonly string[];
+  /** Mỗi nhóm: ít nhất một tên cột phải có trong dòng tiêu đề (VD categoryId hoặc categoryCode). */
+  requireAnyHeaderInEachGroup?: readonly (readonly string[])[];
+  /** Mỗi dòng: trong mỗi nhóm, ít nhất một cột (có trong file) phải khác rỗng. */
+  requireAnyValueInEachRowGroup?: readonly (readonly string[])[];
   /** Nhãn hiển thị trong cảnh báo (key = tên cột trong file). */
   fieldLabels?: Readonly<Record<string, string>>;
 };
@@ -54,11 +58,29 @@ export function matrixToImportPreview(
     }
   }
 
+  for (const group of config.requireAnyHeaderInEachGroup ?? []) {
+    const ok = group.some((g) => headerSet.has(g.toLowerCase()));
+    if (!ok) {
+      issues.push(
+        `File thiếu nhóm danh mục: cần ít nhất một cột trong [${group.map((g) => label(g)).join(", ")}].`,
+      );
+    }
+  }
+
   const required = config.requiredRowFields ?? [];
   const fieldIndices = required.map((field) => ({
     field,
     idx: headers.findIndex((h) => h.toLowerCase() === field.toLowerCase()),
   }));
+
+  const rowValueGroups = (config.requireAnyValueInEachRowGroup ?? []).map((group) =>
+    group
+      .map((field) => ({
+        field,
+        idx: headers.findIndex((h) => h.toLowerCase() === field.toLowerCase()),
+      }))
+      .filter((x) => x.idx >= 0),
+  );
 
   dataRows.forEach((r, idx) => {
     const line = idx + 2;
@@ -69,16 +91,25 @@ export function matrixToImportPreview(
         issues.push(`Dòng ${line} (trong Excel): chưa điền ${label(field)}.`);
       }
     }
+    for (const group of rowValueGroups) {
+      if (group.length === 0) continue;
+      const anyFilled = group.some(({ idx: col }) => (r[col]?.trim() ?? "").length > 0);
+      if (!anyFilled) {
+        issues.push(
+          `Dòng ${line} (trong Excel): cần điền ít nhất một trong [${group.map((g) => label(g.field)).join(", ")}].`,
+        );
+      }
+    }
   });
 
   return { headers, dataRows, issues };
 }
 
 /** Đọc .xlsx (sheet đầu) + kiểm tra theo `config`. */
-export function buildImportPreviewFromXlsx(
+export async function buildImportPreviewFromXlsx(
   data: ArrayBuffer,
   config: XlsxImportPreviewConfig,
-): ImportPreview | null {
-  const matrix = readXlsxFirstSheetMatrix(data);
+): Promise<ImportPreview | null> {
+  const matrix = await readXlsxFirstSheetMatrix(data);
   return matrixToImportPreview(matrix, config);
 }

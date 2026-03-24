@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   ArrowLeft,
   Save,
@@ -100,7 +101,7 @@ export default function NewInboundPage() {
   const [lineQtyStr, setLineQtyStr] = useState("1");
   const [linePriceStr, setLinePriceStr] = useState("");
   const [productSearch, setProductSearch] = useState("");
-  const [debouncedProductSearch, setDebouncedProductSearch] = useState("");
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim());
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [lineFormErrors, setLineFormErrors] = useState<LineFormErrors>({});
@@ -109,28 +110,22 @@ export default function NewInboundPage() {
   const [removeTarget, setRemoveTarget] = useState<InboundLine | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedProductSearch(productSearch.trim()), 350);
-    return () => window.clearTimeout(t);
-  }, [productSearch]);
+
 
   const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } =
     useGetSuppliersQuery({
       page: 0,
-      size: 500,
+      size: 50,
       sort: "createdAt",
       sortDir: "desc",
     });
   const { data: warehousesRes, isError: warehousesErr, isFetching: warehousesLoading } =
-    useGetWarehousesForPoQuery({
-      size: 500,
-    });
+    useGetWarehousesForPoQuery({});
   const {
     data: productsRes,
     isError: productsErr,
     isFetching: productsLoading,
   } = useGetProductsForPoQuery({
-    size: 300,
     ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
   });
 

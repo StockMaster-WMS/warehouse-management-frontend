@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { z } from "zod";
 import { ArrowLeft, Building2, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -73,26 +74,20 @@ export default function NewPurchaseOrderPage() {
   const [linePrice, setLinePrice] = useState("");
   const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
   const [productSearch, setProductSearch] = useState("");
-  const [debouncedProductSearch, setDebouncedProductSearch] = useState("");
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedProductSearch(productSearch.trim()), 350);
-    return () => window.clearTimeout(t);
-  }, [productSearch]);
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim());
 
   const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } = useGetSuppliersQuery({
     page: 0,
-    size: 500,
+    size: 50,
     sort: "createdAt",
     sortDir: "desc",
   });
-  const { data: warehousesRes, isError: warehousesErr } = useGetWarehousesForPoQuery({ size: 500 });
+  const { data: warehousesRes, isError: warehousesErr } = useGetWarehousesForPoQuery({});
   const {
     data: productsRes,
     isError: productsErr,
     isFetching: productsLoading,
   } = useGetProductsForPoQuery({
-    size: 300,
     ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
   });
 

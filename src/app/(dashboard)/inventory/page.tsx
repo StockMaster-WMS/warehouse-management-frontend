@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Boxes,
   TrendingUp,
@@ -61,7 +62,6 @@ const SORT_DIR_LABELS: Record<string, SortDirection> = {
 const SORT_DIR_OPTIONS = Object.keys(SORT_DIR_LABELS);
 
 const PAGE_SIZE = 20;
-const SEARCH_DEBOUNCE_MS = 350;
 
 export default function InventoryPage() {
   const {
@@ -73,19 +73,12 @@ export default function InventoryPage() {
   const summary = summaryResponse?.data;
 
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(PAGE_SIZE);
   const [sort, setSort] = useState<WarehouseSortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      setDebouncedKeyword(searchInput.trim());
-    }, SEARCH_DEBOUNCE_MS);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
 
   useEffect(() => {
     setPage(0);
@@ -133,7 +126,6 @@ export default function InventoryPage() {
 
   const clearFilters = () => {
     setSearchInput("");
-    setDebouncedKeyword("");
     setIsActive(undefined);
     setSort("createdAt");
     setSortDir("desc");

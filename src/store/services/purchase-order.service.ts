@@ -19,7 +19,7 @@ type GetPutawayTasksArgs = { poItemId?: string; status?: string };
 const purchaseOrderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWarehousesForPo: builder.query<ApiResponse<PagedResponse<Warehouse>>, { size?: number }>({
-      query: ({ size = 500 }) => ({
+      query: ({ size = 50 }) => ({
         url: "warehouses",
         method: "GET",
         params: { page: 0, size, sort: "createdAt", sortDir: "desc" },
@@ -28,7 +28,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
     }),
 
     getProductsForPo: builder.query<ApiResponse<PagedResponse<Product>>, { size?: number; keyword?: string }>({
-      query: ({ size = 200, keyword }) => ({
+      query: ({ size = 50, keyword }) => ({
         url: "products",
         method: "GET",
         params: {
