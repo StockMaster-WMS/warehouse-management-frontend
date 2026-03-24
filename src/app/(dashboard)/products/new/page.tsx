@@ -9,6 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -107,6 +108,7 @@ export default function NewProductPage() {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
+      toast.error("Kiểm tra lại thông tin đã nhập.");
       return;
     }
 
@@ -114,6 +116,9 @@ export default function NewProductPage() {
     await new Promise((resolve) => setTimeout(resolve, 700));
     setIsSubmitting(false);
     setSubmitMessage("Đã lưu thông tin sản phẩm ở mức giao diện. Bước tiếp theo: kết nối API tạo sản phẩm.");
+    toast.success("Đã lưu bản nháp", {
+      description: "Kết nối API tạo sản phẩm sẽ bật ở bước sau.",
+    });
   };
 
   const updateValue = (key: keyof ProductFormValues, value: string) => {

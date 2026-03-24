@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { ArrowLeft, Save, Tag } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useGetCategoriesQuery, useCreateCategoryMutation } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import { apiErrMessage } from "@/types/api";
 
 type CategoryFormValues = {
   name: string;
@@ -81,7 +83,10 @@ export default function NewCategoryPage() {
 
     const validationErrors = validate(values);
     setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error("Kiểm tra lại thông tin đã nhập.");
+      return;
+    }
 
     try {
       await createCategory({
@@ -91,12 +96,12 @@ export default function NewCategoryPage() {
       }).unwrap();
 
       setSubmitMessage("Tạo nhóm hàng thành công.");
+      toast.success("Đã tạo nhóm hàng");
       setValues({ name: "", parentId: "", isActive: true });
     } catch (submitError) {
-      setSubmitMessage(
-        (submitError as { data?: { message?: string } })?.data?.message ??
-          "Không thể tạo nhóm hàng. Vui lòng thử lại.",
-      );
+      const msg = apiErrMessage(submitError, "Không thể tạo nhóm hàng. Vui lòng thử lại.");
+      setSubmitMessage(msg);
+      toast.error(msg);
     }
   };
 

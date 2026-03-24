@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { ChevronDown, Download, FileDown, FileUp } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -89,10 +90,12 @@ export function ImportExportXlsxMenu({
   const handleExport = () => {
     const rows = getExportMatrix();
     downloadAoAAsXlsx(getExportFilename(), sheetName, rows);
+    toast.success("Đã tải file xuất");
   };
 
   const handleTemplate = () => {
     downloadAoAAsXlsx(`${templateBasename}.xlsx`, sheetName, getTemplateMatrix());
+    toast.success("Đã tải file mẫu");
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {

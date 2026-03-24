@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { Warehouse } from "@/types/warehouse";
 import type { Product } from "@/types/product";
 import { apiErrMessage } from "@/types/api";
@@ -71,6 +72,13 @@ export default function NewPurchaseOrderPage() {
   const [lineQty, setLineQty] = useState("");
   const [linePrice, setLinePrice] = useState("");
   const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
+  const [productSearch, setProductSearch] = useState("");
+  const [debouncedProductSearch, setDebouncedProductSearch] = useState("");
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedProductSearch(productSearch.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [productSearch]);
 
   const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } = useGetSuppliersQuery({
     page: 0,
@@ -79,7 +87,14 @@ export default function NewPurchaseOrderPage() {
     sortDir: "desc",
   });
   const { data: warehousesRes, isError: warehousesErr } = useGetWarehousesForPoQuery({ size: 500 });
-  const { data: productsRes, isError: productsErr } = useGetProductsForPoQuery({ size: 300 });
+  const {
+    data: productsRes,
+    isError: productsErr,
+    isFetching: productsLoading,
+  } = useGetProductsForPoQuery({
+    size: 300,
+    ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
+  });
 
   const suppliers = useMemo(
     () =>
@@ -88,6 +103,11 @@ export default function NewPurchaseOrderPage() {
         name: getSupplierDisplayName(s),
       })),
     [suppliersRes]
+  );
+
+  const supplierOptions = useMemo(
+    () => suppliers.map((s) => ({ value: String(s.id), label: s.name })),
+    [suppliers]
   );
   const warehouses = useMemo(
     () =>
@@ -108,11 +128,21 @@ export default function NewPurchaseOrderPage() {
   const products = useMemo(
     () =>
       (productsRes?.data?.content ?? []).map((p: Product) => ({
-        id: p.id,
+        id: String(p.id),
         sku: p.sku,
         name: p.name,
       })),
     [productsRes]
+  );
+
+  const productOptions = useMemo(
+    () =>
+      products.map((p) => ({
+        value: p.id,
+        label: p.name,
+        hint: p.sku,
+      })),
+    [products]
   );
 
   const { data: poItemsRes, isFetching: itemsLoading } = useGetPoItemsQuery(
@@ -328,29 +358,27 @@ export default function NewPurchaseOrderPage() {
             {headerErrors.orderDate && <p className="text-xs text-rose-600">{headerErrors.orderDate}</p>}
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-500">Nhà cung cấp *</label>
-            <Select
+            <label htmlFor="po-supplier" className="text-xs font-semibold text-slate-500">
+              Nhà cung cấp *
+            </label>
+            <SearchableSelect
+              id="po-supplier"
               value={supplierId}
-              onValueChange={(v) => setSupplierId(v ?? "")}
+              onValueChange={(v) => setSupplierId(v)}
+              options={supplierOptions}
+              placeholder={
+                suppliersErr ? "Lỗi tải NCC" : suppliersLoading ? "Đang tải…" : "Chạm để chọn NCC"
+              }
+              searchPlaceholder="Tên nhà cung cấp…"
+              emptyText="Không tìm thấy NCC"
               disabled={headerLocked || suppliersErr || suppliersLoading}
-            >
-              <SelectTrigger className={headerErrors.supplierId ? "border-rose-400" : ""}>
-                <SelectValue
-                  placeholder={
-                    suppliersErr ? "Lỗi tải NCC" : suppliersLoading ? "Đang tải NCC…" : "Chọn nhà cung cấp"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              loading={suppliersLoading}
+              error={Boolean(headerErrors.supplierId)}
+              icon={<Building2 className="size-4" />}
+              dialogTitle="Chọn nhà cung cấp"
+            />
             {suppliersErr && (
-              <p className="text-xs text-amber-600">Không gọi được GET suppliers. Kiểm tra gateway và quyền truy cập.</p>
+              <p className="text-xs text-amber-600">Không tải được danh sách nhà cung cấp.</p>
             )}
             {headerErrors.supplierId && <p className="text-xs text-rose-600">{headerErrors.supplierId}</p>}
           </div>
@@ -482,26 +510,29 @@ export default function NewPurchaseOrderPage() {
 
         <form onSubmit={onAddLine} className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 md:grid-cols-12 md:items-end dark:border-slate-800">
           <div className="md:col-span-4">
-            <label className="mb-1 block text-xs font-semibold text-slate-500">Sản phẩm *</label>
-            <Select
+            <label htmlFor="po-line-product" className="mb-1 block text-xs font-semibold text-slate-500">
+              Sản phẩm *
+            </label>
+            <SearchableSelect
+              id="po-line-product"
               value={lineProductId}
-              onValueChange={(v) => setLineProductId(v ?? "")}
+              onValueChange={(v) => setLineProductId(v)}
+              options={productOptions}
+              placeholder={
+                productsErr ? "Lỗi tải SP" : productsLoading ? "Đang tải…" : "Chạm để chọn & tìm SP"
+              }
+              searchPlaceholder="Tên hoặc mã SKU…"
+              emptyText="Không có sản phẩm — thử từ khóa khác"
               disabled={!purchaseOrderId || productsErr}
-            >
-              <SelectTrigger className={lineErrors.productId ? "border-rose-400" : ""}>
-                <SelectValue placeholder={productsErr ? "Lỗi GET /api/products" : "Chọn SP"} />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name} ({p.sku})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {productsErr && (
-              <p className="mt-1 text-xs text-amber-600">TODO: GET /api/products (phân trang) trên gateway.</p>
-            )}
+              loading={productsLoading}
+              error={Boolean(lineErrors.productId)}
+              icon={<Package className="size-4" />}
+              dialogTitle="Chọn sản phẩm"
+              serverSearch
+              searchQuery={productSearch}
+              onSearchChange={setProductSearch}
+            />
+            {productsErr && <p className="mt-1 text-xs text-amber-600">Không tải được danh sách sản phẩm.</p>}
           </div>
           <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-semibold text-slate-500">SKU</label>

@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle, Info, Ruler, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -22,6 +23,7 @@ import {
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { getProductCategoryDisplayName } from "@/types/product";
+import { apiErrMessage } from "@/types/api";
 
 type ProductFormValues = {
   barcode: string;
@@ -132,7 +134,10 @@ export default function EditProductPage({
     setSubmitMessage("");
     const validationErrors = validate(values);
     setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error("Kiểm tra lại thông tin đã nhập.");
+      return;
+    }
 
     const current = data?.data;
     if (!current) return;
@@ -153,11 +158,11 @@ export default function EditProductPage({
         status: values.status,
       }).unwrap();
       setSubmitMessage("Cập nhật sản phẩm thành công.");
+      toast.success("Đã cập nhật sản phẩm");
     } catch (submitError) {
-      const message =
-        (submitError as { data?: { message?: string } })?.data?.message ??
-        "Không thể cập nhật sản phẩm. Vui lòng thử lại.";
+      const message = apiErrMessage(submitError, "Không thể cập nhật sản phẩm. Vui lòng thử lại.");
       setSubmitMessage(message);
+      toast.error(message);
     }
   };
 
