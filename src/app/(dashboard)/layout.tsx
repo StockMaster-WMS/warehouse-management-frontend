@@ -11,7 +11,7 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="min-h-svh bg-[#F8FAFC] dark:bg-slate-950">
+      <SidebarInset className="min-h-svh bg-muted">
         <Navbar />
         <main
           id="main-content"

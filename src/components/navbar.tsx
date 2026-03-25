@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -18,6 +18,8 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useSearchShortcutLabel } from "@/hooks/use-search-shortcut-label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 function toTitle(segment: string): string {
@@ -54,7 +56,23 @@ function toTitle(segment: string): string {
 }
 
 export function Navbar() {
+  const [quickSearchOpen, setQuickSearchOpen] = useState(false);
+  const searchShortcut = useSearchShortcutLabel();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing) return;
+      if (e.key !== "k" && e.key !== "K") return;
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+
+      e.preventDefault();
+      setQuickSearchOpen((open) => !open);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
   const pathSegments = useMemo(
     () => pathname.split("/").filter(Boolean),
     [pathname]
@@ -70,6 +88,17 @@ export function Navbar() {
       <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
         <div className="flex min-w-0 items-center gap-4">
           <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0 text-indigo-100 hover:bg-white/10 hover:text-white md:hidden"
+            onClick={() => setQuickSearchOpen(true)}
+            aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
 
           <div className="hidden min-w-0 md:flex md:flex-col md:gap-0.5">
             <div className="flex min-w-0 items-center gap-1 text-[11px] text-indigo-100">
@@ -87,28 +116,34 @@ export function Navbar() {
 
           <div className="hidden items-center gap-2 md:flex">
             <div className="relative flex items-center">
-              <Search className="absolute left-3 h-4 w-4 text-indigo-200" />
-              <Input
-                type="search"
-                placeholder="Tìm kiếm nhanh... (Ctrl+K)"
-                className="h-9 w-64 rounded-full border-transparent bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-indigo-200 focus-visible:bg-white/20 focus-visible:ring-0 lg:w-80"
-              />
-              <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
+              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-indigo-200" />
+              <button
+                type="button"
+                onClick={() => setQuickSearchOpen(true)}
+                className="flex h-9 w-64 cursor-pointer items-center rounded-full border border-transparent bg-white/10 py-0 pr-20 pl-10 text-left text-sm text-indigo-100/95 transition-colors hover:bg-white/15 focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none lg:w-80"
+                aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
+              >
+                <span className="truncate text-indigo-100/90">
+                  Tìm kiếm nhanh… ({searchShortcut})
+                </span>
+              </button>
+              <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 sm:flex">
+                {searchShortcut}
               </kbd>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="hidden items-center pr-2 md:flex">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
-              <Sparkles className="h-3.5 w-3.5 fill-indigo-300 text-indigo-300" />
-              <span>Cập nhật mới: Quản lý kho thông minh đã sẵn sàng</span>
+          <div className="hidden items-center pr-2 lg:flex">
+            <div className="flex max-w-[min(100%,20rem)] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 fill-indigo-300 text-indigo-300" />
+              <span className="truncate">StockMaster — sẵn sàng vận hành</span>
             </div>
           </div>
 
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <Button
               render={<Link href="/settings" />}
               nativeButton={false}
@@ -207,6 +242,8 @@ export function Navbar() {
           </DropdownMenu>
         </div>
       </div>
+
+      <QuickSearchDialog open={quickSearchOpen} onOpenChange={setQuickSearchOpen} />
     </header>
   );
 }

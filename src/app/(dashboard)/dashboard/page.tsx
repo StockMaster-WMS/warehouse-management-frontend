@@ -1,5 +1,44 @@
+import Link from "next/link";
+import { AlertCircle, CheckCircle2, TriangleAlert } from "lucide-react";
+
+import { InboundOutboundChartLazy } from "@/components/dashboard/inbound-outbound-chart-lazy";
 import { PageHeader } from "@/components/page-header";
+import { PageSection } from "@/components/ui/page-section";
+import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
+
+const NOTICES: Array<{
+  title: string;
+  desc: string;
+  type: "error" | "success" | "warning";
+  time: string;
+}> = [
+  {
+    title: "Cảnh báo tồn kho thấp",
+    desc: "Sản phẩm iPhone 15 Pro Max chỉ còn 2 đơn vị.",
+    type: "error",
+    time: "10:42",
+  },
+  {
+    title: "Đã xác nhận đơn hàng",
+    desc: "Đơn hàng #3390 đã được đóng gói và sẵn sàng giao.",
+    type: "success",
+    time: "09:15",
+  },
+  {
+    title: "Hệ thống bảo trì",
+    desc: "Hệ thống sẽ bảo trì vào lúc 02:00 sáng mai.",
+    type: "warning",
+    time: "Hôm qua",
+  },
+];
+
+function NoticeIcon({ type }: { type: (typeof NOTICES)[number]["type"] }) {
+  const cls = "mt-0.5 h-4 w-4 shrink-0";
+  if (type === "error") return <AlertCircle className={cls} aria-hidden />;
+  if (type === "warning") return <TriangleAlert className={cls} aria-hidden />;
+  return <CheckCircle2 className={cls} aria-hidden />;
+}
 
 export default function DashboardPage() {
   return (
@@ -47,57 +86,47 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              Lưu lượng xuất/nhập
-            </h3>
-          </div>
-          <div className="flex h-60 items-center justify-center rounded-xl border border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/50">
-            <span className="text-sm font-medium text-slate-400">
-              Biểu đồ đang được tải...
-            </span>
-          </div>
-        </div>
+        <PageSection
+          title="Lưu lượng xuất/nhập"
+          description="Theo ngày trong tuần (dữ liệu mẫu — kết nối API sau)."
+        >
+          <InboundOutboundChartLazy />
+        </PageSection>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              Thông báo quan trọng
-            </h3>
-          </div>
-          <div className="space-y-4">
-            {[
-              {
-                title: "Cảnh báo tồn kho thấp",
-                desc: "Sản phẩm iPhone 15 Pro Max chỉ còn 2 đơn vị.",
-                type: "error",
-              },
-              {
-                title: "Đã xác nhận đơn hàng",
-                desc: "Đơn hàng #3390 đã được đóng gói và sẵn sàng giao.",
-                type: "success",
-              },
-              {
-                title: "Hệ thống bảo trì",
-                desc: "Hệ thống sẽ bảo trì vào lúc 02:00 sáng mai.",
-                type: "warning",
-              },
-            ].map((msg, i) => (
+        <PageSection
+          title="Thông báo quan trọng"
+          action={
+            <Button render={<Link href="/history" />} nativeButton={false} variant="outline" size="sm" className="rounded-lg">
+              Xem tất cả
+            </Button>
+          }
+        >
+          <div className="space-y-3">
+            {NOTICES.map((msg, i) => (
               <div
                 key={i}
-                className={`flex items-start gap-4 p-3 rounded-xl border ${msg.type === "error" ? "bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400" : msg.type === "warning" ? "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/30" : "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/30"}`}
+                className={`flex items-start gap-3 rounded-xl border p-3 ${
+                  msg.type === "error"
+                    ? "border-rose-100 bg-rose-50 text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-200"
+                    : msg.type === "warning"
+                      ? "border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100"
+                      : "border-emerald-100 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/25 dark:text-emerald-100"
+                }`}
               >
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">{msg.title}</span>
-                  <p className="text-[12px] font-medium opacity-80">
-                    {msg.desc}
-                  </p>
+                <NoticeIcon type={msg.type} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="text-[13px] font-semibold">{msg.title}</span>
+                    <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                      {msg.time}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[12px] font-medium opacity-90">{msg.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </PageSection>
       </div>
     </div>
   );
