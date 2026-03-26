@@ -62,7 +62,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     getPurchaseOrderById: builder.query<ApiResponse<PurchaseOrder>, string>({
       query: (id) => ({ url: `/purchase-orders/${id}`, method: "GET" }),
-      providesTags: (_r, _e, id) => [{ type: "PurchaseOrder", id }],
+      providesTags: (_r, _e, id) => [{ type: "PurchaseOrder" as const, id }],
     }),
 
     createPurchaseOrder: builder.mutation<ApiResponse<PurchaseOrder>, CreatePurchaseOrderPayload>({
@@ -92,7 +92,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         const items = result?.data?.content ?? [];
         return [
           ...items.map((i) => ({ type: "PoItem" as const, id: i.id })),
-          { type: "PoItem" as const, id: `PO-${purchaseOrderId}` },
+          { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${purchaseOrderId}` },
         ];
       },
     }),
@@ -110,12 +110,12 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         if (body.unitPrice != null && !Number.isNaN(body.unitPrice)) payload.unitPrice = body.unitPrice;
         return { url: "/po-items", method: "POST", data: payload };
       },
-      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem", id: `PO-${arg.purchaseOrderId}` }],
+      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],
     }),
 
     deletePoItem: builder.mutation<ApiResponse<unknown>, { id: string; purchaseOrderId: string }>({
       query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
-      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem", id: `PO-${arg.purchaseOrderId}` }],
+      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],
     }),
 
     receivePoItem: builder.mutation<ApiResponse<unknown>, ReceivePoItemPayload>({
@@ -128,8 +128,8 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         },
       }),
       invalidatesTags: (_r, _e, arg) => [
-        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
-        { type: "PutawayTask", id: "LIST" },
+        { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` },
+        { type: "PutawayTask" as const, id: "LIST" },
       ],
     }),
 

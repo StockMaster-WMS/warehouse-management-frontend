@@ -2,29 +2,102 @@
 
 import {
   ArrowLeft,
+  Loader2,
   Save,
-  Truck,
-  User,
   MapPin,
-  Package,
-  Plus,
-  Trash2,
-  CreditCard
+  User,
+  Warehouse,
 } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { apiErrMessage } from "@/types/api";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import { useCreateSalesOrderMutation } from "@/store/services/order.service";
 
 export default function NewOrderPage() {
+  const router = useRouter();
+  const [customerName, setCustomerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [line1, setLine1] = useState("");
+  const [ward, setWard] = useState("");
+  const [district, setDistrict] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("VN");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [priority, setPriority] = useState("5");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: warehousesRes, isFetching: warehousesLoading } = useGetWarehousesQuery({
+    page: 0,
+    size: 50,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
+  const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
+
+  const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+
+  const warehouseOptions = useMemo(
+    () =>
+      warehouses.map((w) => ({
+        value: String(w.id),
+        label: String(w.name ?? w.id),
+      })),
+    [warehouses]
+  );
+
+  function validate() {
+    const next: Record<string, string> = {};
+    if (!customerName.trim()) next.customerName = "Nhập hoặc chọn khách hàng";
+    if (!line1.trim()) next.line1 = "Nhập địa chỉ giao hàng";
+    if (!ward.trim()) next.ward = "Nhập phường/xã";
+    if (!district.trim()) next.district = "Nhập quận/huyện";
+    if (!city.trim()) next.city = "Nhập tỉnh/thành";
+    if (!country.trim()) next.country = "Nhập mã quốc gia";
+    if (!warehouseId) next.warehouseId = "Chọn kho xuất";
+    const p = Number(priority);
+    if (!Number.isInteger(p) || p < 1) next.priority = "Độ ưu tiên phải là số nguyên >= 1";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) {
+      toast.error("Vui lòng kiểm tra lại thông tin đơn xuất");
+      return;
+    }
+    try {
+      const res = await createSalesOrder({
+        customerName: customerName.trim(),
+        shippingAddress: {
+          line1: line1.trim(),
+          ward: ward.trim(),
+          district: district.trim(),
+          city: city.trim(),
+          country: country.trim().toUpperCase(),
+        },
+        warehouseId,
+        priority: Number(priority),
+      }).unwrap();
+      if (!res.success) {
+        toast.error(res.message || "Tạo đơn xuất thất bại");
+        return;
+      }
+      toast.success(res.message || "Đã tạo đơn xuất thành công");
+      router.push(`/orders/${res.data.id}`);
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể tạo đơn xuất"));
+    }
+  }
+
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
@@ -43,172 +116,206 @@ export default function NewOrderPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <User className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin người nhận
-              </h3>
+              <div className="flex flex-col">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Thông tin người nhận
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Nhập địa chỉ giao hàng đầy đủ để tạo đơn xuất.
+                </p>
+              </div>
             </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                 <div className="space-y-2">
+
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">
-                     Khách hàng / Đối tác <span className="text-rose-500">*</span>
-                  </label>
-                   <Select>
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                      <SelectValue placeholder="Chọn từ danh sách..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="c1">Nguyễn Văn A (098xxxx)</SelectItem>
-                      <SelectItem value="c2">Trần Thị B (091xxxx)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                 </div>
-                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                     Số điện thoại nhận
+                    Khách hàng / Đối tác <span className="text-rose-500">*</span>
                   </label>
                   <Input
-                    placeholder="Tự động điền hoặc nhập mới..."
-                    className="border-slate-200 bg-slate-50/50"
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      setErrors((prev) => ({ ...prev, customerName: "" }));
+                    }}
+                    aria-invalid={Boolean(errors.customerName)}
+                    placeholder="Nhập tên khách hàng/đối tác..."
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
-                 </div>
+                  {errors.customerName ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.customerName}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">SĐT người nhận (nội bộ)</label>
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Tự động điền hoặc nhập mới..."
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Thông tin này hiện chưa gửi lên hệ thống, dùng cho vận hành nội bộ.
+                  </p>
+                </div>
               </div>
 
-               <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase">
-                         Địa chỉ giao hàng <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <Textarea
-                           placeholder="Nhập địa chỉ giao hàng chi tiết..."
-                           className="pl-10 min-h-[80px] text-sm border-slate-200 bg-slate-50/50"
-                        />
-                    </div>
-               </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center justify-between border-b pb-4 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-indigo-600" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    Sản phẩm xuất kho
-                </h3>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">
+                  Địa chỉ giao hàng <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Textarea
+                    value={line1}
+                    onChange={(e) => {
+                      setLine1(e.target.value);
+                      setErrors((prev) => ({ ...prev, line1: "" }));
+                    }}
+                    placeholder="Số nhà, đường..."
+                    aria-invalid={Boolean(errors.line1)}
+                    className="min-h-[92px] border-slate-200 bg-slate-50/50 pl-10 text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                </div>
+                {errors.line1 ? <p className="text-xs font-medium text-rose-600">{errors.line1}</p> : null}
               </div>
-              <Button size="sm" variant="outline" className="h-8 rounded-lg text-xs">
-                 <Plus className="mr-1 h-3 w-3" />
-                 Thêm hàng
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-               {/* Line Items Table Header */}
-               <div className="hidden grid-cols-12 gap-4 px-2 text-[10px] font-bold uppercase text-slate-400 sm:grid">
-                  <div className="col-span-6">Sản phẩm / SKU</div>
-                  <div className="col-span-2 text-center">Số lượng</div>
-                  <div className="col-span-3 text-right">Đơn giá</div>
-                  <div className="col-span-1"></div>
-               </div>
 
-               {/* Mock Line Item */}
-               <div className="grid grid-cols-12 gap-4 rounded-xl border border-slate-100 bg-slate-50/30 p-2 items-center dark:border-slate-800 sm:bg-transparent sm:border-0 sm:p-0">
-                  <div className="col-span-12 sm:col-span-6">
-                      <div className="flex flex-col">
-                          <span className="text-sm font-bold">iPhone 15 Pro Max 256GB</span>
-                          <span className="text-[10px] text-slate-500 font-mono italic">SKU: IP15PM-256-BLUE</span>
-                      </div>
-                  </div>
-                  <div className="col-span-4 sm:col-span-2">
-                      <Input type="number" defaultValue="1" className="h-9 text-center" />
-                  </div>
-                  <div className="col-span-6 sm:col-span-3">
-                      <Input defaultValue="31,500,000" className="h-9 text-right font-bold text-indigo-600" />
-                  </div>
-                  <div className="col-span-2 sm:col-span-1 text-right">
-                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-rose-500">
-                         <Trash2 className="h-4 w-4" />
-                      </Button>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-                <Truck className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                 Vận chuyển & Thanh toán
-              </h3>
-            </div>
-            <div className="space-y-4">
-               <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">
-                    Đơn vị vận chuyển
+                    Phường/xã <span className="text-rose-500">*</span>
                   </label>
-                  <Select defaultValue="jt">
-                    <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                      <SelectValue placeholder="Chọn đơn vị..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="jt">J&T Express</SelectItem>
-                      <SelectItem value="ghtk">Giao Hàng Tiết Kiệm</SelectItem>
-                      <SelectItem value="ghn">Giao Hàng Nhanh</SelectItem>
-                      <SelectItem value="vtp">Viettel Post</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    value={ward}
+                    onChange={(e) => setWard(e.target.value)}
+                    placeholder="VD: Bến Nghé"
+                    aria-invalid={Boolean(errors.ward)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                  {errors.ward ? <p className="text-xs font-medium text-rose-600">{errors.ward}</p> : null}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">
-                    Phương thức thanh toán
+                    Quận/huyện <span className="text-rose-500">*</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
-                      <div className="flex h-10 items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 cursor-pointer">
-                          <CreditCard className="h-4 w-4 text-indigo-600" />
-                          <span className="text-xs font-bold">Chuyển khoản</span>
-                      </div>
-                       <div className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 cursor-pointer hover:bg-slate-50">
-                          <Truck className="h-4 w-4 text-slate-400" />
-                          <span className="text-xs font-bold">COD</span>
-                      </div>
-                  </div>
+                  <Input
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    placeholder="VD: Quận 1"
+                    aria-invalid={Boolean(errors.district)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                  {errors.district ? <p className="text-xs font-medium text-rose-600">{errors.district}</p> : null}
                 </div>
 
-                <div className="mt-6 space-y-2 rounded-xl bg-slate-900 p-4 dark:bg-slate-800/50">
-                    <div className="flex justify-between text-[11px] text-slate-400 uppercase font-bold">
-                        <span>Tạm tính</span>
-                        <span>31,500,000 ₫</span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-slate-400 uppercase font-bold">
-                        <span>Phí vận chuyển</span>
-                        <span>35,000 ₫</span>
-                    </div>
-                    <div className="my-2 border-t border-slate-800"></div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-300">TỔNG CỘNG</span>
-                        <span className="text-lg font-black text-rose-500">31,535,000 ₫</span>
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">
+                    Tỉnh/thành <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="VD: TP.HCM"
+                    aria-invalid={Boolean(errors.city)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                  {errors.city ? <p className="text-xs font-medium text-rose-600">{errors.city}</p> : null}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
+              <Warehouse className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Cấu hình đơn xuất
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-slate-500">
+                  Kho xuất <span className="text-rose-500">*</span>
+                </label>
+                <SearchableSelect
+                  value={warehouseId}
+                  onValueChange={setWarehouseId}
+                  options={warehouseOptions}
+                  dialogTitle="Chọn kho xuất"
+                  placeholder={warehousesLoading ? "Đang tải kho..." : "Chọn hoặc gõ để tìm..."}
+                  searchPlaceholder="Tìm theo tên kho…"
+                  emptyText="Không tìm thấy kho phù hợp"
+                  disabled={warehousesLoading}
+                  loading={warehousesLoading}
+                  error={Boolean(errors.warehouseId)}
+                  className="focus:ring-indigo-500/30"
+                />
+                {errors.warehouseId ? <p className="text-xs font-medium text-rose-600">{errors.warehouseId}</p> : null}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Độ ưu tiên <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    placeholder="5"
+                    aria-invalid={Boolean(errors.priority)}
+                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  />
+                  {errors.priority ? <p className="text-xs font-medium text-rose-600">{errors.priority}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">Trạng thái</label>
+                  <Input value="PENDING" disabled className="border-slate-200 bg-slate-100 font-mono text-sm" />
+                  <p className="text-[11px] text-slate-400">Đơn mới tạo luôn bắt đầu ở trạng thái PENDING.</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-slate-500">
+                  Quốc gia <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  placeholder="VN"
+                  maxLength={2}
+                  aria-invalid={Boolean(errors.country)}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+                {errors.country ? <p className="text-xs font-medium text-rose-600">{errors.country}</p> : null}
+              </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-             <div className="flex flex-col gap-4">
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 dark:shadow-none h-12">
-                <Save className="mr-2 h-4 w-4" />
-                Xác nhận & Xuất kho
+            <div className="flex flex-col gap-3">
+              <Button
+                type="submit"
+                disabled={creating}
+                className="h-12 w-full bg-indigo-600 shadow-xl shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70 dark:shadow-none"
+              >
+                {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {creating ? "Đang tạo..." : "Xác nhận & Xuất kho"}
               </Button>
               <Button
+                type="button"
                 render={<Link href="/orders" />}
                 nativeButton={false}
                 variant="outline"
@@ -218,8 +325,8 @@ export default function NewOrderPage() {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
+      </form>
     </div>
   );
 }
