@@ -21,14 +21,40 @@ export interface PurchaseOrder {
   updatedAt?: string;
 }
 
-export interface CreatePurchaseOrderPayload {
-  poNumber: string;
+export interface PurchaseOrderProgress {
+  totalOrderedQty: number;
+  totalReceivedQty: number;
+  fullyReceived: boolean;
+}
+
+export interface PurchaseOrderDetail {
+  purchaseOrder: PurchaseOrder;
+  items: PoItem[];
+  putawayTasks: PutawayTask[];
+  progress: PurchaseOrderProgress;
+}
+
+export interface CreatePurchaseOrderRequest {
   supplierId: string;
   warehouseId: string;
   orderDate: string;
   expectedDate?: string;
-  status?: PurchaseOrderStatus;
   totalAmount?: number;
+}
+
+export type CreatePurchaseOrderPayload = CreatePurchaseOrderRequest;
+
+export interface UpdatePurchaseOrderPayload {
+  id: string;
+  body: Partial<{
+    poNumber: string;
+    supplierId: string;
+    warehouseId: string;
+    orderDate: string;
+    expectedDate: string | null;
+    status: PurchaseOrderStatus;
+    totalAmount: number | null;
+  }>;
 }
 
 export interface PoItem {
@@ -52,13 +78,30 @@ export interface CreatePoItemPayload {
   unitPrice?: number;
 }
 
+export interface UpdatePoItemPayload {
+  id: string;
+  purchaseOrderId: string;
+  body: Partial<{
+    lineNumber: number;
+    productId: string;
+    productSku: string;
+    orderedQty: number;
+    receivedQty: number;
+    unitPrice: number | null;
+  }>;
+}
+
 export interface ReceivePoItemPayload {
   poItemId: string;
   purchaseOrderId: string;
   body: { qty: number; suggestedLocationId?: string };
 }
 
-export type PutawayTaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export type PutawayTaskStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
 
 export interface PutawayTask {
   id: string;
@@ -70,6 +113,22 @@ export interface PutawayTask {
   assigneeId?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface LocationOption {
+  id: string;
+  warehouseId: string;
+  code?: string;
+  name?: string;
+}
+
+export interface StockSnapshot {
+  id?: string;
+  warehouseId?: string;
+  locationId?: string;
+  productId?: string;
+  qty?: number;
+  availableQty?: number;
 }
 
 export interface PatchPutawayTaskPayload {
@@ -91,4 +150,6 @@ export type ReceivePoItemResponse = ApiResponse<{
   putawayTask?: PutawayTask | null;
 }>;
 
-export type PurchaseOrderListResponse = ApiResponse<PurchaseOrder[] | PagedResponse<PurchaseOrder>>;
+export type PurchaseOrderListResponse = ApiResponse<
+  PurchaseOrder[] | PagedResponse<PurchaseOrder>
+>;

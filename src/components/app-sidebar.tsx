@@ -97,6 +97,12 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function stableHrefToId(href: string) {
+  // Keep it deterministic across SSR and client.
+  // Also sanitize to a valid HTML id-friendly string.
+  return `sidebar-link-${href.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const allItems = [...mainItems, ...secondaryItems, ...reportItems, ...systemItems];
@@ -245,7 +251,7 @@ const SidebarItem = memo(function SidebarItem({
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        render={<Link href={item.href} />}
+        render={<Link href={item.href} id={stableHrefToId(item.href)} />}
         isActive={active}
         tooltip={item.label}
         onClick={() => {

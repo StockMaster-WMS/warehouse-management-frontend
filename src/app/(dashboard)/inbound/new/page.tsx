@@ -1,419 +1,267 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import {
-  ArrowLeft,
-  Save,
-  FileUp,
-} from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AlertCircle, ChevronLeft, ChevronRight, FileText, Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import type { Warehouse as WarehouseType } from "@/types/warehouse";
-import type { Product } from "@/types/product";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { apiErrMessage, type PagedResponse } from "@/types/api";
+import type { PurchaseOrder } from "@/types/purchase-order";
 import {
-  useGetProductsForPoQuery,
-  useGetWarehousesForPoQuery,
+  useConfirmPurchaseOrderMutation,
+  useGetPurchaseOrdersQuery,
 } from "@/store/services/purchase-order.service";
-import { useGetSuppliersQuery } from "@/store/services/supplier.service";
-import { getSupplierDisplayName } from "@/types/supplier";
-import type { InboundLine, FieldErrors, LineFormErrors } from "@/types/inbound";
-import { InboundGeneralForm } from "@/components/features/InboundGeneralForm";
-import { InboundLinesTable } from "@/components/features/InboundLinesTable";
 
-function todayIsoDate() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+export default function NewInboundReceiptPage() {
+  const router = useRouter();
+  const [page, setPage] = useState(0);
+  const [keyword, setKeyword] = useState("");
 
-function parseDecimal(str: string) {
-  const n = Number(String(str).replace(",", ".").trim());
-  return Number.isFinite(n) ? n : NaN;
-}
-
-export default function NewInboundPage() {
-  const [supplierId, setSupplierId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
-  const [inboundDate, setInboundDate] = useState(todayIsoDate);
-  const [note, setNote] = useState("");
-  const [transportMode, setTransportMode] = useState("road");
-
-  const [lines, setLines] = useState<InboundLine[]>([]);
-  const [lineProductId, setLineProductId] = useState("");
-  const [lineQtyStr, setLineQtyStr] = useState("1");
-  const [linePriceStr, setLinePriceStr] = useState("");
-  const [productSearch, setProductSearch] = useState("");
-  const debouncedProductSearch = useDebouncedValue(productSearch.trim());
-
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [lineFormErrors, setLineFormErrors] = useState<LineFormErrors>({});
-  const [rowErrors, setRowErrors] = useState<Record<string, { qty?: string; price?: string }>>({});
-
-  const [removeTarget, setRemoveTarget] = useState<InboundLine | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-
-
-  const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } =
-    useGetSuppliersQuery({
-      page: 0,
-      size: 50,
-      sort: "createdAt",
-      sortDir: "desc",
+  // In this project, "Tạo phiếu nhập" maps to confirming a PO (DRAFT -> RECEIVING).
+  // The actual receive/putaway happens on `purchase-orders/[id]`.
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetPurchaseOrdersQuery({
+      page,
+      size: 20,
+      status: "DRAFT",
+      ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
     });
-  const { data: warehousesRes, isError: warehousesErr, isFetching: warehousesLoading } =
-    useGetWarehousesForPoQuery({});
-  const {
-    data: productsRes,
-    isError: productsErr,
-    isFetching: productsLoading,
-  } = useGetProductsForPoQuery({
-    ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
-  });
 
-  const suppliers = useMemo(
-    () =>
-      (suppliersRes?.data?.content ?? []).map((s) => ({
-        id: s.id,
-        name: getSupplierDisplayName(s),
-      })),
-    [suppliersRes]
-  );
+  const rows = data?.data?.content ?? [];
+  const pagedBody = data?.data;
 
-  const supplierOptions = useMemo(
-    () => suppliers.map((s) => ({ value: String(s.id), label: s.name })),
-    [suppliers]
-  );
+  const paged = useMemo((): Pick<
+    PagedResponse<PurchaseOrder>,
+    "page" | "size" | "total_elements" | "total_pages"
+  > | null => {
+    if (
+      !pagedBody ||
+      typeof pagedBody.page !== "number" ||
+      typeof pagedBody.total_pages !== "number"
+    )
+      return null;
+    return {
+      page: pagedBody.page,
+      size: pagedBody.size,
+      total_elements: pagedBody.total_elements,
+      total_pages: pagedBody.total_pages,
+    };
+  }, [pagedBody]);
 
-  const warehouses = useMemo(
-    () =>
-      (warehousesRes?.data?.content ?? []).flatMap((raw) => {
-        const w = raw as Partial<WarehouseType>;
-        if (!w.id || !w.name) return [];
-        return [{ id: String(w.id), name: String(w.name) }];
-      }),
-    [warehousesRes]
-  );
+  const canGoPrev = page > 0;
+  const canGoNext =
+    paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
 
-  const selectedWarehouseName = useMemo(() => {
-    if (!warehouseId) return undefined;
-    return warehouses.find((w) => String(w.id) === String(warehouseId))?.name;
-  }, [warehouseId, warehouses]);
+  const [confirmPo, { isLoading: confirming }] =
+    useConfirmPurchaseOrderMutation();
 
-  const transportLabel =
-    transportMode === "sea" ? "Đường biển" : transportMode === "air" ? "Hàng không" : "Đường bộ";
-
-  const products = useMemo(
-    () =>
-      (productsRes?.data?.content ?? []).map((p: Product) => ({
-        id: String(p.id),
-        sku: p.sku,
-        name: p.name,
-      })),
-    [productsRes]
-  );
-
-  const productOptions = useMemo(
-    () =>
-      products.map((p) => ({
-        value: p.id,
-        label: p.name,
-        hint: p.sku,
-      })),
-    [products]
-  );
-
-  const selectedLineProduct = useMemo(
-    () => products.find((p) => p.id === lineProductId),
-    [products, lineProductId]
-  );
-
-  const totals = useMemo(() => {
-    let qtySum = 0;
-    let moneySum = 0;
-    let hasPrice = false;
-    for (const row of lines) {
-      const q = parseDecimal(row.qtyStr);
-      if (q > 0) qtySum += q;
-      const p = parseDecimal(row.unitPriceStr);
-      if (row.unitPriceStr.trim() !== "" && Number.isFinite(p)) {
-        hasPrice = true;
-        if (q > 0 && p >= 0) moneySum += q * p;
-      }
-    }
-    return { lineCount: lines.length, qtySum, moneySum, hasPrice };
-  }, [lines]);
-
-  function validateHeader(): FieldErrors {
-    const e: FieldErrors = {};
-    if (!supplierId) e.supplier = "Chọn nhà cung cấp";
-    if (!warehouseId) e.warehouse = "Chọn kho nhận";
-    if (!inboundDate) e.date = "Chọn ngày nhập";
-    if (lines.length === 0) e.lines = "Thêm ít nhất một dòng hàng";
-    return e;
-  }
-
-  function validateRow(row: InboundLine): { qty?: string; price?: string } {
-    const out: { qty?: string; price?: string } = {};
-    const q = parseDecimal(row.qtyStr);
-    if (!(q > 0) || Number.isNaN(q)) out.qty = "Số lượng phải lớn hơn 0";
-    if (row.unitPriceStr.trim() !== "") {
-      const p = parseDecimal(row.unitPriceStr);
-      if (Number.isNaN(p) || p < 0) out.price = "Đơn giá không hợp lệ";
-    }
-    return out;
-  }
-
-  function addLine(e: React.FormEvent) {
-    e.preventDefault();
-    const le: LineFormErrors = {};
-    if (!lineProductId) le.product = "Chọn sản phẩm";
-    const qty = parseDecimal(lineQtyStr);
-    if (!(qty > 0) || Number.isNaN(qty)) le.qty = "Nhập số lượng lớn hơn 0";
-    setLineFormErrors(le);
-    if (Object.keys(le).length) return;
-
-    if (lines.some((l) => l.productId === lineProductId)) {
-      toast.error("Sản phẩm đã có trong phiếu");
-      return;
-    }
-    const p = selectedLineProduct;
-    if (!p) {
-      toast.error("Không tìm thấy sản phẩm");
-      return;
-    }
-    setLines((prev) => [
-      ...prev,
-      {
-        rowId: crypto.randomUUID(),
-        productId: p.id,
-        sku: p.sku,
-        name: p.name,
-        qtyStr: String(qty),
-        unitPriceStr: linePriceStr.trim(),
-      },
-    ]);
-    setLineProductId("");
-    setLineQtyStr("1");
-    setLinePriceStr("");
-    setLineFormErrors({});
-    setFieldErrors((prev) => ({ ...prev, lines: undefined }));
-    toast.success("Đã thêm dòng");
-  }
-
-  function confirmRemoveLine() {
-    if (!removeTarget) return;
-    setLines((prev) => prev.filter((l) => l.rowId !== removeTarget.rowId));
-    setRowErrors((prev) => {
-      const next = { ...prev };
-      delete next[removeTarget.rowId];
-      return next;
-    });
-    toast.message("Đã xóa dòng", { description: "Có thể thêm lại bằng form phía trên." });
-    setRemoveTarget(null);
-  }
-
-  function updateLineQty(rowId: string, qtyStr: string) {
-    setLines((prev) => prev.map((l) => (l.rowId === rowId ? { ...l, qtyStr } : l)));
-    setRowErrors((prev) => {
-      const next = { ...prev };
-      if (next[rowId]) next[rowId] = { ...next[rowId], qty: undefined };
-      return next;
-    });
-  }
-
-  function updateLinePrice(rowId: string, unitPriceStr: string) {
-    setLines((prev) => prev.map((l) => (l.rowId === rowId ? { ...l, unitPriceStr } : l)));
-    setRowErrors((prev) => {
-      const next = { ...prev };
-      if (next[rowId]) next[rowId] = { ...next[rowId], price: undefined };
-      return next;
-    });
-  }
-
-  async function handleSave() {
-    const headerErr = validateHeader();
-    const perRow: Record<string, { qty?: string; price?: string }> = {};
-    for (const row of lines) {
-      const re = validateRow(row);
-      if (re.qty || re.price) perRow[row.rowId] = re;
-    }
-    setFieldErrors(headerErr);
-    setRowErrors(perRow);
-
-    if (Object.keys(headerErr).length || Object.keys(perRow).length) {
-      toast.error("Kiểm tra lại thông tin", {
-        description: "Các ô chưa đúng được đánh dấu bên dưới.",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+  async function handleCreateReceipt(poId: string) {
     try {
-      await new Promise((r) => window.setTimeout(r, 500));
-      toast.success("Đã lưu phiếu", {
-        description: "Dữ liệu đã ghi nhận trên form. Kết nối máy chủ sẽ bật khi có API.",
-      });
-    } catch {
-      toast.error("Không lưu được", { description: "Thử lại sau giây lát." });
-    } finally {
-      setIsSubmitting(false);
+      const res = await confirmPo(poId).unwrap();
+      if (!res.success) {
+        toast.error(res.message || "Tạo phiếu nhập thất bại");
+        return;
+      }
+      toast.success(res.message || "Đã tạo phiếu nhập (sang RECEIVING)");
+      router.push(`/purchase-orders/${poId}`);
+    } catch (err) {
+      toast.error(apiErrMessage(err));
     }
   }
-
-  const saveDisabled = isSubmitting || suppliersErr || warehousesErr;
 
   return (
-    <div className="flex min-h-[calc(100svh-10rem)] flex-col gap-8 pb-28">
+    <div className="space-y-6">
       <PageHeader
-        title="Tạo phiếu nhập hàng"
-        description="Điền thông tin chung, thêm từng dòng hàng rồi bấm Lưu phiếu."
+        title="Tạo phiếu nhập"
+        description="Chọn PO ở trạng thái DRAFT và Confirm PO để bắt đầu nhận hàng."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              render={<Link href="/inbound" />}
-              nativeButton={false}
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-              aria-label="Quay lại danh sách"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-slate-200 dark:border-slate-700"
-              disabled
-              title="Tính năng đang phát triển"
-            >
-              <FileUp className="mr-2 h-4 w-4" />
-              Nhập từ file
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full hover:bg-slate-100"
+            onClick={() => router.push("/inbound")}
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
         }
       />
 
-      <InboundGeneralForm
-        supplierId={supplierId}
-        setSupplierId={setSupplierId}
-        warehouseId={warehouseId}
-        setWarehouseId={setWarehouseId}
-        inboundDate={inboundDate}
-        setInboundDate={setInboundDate}
-        note={note}
-        setNote={setNote}
-        transportMode={transportMode}
-        setTransportMode={setTransportMode}
-        fieldErrors={fieldErrors}
-        setFieldErrors={setFieldErrors}
-        supplierOptions={supplierOptions}
-        warehouses={warehouses}
-        selectedWarehouseName={selectedWarehouseName}
-        suppliersErr={suppliersErr}
-        suppliersLoading={suppliersLoading}
-        warehousesErr={warehousesErr}
-        warehousesLoading={warehousesLoading}
-        transportLabel={transportLabel}
-      />
-
-      <InboundLinesTable
-        lines={lines}
-        onAddLine={addLine}
-        lineProductId={lineProductId}
-        setLineProductId={setLineProductId}
-        lineQtyStr={lineQtyStr}
-        setLineQtyStr={setLineQtyStr}
-        linePriceStr={linePriceStr}
-        setLinePriceStr={setLinePriceStr}
-        lineFormErrors={lineFormErrors}
-        setLineFormErrors={setLineFormErrors}
-        rowErrors={rowErrors}
-        updateLineQty={updateLineQty}
-        updateLinePrice={updateLinePrice}
-        setRemoveTarget={setRemoveTarget}
-        productOptions={productOptions}
-        selectedLineProduct={selectedLineProduct}
-        productsErr={productsErr}
-        productsLoading={productsLoading}
-        productSearch={productSearch}
-        setProductSearch={setProductSearch}
-        totals={totals}
-        fieldErrors={fieldErrors}
-      />
-
-      {/* Action bar */}
-      <div
-        className="sticky bottom-0 z-30 -mx-4 mt-auto border-t border-slate-200/90 bg-[#F8FAFC]/95 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-[#F8FAFC]/85 dark:border-slate-800 dark:bg-slate-950/90 lg:-mx-8 lg:px-8"
-        role="toolbar"
-        aria-label="Thao tác phiếu nhập"
-      >
-        <div className="mx-auto flex w-full max-w-8xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <FileText className="h-4 w-4 text-indigo-500" />
+          PO DRAFT
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="relative lg:col-span-2">
+            <Input
+              value={keyword}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
+              placeholder="Tìm theo mã PO..."
+              className="pr-2"
+            />
+          </div>
           <Button
-            render={<Link href="/inbound" />}
-            nativeButton={false}
             variant="outline"
-            className="order-2 border-slate-200 sm:order-1 dark:border-slate-700"
-            disabled={isSubmitting}
+            size="sm"
+            onClick={() => {
+              setKeyword("");
+              setPage(0);
+              refetch();
+            }}
           >
-            <ArrowLeft className="mr-2 size-4" />
-            Quay lại / Huỷ
-          </Button>
-          <Button
-            type="button"
-            className="order-1 h-10 bg-indigo-600 px-6 hover:bg-indigo-700 sm:order-2 sm:min-w-[200px]"
-            disabled={saveDisabled}
-            onClick={handleSave}
-          >
-            {isSubmitting ? (
-              <>Đang lưu…</>
-            ) : (
-              <>
-                <Save className="mr-2 size-4" />
-                Lưu phiếu
-              </>
-            )}
+            Làm mới
           </Button>
         </div>
       </div>
 
-      <Dialog open={Boolean(removeTarget)} onOpenChange={(o) => !o && setRemoveTarget(null)}>
-        <DialogContent className="max-w-sm" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Xóa dòng hàng?</DialogTitle>
-            <DialogDescription>
-              {removeTarget ? (
-                <>
-                  Sẽ bỏ <span className="font-medium text-foreground">{removeTarget.name}</span> khỏi phiếu. Thao tác
-                  này chỉ áp dụng trên form (chưa gửi máy chủ).
-                </>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setRemoveTarget(null)}>
-              Không
-            </Button>
-            <Button type="button" variant="destructive" onClick={confirmRemoveLine}>
-              Xóa dòng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {isFetching && !isLoading ? (
+          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+            Đang cập nhật dữ liệu…
+          </p>
+        ) : null}
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Mã PO</TableHead>
+                <TableHead>Ngày đặt</TableHead>
+                <TableHead>Dự kiến</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={`po-draft-skel-${i}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="ml-auto h-8 w-20 rounded-lg" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={AlertCircle}
+                      title="Không tải được danh sách PO"
+                      description={apiErrMessage(error)}
+                      action={
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetch()}
+                        >
+                          Thử lại
+                        </Button>
+                      }
+                      className="py-10"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={FileText}
+                      title="Chưa có PO DRAFT"
+                      description="Không có đơn nhập nào ở trạng thái DRAFT để tạo phiếu nhập."
+                      className="py-10"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((po: PurchaseOrder) => (
+                  <TableRow key={po.id}>
+                    <TableCell className="font-medium">{po.poNumber}</TableCell>
+                    <TableCell>{po.orderDate}</TableCell>
+                    <TableCell>{po.expectedDate ?? "—"}</TableCell>
+                    <TableCell>{po.status ?? "DRAFT"}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={confirming}
+                        onClick={() => handleCreateReceipt(po.id)}
+                      >
+                        {confirming ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Đang xử lý
+                          </>
+                        ) : (
+                          "Tạo phiếu nhập"
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {paged && paged.total_pages > 1 ? (
+          <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+            <div className="text-xs text-slate-500">
+              Hiển thị {rows.length}/{paged.total_elements} PO
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canGoPrev || isFetching}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Trước
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canGoNext || isFetching}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

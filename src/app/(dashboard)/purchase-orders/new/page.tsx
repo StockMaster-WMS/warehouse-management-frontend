@@ -26,7 +26,6 @@ import { getSupplierDisplayName } from "@/types/supplier";
 import type { PoItem } from "@/types/purchase-order";
 
 const headerSchema = z.object({
-  poNumber: z.string().trim().min(1, "Nhập mã PO").max(30, "Tối đa 30 ký tự"),
   supplierId: z.string().min(1, "Chọn nhà cung cấp"),
   warehouseId: z.string().min(1, "Chọn kho"),
   orderDate: z.string().min(1, "Chọn ngày đặt"),
@@ -41,7 +40,6 @@ const lineSchema = z.object({
 });
 
 export default function NewPurchaseOrderPage() {
-  const [poNumber, setPoNumber] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
   const [orderDate, setOrderDate] = useState("");
@@ -60,13 +58,18 @@ export default function NewPurchaseOrderPage() {
   const [productSearch, setProductSearch] = useState("");
   const debouncedProductSearch = useDebouncedValue(productSearch.trim());
 
-  const { data: suppliersRes, isError: suppliersErr, isFetching: suppliersLoading } = useGetSuppliersQuery({
+  const {
+    data: suppliersRes,
+    isError: suppliersErr,
+    isFetching: suppliersLoading,
+  } = useGetSuppliersQuery({
     page: 0,
     size: 50,
     sort: "createdAt",
     sortDir: "desc",
   });
-  const { data: warehousesRes, isError: warehousesErr } = useGetWarehousesForPoQuery({});
+  const { data: warehousesRes, isError: warehousesErr } =
+    useGetWarehousesForPoQuery({});
   const {
     data: productsRes,
     isError: productsErr,
@@ -81,12 +84,12 @@ export default function NewPurchaseOrderPage() {
         id: s.id,
         name: getSupplierDisplayName(s),
       })),
-    [suppliersRes]
+    [suppliersRes],
   );
 
   const supplierOptions = useMemo(
     () => suppliers.map((s) => ({ value: String(s.id), label: s.name })),
-    [suppliers]
+    [suppliers],
   );
   const warehouses = useMemo(
     () =>
@@ -102,7 +105,7 @@ export default function NewPurchaseOrderPage() {
           } as Warehouse,
         ];
       }),
-    [warehousesRes]
+    [warehousesRes],
   );
   const products = useMemo(
     () =>
@@ -111,7 +114,7 @@ export default function NewPurchaseOrderPage() {
         sku: p.sku,
         name: p.name,
       })),
-    [productsRes]
+    [productsRes],
   );
 
   const productOptions = useMemo(
@@ -121,12 +124,12 @@ export default function NewPurchaseOrderPage() {
         label: p.name,
         hint: p.sku,
       })),
-    [products]
+    [products],
   );
 
   const { data: poItemsRes, isFetching: itemsLoading } = useGetPoItemsQuery(
     { purchaseOrderId: purchaseOrderId! },
-    { skip: !purchaseOrderId }
+    { skip: !purchaseOrderId },
   );
 
   const lines = useMemo(() => poItemsRes?.data?.content ?? [], [poItemsRes]);
@@ -138,10 +141,11 @@ export default function NewPurchaseOrderPage() {
 
   const selectedProduct = useMemo(
     () => products.find((p) => p.id === lineProductId),
-    [products, lineProductId]
+    [products, lineProductId],
   );
 
-  const [createPo, { isLoading: savingHeader }] = useCreatePurchaseOrderMutation();
+  const [createPo, { isLoading: savingHeader }] =
+    useCreatePurchaseOrderMutation();
   const [createLine, { isLoading: savingLine }] = useCreatePoItemMutation();
   const [deleteLine, { isLoading: isDeletingLine }] = useDeletePoItemMutation();
 
@@ -151,7 +155,6 @@ export default function NewPurchaseOrderPage() {
     e.preventDefault();
     setHeaderErrors({});
     const parsed = headerSchema.safeParse({
-      poNumber,
       supplierId,
       warehouseId,
       orderDate,
@@ -165,7 +168,9 @@ export default function NewPurchaseOrderPage() {
         if (!err[k]) err[k] = issue.message;
       }
       setHeaderErrors(err);
-      toast.error(err.poNumber ?? err.supplierId ?? err.warehouseId ?? err.orderDate ?? "Kiểm tra form");
+      toast.error(
+        err.supplierId ?? err.warehouseId ?? err.orderDate ?? "Kiểm tra form",
+      );
       return;
     }
 
@@ -182,11 +187,12 @@ export default function NewPurchaseOrderPage() {
 
     try {
       const res = await createPo({
-        poNumber: parsed.data.poNumber,
         supplierId: parsed.data.supplierId,
         warehouseId: parsed.data.warehouseId,
         orderDate: parsed.data.orderDate,
-        ...(parsed.data.expectedDate?.trim() ? { expectedDate: parsed.data.expectedDate.trim() } : {}),
+        ...(parsed.data.expectedDate?.trim()
+          ? { expectedDate: parsed.data.expectedDate.trim() }
+          : {}),
         ...(totalAmount != null ? { totalAmount } : {}),
       }).unwrap();
 
@@ -198,7 +204,7 @@ export default function NewPurchaseOrderPage() {
       setPurchaseOrderId(po.id);
       setSavedPoNumber(po.poNumber);
       setSavedStatus(po.status ?? "DRAFT");
-      toast.success(res.message || "Đã lưu đơn nhập");
+      toast.success(`Tạo đơn nhập thành công: ${po.poNumber}`);
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
@@ -306,8 +312,6 @@ export default function NewPurchaseOrderPage() {
       />
 
       <PoHeaderForm
-        poNumber={poNumber}
-        setPoNumber={setPoNumber}
         supplierId={supplierId}
         setSupplierId={setSupplierId}
         warehouseId={warehouseId}
@@ -358,7 +362,11 @@ export default function NewPurchaseOrderPage() {
 
       {purchaseOrderId && (
         <div className="text-center">
-          <Button render={<Link href={`/purchase-orders/${purchaseOrderId}`} />} nativeButton={false} variant="outline">
+          <Button
+            render={<Link href={`/purchase-orders/${purchaseOrderId}`} />}
+            nativeButton={false}
+            variant="outline"
+          >
             Xem chi tiết & nhận hàng
           </Button>
         </div>
