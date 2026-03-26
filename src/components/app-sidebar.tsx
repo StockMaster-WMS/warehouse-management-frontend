@@ -191,7 +191,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-slate-100 p-4 dark:border-slate-800">
         <div className="flex flex-col gap-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 group-data-[collapsible=icon]:hidden dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Nguyen Van A</p>
+            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">An Nguyen</p>
             <p className="mt-0.5 text-[11px] text-slate-500">Warehouse Manager</p>
           </div>
 

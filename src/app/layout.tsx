@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
@@ -17,8 +17,27 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Warehouse Management System",
-  description: "Sustainable WMS frontend with Next.js App Router",
+  title: "StockMaster — Quản lý kho",
+  description:
+    "Giao diện web quản lý kho đa điểm: tồn kho, nhập xuất, đơn hàng và báo cáo.",
+  applicationName: "StockMaster",
+  appleWebApp: {
+    capable: true,
+    title: "StockMaster",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -35,7 +54,7 @@ export default function RootLayout({
       <body>
         <a
           href="#main-content"
-          className="sr-only z-50 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Bỏ qua đến nội dung chính
         </a>

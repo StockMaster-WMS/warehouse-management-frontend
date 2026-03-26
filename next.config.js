@@ -2,14 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:9000/api/:path*",
-      },
-    ];
-  },
+  // API gọi thẳng tới BE qua NEXT_PUBLIC_API_BASE* trong .env — không dùng rewrite /api.
 };
 
 module.exports = nextConfig;
