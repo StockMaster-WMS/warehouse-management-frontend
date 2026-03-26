@@ -15,8 +15,6 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { Warehouse } from "@/types/warehouse";
 
 export interface PoHeaderFormProps {
-  poNumber: string;
-  setPoNumber: (v: string) => void;
   supplierId: string;
   setSupplierId: (v: string) => void;
   warehouseId: string;
@@ -43,8 +41,6 @@ export interface PoHeaderFormProps {
 }
 
 export function PoHeaderForm({
-  poNumber,
-  setPoNumber,
   supplierId,
   setSupplierId,
   warehouseId,
@@ -79,19 +75,9 @@ export function PoHeaderForm({
       </h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">Mã PO *</label>
-          <Input
-            value={poNumber}
-            onChange={(e) => setPoNumber(e.target.value)}
-            maxLength={30}
-            disabled={headerLocked}
-            placeholder="VD: PO-2025-001"
-            className={headerErrors.poNumber ? "border-rose-400" : ""}
-          />
-          {headerErrors.poNumber && <p className="text-xs text-rose-600">{headerErrors.poNumber}</p>}
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">Ngày đặt *</label>
+          <label className="text-xs font-semibold text-slate-500">
+            Ngày đặt *
+          </label>
           <Input
             type="date"
             value={orderDate}
@@ -99,10 +85,15 @@ export function PoHeaderForm({
             disabled={headerLocked}
             className={headerErrors.orderDate ? "border-rose-400" : ""}
           />
-          {headerErrors.orderDate && <p className="text-xs text-rose-600">{headerErrors.orderDate}</p>}
+          {headerErrors.orderDate && (
+            <p className="text-xs text-rose-600">{headerErrors.orderDate}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <label htmlFor="po-supplier" className="text-xs font-semibold text-slate-500">
+          <label
+            htmlFor="po-supplier"
+            className="text-xs font-semibold text-slate-500"
+          >
             Nhà cung cấp *
           </label>
           <SearchableSelect
@@ -111,7 +102,11 @@ export function PoHeaderForm({
             onValueChange={(v) => setSupplierId(v)}
             options={supplierOptions}
             placeholder={
-              suppliersErr ? "Lỗi tải NCC" : suppliersLoading ? "Đang tải…" : "Chạm để chọn NCC"
+              suppliersErr
+                ? "Lỗi tải NCC"
+                : suppliersLoading
+                  ? "Đang tải…"
+                  : "Chạm để chọn NCC"
             }
             searchPlaceholder="Tên nhà cung cấp…"
             emptyText="Không tìm thấy NCC"
@@ -122,19 +117,31 @@ export function PoHeaderForm({
             dialogTitle="Chọn nhà cung cấp"
           />
           {suppliersErr && (
-            <p className="text-xs text-amber-600">Không tải được danh sách nhà cung cấp.</p>
+            <p className="text-xs text-amber-600">
+              Không tải được danh sách nhà cung cấp.
+            </p>
           )}
-          {headerErrors.supplierId && <p className="text-xs text-rose-600">{headerErrors.supplierId}</p>}
+          {headerErrors.supplierId && (
+            <p className="text-xs text-rose-600">{headerErrors.supplierId}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">Kho nhận *</label>
+          <label className="text-xs font-semibold text-slate-500">
+            Kho nhận *
+          </label>
           <Select
             value={warehouseId}
             onValueChange={(v) => setWarehouseId(v ?? "")}
             disabled={headerLocked || warehousesErr}
           >
-            <SelectTrigger className={headerErrors.warehouseId ? "border-rose-400" : ""}>
-              <SelectValue placeholder={warehousesErr ? "Lỗi GET /api/warehouses" : "Chọn kho"} />
+            <SelectTrigger
+              className={headerErrors.warehouseId ? "border-rose-400" : ""}
+            >
+              <SelectValue
+                placeholder={
+                  warehousesErr ? "Lỗi GET /api/warehouses" : "Chọn kho"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
               {warehouses.map((w) => (
@@ -145,12 +152,18 @@ export function PoHeaderForm({
             </SelectContent>
           </Select>
           {warehousesErr && (
-            <p className="text-xs text-amber-600">Không tải được danh sách kho.</p>
+            <p className="text-xs text-amber-600">
+              Không tải được danh sách kho.
+            </p>
           )}
-          {headerErrors.warehouseId && <p className="text-xs text-rose-600">{headerErrors.warehouseId}</p>}
+          {headerErrors.warehouseId && (
+            <p className="text-xs text-rose-600">{headerErrors.warehouseId}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">Ngày dự kiến</label>
+          <label className="text-xs font-semibold text-slate-500">
+            Ngày dự kiến
+          </label>
           <Input
             type="date"
             value={expectedDate}
@@ -159,7 +172,9 @@ export function PoHeaderForm({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">Tổng tiền (tuỳ chọn)</label>
+          <label className="text-xs font-semibold text-slate-500">
+            Tổng tiền (tuỳ chọn)
+          </label>
           <Input
             value={totalAmountStr}
             onChange={(e) => setTotalAmountStr(e.target.value)}
@@ -169,23 +184,37 @@ export function PoHeaderForm({
             className={headerErrors.totalAmountStr ? "border-rose-400" : ""}
           />
           {headerErrors.totalAmountStr && (
-            <p className="text-xs text-rose-600">{headerErrors.totalAmountStr}</p>
+            <p className="text-xs text-rose-600">
+              {headerErrors.totalAmountStr}
+            </p>
           )}
         </div>
       </div>
 
       {headerLocked && savedPoNumber && (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
-          <span className="font-medium text-emerald-900 dark:text-emerald-100">Đã lưu đơn:</span>
+          <span className="font-medium text-emerald-900 dark:text-emerald-100">
+            Đã lưu đơn:
+          </span>
           <Badge>{savedPoNumber}</Badge>
-          <span className="text-slate-600 dark:text-slate-300">Trạng thái: {savedStatus}</span>
-          <span className="font-mono text-xs text-slate-500">id: {purchaseOrderId}</span>
+          <span className="text-slate-600 dark:text-slate-300">
+            Trạng thái: {savedStatus}
+          </span>
+          <span className="font-mono text-xs text-slate-500">
+            id: {purchaseOrderId}
+          </span>
         </div>
       )}
 
       <div className="mt-6">
-        <Button type="submit" disabled={headerLocked || savingHeader} className="bg-indigo-600 hover:bg-indigo-700">
-          {savingHeader ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        <Button
+          type="submit"
+          disabled={headerLocked || savingHeader}
+          className="bg-indigo-600 hover:bg-indigo-700"
+        >
+          {savingHeader ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : null}
           Lưu đơn nhập
         </Button>
       </div>

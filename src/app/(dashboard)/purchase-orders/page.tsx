@@ -2,10 +2,26 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, FileText, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  FileText,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Filter,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -19,23 +35,71 @@ import {
 import { useGetPurchaseOrdersQuery } from "@/store/services/purchase-order.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+
+const STATUS_OPTIONS = ["DRAFT", "RECEIVING", "RECEIVED", "CANCELLED"] as const;
+
+function statusBadgeClass(status: string | null | undefined): string {
+  switch (status) {
+    case "DRAFT":
+      return "bg-slate-100 text-slate-700";
+    case "RECEIVING":
+      return "bg-amber-100 text-amber-700";
+    case "RECEIVED":
+      return "bg-emerald-100 text-emerald-700";
+    case "CANCELLED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
 
 export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(0);
+  const [keyword, setKeyword] = useState("");
+  const [status, setStatus] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
 
-  const { data, isLoading, isFetching, isError, error, refetch } = useGetPurchaseOrdersQuery({
-    page,
-    size: 20,
+  const { data: suppliersRes } = useGetSuppliersQuery({
+    page: 0,
+    size: 100,
+    sort: "createdAt",
+    sortDir: "desc",
   });
+  const { data: warehousesRes } = useGetWarehousesQuery({
+    page: 0,
+    size: 100,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
+
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetPurchaseOrdersQuery({
+      page,
+      size: 20,
+      ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
+      ...(status ? { status } : {}),
+      ...(supplierId ? { supplierId } : {}),
+      ...(warehouseId ? { warehouseId } : {}),
+    });
 
   const rows = data?.data?.content ?? [];
   const pagedBody = data?.data;
+  const suppliers = suppliersRes?.data?.content ?? [];
+  const warehouses = warehousesRes?.data?.content ?? [];
 
   const paged = useMemo((): Pick<
     PagedResponse<PurchaseOrder>,
     "page" | "size" | "total_elements" | "total_pages"
   > | null => {
-    if (!pagedBody || typeof pagedBody.page !== "number" || typeof pagedBody.total_pages !== "number") return null;
+    if (
+      !pagedBody ||
+      typeof pagedBody.page !== "number" ||
+      typeof pagedBody.total_pages !== "number"
+    )
+      return null;
     return {
       page: pagedBody.page,
       size: pagedBody.size,
@@ -45,7 +109,19 @@ export default function PurchaseOrdersPage() {
   }, [pagedBody]);
 
   const canGoPrev = page > 0;
-  const canGoNext = paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
+  const canGoNext =
+    paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
+  const hasAnyFilter = Boolean(
+    keyword.trim() || status || supplierId || warehouseId,
+  );
+
+  const clearFilters = () => {
+    setKeyword("");
+    setStatus("");
+    setSupplierId("");
+    setWarehouseId("");
+    setPage(0);
+  };
 
   return (
     <div className="space-y-6">
@@ -75,6 +151,94 @@ export default function PurchaseOrdersPage() {
           </div>
         }
       />
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <Filter className="h-4 w-4 text-indigo-500" />
+          Bộ lọc PO
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+          <div className="relative lg:col-span-2">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={keyword}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
+              placeholder="Tìm theo mã PO..."
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={status || "__all__"}
+            onValueChange={(v) => {
+              const next = String(v ?? "");
+              setStatus(next === "__all__" ? "" : next);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger id="po-status-select-trigger">
+              <SelectValue placeholder="Tất cả trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tất cả trạng thái</SelectItem>
+              {STATUS_OPTIONS.map((st) => (
+                <SelectItem key={st} value={st}>
+                  {st}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={supplierId || "__all__"}
+            onValueChange={(v) => {
+              const next = String(v ?? "");
+              setSupplierId(next === "__all__" ? "" : next);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger id="po-supplier-select-trigger">
+              <SelectValue placeholder="Tất cả nhà cung cấp" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tất cả nhà cung cấp</SelectItem>
+              {suppliers.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name ?? s.code ?? s.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={warehouseId || "__all__"}
+            onValueChange={(v) => {
+              const next = String(v ?? "");
+              setWarehouseId(next === "__all__" ? "" : next);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger id="po-warehouse-select-trigger">
+              <SelectValue placeholder="Tất cả kho" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tất cả kho</SelectItem>
+              {warehouses.map((w) => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {hasAnyFilter ? (
+          <div className="mt-3">
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Xóa bộ lọc
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {isFetching && !isLoading ? (
@@ -120,9 +284,16 @@ export default function PurchaseOrdersPage() {
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách đơn nhập"
-                      description={apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối yêu cầu.")}
+                      description={apiErrMessage(
+                        error,
+                        "Lỗi mạng hoặc máy chủ từ chối yêu cầu.",
+                      )}
                       action={
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetch()}
+                        >
                           Thử lại
                         </Button>
                       }
@@ -158,7 +329,10 @@ export default function PurchaseOrdersPage() {
                     <TableCell>{po.orderDate}</TableCell>
                     <TableCell>{po.expectedDate ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="font-normal">
+                      <Badge
+                        variant="secondary"
+                        className={`font-normal ${statusBadgeClass(po.status)}`}
+                      >
                         {po.status ?? "—"}
                       </Badge>
                     </TableCell>
@@ -186,7 +360,9 @@ export default function PurchaseOrdersPage() {
               {isLoading ? (
                 <span>Đang tải danh sách…</span>
               ) : isError ? (
-                <span className="text-rose-600 dark:text-rose-400">Không tải được dữ liệu.</span>
+                <span className="text-rose-600 dark:text-rose-400">
+                  Không tải được dữ liệu.
+                </span>
               ) : paged ? (
                 <span>
                   Hiển thị {rows.length}/{paged.total_elements} đơn nhập
