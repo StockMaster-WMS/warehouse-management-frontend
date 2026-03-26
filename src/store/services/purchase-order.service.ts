@@ -170,7 +170,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
 
     getPurchaseOrderById: builder.query<ApiResponse<PurchaseOrder>, string>({
       query: (id) => ({ url: `/purchase-orders/${id}`, method: "GET" }),
-      providesTags: (_r, _e, id) => [{ type: "PurchaseOrder", id }],
+      providesTags: (_r, _e, id) => [{ type: "PurchaseOrder" as const, id }],
     }),
 
     getPurchaseOrderDetail: builder.query<
@@ -279,9 +279,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         const items = result?.data?.content ?? [];
         return [
           ...items.map((i) => ({ type: "PoItem" as const, id: i.id })),
-          ...(purchaseOrderId
-            ? [{ type: "PoItem" as const, id: `PO-${purchaseOrderId}` }]
-            : []),
+          { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${purchaseOrderId}` },
         ];
       },
     }),
@@ -305,22 +303,12 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           payload.unitPrice = body.unitPrice;
         return { url: "/po-items", method: "POST", data: payload };
       },
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
-      ],
+      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],
     }),
 
-    updatePoItem: builder.mutation<ApiResponse<PoItem>, UpdatePoItemPayload>({
-      query: ({ id, body }) => ({
-        url: `/po-items/${id}`,
-        method: "PUT",
-        data: body,
-      }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "PoItem", id: arg.id },
-        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
-      ],
-    }),
+    deletePoItem: builder.mutation<ApiResponse<unknown>, { id: string; purchaseOrderId: string }>({
+      query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
+      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],    }),
 
     deletePoItem: builder.mutation<
       ApiResponse<unknown>,
@@ -328,8 +316,8 @@ const purchaseOrderApi = baseApi.injectEndpoints({
     >({
       query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
       invalidatesTags: (_r, _e, arg) => [
-        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
-      ],
+        { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` },
+        { type: "PutawayTask" as const, id: "LIST" },      ],
     }),
 
     receivePoItem: builder.mutation<ApiResponse<unknown>, ReceivePoItemPayload>(
