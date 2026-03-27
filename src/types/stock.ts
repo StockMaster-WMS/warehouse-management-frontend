@@ -12,4 +12,28 @@ export interface Stock {
   updatedAt?: string | null;
 }
 
+export type StockRef = {
+  id: string;
+  code?: string | null;
+  name?: string | null;
+};
+
+export type StockProductRef = {
+  id: string;
+  sku?: string | null;
+  name?: string | null;
+  minQty?: number | null;
+  maxQty?: number | null;
+  unitPrice?: number | null;
+};
+
+/** Stock expanded from backend: includes product/location/warehouse objects. */
+export interface StockExpanded extends Stock {
+  lotNumber?: string | null;
+  expiryDate?: string | null;
+  warehouse?: StockRef | null;
+  location?: StockRef | null;
+  product?: StockProductRef | null;
+}
+
 export type StockResponse = ApiResponse<Stock>;
