@@ -457,17 +457,17 @@ export default function PurchaseOrderDetailPage({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Dòng</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">orderedQty</TableHead>
-                    <TableHead className="text-right">receivedQty</TableHead>
-                    <TableHead className="text-right w-56">Thao tác</TableHead>
+              <Table className="min-w-[860px] text-left">
+                <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                  <TableRow>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dòng</TableHead>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</TableHead>
+                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">orderedQty</TableHead>
+                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">receivedQty</TableHead>
+                    <TableHead className="w-56 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {items.length === 0 ? (
                     <TableRow>
                       <TableCell
@@ -485,18 +485,18 @@ export default function PurchaseOrderDetailPage({
                           Number(row.receivedQty ?? 0),
                       );
                       return (
-                        <TableRow key={row.id}>
-                          <TableCell>{row.lineNumber}</TableCell>
-                          <TableCell className="font-mono text-sm">
+                        <TableRow key={row.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
+                          <TableCell className="px-3 py-3">{row.lineNumber}</TableCell>
+                          <TableCell className="px-3 py-3 font-mono text-sm">
                             {row.productSku}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="px-3 py-3 text-right">
                             {row.orderedQty}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="px-3 py-3 text-right">
                             {row.receivedQty ?? 0}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="px-3 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Button
                                 type="button"
@@ -536,18 +536,18 @@ export default function PurchaseOrderDetailPage({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Task</TableHead>
-                    <TableHead>poItemId</TableHead>
-                    <TableHead>status</TableHead>
-                    <TableHead>suggestedLocationId</TableHead>
-                    <TableHead>actualLocationId</TableHead>
-                    <TableHead className="text-right w-40">Thao tác</TableHead>
+              <Table className="min-w-[980px] text-left">
+                <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                  <TableRow>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">poItemId</TableHead>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">status</TableHead>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">suggestedLocationId</TableHead>
+                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">actualLocationId</TableHead>
+                    <TableHead className="w-40 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {tasks.length === 0 ? (
                     <TableRow>
                       <TableCell
@@ -559,21 +559,21 @@ export default function PurchaseOrderDetailPage({
                     </TableRow>
                   ) : (
                     tasks.map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell className="font-mono text-xs">
+                      <TableRow key={task.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
+                        <TableCell className="px-3 py-3 font-mono text-xs">
                           {task.id}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
+                        <TableCell className="px-3 py-3 font-mono text-xs">
                           {task.poItemId ?? "-"}
                         </TableCell>
-                        <TableCell>{task.status}</TableCell>
-                        <TableCell className="font-mono text-xs">
+                        <TableCell className="px-3 py-3">{task.status}</TableCell>
+                        <TableCell className="px-3 py-3 font-mono text-xs">
                           {task.suggestedLocationId ?? "-"}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
+                        <TableCell className="px-3 py-3 font-mono text-xs">
                           {task.actualLocationId ?? "-"}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="px-3 py-3 text-right">
                           <Button
                             type="button"
                             size="sm"

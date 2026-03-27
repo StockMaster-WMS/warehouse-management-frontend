@@ -101,8 +101,8 @@ export default function NewOrderPage() {
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
-        title="Tạo vận đơn / Hành trình"
-        description="Khởi tạo lệnh xuất kho và điều phối vận chuyển mới."
+        title="Tạo đơn hàng xuất kho"
+        description="Khởi tạo đơn xuất kho mới và chuẩn bị luồng giao nhận."
         actions={
           <Button
             render={<Link href="/orders" />}
