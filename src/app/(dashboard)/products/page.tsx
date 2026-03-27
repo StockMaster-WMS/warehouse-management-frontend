@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { apiErrMessage } from "@/types/api";
 
@@ -81,10 +82,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
-
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedKeyword, statusFilter, categoryFilter]);
+  const [warehouseFilter, setWarehouseFilter] = useState("");
 
   const listParams = useMemo(
     () => ({
@@ -94,8 +92,9 @@ export default function ProductsPage() {
       keyword: debouncedKeyword || undefined,
       status: statusFilter || undefined,
       categoryId: categoryFilter || undefined,
+      warehouseId: warehouseFilter || undefined,
     }),
-    [page, debouncedKeyword, statusFilter, categoryFilter],
+    [page, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
   );
 
   const { data, error, isLoading, isFetching, refetch } = useGetProductsQuery(listParams);
@@ -111,17 +110,32 @@ export default function ProductsPage() {
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
+  const {
+    data: warehouseOptionsData,
+    isLoading: warehousesLoading,
+    error: warehousesError,
+    refetch: refetchWarehouses,
+  } = useGetWarehousesQuery({
+    page: 0,
+    size: 200,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState("");
 
   const hasAnyFilter =
-    searchInput.trim().length > 0 || Boolean(statusFilter) || Boolean(categoryFilter);
+    searchInput.trim().length > 0 ||
+    Boolean(statusFilter) ||
+    Boolean(categoryFilter) ||
+    Boolean(warehouseFilter);
 
   const clearFilters = () => {
     setSearchInput("");
     setStatusFilter("");
     setCategoryFilter("");
+    setWarehouseFilter("");
     setPage(0);
   };
 
@@ -185,7 +199,10 @@ export default function ProductsPage() {
       <SearchToolbar
         placeholder="Tìm kiếm sản phẩm"
         value={searchInput}
-        onValueChange={setSearchInput}
+        onValueChange={(value) => {
+          setSearchInput(value);
+          setPage(0);
+        }}
         filters={
           <div className="flex w-full flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -195,7 +212,10 @@ export default function ProductsPage() {
             <Select
               value={statusFilter}
               onValueChange={(v) =>
-                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "")
+                {
+                  setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "");
+                  setPage(0);
+                }
               }
             >
               <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-[168px] dark:border-slate-800 dark:bg-slate-900">
@@ -215,7 +235,13 @@ export default function ProductsPage() {
                 <SelectItem value="INACTIVE" className="rounded-lg">Ngưng</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "")}>
+            <Select
+              value={categoryFilter}
+              onValueChange={(v) => {
+                setCategoryFilter(v ?? "");
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue
                   placeholder={
@@ -253,6 +279,51 @@ export default function ProductsPage() {
                     itemClassName="rounded-lg"
                   />
                 ) : null}
+              </SelectContent>
+            </Select>
+            <Select
+              value={warehouseFilter}
+              onValueChange={(v) => {
+                setWarehouseFilter(v ?? "");
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
+                <SelectValue
+                  placeholder={
+                    warehousesLoading
+                      ? "Đang tải kho..."
+                      : warehousesError
+                        ? "Lỗi tải kho"
+                        : "Tất cả kho"
+                  }
+                >
+                  {(val) => {
+                    if (!val) return "Tất cả kho";
+                    const w = warehouseOptionsData?.data?.content?.find((x) => x.id === val);
+                    return w ? `${w.name} (${w.code || "—"})` : "Đang tải…";
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-72 rounded-xl">
+                {warehousesError ? (
+                  <div className="px-2 py-1.5 text-xs text-rose-500">
+                    Không tải được danh sách kho.
+                    <button
+                      type="button"
+                      onClick={() => refetchWarehouses()}
+                      className="ml-1 underline"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                ) : null}
+                <SelectItem value="" className="rounded-lg">Tất cả kho</SelectItem>
+                {warehouseOptionsData?.data?.content?.map((w) => (
+                  <SelectItem key={w.id} value={w.id} className="rounded-lg">
+                    {w.name} {w.code ? `(${w.code})` : ""}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {hasAnyFilter ? (

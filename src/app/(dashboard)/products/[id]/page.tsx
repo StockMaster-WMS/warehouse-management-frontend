@@ -326,27 +326,65 @@ function formatLocationCode(location?: Location) {
   return pieces.length ? pieces.join("-") : "--";
 }
 
-function formatLocationHint(location?: Location, fallbackLocationId?: string) {
+function getLocationParts(location?: Location, fallbackLocationId?: string) {
+  const parseFromCode = (code?: string | null) => {
+    const normalized = code?.trim();
+    if (!normalized) return null;
+    const chunks = normalized
+      .split(/[-_/.\s]+/)
+      .map((v) => v.trim())
+      .filter(Boolean);
+    if (chunks.length < 3) return null;
+    return {
+      zone: chunks[0],
+      rack: chunks[1],
+      aisle: chunks[2],
+      level: undefined as string | undefined,
+      bin: chunks[3],
+    };
+  };
+
   if (!location) {
-    return fallbackLocationId
-      ? `Mã vị trí: ...${fallbackLocationId.slice(-6).toUpperCase()}`
-      : "Chưa có thông tin vị trí";
+    return {
+      zone: "",
+      rack: "",
+      aisle: "",
+      level: "",
+      bin: "",
+      fallback: fallbackLocationId
+        ? `Mã vị trí: ...${fallbackLocationId.slice(-6).toUpperCase()}`
+        : "Chưa có thông tin vị trí",
+    };
   }
 
-  const hints: string[] = [];
-  if (location.zone?.trim()) hints.push(`Khu ${location.zone.trim()}`);
-  if (location.aisle?.trim()) hints.push(`Dãy ${location.aisle.trim()}`);
-  if (location.rack?.trim()) hints.push(`Kệ ${location.rack.trim()}`);
-  if (location.level != null && String(location.level).trim()) {
-    hints.push(`Tầng ${String(location.level).trim()}`);
+  const direct = {
+    zone: location.zone?.trim() || "",
+    rack: location.rack?.trim() || "",
+    aisle: location.aisle?.trim() || "",
+    level:
+      location.level != null && String(location.level).trim()
+        ? String(location.level).trim()
+        : "",
+    bin: location.bin?.trim() || "",
+  };
+
+  if (direct.zone || direct.rack || direct.aisle || direct.level || direct.bin) {
+    return { ...direct, fallback: "" };
   }
-  if (location.bin?.trim()) hints.push(`Ô ${location.bin.trim()}`);
 
-  if (hints.length > 0) return hints.join(" - ");
+  const parsed = parseFromCode(location.code);
+  if (parsed) return { ...parsed, fallback: "" };
 
-  return location.id
-    ? `Mã vị trí: ...${location.id.slice(-6).toUpperCase()}`
-    : "Chưa có thông tin vị trí";
+  return {
+    zone: "",
+    rack: "",
+    aisle: "",
+    level: "",
+    bin: "",
+    fallback: location.id
+      ? `Mã vị trí: ...${location.id.slice(-6).toUpperCase()}`
+      : "Chưa có thông tin vị trí",
+  };
 }
 
 function StockByLocationList({
@@ -396,9 +434,6 @@ function StockByLocationList({
     (sum, item) => sum + Number(item.qtyAvailable || 0),
     0,
   );
-  const suggestedStocks = sortedStocks
-    .filter((item) => Number(item.qtyAvailable || 0) > 0)
-    .slice(0, 3);
 
   const maxOnHand = Math.max(...stocks.map((item) => Number(item.qtyOnHand || 0)), 1);
 
@@ -454,35 +489,10 @@ function StockByLocationList({
         <span className="text-right">Khả dụng</span>
       </div>
 
-      {suggestedStocks.length > 0 ? (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-2 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-500">
-            Gợi ý lấy hàng
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {suggestedStocks.map((item, index) => {
-              const location = locationMap[item.locationId];
-              return (
-                <span
-                  key={`pick-suggestion-${item.id}`}
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                    index === 0
-                      ? "border-indigo-300 bg-white text-indigo-700 dark:border-indigo-700 dark:bg-slate-900 dark:text-indigo-300"
-                      : "border-indigo-200 bg-indigo-100/70 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-                  }`}
-                >
-                  {index === 0 ? "Nên lấy: " : ""}
-                  {formatLocationCode(location)} ({Number(item.qtyAvailable || 0).toLocaleString("vi-VN")})
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
       <div className="space-y-2">
         {sortedStocks.map((stock, index) => {
-        const location = locationMap[stock.locationId];
+          const location = locationMap[stock.locationId];
+          const locationParts = getLocationParts(location, stock.locationId);
           const onHand = Number(stock.qtyOnHand || 0);
           const available = Number(stock.qtyAvailable || 0);
           const ratio = onHand > 0 ? Math.min(100, Math.round((available / onHand) * 100)) : 0;
@@ -516,9 +526,38 @@ function StockByLocationList({
                     {state}
                   </span>
                 </div>
-                <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                  {formatLocationHint(location, stock.locationId)}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1">
+                  {locationParts.zone ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Khu: {locationParts.zone}
+                    </span>
+                  ) : null}
+                  {locationParts.rack ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Kệ: {locationParts.rack}
+                    </span>
+                  ) : null}
+                  {locationParts.aisle ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Hàng: {locationParts.aisle}
+                    </span>
+                  ) : null}
+                  {locationParts.level ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Tầng: {locationParts.level}
+                    </span>
+                  ) : null}
+                  {locationParts.bin ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Ô: {locationParts.bin}
+                    </span>
+                  ) : null}
+                  {locationParts.fallback ? (
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {locationParts.fallback}
+                    </span>
+                  ) : null}
+                </div>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                   <div
                     className="h-full rounded-full bg-indigo-500 transition-all"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Boxes,
@@ -11,6 +12,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
+  RefreshCcw,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -68,6 +71,8 @@ export default function InventoryPage() {
     data: summaryResponse,
     isLoading: isSummaryLoading,
     isError: isSummaryError,
+    refetch: refetchSummary,
+    isFetching: isSummaryFetching,
   } = useGetWarehouseSummaryQuery();
 
   const summary = summaryResponse?.data;
@@ -134,34 +139,54 @@ export default function InventoryPage() {
   };
 
   const stats = useMemo(() => {
+    const listDerivedTotal = warehouses.length;
+    const listDerivedActive = warehouses.filter((w) => w.isActive).length;
+    const listDerivedInactive = Math.max(0, listDerivedTotal - listDerivedActive);
+    const listWithStock = warehouses.filter((w) => (w.fillRatePercent ?? 0) > 0).length;
+    const listHighFill = warehouses.filter((w) => (w.fillRatePercent ?? 0) >= 90).length;
+
+    const totalWarehouses =
+      summary?.totalWarehouses ??
+      (totalElements > 0 ? totalElements : listDerivedTotal);
+    const activeWarehouses = summary?.activeWarehouses ?? listDerivedActive;
+    const inactiveWarehouses = summary?.inactiveWarehouses ?? listDerivedInactive;
+    const warehousesWithStock = summary?.warehousesWithStock ?? listWithStock;
+    const highFillRateWarehouses = summary?.highFillRateWarehouses ?? listHighFill;
+
     return [
       {
         label: "Tổng số kho",
-        value: String(summary?.totalWarehouses ?? 0),
+        value: String(totalWarehouses),
         icon: CheckCircle2,
       },
       {
         label: "Kho đang hoạt động",
-        value: String(summary?.activeWarehouses ?? 0),
+        value: String(activeWarehouses),
         icon: Boxes,
       },
       {
         label: "Kho ngừng hoạt động",
-        value: String(summary?.inactiveWarehouses ?? 0),
+        value: String(inactiveWarehouses),
         icon: AlertTriangle,
       },
       {
         label: "Kho có tồn hàng",
-        value: String(summary?.warehousesWithStock ?? 0),
+        value: String(warehousesWithStock),
         icon: Boxes,
       },
       {
         label: "Kho lấp đầy cao",
-        value: String(summary?.highFillRateWarehouses ?? 0),
+        value: String(highFillRateWarehouses),
         icon: AlertTriangle,
       },
     ];
-  }, [summary]);
+  }, [summary, warehouses, totalElements]);
+
+  const avgFillRate = useMemo(() => {
+    if (warehouses.length === 0) return 0;
+    const sum = warehouses.reduce((acc, w) => acc + Number(w.fillRatePercent ?? 0), 0);
+    return Math.round(sum / warehouses.length);
+  }, [warehouses]);
 
   const paginationMeta = useMemo(() => {
     if (warehouses.length === 0) {
@@ -178,12 +203,26 @@ export default function InventoryPage() {
         title="Theo dõi tồn kho"
         description="Tổng quan tình trạng hàng hóa và biến động kho theo thời gian thực."
         actions={
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+          <Button
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => {
+              refetch();
+              refetchSummary();
+            }}
+            disabled={isFetching || isSummaryFetching}
+          >
             <TrendingUp className="mr-2 h-4 w-4" />
-            Báo cáo nhập xuất
+            {isFetching || isSummaryFetching ? "Đang làm mới..." : "Làm mới số liệu"}
           </Button>
         }
       />
+
+      {isSummaryError ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
+          Chưa tải được số liệu tổng hợp kho. Hệ thống đang dùng dữ liệu fallback từ danh sách hiện tại.
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat, i) => {
@@ -260,6 +299,27 @@ export default function InventoryPage() {
           </p>
         ) : null}
 
+        {!isLoading && !error ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
+            <span>
+              Tỷ lệ lấp đầy trung bình (trang hiện tại):{" "}
+              <span className="font-bold">{avgFillRate}%</span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => {
+                refetch();
+                refetchSummary();
+              }}
+            >
+              <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+              Cập nhật
+            </Button>
+          </div>
+        ) : null}
+
         <Table className="text-left">
           <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
             <TableRow>
@@ -277,6 +337,15 @@ export default function InventoryPage() {
               </TableHead>
               <TableHead className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Trạng thái
+              </TableHead>
+              <TableHead className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Lấp đầy
+              </TableHead>
+              <TableHead className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Zones / Bins
+              </TableHead>
+              <TableHead className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Chi tiết
               </TableHead>
               <TableHead className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Cập nhật
@@ -306,6 +375,15 @@ export default function InventoryPage() {
                   <TableCell className="px-6 py-4 text-center">
                     <Skeleton className="mx-auto h-5 w-24 rounded-full" />
                   </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <Skeleton className="mx-auto h-5 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <Skeleton className="mx-auto h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Skeleton className="ml-auto h-8 w-24 rounded-md" />
+                  </TableCell>
                   <TableCell className="px-6 py-4 text-right">
                     <Skeleton className="ml-auto h-3 w-20" />
                   </TableCell>
@@ -313,7 +391,7 @@ export default function InventoryPage() {
               ))
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={6} className="p-0">
+                <TableCell colSpan={9} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải dữ liệu tồn kho"
@@ -333,7 +411,7 @@ export default function InventoryPage() {
               </TableRow>
             ) : warehouses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="p-0">
+                <TableCell colSpan={9} className="p-0">
                   <EmptyState
                     icon={Boxes}
                     title={
@@ -401,6 +479,32 @@ export default function InventoryPage() {
                         ? "Đang hoạt động"
                         : "Ngừng hoạt động"}
                     </span>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        (warehouse.fillRatePercent ?? 0) >= 90
+                          ? "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+                          : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300"
+                      }`}
+                    >
+                      {Math.max(0, Math.round(warehouse.fillRatePercent ?? 0))}%
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center text-xs text-slate-600 dark:text-slate-300">
+                    {warehouse.zonesCount ?? 0} / {warehouse.binsCount ?? 0}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Button
+                      render={<Link href={`/warehouses/${warehouse.id}/edit`} />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-slate-200 text-xs"
+                    >
+                      Xem chi tiết
+                      <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right text-xs font-medium text-slate-500">
                     {warehouse.updatedAt
