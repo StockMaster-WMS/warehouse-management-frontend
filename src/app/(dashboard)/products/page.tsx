@@ -8,7 +8,6 @@ import {
   MapPin,
   AlertCircle,
   Hash,
-  Filter,
   ListOrdered,
   X,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { ProductTableRow } from "@/components/features/ProductTableRow";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 
 const DeleteConfirmDialog = dynamic(
   () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
@@ -83,6 +83,7 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const listParams = useMemo(
     () => ({
@@ -130,6 +131,8 @@ export default function ProductsPage() {
     Boolean(statusFilter) ||
     Boolean(categoryFilter) ||
     Boolean(warehouseFilter);
+  const advancedCount =
+    Number(Boolean(statusFilter)) + Number(Boolean(categoryFilter)) + Number(Boolean(warehouseFilter));
 
   const clearFilters = () => {
     setSearchInput("");
@@ -137,6 +140,7 @@ export default function ProductsPage() {
     setCategoryFilter("");
     setWarehouseFilter("");
     setPage(0);
+    setAdvancedOpen(false);
   };
 
   const handleRequestDelete = useCallback((name: string) => {
@@ -203,20 +207,59 @@ export default function ProductsPage() {
           setSearchInput(value);
           setPage(0);
         }}
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={clearFilters}
+          />
+        }
         filters={
-          <div className="flex w-full flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {statusFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Trạng thái:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {statusFilter === "ACTIVE" ? "Hoạt động" : "Ngưng"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {categoryFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Nhóm:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.code ??
+                          categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {warehouseFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Kho:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.code ??
+                          warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
             <Select
               value={statusFilter}
-              onValueChange={(v) =>
-                {
-                  setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "");
-                  setPage(0);
-                }
-              }
+              onValueChange={(v) => {
+                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "");
+                setPage(0);
+              }}
             >
               <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-[168px] dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue placeholder="Trạng thái">
@@ -235,6 +278,7 @@ export default function ProductsPage() {
                 <SelectItem value="INACTIVE" className="rounded-lg">Ngưng</SelectItem>
               </SelectContent>
             </Select>
+
             <Select
               value={categoryFilter}
               onValueChange={(v) => {
@@ -281,6 +325,7 @@ export default function ProductsPage() {
                 ) : null}
               </SelectContent>
             </Select>
+
             <Select
               value={warehouseFilter}
               onValueChange={(v) => {
@@ -326,18 +371,7 @@ export default function ProductsPage() {
                 ))}
               </SelectContent>
             </Select>
-            {hasAnyFilter ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={clearFilters}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
-            ) : null}
-          </div>
+          </AdvancedFilterPanel>
         }
       />
 

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -74,6 +75,7 @@ export default function OrderPage() {
   const debouncedKeyword = useDebouncedValue(query.trim());
   const [statusFilter, setStatusFilter] = useState("Tất cả trạng thái");
   const [page, setPage] = useState(0);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const apiStatus = STATUS_LABEL_TO_API[statusFilter] ?? "";
 
@@ -103,6 +105,7 @@ export default function OrderPage() {
   const canGoNext = totalPages > 0 && page < totalPages - 1;
 
   const hasAnyFilter = query.trim().length > 0 || statusFilter !== "Tất cả trạng thái";
+  const advancedCount = Number(statusFilter !== "Tất cả trạng thái");
 
   useEffect(() => {
     if (!createdId) return;
@@ -146,24 +149,57 @@ export default function OrderPage() {
           setQuery(value);
           setPage(0);
         }}
-        filters={
-          <FilterGroup
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
             hasAnyFilter={hasAnyFilter}
-            onClear={clearFilters}
-            filters={[
-              {
-                label: "trạng thái",
-                placeholder: "Trạng thái",
-                value: statusFilter,
-                onChange: (value) => {
-                  setStatusFilter(value);
-                  setPage(0);
-                },
-                options: STATUS_FILTER_OPTIONS,
-                width: "sm:w-[200px]",
-              },
-            ]}
+            onClear={() => {
+              clearFilters();
+              setAdvancedOpen(false);
+            }}
           />
+        }
+        filters={
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {statusFilter !== "Tất cả trạng thái" ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Trạng thái:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">{statusFilter}</span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
+            <FilterGroup
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
+                clearFilters();
+                setAdvancedOpen(false);
+              }}
+              showTitle={false}
+              showClear={false}
+              filters={[
+                {
+                  label: "trạng thái",
+                  placeholder: "Trạng thái",
+                  value: statusFilter,
+                  onChange: (value) => {
+                    setStatusFilter(value);
+                    setPage(0);
+                  },
+                  options: STATUS_FILTER_OPTIONS,
+                  width: "sm:w-[200px]",
+                },
+              ]}
+            />
+          </AdvancedFilterPanel>
         }
       />
 

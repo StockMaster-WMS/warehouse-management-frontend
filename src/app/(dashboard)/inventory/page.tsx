@@ -6,6 +6,8 @@ import {
   AlertCircle,
   AlertTriangle,
   Boxes,
+  ChevronDown,
+  ChevronUp,
   FileSpreadsheet,
   Filter,
   History,
@@ -152,6 +154,7 @@ export default function InventoryPage() {
   const [page, setPage] = useState(0);
 
   const [reason, setReason] = useState("Kiểm kê");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const { data: warehousesData, isLoading: warehousesLoading, error: warehousesError, refetch: refetchWarehouses } =
     useGetWarehousesQuery({ page: 0, size: 200, sort: "createdAt", sortDir: "desc" });
@@ -175,12 +178,14 @@ export default function InventoryPage() {
   const canGoNext = totalPages > 0 && page < totalPages - 1;
 
   const hasAnyFilter = searchInput.trim().length > 0 || Boolean(warehouseId) || reason !== "Kiểm kê";
+  const activeAdvancedFiltersCount = Number(Boolean(warehouseId)) + Number(reason !== "Kiểm kê");
 
   const clearFilters = () => {
     setSearchInput("");
     setWarehouseId("");
     setReason("Kiểm kê");
     setPage(0);
+    setAdvancedOpen(false);
   };
 
   const summary = useMemo(() => {
@@ -284,7 +289,41 @@ export default function InventoryPage() {
           setPage(0);
         }}
         right={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-11 rounded-xl border-slate-200"
+              onClick={() => setAdvancedOpen((v) => !v)}
+              aria-expanded={advancedOpen}
+            >
+              <Filter className="mr-2 h-4 w-4 text-indigo-500" />
+              Bộ lọc nâng cao
+              {activeAdvancedFiltersCount > 0 ? (
+                <span className="ml-2 rounded-full bg-indigo-600/10 px-2 py-0.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+                  {activeAdvancedFiltersCount}
+                </span>
+              ) : null}
+              {advancedOpen ? (
+                <ChevronUp className="ml-2 h-4 w-4 text-slate-500" />
+              ) : (
+                <ChevronDown className="ml-2 h-4 w-4 text-slate-500" />
+              )}
+            </Button>
+
+            {hasAnyFilter ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-11 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                onClick={clearFilters}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Xoá lọc
+              </Button>
+            ) : null}
+
             <Button
               type="button"
               variant="outline"
@@ -298,50 +337,58 @@ export default function InventoryPage() {
           </div>
         }
         filters={
-          <div className="flex w-full flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
+          <div className="w-full space-y-3">
+            {!advancedOpen && activeAdvancedFiltersCount > 0 ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                {warehouseId ? (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                    Kho:{" "}
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">
+                      {warehouseOptions.find((x) => x.id === warehouseId)?.code ??
+                        warehouseOptions.find((x) => x.id === warehouseId)?.name ??
+                        "—"}
+                    </span>
+                  </span>
+                ) : null}
+                {reason !== "Kiểm kê" ? (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                    Lý do:{" "}
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">{reason}</span>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
 
-            {warehouseSelect}
+            {advancedOpen ? (
+              <div className="flex w-full flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                {warehouseSelect}
 
-            <Select
-              value={reason}
-              onValueChange={(v) => {
-                setReason(v ?? "Kiểm kê");
-                setPage(0);
-              }}
-            >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-[220px] dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
-                <SelectValue placeholder="Lý do điều chỉnh" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
-                <SelectItem value="Kiểm kê" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                  Kiểm kê
-                </SelectItem>
-                <SelectItem value="Hư hỏng" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                  Hư hỏng
-                </SelectItem>
-                <SelectItem value="Thất thoát" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                  Thất thoát
-                </SelectItem>
-                <SelectItem value="Khác" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                  Khác
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {hasAnyFilter ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={clearFilters}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
+                <Select
+                  value={reason}
+                  onValueChange={(v) => {
+                    setReason(v ?? "Kiểm kê");
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-[220px] dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
+                    <SelectValue placeholder="Lý do điều chỉnh" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
+                    <SelectItem value="Kiểm kê" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                      Kiểm kê
+                    </SelectItem>
+                    <SelectItem value="Hư hỏng" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                      Hư hỏng
+                    </SelectItem>
+                    <SelectItem value="Thất thoát" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                      Thất thoát
+                    </SelectItem>
+                    <SelectItem value="Khác" className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                      Khác
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             ) : null}
           </div>
         }

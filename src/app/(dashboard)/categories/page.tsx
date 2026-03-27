@@ -191,18 +191,18 @@ export default function CategoriesPage() {
         placeholder="Tìm theo tên hoặc mã nhóm..."
         value={query}
         onValueChange={setQuery}
-        filters={
-          query.trim().length > 0 && (
+        right={
+          query.trim().length > 0 ? (
             <Button
               type="button"
               variant="ghost"
-              className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+              className="h-11 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
               onClick={() => setQuery("")}
             >
               <X className="mr-2 h-4 w-4" />
               Xoá lọc
             </Button>
-          )
+          ) : null
         }
       />
         
