@@ -9,8 +9,8 @@ import {
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,12 @@ import { apiErrMessage } from "@/types/api";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateSalesOrderMutation } from "@/store/services/order.service";
 
-export default function NewOrderPage() {
+function NewOrderFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
+  const appliedWarehouseFromUrl = useRef(false);
+
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [line1, setLine1] = useState("");
@@ -36,13 +40,22 @@ export default function NewOrderPage() {
 
   const { data: warehousesRes, isFetching: warehousesLoading } = useGetWarehousesQuery({
     page: 0,
-    size: 50,
-    sort: "createdAt",
-    sortDir: "desc",
+    size: 200,
+    sort: "name",
+    sortDir: "asc",
   });
   const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
 
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+
+  useEffect(() => {
+    if (appliedWarehouseFromUrl.current || !warehouseIdFromUrl || warehousesLoading) return;
+    const exists = warehouses.some((w) => String(w.id) === warehouseIdFromUrl);
+    if (exists) {
+      setWarehouseId(warehouseIdFromUrl);
+      appliedWarehouseFromUrl.current = true;
+    }
+  }, [warehouseIdFromUrl, warehousesLoading, warehouses]);
 
   const warehouseOptions = useMemo(
     () =>
@@ -102,7 +115,11 @@ export default function NewOrderPage() {
     <div className="w-full space-y-6 pb-20">
       <PageHeader
         title="Tạo đơn hàng xuất kho"
-        description="Khởi tạo đơn xuất kho mới và chuẩn bị luồng giao nhận."
+        description={
+          warehouseIdFromUrl
+            ? "Khởi tạo đơn xuất kho mới. Kho xuất có thể đã được gợi ý từ liên kết (?warehouseId=)."
+            : "Khởi tạo đơn xuất kho mới và chuẩn bị luồng giao nhận."
+        }
         actions={
           <Button
             render={<Link href="/orders" />}
@@ -261,6 +278,15 @@ export default function NewOrderPage() {
                   className="focus:ring-indigo-500/30"
                 />
                 {errors.warehouseId ? <p className="text-xs font-medium text-rose-600">{errors.warehouseId}</p> : null}
+                {warehouseIdFromUrl && warehouseId === warehouseIdFromUrl ? (
+                  <p className="text-[11px] text-indigo-700 dark:text-indigo-300">
+                    Kho xuất đang theo liên kết <span className="font-mono">?warehouseId=</span> — có thể đổi tay nếu cần.
+                  </p>
+                ) : warehouseIdFromUrl && !warehousesLoading && !warehouses.some((w) => String(w.id) === warehouseIdFromUrl) ? (
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                    Tham số warehouseId trên URL không khớp kho nào — chọn kho thủ công.
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
@@ -328,5 +354,17 @@ export default function NewOrderPage() {
         </aside>
       </form>
     </div>
+  );
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center pb-20 text-sm text-slate-500">Đang tải form…</div>
+      }
+    >
+      <NewOrderFormContent />
+    </Suspense>
   );
 }

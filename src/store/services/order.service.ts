@@ -1,6 +1,6 @@
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { SalesOrder } from "@/types/sales-order";
+import type { SalesOrder, UpdateSalesOrderPayload } from "@/types/sales-order";
 
 export type GetOrdersParams = {
   page?: number;
@@ -67,6 +67,17 @@ const orderApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, id) => [{ type: "SalesOrder" as const, id }],
     }),
 
+    getSalesOrderBySoNumber: builder.query<ApiResponse<SalesOrder>, string>({
+      query: (soNumber) => ({
+        url: `/sales-orders/number/${encodeURIComponent(soNumber.trim())}`,
+        method: "GET",
+      }),
+      providesTags: (result) => {
+        const id = result?.data?.id;
+        return id ? [{ type: "SalesOrder" as const, id }] : [];
+      },
+    }),
+
     createSalesOrder: builder.mutation<ApiResponse<SalesOrder>, CreateSalesOrderPayload>({
       query: (data) => ({
         url: "/sales-orders",
@@ -74,6 +85,29 @@ const orderApi = baseApi.injectEndpoints({
         data,
       }),
       invalidatesTags: [{ type: "SalesOrder", id: "LIST" }],
+    }),
+
+    updateSalesOrder: builder.mutation<ApiResponse<SalesOrder>, { id: string; body: UpdateSalesOrderPayload }>({
+      query: ({ id, body }) => ({
+        url: `/sales-orders/${id}`,
+        method: "PUT",
+        data: body,
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "SalesOrder", id: arg.id },
+        { type: "SalesOrder", id: "LIST" },
+      ],
+    }),
+
+    deleteSalesOrder: builder.mutation<ApiResponse<unknown>, string>({
+      query: (id) => ({
+        url: `/sales-orders/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, id) => [
+        { type: "SalesOrder", id },
+        { type: "SalesOrder", id: "LIST" },
+      ],
     }),
 
     startPicking: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
@@ -114,7 +148,10 @@ const orderApi = baseApi.injectEndpoints({
 export const {
   useGetSalesOrdersQuery,
   useGetSalesOrderByIdQuery,
+  useLazyGetSalesOrderBySoNumberQuery,
   useCreateSalesOrderMutation,
+  useUpdateSalesOrderMutation,
+  useDeleteSalesOrderMutation,
   useStartPickingMutation,
   useMarkPackedMutation,
   useMarkShippedMutation,
