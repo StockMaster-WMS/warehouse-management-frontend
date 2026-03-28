@@ -49,6 +49,7 @@ function toTitle(segment: string): string {
     reports: "Báo cáo",
     settings: "Cài đặt hệ thống",
     security: "Bảo mật & Phân quyền",
+    profile: "Trang cá nhân",
     new: "Tạo mới",
   };
 
@@ -221,7 +222,7 @@ export function Navbar() {
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="rounded-lg py-2">
+              <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/profile" />}>
                 <UserCog className="mr-2 h-4 w-4 text-slate-500" />
                 <span>Trang cá nhân</span>
               </DropdownMenuItem>
