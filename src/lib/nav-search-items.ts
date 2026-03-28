@@ -46,7 +46,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "orders",
-    label: "Đơn hàng & giao nhận",
+    label: "Xuất kho & giao hàng",
     href: "/orders",
     group: "Tổng quan & tác nghiệp",
   },

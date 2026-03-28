@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -8,7 +8,6 @@ import {
   MapPin,
   AlertCircle,
   Hash,
-  Filter,
   ListOrdered,
   X,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { ProductTableRow } from "@/components/features/ProductTableRow";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 
 const DeleteConfirmDialog = dynamic(
   () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { apiErrMessage } from "@/types/api";
 
@@ -81,10 +82,8 @@ export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
-
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedKeyword, statusFilter, categoryFilter]);
+  const [warehouseFilter, setWarehouseFilter] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const listParams = useMemo(
     () => ({
@@ -94,8 +93,9 @@ export default function ProductsPage() {
       keyword: debouncedKeyword || undefined,
       status: statusFilter || undefined,
       categoryId: categoryFilter || undefined,
+      warehouseId: warehouseFilter || undefined,
     }),
-    [page, debouncedKeyword, statusFilter, categoryFilter],
+    [page, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
   );
 
   const { data, error, isLoading, isFetching, refetch } = useGetProductsQuery(listParams);
@@ -111,18 +111,36 @@ export default function ProductsPage() {
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
+  const {
+    data: warehouseOptionsData,
+    isLoading: warehousesLoading,
+    error: warehousesError,
+    refetch: refetchWarehouses,
+  } = useGetWarehousesQuery({
+    page: 0,
+    size: 200,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState("");
 
   const hasAnyFilter =
-    searchInput.trim().length > 0 || Boolean(statusFilter) || Boolean(categoryFilter);
+    searchInput.trim().length > 0 ||
+    Boolean(statusFilter) ||
+    Boolean(categoryFilter) ||
+    Boolean(warehouseFilter);
+  const advancedCount =
+    Number(Boolean(statusFilter)) + Number(Boolean(categoryFilter)) + Number(Boolean(warehouseFilter));
 
   const clearFilters = () => {
     setSearchInput("");
     setStatusFilter("");
     setCategoryFilter("");
+    setWarehouseFilter("");
     setPage(0);
+    setAdvancedOpen(false);
   };
 
   const handleRequestDelete = useCallback((name: string) => {
@@ -185,18 +203,63 @@ export default function ProductsPage() {
       <SearchToolbar
         placeholder="Tìm kiếm sản phẩm"
         value={searchInput}
-        onValueChange={setSearchInput}
+        onValueChange={(value) => {
+          setSearchInput(value);
+          setPage(0);
+        }}
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={clearFilters}
+          />
+        }
         filters={
-          <div className="flex w-full flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {statusFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Trạng thái:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {statusFilter === "ACTIVE" ? "Hoạt động" : "Ngưng"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {categoryFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Nhóm:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.code ??
+                          categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {warehouseFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Kho:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.code ??
+                          warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
             <Select
               value={statusFilter}
-              onValueChange={(v) =>
-                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "")
-              }
+              onValueChange={(v) => {
+                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "");
+                setPage(0);
+              }}
             >
               <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-[168px] dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue placeholder="Trạng thái">
@@ -215,7 +278,14 @@ export default function ProductsPage() {
                 <SelectItem value="INACTIVE" className="rounded-lg">Ngưng</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "")}>
+
+            <Select
+              value={categoryFilter}
+              onValueChange={(v) => {
+                setCategoryFilter(v ?? "");
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue
                   placeholder={
@@ -255,18 +325,53 @@ export default function ProductsPage() {
                 ) : null}
               </SelectContent>
             </Select>
-            {hasAnyFilter ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={clearFilters}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
-            ) : null}
-          </div>
+
+            <Select
+              value={warehouseFilter}
+              onValueChange={(v) => {
+                setWarehouseFilter(v ?? "");
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
+                <SelectValue
+                  placeholder={
+                    warehousesLoading
+                      ? "Đang tải kho..."
+                      : warehousesError
+                        ? "Lỗi tải kho"
+                        : "Tất cả kho"
+                  }
+                >
+                  {(val) => {
+                    if (!val) return "Tất cả kho";
+                    const w = warehouseOptionsData?.data?.content?.find((x) => x.id === val);
+                    return w ? `${w.name} (${w.code || "—"})` : "Đang tải…";
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-72 rounded-xl">
+                {warehousesError ? (
+                  <div className="px-2 py-1.5 text-xs text-rose-500">
+                    Không tải được danh sách kho.
+                    <button
+                      type="button"
+                      onClick={() => refetchWarehouses()}
+                      className="ml-1 underline"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                ) : null}
+                <SelectItem value="" className="rounded-lg">Tất cả kho</SelectItem>
+                {warehouseOptionsData?.data?.content?.map((w) => (
+                  <SelectItem key={w.id} value={w.id} className="rounded-lg">
+                    {w.name} {w.code ? `(${w.code})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AdvancedFilterPanel>
         }
       />
 

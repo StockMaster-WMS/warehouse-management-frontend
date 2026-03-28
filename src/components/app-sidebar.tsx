@@ -62,7 +62,7 @@ const mainItems: MenuItem[] = [
       { label: "Nhóm / loại hàng", href: "/categories" },
     ],
   },
-  { label: "Đơn hàng & giao nhận", href: "/orders", icon: Truck },
+  { label: "Xuất kho & giao hàng", href: "/orders", icon: Truck },
   {
     label: "Nhập hàng",
     href: "/inbound",

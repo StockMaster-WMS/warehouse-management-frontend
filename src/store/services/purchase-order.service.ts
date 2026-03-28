@@ -17,7 +17,6 @@ import type {
   PutawayTask,
   ReceivePoItemPayload,
   StockSnapshot,
-  UpdatePoItemPayload,
   UpdatePurchaseOrderPayload,
 } from "@/types/purchase-order";
 import type { Warehouse } from "@/types/warehouse";
@@ -95,6 +94,7 @@ function normalizeLocationList(raw: unknown): LocationOption[] {
 }
 
 const purchaseOrderApi = baseApi.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getWarehousesForPo: builder.query<
       ApiResponse<PagedResponse<Warehouse>>,
@@ -306,10 +306,6 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],
     }),
 
-    deletePoItem: builder.mutation<ApiResponse<unknown>, { id: string; purchaseOrderId: string }>({
-      query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
-      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],    }),
-
     deletePoItem: builder.mutation<
       ApiResponse<unknown>,
       { id: string; purchaseOrderId: string }
@@ -460,7 +456,6 @@ export const {
   useGetPoItemsQuery,
   useGetPoItemByIdQuery,
   useCreatePoItemMutation,
-  useUpdatePoItemMutation,
   useDeletePoItemMutation,
   useReceivePoItemMutation,
   useGetPutawayTasksQuery,

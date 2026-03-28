@@ -29,6 +29,7 @@ import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { FilterGroup } from "@/components/features/FilterGroup";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { apiErrMessage } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -98,6 +99,7 @@ export default function WarehousesPage() {
   const [sort, setSort] = useState<WarehouseSortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     setPage(0);
@@ -142,6 +144,8 @@ export default function WarehousesPage() {
     typeof isActive === "boolean" ||
     sort !== "createdAt" ||
     sortDir !== "desc";
+  const advancedCount =
+    Number(typeof isActive === "boolean") + Number(sort !== "createdAt") + Number(sortDir !== "desc");
 
   const clearFilters = () => {
     setSearchInput("");
@@ -184,49 +188,92 @@ export default function WarehousesPage() {
         className="max-w-full"
         value={searchInput}
         onValueChange={setSearchInput}
-        filters={
-          <FilterGroup
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
             hasAnyFilter={hasAnyFilter}
-            onClear={clearFilters}
-            filters={[
-              {
-                label: "trạng thái",
-                placeholder: "Trạng thái",
-                value: statusValue,
-                onChange: (value) => {
-                  if (value === STATUS_LABEL_ACTIVE) {
-                    setIsActive(true);
-                    return;
-                  }
-                  if (value === STATUS_LABEL_INACTIVE) {
-                    setIsActive(false);
-                    return;
-                  }
-                  setIsActive(undefined);
-                },
-                options: [STATUS_LABEL_ACTIVE, STATUS_LABEL_INACTIVE],
-                width: "sm:w-[180px]",
-              },
-              {
-                label: "sắp xếp",
-                placeholder: "Sắp xếp",
-                value: sortValue,
-                onChange: (value) =>
-                  setSort(SORT_FIELD_LABELS[value] ?? "createdAt"),
-                options: SORT_FIELD_OPTIONS,
-                width: "sm:w-[170px]",
-              },
-              {
-                label: "thứ tự",
-                placeholder: "Thứ tự",
-                value: sortDirValue,
-                onChange: (value) =>
-                  setSortDir(SORT_DIR_LABELS[value] ?? "desc"),
-                options: SORT_DIR_OPTIONS,
-                width: "sm:w-[150px]",
-              },
-            ]}
+            onClear={() => {
+              clearFilters();
+              setAdvancedOpen(false);
+            }}
           />
+        }
+        filters={
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {typeof isActive === "boolean" ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Trạng thái:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">{statusValue}</span>
+                    </span>
+                  ) : null}
+                  {sort !== "createdAt" ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Sắp xếp:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">{sortValue}</span>
+                    </span>
+                  ) : null}
+                  {sortDir !== "desc" ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Thứ tự:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">{sortDirValue}</span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
+            <FilterGroup
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
+                clearFilters();
+                setAdvancedOpen(false);
+              }}
+              showTitle={false}
+              showClear={false}
+              filters={[
+                {
+                  label: "trạng thái",
+                  placeholder: "Trạng thái",
+                  value: statusValue,
+                  onChange: (value) => {
+                    if (value === STATUS_LABEL_ACTIVE) {
+                      setIsActive(true);
+                      return;
+                    }
+                    if (value === STATUS_LABEL_INACTIVE) {
+                      setIsActive(false);
+                      return;
+                    }
+                    setIsActive(undefined);
+                  },
+                  options: [STATUS_LABEL_ACTIVE, STATUS_LABEL_INACTIVE],
+                  width: "sm:w-[180px]",
+                },
+                {
+                  label: "sắp xếp",
+                  placeholder: "Sắp xếp",
+                  value: sortValue,
+                  onChange: (value) => setSort(SORT_FIELD_LABELS[value] ?? "createdAt"),
+                  options: SORT_FIELD_OPTIONS,
+                  width: "sm:w-[170px]",
+                },
+                {
+                  label: "thứ tự",
+                  placeholder: "Thứ tự",
+                  value: sortDirValue,
+                  onChange: (value) => setSortDir(SORT_DIR_LABELS[value] ?? "desc"),
+                  options: SORT_DIR_OPTIONS,
+                  width: "sm:w-[150px]",
+                },
+              ]}
+            />
+          </AdvancedFilterPanel>
         }
       />
 
