@@ -28,11 +28,12 @@ import {
 import { downloadAoAAsXlsx, type AoA } from "@/lib/xlsx-utils";
 
 export type ImportExportXlsxMenuProps = {
+  onExport?: () => Promise<void>;
   /** Ma trận xuất: dòng đầu thường là header. */
-  getExportMatrix: () => AoA;
+  getExportMatrix?: () => AoA;
   exportDisabled?: boolean;
   /** Tên file xuất (có hoặc không .xlsx đều được). */
-  getExportFilename: () => string;
+  getExportFilename?: () => string;
   getTemplateMatrix: () => AoA;
   /** Tên file mẫu, không cần đuôi .xlsx */
   templateBasename: string;
@@ -61,6 +62,7 @@ const defaultDescription = (
 );
 
 export function ImportExportXlsxMenu({
+  onExport,
   getExportMatrix,
   exportDisabled = false,
   getExportFilename,
@@ -97,6 +99,11 @@ export function ImportExportXlsxMenu({
   };
 
   const handleExport = async () => {
+    if (onExport) {
+      await onExport();
+      return;
+    }
+    if (!getExportMatrix || !getExportFilename) return;
     const rows = getExportMatrix();
     await downloadAoAAsXlsx(getExportFilename(), sheetName, rows);
     toast.success("Đã tải file xuất");
@@ -152,7 +159,7 @@ export function ImportExportXlsxMenu({
             </Button>
           }
         />
-        <DropdownMenuContent align="end" className="min-w-[240px] rounded-xl">
+        <DropdownMenuContent align="end" className="min-w-60 rounded-xl">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{menuGroupLabel}</DropdownMenuLabel>
           </DropdownMenuGroup>
@@ -215,7 +222,7 @@ export function ImportExportXlsxMenu({
               )}
 
               <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-                <table className="w-full min-w-[520px] border-collapse text-left text-sm sm:text-[15px]">
+                <table className="w-full min-w-130 border-collapse text-left text-sm sm:text-[15px]">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80">
                       {importPreview.headers.map((h, hi) => (
@@ -237,7 +244,7 @@ export function ImportExportXlsxMenu({
                         {importPreview.headers.map((_, ci) => (
                           <td
                             key={`preview-${ri}-${ci}`}
-                            className="max-w-[200px] truncate px-3 py-2.5 text-slate-800 dark:text-slate-200"
+                            className="max-w-50 truncate px-3 py-2.5 text-slate-800 dark:text-slate-200"
                             title={row[ci] ?? ""}
                           >
                             {row[ci]?.trim() ? row[ci] : "—"}

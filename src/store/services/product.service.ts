@@ -91,6 +91,14 @@ const productApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "Product", id: "LIST" }],
     }),
+    exportProductsXlsx: builder.mutation<Blob, Omit<GetProductsParams, "page" | "size" | "sort">>({
+      query: (params) => ({
+        url: "/products/export",
+        method: "GET",
+        params: buildProductsQueryParams(params),
+        responseType: "blob",
+      }),
+    }),
   }),
 });
 
@@ -99,4 +107,5 @@ export const {
   useGetProductByIdQuery,
   useUpdateProductMutation,
   useImportProductsXlsxMutation,
+  useExportProductsXlsxMutation,
 } = productApi;
