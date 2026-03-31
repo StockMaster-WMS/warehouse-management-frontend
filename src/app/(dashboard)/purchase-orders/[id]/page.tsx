@@ -6,17 +6,19 @@ import { z } from "zod";
 import {
   ArrowLeft,
   Loader2,
-  PackageCheck,
   CheckCircle2,
   Ban,
-  AlertTriangle,
   Trash2,
+  PackagePlus,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -41,33 +43,37 @@ import {
 } from "@/components/ui/select";
 import { apiErrMessage } from "@/types/api";
 import {
+  useApprovePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,
   useCompletePutawayTaskMutation,
-  useConfirmPurchaseOrderMutation,
-  useDeletePoItemMutation,
+  useDeletePurchaseOrderMutation,
   useGetLocationsQuery,
   useGetPurchaseOrderDetailQuery,
-  useGetStocksQuery,
-  useReceivePoItemMutation,
 } from "@/store/services/purchase-order.service";
+import {
+  useCreateInboundReceiptMutation,
+  useGetInboundReceiptsByPoQuery,
+} from "@/store/services/inbound.service";
 import type { PoItem, PutawayTask } from "@/types/purchase-order";
+import type { InboundReceipt } from "@/types/inbound-receipt";
 
-const receiveSchema = z.object({
-  qtyStr: z.string().min(1, "Nhập số lượng nhận"),
-  suggestedLocationId: z.string().optional(),
-});
-
-const completeSchema = z.object({
-  actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
-});
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Nháp",
+  APPROVED: "Đã duyệt",
+  PARTIAL: "Nhận một phần",
+  COMPLETED: "Hoàn tất",
+  CANCELLED: "Đã hủy",
+};
 
 function statusClass(status: string | null | undefined): string {
   switch (status) {
     case "DRAFT":
       return "bg-slate-100 text-slate-700";
-    case "RECEIVING":
+    case "APPROVED":
+      return "bg-blue-100 text-blue-700";
+    case "PARTIAL":
       return "bg-amber-100 text-amber-700";
-    case "RECEIVED":
+    case "COMPLETED":
       return "bg-emerald-100 text-emerald-700";
     case "CANCELLED":
       return "bg-rose-100 text-rose-700";
@@ -75,6 +81,10 @@ function statusClass(status: string | null | undefined): string {
       return "bg-slate-100 text-slate-700";
   }
 }
+
+const completeSchema = z.object({
+  actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
+});
 
 export default function PurchaseOrderDetailPage({
   params: paramsPromise,
@@ -90,14 +100,19 @@ export default function PurchaseOrderDetailPage({
     refetch,
   } = useGetPurchaseOrderDetailQuery(id, { skip: !id });
 
-  const [receiveOpen, setReceiveOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<PoItem | null>(null);
-  const [qtyStr, setQtyStr] = useState("");
-  const [suggestedLocationId, setSuggestedLocationId] = useState("");
-  const [receiveErrors, setReceiveErrors] = useState<Record<string, string>>(
-    {},
-  );
+  const { data: receiptsRes } = useGetInboundReceiptsByPoQuery(id, {
+    skip: !id,
+  });
 
+  /* ── GRN dialog state ── */
+  const [grnOpen, setGrnOpen] = useState(false);
+  const [grnLocationId, setGrnLocationId] = useState("");
+  const [grnNote, setGrnNote] = useState("");
+  const [grnLines, setGrnLines] = useState<
+    { poItemId: string; receivedQty: string; note: string }[]
+  >([]);
+
+  /* ── Putaway dialog state ── */
   const [putawayOpen, setPutawayOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<PutawayTask | null>(null);
   const [actualLocationId, setActualLocationId] = useState("");
@@ -105,96 +120,87 @@ export default function PurchaseOrderDetailPage({
     {},
   );
 
-  const [receivePoItem, { isLoading: receiving }] = useReceivePoItemMutation();
-  const [completePutawayTask, { isLoading: completingPutaway }] =
-    useCompletePutawayTaskMutation();
-  const [confirmPo, { isLoading: confirmingPo }] =
-    useConfirmPurchaseOrderMutation();
+  /* ── Mutations ── */
+  const [approvePo, { isLoading: approvingPo }] =
+    useApprovePurchaseOrderMutation();
   const [cancelPo, { isLoading: cancellingPo }] =
     useCancelPurchaseOrderMutation();
-  const [deletePoItem, { isLoading: deletingItem }] = useDeletePoItemMutation();
+  const [deletePo, { isLoading: deletingPo }] =
+    useDeletePurchaseOrderMutation();
+  const [createGrn, { isLoading: creatingGrn }] =
+    useCreateInboundReceiptMutation();
+  const [completePutawayTask, { isLoading: completingPutaway }] =
+    useCompletePutawayTaskMutation();
 
   const detail = detailRes?.data;
   const po = detail?.purchaseOrder;
   const items = detail?.items ?? [];
   const tasks = detail?.putawayTasks ?? [];
   const progress = detail?.progress;
+  const receipts: InboundReceipt[] = receiptsRes?.data ?? [];
 
   const poStatus = po?.status ?? "";
-  const canConfirm = poStatus === "DRAFT";
-  const canReceive = poStatus === "RECEIVING";
-  const canCancel = poStatus === "DRAFT" || poStatus === "RECEIVING";
+  const isDraft = poStatus === "DRAFT";
+  const canApprove = isDraft && items.length > 0;
+  const canReceive = poStatus === "APPROVED" || poStatus === "PARTIAL";
+  const canCancel =
+    poStatus === "DRAFT" || poStatus === "APPROVED" || poStatus === "PARTIAL";
+  const canDelete = isDraft;
 
-  const maxReceivable = useMemo(() => {
-    if (!activeItem) return 0;
-    const ordered = Number(activeItem.orderedQty ?? 0);
-    const received = Number(activeItem.receivedQty ?? 0);
-    return Math.max(0, ordered - received);
-  }, [activeItem]);
-
-  const { data: locationsRes } = useGetLocationsQuery(
+  /* ── Locations ── */
+  const { data: whLocRes } = useGetLocationsQuery(
     { warehouseId: po?.warehouseId ?? "" },
     { skip: !po?.warehouseId },
   );
-  const locationOptions = Array.isArray(locationsRes?.data)
-    ? locationsRes.data
-    : [];
+  const locationOptions = Array.isArray(whLocRes?.data) ? whLocRes.data : [];
 
-  const taskProductId = useMemo(() => {
-    if (!activeTask?.poItemId) return "";
-    const found = items.find((x) => x.id === activeTask.poItemId);
-    return found?.productId ?? "";
-  }, [activeTask, items]);
-
-  const { data: stocksRes } = useGetStocksQuery(
-    {
-      warehouseId: po?.warehouseId ?? "",
-      ...(actualLocationId.trim()
-        ? { locationId: actualLocationId.trim() }
-        : {}),
-      ...(taskProductId ? { productId: taskProductId } : {}),
-    },
-    {
-      skip: !po?.warehouseId || !actualLocationId.trim() || !taskProductId,
-    },
-  );
-
-  const stockPreview = stocksRes?.data?.content ?? [];
-
-  function openReceive(item: PoItem) {
-    setActiveItem(item);
-    setQtyStr("");
-    setSuggestedLocationId("");
-    setReceiveErrors({});
-    setReceiveOpen(true);
+  /* ── Open GRN dialog ── */
+  function openGrn() {
+    const lines = items
+      .filter((item) => {
+        const remain =
+          Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0);
+        return remain > 0;
+      })
+      .map((item) => ({
+        poItemId: item.id,
+        receivedQty: "",
+        note: "",
+      }));
+    setGrnLines(lines);
+    setGrnLocationId("");
+    setGrnNote("");
+    setGrnOpen(true);
   }
 
-  function openPutaway(task: PutawayTask) {
-    setActiveTask(task);
-    setActualLocationId(
-      task.actualLocationId ?? task.suggestedLocationId ?? "",
+  function updateGrnLine(
+    poItemId: string,
+    field: "receivedQty" | "note",
+    value: string,
+  ) {
+    setGrnLines((prev) =>
+      prev.map((l) => (l.poItemId === poItemId ? { ...l, [field]: value } : l)),
     );
-    setPutawayErrors({});
-    setPutawayOpen(true);
   }
 
-  async function handleConfirmPo() {
-    if (!id || !canConfirm) return;
+  /* ── Actions ── */
+  async function handleApprove() {
+    if (!id) return;
     try {
-      const res = await confirmPo(id).unwrap();
+      const res = await approvePo(id).unwrap();
       if (!res.success) {
-        toast.error(res.message || "Confirm PO thất bại");
+        toast.error(res.message || "Duyệt PO thất bại");
         return;
       }
-      toast.success(res.message || "Đã confirm PO, trạng thái sang RECEIVING");
+      toast.success(res.message || "Đã duyệt PO → APPROVED");
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
   }
 
-  async function handleCancelPo() {
-    if (!id || !canCancel) return;
+  async function handleCancel() {
+    if (!id) return;
     try {
       const res = await cancelPo(id).unwrap();
       if (!res.success) {
@@ -208,105 +214,99 @@ export default function PurchaseOrderDetailPage({
     }
   }
 
-  async function handleDeletePoItem(item: PoItem) {
+  async function handleDelete() {
     if (!id) return;
     try {
-      const res = await deletePoItem({
-        id: item.id,
-        purchaseOrderId: id,
-      }).unwrap();
+      const res = await deletePo(id).unwrap();
       if (!res.success) {
-        toast.error(res.message || "Xóa dòng thất bại");
+        toast.error((res as { message?: string }).message || "Xóa thất bại");
         return;
       }
-      toast.success(res.message || "Đã xóa dòng");
+      toast.success("Đã xóa PO");
+      window.location.href = "/purchase-orders";
+    } catch (err) {
+      toast.error(apiErrMessage(err));
+    }
+  }
+
+  async function handleSubmitGrn(e: React.FormEvent) {
+    e.preventDefault();
+    const validLines = grnLines
+      .map((l) => {
+        const qty = Number(l.receivedQty.replace(",", "."));
+        if (!qty || Number.isNaN(qty) || qty <= 0) return null;
+        return {
+          poItemId: l.poItemId,
+          receivedQty: qty,
+          ...(l.note.trim() ? { note: l.note.trim() } : {}),
+        };
+      })
+      .filter(Boolean) as {
+      poItemId: string;
+      receivedQty: number;
+      note?: string;
+    }[];
+
+    if (validLines.length === 0) {
+      toast.error("Nhập số lượng ít nhất 1 dòng hàng");
+      return;
+    }
+
+    // Validate qty not exceeding remaining
+    for (const line of validLines) {
+      const item = items.find((i) => i.id === line.poItemId);
+      if (!item) continue;
+      const remain =
+        Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0);
+      if (line.receivedQty > remain) {
+        toast.error(
+          `Dòng ${item.productSku}: số lượng nhập (${line.receivedQty}) vượt quá còn lại (${remain})`,
+        );
+        return;
+      }
+    }
+
+    if (!grnLocationId.trim()) {
+      toast.error("Vui lòng chọn vị trí nhận hàng");
+      return;
+    }
+
+    try {
+      const res = await createGrn({
+        purchaseOrderId: id,
+        locationId: grnLocationId.trim(),
+        ...(grnNote.trim() ? { note: grnNote.trim() } : {}),
+        items: validLines,
+      }).unwrap();
+
+      if (!res.success) {
+        toast.error(res.message || "Tạo phiếu nhập kho thất bại");
+        return;
+      }
+      toast.success(
+        `Đã tạo phiếu nhập kho: ${res.data?.receiptNumber ?? "OK"}`,
+      );
+      setGrnOpen(false);
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
   }
 
-  async function submitReceive(e: React.FormEvent) {
-    e.preventDefault();
-    if (!activeItem || !id) return;
-    setReceiveErrors({});
-
-    if (!canReceive) {
-      toast.error(
-        "PO chưa ở trạng thái RECEIVING. Hãy Confirm PO trước khi nhận hàng.",
-      );
-      return;
-    }
-
-    const parsed = receiveSchema.safeParse({
-      qtyStr,
-      suggestedLocationId: suggestedLocationId || undefined,
-    });
-    if (!parsed.success) {
-      const err: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const k = String(issue.path[0] ?? "form");
-        if (!err[k]) err[k] = issue.message;
-      }
-      setReceiveErrors(err);
-      return;
-    }
-
-    const qty = Number(parsed.data.qtyStr.replace(",", "."));
-    if (!(qty > 0) || Number.isNaN(qty)) {
-      setReceiveErrors({ qtyStr: "Số lượng phải > 0" });
-      return;
-    }
-
-    if (qty > maxReceivable) {
-      setReceiveErrors({
-        qtyStr: `Số lượng vượt phần còn lại (${maxReceivable}).`,
-      });
-      toast.warning(`Qty vượt ordered còn lại (${maxReceivable}).`);
-      return;
-    }
-
-    try {
-      const res = await receivePoItem({
-        poItemId: activeItem.id,
-        purchaseOrderId: id,
-        body: {
-          qty,
-          ...(parsed.data.suggestedLocationId?.trim()
-            ? { suggestedLocationId: parsed.data.suggestedLocationId.trim() }
-            : {}),
-        },
-      }).unwrap();
-
-      if (!res.success) {
-        toast.error(
-          (res as { message?: string }).message || "Nhận hàng thất bại",
-        );
-        return;
-      }
-      toast.success(
-        (res as { message?: string }).message || "Đã ghi nhận hàng",
-      );
-      setReceiveOpen(false);
-      setActiveItem(null);
-      refetch();
-    } catch (err) {
-      toast.error(apiErrMessage(err));
-    }
+  /* ── Putaway ── */
+  function openPutaway(task: PutawayTask) {
+    setActiveTask(task);
+    setActualLocationId(
+      task.actualLocationId ?? task.suggestedLocationId ?? "",
+    );
+    setPutawayErrors({});
+    setPutawayOpen(true);
   }
 
   async function submitCompletePutaway(e: React.FormEvent) {
     e.preventDefault();
     if (!activeTask) return;
     setPutawayErrors({});
-
-    if (
-      !(activeTask.status === "PENDING" || activeTask.status === "IN_PROGRESS")
-    ) {
-      toast.error("Chỉ task PENDING/IN_PROGRESS mới được complete putaway.");
-      return;
-    }
-
     const parsed = completeSchema.safeParse({
       actualLocationId: actualLocationId.trim(),
     });
@@ -319,21 +319,19 @@ export default function PurchaseOrderDetailPage({
       setPutawayErrors(err);
       return;
     }
-
     try {
       const res = await completePutawayTask({
         id: activeTask.id,
         body: { actualLocationId: parsed.data.actualLocationId },
       }).unwrap();
-
       if (!res.success) {
         toast.error(
-          (res as { message?: string }).message || "Complete putaway thất bại",
+          (res as { message?: string }).message || "Hoàn tất putaway thất bại",
         );
         return;
       }
       toast.success(
-        (res as { message?: string }).message || "Đã complete putaway",
+        (res as { message?: string }).message || "Đã hoàn tất putaway",
       );
       setPutawayOpen(false);
       setActiveTask(null);
@@ -347,11 +345,12 @@ export default function PurchaseOrderDetailPage({
 
   return (
     <div className="space-y-6 pb-16">
+      {/* ── Header + Actions ── */}
       <PageHeader
-        title="Chi tiết đơn nhập"
+        title="Chi tiết đơn mua hàng"
         description={po ? `Mã PO: ${po.poNumber}` : "Đang tải..."}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               render={<Link href="/purchase-orders" />}
               nativeButton={false}
@@ -361,32 +360,60 @@ export default function PurchaseOrderDetailPage({
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            {canConfirm ? (
+
+            {/* DRAFT actions */}
+            {isDraft && canApprove && (
               <Button
-                onClick={handleConfirmPo}
-                disabled={confirmingPo}
+                onClick={handleApprove}
+                disabled={approvingPo}
                 className="bg-indigo-600 hover:bg-indigo-700"
               >
-                {confirmingPo ? (
+                {approvingPo && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Confirm PO
+                )}
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                Duyệt PO
               </Button>
-            ) : null}
-            {canCancel ? (
+            )}
+            {isDraft && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deletingPo}
+              >
+                {deletingPo && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                <Trash2 className="mr-2 h-4 w-4" />
+                Xóa PO
+              </Button>
+            )}
+
+            {/* APPROVED / PARTIAL actions */}
+            {canReceive && (
+              <Button
+                onClick={openGrn}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <PackagePlus className="mr-2 h-4 w-4" />
+                Nhập hàng
+              </Button>
+            )}
+
+            {/* Cancel (DRAFT / APPROVED / PARTIAL) */}
+            {canCancel && (
               <Button
                 variant="outline"
-                onClick={handleCancelPo}
+                onClick={handleCancel}
                 disabled={cancellingPo}
               >
-                {cancellingPo ? (
+                {cancellingPo && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Ban className="mr-2 h-4 w-4" />
                 )}
-                Cancel PO
+                <Ban className="mr-2 h-4 w-4" />
+                Hủy PO
               </Button>
-            ) : null}
+            )}
           </div>
         }
       />
@@ -402,12 +429,13 @@ export default function PurchaseOrderDetailPage({
         </p>
       ) : (
         <>
+          {/* ── Summary cards ── */}
           <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-4">
             <div>
               <span className="text-slate-500">Trạng thái</span>
               <div className="mt-1">
                 <Badge variant="secondary" className={statusClass(po.status)}>
-                  {po.status ?? "-"}
+                  {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
                 </Badge>
               </div>
             </div>
@@ -416,40 +444,31 @@ export default function PurchaseOrderDetailPage({
               <p className="mt-1 font-medium">{po.orderDate}</p>
             </div>
             <div>
-              <span className="text-slate-500">Kho nhận</span>
-              <p className="mt-1 font-mono text-xs break-all">
-                {po.warehouseId}
-              </p>
-            </div>
-            <div>
-              <span className="text-slate-500">Nhà cung cấp</span>
-              <p className="mt-1 font-mono text-xs break-all">
-                {po.supplierId}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-xs text-slate-500">totalOrderedQty</p>
-              <p className="mt-1 text-2xl font-bold">
+              <span className="text-slate-500">Tiến độ nhập</span>
+              <p className="mt-1 font-medium">
+                {progress?.totalReceivedQty ?? 0} /{" "}
                 {progress?.totalOrderedQty ?? 0}
               </p>
+              {progress && progress.totalOrderedQty > 0 && (
+                <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div
+                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    style={{
+                      width: `${Math.min(100, (progress.totalReceivedQty / progress.totalOrderedQty) * 100)}%`,
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-xs text-slate-500">totalReceivedQty</p>
-              <p className="mt-1 text-2xl font-bold">
-                {progress?.totalReceivedQty ?? 0}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-xs text-slate-500">fullyReceived</p>
-              <p className="mt-1 text-2xl font-bold">
-                {progress?.fullyReceived ? "true" : "false"}
+            <div>
+              <span className="text-slate-500">Tổng tiền</span>
+              <p className="mt-1 font-medium">
+                {po.totalAmount != null
+                  ? po.totalAmount.toLocaleString("vi-VN") + " ₫"
+                  : "—"}
               </p>
             </div>
           </div>
-
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -503,32 +522,52 @@ export default function PurchaseOrderDetailPage({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => openReceive(row)}
-                                disabled={!canReceive || remain <= 0}
-                              >
-                                <PackageCheck className="mr-1 h-3.5 w-3.5" />
-                                Receive
-                              </Button>
+                                disabled={!canReceive || remain <= 0}                              >
+                                {task.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {task.suggestedLocationId
+                                ? (locationOptions.find(
+                                    (l) => l.id === task.suggestedLocationId,
+                                  )?.code ??
+                                  task.suggestedLocationId.slice(0, 8))
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {task.actualLocationId
+                                ? (locationOptions.find(
+                                    (l) => l.id === task.actualLocationId,
+                                  )?.code ?? task.actualLocationId.slice(0, 8))
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
                               <Button
                                 type="button"
-                                variant="outline"
                                 size="sm"
-                                disabled={deletingItem}
-                                onClick={() => handleDeletePoItem(row)}
+                                onClick={() => openPutaway(task)}
+                                disabled={
+                                  !(
+                                    task.status === "PENDING" ||
+                                    task.status === "IN_PROGRESS"
+                                  )
+                                }
                               >
-                                <Trash2 className="mr-1 h-3.5 w-3.5" />
-                                Xóa dòng
+                                <CheckCircle2 className="mr-1 h-4 w-4" />
+                                Hoàn tất
                               </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -584,116 +623,119 @@ export default function PurchaseOrderDetailPage({
                                 task.status === "IN_PROGRESS"
                               )
                             }
-                          >
-                            <CheckCircle2 className="mr-1 h-4 w-4" />
-                            Complete
-                          </Button>
+                            inputMode="decimal"
+                            placeholder={`Tối đa ${remain}`}
+                            className="w-24 text-right"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={line.note}
+                            onChange={(e) =>
+                              updateGrnLine(
+                                line.poItemId,
+                                "note",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="Ghi chú"
+                            className="w-32"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    );
+                  })}
                 </TableBody>
               </Table>
-            </div>
-          </div>
-        </>
-      )}
 
-      <Dialog open={receiveOpen} onOpenChange={setReceiveOpen}>
-        <DialogContent className="sm:max-w-md">
-          <form onSubmit={submitReceive}>
-            <DialogHeader>
-              <DialogTitle>Receive theo dòng</DialogTitle>
-              {activeItem ? (
-                <p className="text-xs text-slate-500">
-                  Dòng {activeItem.lineNumber} - SKU {activeItem.productSku}
-                </p>
-              ) : null}
-            </DialogHeader>
-            <div className="grid gap-3 py-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  qty *
-                </label>
-                <Input
-                  value={qtyStr}
-                  onChange={(e) => setQtyStr(e.target.value)}
-                  inputMode="decimal"
-                  className={receiveErrors.qtyStr ? "border-rose-400" : ""}
-                />
-                {receiveErrors.qtyStr ? (
-                  <p className="text-xs text-rose-600">
-                    {receiveErrors.qtyStr}
-                  </p>
-                ) : null}
-                {activeItem ? (
-                  <p className="mt-1 text-xs text-amber-600">
-                    Còn lại có thể nhận: {maxReceivable}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  suggestedLocationId (optional)
-                </label>
-                <Input
-                  value={suggestedLocationId}
-                  onChange={(e) => setSuggestedLocationId(e.target.value)}
-                  placeholder="UUID vị trí gợi ý"
-                  className="font-mono text-xs"
-                />
-              </div>
-              {!canReceive ? (
-                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  <AlertTriangle className="mr-1 inline h-3 w-3" />
-                  PO phải ở trạng thái RECEIVING mới receive được.
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Vị trí nhận hàng <span className="text-rose-500">*</span>
+                  </label>
+                  {locationOptions.length === 0 ? (
+                    <p className="mt-1 text-xs text-amber-600">
+                      Kho này chưa có vị trí nào. Vui lòng tạo vị trí cho kho
+                      trước khi nhập hàng.
+                    </p>
+                  ) : (
+                    <Select
+                      value={grnLocationId || "__empty__"}
+                      onValueChange={(v) =>
+                        setGrnLocationId(!v || v === "__empty__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn vị trí" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locationOptions.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.code ?? loc.name ?? loc.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
-              ) : null}
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Ghi chú phiếu nhập
+                  </label>
+                  <Textarea
+                    value={grnNote}
+                    onChange={(e) => setGrnNote(e.target.value)}
+                    placeholder="Ghi chú chung (tuỳ chọn)"
+                    rows={2}
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setReceiveOpen(false)}
+                onClick={() => setGrnOpen(false)}
               >
                 Hủy
               </Button>
               <Button
                 type="submit"
-                disabled={receiving}
+                disabled={creatingGrn}
                 className="bg-indigo-600 hover:bg-indigo-700"
               >
-                {receiving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Xác nhận receive"
-                )}
+                {creatingGrn ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Tạo phiếu nhập
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* ── Putaway Dialog ── */}
       <Dialog open={putawayOpen} onOpenChange={setPutawayOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <form onSubmit={submitCompletePutaway}>
             <DialogHeader>
-              <DialogTitle>Complete Putaway</DialogTitle>
+              <DialogTitle>Hoàn tất Putaway</DialogTitle>
               {activeTask ? (
-                <p className="text-xs text-slate-500">Task: {activeTask.id}</p>
+                <p className="text-xs text-slate-500">
+                  Task: {activeTask.id.slice(0, 8)}…
+                </p>
               ) : null}
             </DialogHeader>
             <div className="grid gap-3 py-2">
               <div>
                 <label className="text-xs font-semibold text-slate-500">
-                  actualLocationId *
+                  Vị trí thực tế *
                 </label>
                 <Select
                   value={actualLocationId || "__empty__"}
-                  onValueChange={(v) => {
-                    const next = String(v ?? "");
-                    setActualLocationId(next === "__empty__" ? "" : next);
-                  }}
+                  onValueChange={(v) =>
+                    setActualLocationId(!v || v === "__empty__" ? "" : v)
+                  }
                 >
                   <SelectTrigger
                     className={
@@ -711,44 +753,12 @@ export default function PurchaseOrderDetailPage({
                     ))}
                   </SelectContent>
                 </Select>
-                {putawayErrors.actualLocationId ? (
+                {putawayErrors.actualLocationId && (
                   <p className="text-xs text-rose-600">
                     {putawayErrors.actualLocationId}
                   </p>
-                ) : null}
+                )}
               </div>
-
-              {stockPreview.length > 0 ? (
-                <div className="rounded-md border border-slate-200 p-2">
-                  <p className="mb-2 text-xs font-semibold text-slate-600">
-                    Stock preview tại vị trí chọn
-                  </p>
-                  <div className="max-h-40 overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="text-xs">locationId</TableHead>
-                          <TableHead className="text-xs text-right">
-                            qty
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {stockPreview.slice(0, 5).map((s, idx) => (
-                          <TableRow key={`${s.id ?? "stock"}-${idx}`}>
-                            <TableCell className="font-mono text-xs">
-                              {s.locationId ?? "-"}
-                            </TableCell>
-                            <TableCell className="text-right text-xs">
-                              {s.qty ?? s.availableQty ?? 0}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              ) : null}
             </div>
             <DialogFooter>
               <Button
@@ -764,9 +774,9 @@ export default function PurchaseOrderDetailPage({
                 className="bg-indigo-600 hover:bg-indigo-700"
               >
                 {completingPutaway ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  "Complete"
+                  "Hoàn tất"
                 )}
               </Button>
             </DialogFooter>
