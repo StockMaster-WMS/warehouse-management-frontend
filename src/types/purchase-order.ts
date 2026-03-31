@@ -12,6 +12,8 @@ export interface PurchaseOrder {
   poNumber: string;
   supplierId: string;
   warehouseId: string;
+  supplierName?: string | null;
+  warehouseName?: string | null;
   orderDate: string;
   expectedDate?: string | null;
   status?: PurchaseOrderStatus | null;

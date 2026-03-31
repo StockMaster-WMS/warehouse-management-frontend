@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useMemo, useState } from "react";
+import { use, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -49,12 +49,14 @@ import {
   useDeletePurchaseOrderMutation,
   useGetLocationsQuery,
   useGetPurchaseOrderDetailQuery,
+  useGetWarehousesForPoQuery,
 } from "@/store/services/purchase-order.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import {
   useCreateInboundReceiptMutation,
   useGetInboundReceiptsByPoQuery,
 } from "@/store/services/inbound.service";
-import type { PoItem, PutawayTask } from "@/types/purchase-order";
+import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundReceipt } from "@/types/inbound-receipt";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -145,7 +147,23 @@ export default function PurchaseOrderDetailPage({
   const canReceive = poStatus === "APPROVED" || poStatus === "PARTIAL";
   const canCancel =
     poStatus === "DRAFT" || poStatus === "APPROVED" || poStatus === "PARTIAL";
-  const canDelete = isDraft;
+
+  /* ── Warehouses & Suppliers ── */
+  const { data: warehousesRes } = useGetWarehousesForPoQuery({ size: 200 });
+  const warehouses = warehousesRes?.data?.content ?? [];
+  const warehouseName =
+    po?.warehouseName ||
+    warehouses.find((w) => w.id === po?.warehouseId)?.name ||
+    po?.warehouseId ||
+    "—";
+
+  const { data: suppliersRes } = useGetSuppliersQuery({ page: 0, size: 200 });
+  const suppliers = suppliersRes?.data?.content ?? [];
+  const supplierName =
+    po?.supplierName ||
+    suppliers.find((s) => s.id === po?.supplierId)?.name ||
+    po?.supplierId ||
+    "—";
 
   /* ── Locations ── */
   const { data: whLocRes } = useGetLocationsQuery(
@@ -252,7 +270,6 @@ export default function PurchaseOrderDetailPage({
       return;
     }
 
-    // Validate qty not exceeding remaining
     for (const line of validLines) {
       const item = items.find((i) => i.id === line.poItemId);
       if (!item) continue;
@@ -361,7 +378,6 @@ export default function PurchaseOrderDetailPage({
               <ArrowLeft className="h-4 w-4" />
             </Button>
 
-            {/* DRAFT actions */}
             {isDraft && canApprove && (
               <Button
                 onClick={handleApprove}
@@ -389,7 +405,6 @@ export default function PurchaseOrderDetailPage({
               </Button>
             )}
 
-            {/* APPROVED / PARTIAL actions */}
             {canReceive && (
               <Button
                 onClick={openGrn}
@@ -400,7 +415,6 @@ export default function PurchaseOrderDetailPage({
               </Button>
             )}
 
-            {/* Cancel (DRAFT / APPROVED / PARTIAL) */}
             {canCancel && (
               <Button
                 variant="outline"
@@ -469,60 +483,249 @@ export default function PurchaseOrderDetailPage({
               </p>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                PO Items
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <Table className="min-w-[860px] text-left">
-                <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-                  <TableRow>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dòng</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">orderedQty</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">receivedQty</TableHead>
-                    <TableHead className="w-56 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {items.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="py-10 text-center text-slate-500"
-                      >
-                        Chưa có dòng hàng.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items.map((row) => {
-                      const remain = Math.max(
-                        0,
-                        Number(row.orderedQty ?? 0) -
-                          Number(row.receivedQty ?? 0),
-                      );
-                      return (
-                        <TableRow key={row.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                          <TableCell className="px-3 py-3">{row.lineNumber}</TableCell>
-                          <TableCell className="px-3 py-3 font-mono text-sm">
-                            {row.productSku}
+
+          {/* ── Tabs ── */}
+          <Tabs defaultValue="info" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="info">Thông tin PO</TabsTrigger>
+              <TabsTrigger value="items">
+                Dòng hàng ({items.length})
+              </TabsTrigger>
+              <TabsTrigger value="receipts">
+                Phiếu nhập ({receipts.length})
+              </TabsTrigger>
+              <TabsTrigger value="putaway">
+                Putaway ({tasks.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Tab 1: PO Info ── */}
+            <TabsContent value="info">
+              <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Mã PO
+                  </label>
+                  <p className="mt-1 font-mono font-medium">{po.poNumber}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Nhà cung cấp
+                  </label>
+                  <p className="mt-1 font-medium">{supplierName}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Kho nhận
+                  </label>
+                  <p className="mt-1 font-medium">{warehouseName}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Ngày dự kiến
+                  </label>
+                  <p className="mt-1">{po.expectedDate ?? "—"}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Ngày tạo
+                  </label>
+                  <p className="mt-1 text-xs">
+                    {po.createdAt
+                      ? new Date(po.createdAt).toLocaleString("vi-VN")
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500">
+                    Cập nhật lần cuối
+                  </label>
+                  <p className="mt-1 text-xs">
+                    {po.updatedAt
+                      ? new Date(po.updatedAt).toLocaleString("vi-VN")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ── Tab 2: PO Items ── */}
+            <TabsContent value="items">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Dòng</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead className="text-right">SL đặt</TableHead>
+                        <TableHead className="text-right">Đã nhận</TableHead>
+                        <TableHead className="text-right">Còn lại</TableHead>
+                        <TableHead className="text-right">Đơn giá</TableHead>
+                        <TableHead>Tiến độ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="py-10 text-center text-slate-500"
+                          >
+                            Chưa có dòng hàng.
                           </TableCell>
-                          <TableCell className="px-3 py-3 text-right">
-                            {row.orderedQty}
+                        </TableRow>
+                      ) : (
+                        items.map((row) => {
+                          const ordered = Number(row.orderedQty ?? 0);
+                          const received = Number(row.receivedQty ?? 0);
+                          const remain = Math.max(0, ordered - received);
+                          const pct =
+                            ordered > 0
+                              ? Math.min(100, (received / ordered) * 100)
+                              : 0;
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell>{row.lineNumber}</TableCell>
+                              <TableCell className="font-mono text-sm">
+                                {row.productSku}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {ordered}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {received}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {remain}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {row.unitPrice != null
+                                  ? row.unitPrice.toLocaleString("vi-VN")
+                                  : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2 w-20 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${
+                                        pct >= 100
+                                          ? "bg-emerald-500"
+                                          : pct > 0
+                                            ? "bg-amber-500"
+                                            : "bg-slate-300"
+                                      }`}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-slate-500">
+                                    {Math.round(pct)}%
+                                  </span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ── Tab 3: Inbound Receipts ── */}
+            <TabsContent value="receipts">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Mã phiếu</TableHead>
+                        <TableHead>Ngày nhập</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Ghi chú</TableHead>
+                        <TableHead>Ngày tạo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {receipts.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="py-10 text-center text-slate-500"
+                          >
+                            Chưa có phiếu nhập kho nào cho PO này.
                           </TableCell>
-                          <TableCell className="px-3 py-3 text-right">
-                            {row.receivedQty ?? 0}
+                        </TableRow>
+                      ) : (
+                        receipts.map((r) => (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-mono font-medium">
+                              {r.receiptNumber}
+                            </TableCell>
+                            <TableCell>{r.receivedDate ?? "—"}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="secondary"
+                                className="font-normal"
+                              >
+                                {r.status ?? "—"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-50 truncate">
+                              {r.note ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {r.createdAt
+                                ? new Date(r.createdAt).toLocaleString("vi-VN")
+                                : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ── Tab 4: Putaway Tasks ── */}
+            <TabsContent value="putaway">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Task ID</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Vị trí gợi ý</TableHead>
+                        <TableHead>Vị trí thực tế</TableHead>
+                        <TableHead className="w-40 text-right">
+                          Thao tác
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="py-10 text-center text-slate-500"
+                          >
+                            Chưa có putaway task.
                           </TableCell>
-                          <TableCell className="px-3 py-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openReceive(row)}
-                                disabled={!canReceive || remain <= 0}                              >
+                        </TableRow>
+                      ) : (
+                        tasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell className="max-w-30 truncate font-mono text-xs">
+                              {task.id.slice(0, 8)}…
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="secondary"
+                                className="font-normal"
+                              >
                                 {task.status}
                               </Badge>
                             </TableCell>
@@ -568,59 +771,55 @@ export default function PurchaseOrderDetailPage({
           </Tabs>
         </>
       )}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                Putaway Tasks
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <Table className="min-w-[980px] text-left">
-                <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-                  <TableRow>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">poItemId</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">status</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">suggestedLocationId</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">actualLocationId</TableHead>
-                    <TableHead className="w-40 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+
+      {/* ── GRN Dialog ── */}
+      <Dialog open={grnOpen} onOpenChange={setGrnOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <form onSubmit={handleSubmitGrn}>
+            <DialogHeader>
+              <DialogTitle>Tạo phiếu nhập kho (GRN)</DialogTitle>
+              <p className="text-xs text-slate-500">
+                Nhập số lượng thực nhận cho từng dòng hàng. Dòng nào bỏ trống
+                hoặc = 0 sẽ bị bỏ qua.
+              </p>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Đặt</TableHead>
+                    <TableHead className="text-right">Đã nhận</TableHead>
+                    <TableHead className="text-right">Còn lại</TableHead>
+                    <TableHead className="text-right">Nhập lần này</TableHead>
+                    <TableHead>Ghi chú</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {tasks.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="py-10 text-center text-slate-500"
-                      >
-                        Chưa có putaway task.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    tasks.map((task) => (
-                      <TableRow key={task.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                        <TableCell className="px-3 py-3 font-mono text-xs">
-                          {task.id}
+                <TableBody>
+                  {grnLines.map((line) => {
+                    const item = items.find((i) => i.id === line.poItemId);
+                    if (!item) return null;
+                    const ordered = Number(item.orderedQty ?? 0);
+                    const received = Number(item.receivedQty ?? 0);
+                    const remain = Math.max(0, ordered - received);
+                    return (
+                      <TableRow key={line.poItemId}>
+                        <TableCell className="font-mono text-sm">
+                          {item.productSku}
                         </TableCell>
-                        <TableCell className="px-3 py-3 font-mono text-xs">
-                          {task.poItemId ?? "-"}
+                        <TableCell className="text-right">{ordered}</TableCell>
+                        <TableCell className="text-right">{received}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {remain}
                         </TableCell>
-                        <TableCell className="px-3 py-3">{task.status}</TableCell>
-                        <TableCell className="px-3 py-3 font-mono text-xs">
-                          {task.suggestedLocationId ?? "-"}
-                        </TableCell>
-                        <TableCell className="px-3 py-3 font-mono text-xs">
-                          {task.actualLocationId ?? "-"}
-                        </TableCell>
-                        <TableCell className="px-3 py-3 text-right">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => openPutaway(task)}
-                            disabled={
-                              !(
-                                task.status === "PENDING" ||
-                                task.status === "IN_PROGRESS"
+                        <TableCell className="text-right">
+                          <Input
+                            value={line.receivedQty}
+                            onChange={(e) =>
+                              updateGrnLine(
+                                line.poItemId,
+                                "receivedQty",
+                                e.target.value,
                               )
                             }
                             inputMode="decimal"
