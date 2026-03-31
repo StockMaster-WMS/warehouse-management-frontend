@@ -4,19 +4,17 @@ import type { CreatePickingItemPayload, PickingItem, UpdatePickingItemPayload } 
 
 export type GetPickingItemsParams = {
   soItemId: string;
-};
-
-export type UpdatePickingItemArgs = UpdatePickingItemPayload & {
-  soItemId: string;
+  page?: number;
+  size?: number;
 };
 
 const pickingItemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPickingItems: builder.query<ApiResponse<PagedResponse<PickingItem>>, GetPickingItemsParams>({
-      query: ({ soItemId }) => ({
+      query: ({ soItemId, page = 0, size = 50 }) => ({
         url: "/picking-items",
         method: "GET",
-        params: { soItemId },
+        params: { soItemId, page, size },
       }),
       transformResponse: (r: ApiResponse<PickingItem[] | PagedResponse<PickingItem>>) => normalizeApiResponsePaged(r),
       providesTags: (result, _e, arg) => {
@@ -37,8 +35,8 @@ const pickingItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [{ type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` }],
     }),
 
-    updatePickingItem: builder.mutation<ApiResponse<PickingItem>, UpdatePickingItemArgs>({
-      query: ({ id, soItemId: _soItemId, ...body }) => ({
+    updatePickingItem: builder.mutation<ApiResponse<PickingItem>, UpdatePickingItemPayload>({
+      query: ({ id, ...body }) => ({
         url: `/picking-items/${id}`,
         method: "PUT",
         data: body,
@@ -48,8 +46,35 @@ const pickingItemApi = baseApi.injectEndpoints({
         { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
       ],
     }),
+
+    getPickingItemById: builder.query<ApiResponse<PickingItem>, string>({
+      query: (id) => ({
+        url: `/picking-items/${id}`,
+        method: "GET",
+      }),
+      providesTags: (_r, _e, id) => [{ type: "PickingItem" as const, id }],
+    }),
+
+    deletePickingItem: builder.mutation<ApiResponse<unknown>, { id: string; soItemId: string }>({
+      query: ({ id }) => ({
+        url: `/picking-items/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: arg.id },
+        { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "SalesOrder" as const, id: "LIST" },
+      ],
+    }),
   }),
 });
 
-export const { useGetPickingItemsQuery, useCreatePickingItemMutation, useUpdatePickingItemMutation } = pickingItemApi;
+export const {
+  useGetPickingItemsQuery,
+  useGetPickingItemByIdQuery,
+  useLazyGetPickingItemByIdQuery,
+  useCreatePickingItemMutation,
+  useUpdatePickingItemMutation,
+  useDeletePickingItemMutation,
+} = pickingItemApi;
 

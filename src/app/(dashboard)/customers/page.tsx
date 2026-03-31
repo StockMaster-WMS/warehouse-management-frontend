@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -48,6 +49,7 @@ export default function CustomersPage() {
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORY);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -83,6 +85,7 @@ export default function CustomersPage() {
   const canGoNext = paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
 
   const hasAnyFilter = searchInput.trim().length > 0 || categoryFilter !== ALL_CATEGORY;
+  const advancedCount = Number(categoryFilter !== ALL_CATEGORY);
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -135,28 +138,61 @@ export default function CustomersPage() {
         placeholder="Tìm theo tên, email, số điện thoại..."
         value={searchInput}
         onValueChange={setSearchInput}
-        filters={
-          <FilterGroup
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
             hasAnyFilter={hasAnyFilter}
             onClear={() => {
               setSearchInput("");
               setCategoryFilter(ALL_CATEGORY);
               setPage(0);
+              setAdvancedOpen(false);
             }}
-            filters={[
-              {
-                label: "phân loại",
-                placeholder: "Phân loại",
-                value: categoryFilter,
-                onChange: (v) => {
-                  setCategoryFilter(v);
-                  setPage(0);
-                },
-                options: ["Cá nhân", "Nhà buôn"],
-                width: "sm:w-[180px]",
-              },
-            ]}
           />
+        }
+        filters={
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {categoryFilter !== ALL_CATEGORY ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Phân loại:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">{categoryFilter}</span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
+            <FilterGroup
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
+                setSearchInput("");
+                setCategoryFilter(ALL_CATEGORY);
+                setPage(0);
+                setAdvancedOpen(false);
+              }}
+              showTitle={false}
+              showClear={false}
+              filters={[
+                {
+                  label: "phân loại",
+                  placeholder: "Phân loại",
+                  value: categoryFilter,
+                  onChange: (v) => {
+                    setCategoryFilter(v);
+                    setPage(0);
+                  },
+                  options: ["Cá nhân", "Nhà buôn"],
+                  width: "sm:w-[180px]",
+                },
+              ]}
+            />
+          </AdvancedFilterPanel>
         }
       />
 

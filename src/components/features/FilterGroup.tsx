@@ -21,15 +21,27 @@ interface FilterGroupProps {
     filters: FilterOption[];
     onClear: () => void;
     hasAnyFilter: boolean;
+    title?: string;
+    showTitle?: boolean;
+    showClear?: boolean;
 }
 
-export function FilterGroup({ filters, onClear, hasAnyFilter }: FilterGroupProps) {
+export function FilterGroup({
+    filters,
+    onClear,
+    hasAnyFilter,
+    title = "Bộ lọc",
+    showTitle = true,
+    showClear = true,
+}: FilterGroupProps) {
     return (
         <>
-            <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                <Filter className="h-4 w-4 text-indigo-500" />
-                Bộ lọc
-            </div>
+            {showTitle ? (
+                <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <Filter className="h-4 w-4 text-indigo-500" />
+                    {title}
+                </div>
+            ) : null}
             {filters.map((filter) => (
                 <Select
                     key={filter.label}
@@ -53,7 +65,7 @@ export function FilterGroup({ filters, onClear, hasAnyFilter }: FilterGroupProps
                     </SelectContent>
                 </Select>
             ))}
-            {hasAnyFilter && (
+            {showClear && hasAnyFilter && (
                 <Button
                     type="button"
                     variant="ghost"

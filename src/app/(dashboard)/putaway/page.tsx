@@ -237,25 +237,42 @@ export default function PutawayPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>Task</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Vị trí gợi ý</TableHead>
-                <TableHead>Vị trí thực tế</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
+          <Table className="min-w-[980px] text-left">
+            <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+              <TableRow>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">poItemId</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
+                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={`putaway-skel-${i}`}>
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-3 w-20" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-3 w-20" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Skeleton className="h-8 w-14 rounded-md" />
+                        <Skeleton className="h-8 w-20 rounded-md" />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : isError ? (
@@ -301,36 +318,18 @@ export default function PutawayPage() {
                 </TableRow>
               ) : (
                 tasks.map((t: PutawayTask) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="max-w-30 truncate font-mono text-xs">
-                      {t.id.slice(0, 8)}…
+                  <TableRow key={t.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
+                    <TableCell className="max-w-[120px] truncate px-3 py-3 font-mono text-xs">{t.id}</TableCell>
+                    <TableCell className="max-w-[120px] truncate px-3 py-3 font-mono text-xs">{t.poItemId ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-3">{t.status}</TableCell>
+                    <TableCell className="max-w-[100px] truncate px-3 py-3 font-mono text-xs">
+                      {t.suggestedLocationId ?? "—"}
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={statusBadgeClass(t.status)}
-                      >
-                        {STATUS_LABEL[t.status] ?? t.status}
-                      </Badge>
+                    <TableCell className="max-w-[100px] truncate px-3 py-3 font-mono text-xs">
+                      {t.actualLocationId ?? "—"}
                     </TableCell>
-                    <TableCell className="max-w-28 truncate font-mono text-xs">
-                      {t.suggestedLocationId
-                        ? t.suggestedLocationId.slice(0, 8) + "…"
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="max-w-28 truncate font-mono text-xs">
-                      {t.actualLocationId
-                        ? t.actualLocationId.slice(0, 8) + "…"
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="space-x-1 text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEdit(t)}
-                        disabled={patching}
-                      >
+                    <TableCell className="space-x-1 px-3 py-3 text-right">
+                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(t)} disabled={patching}>
                         Sửa
                       </Button>
                       <Button

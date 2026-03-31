@@ -9,26 +9,35 @@ import {
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
-import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { AddressForm, AddressValue } from "@/components/features/AddressForm";
 import { apiErrMessage } from "@/types/api";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateSalesOrderMutation } from "@/store/services/order.service";
 
-export default function NewOrderPage() {
+function NewOrderFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
+  const appliedWarehouseFromUrl = useRef(false);
+
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
-  const [line1, setLine1] = useState("");
-  const [ward, setWard] = useState("");
-  const [district, setDistrict] = useState("");
-  const [city, setCity] = useState("");
+  const [address, setAddress] = useState<AddressValue>({
+    street: "",
+    provinceCode: "",
+    provinceName: "",
+    districtCode: "",
+    districtName: "",
+    wardCode: "",
+    wardName: "",
+  });
   const [country, setCountry] = useState("VN");
   const [warehouseId, setWarehouseId] = useState("");
   const [priority, setPriority] = useState("5");
@@ -36,13 +45,22 @@ export default function NewOrderPage() {
 
   const { data: warehousesRes, isFetching: warehousesLoading } = useGetWarehousesQuery({
     page: 0,
-    size: 50,
-    sort: "createdAt",
-    sortDir: "desc",
+    size: 200,
+    sort: "name",
+    sortDir: "asc",
   });
   const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
 
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+
+  useEffect(() => {
+    if (appliedWarehouseFromUrl.current || !warehouseIdFromUrl || warehousesLoading) return;
+    const exists = warehouses.some((w) => String(w.id) === warehouseIdFromUrl);
+    if (exists) {
+      setWarehouseId(warehouseIdFromUrl);
+      appliedWarehouseFromUrl.current = true;
+    }
+  }, [warehouseIdFromUrl, warehousesLoading, warehouses]);
 
   const warehouseOptions = useMemo(
     () =>
@@ -56,10 +74,9 @@ export default function NewOrderPage() {
   function validate() {
     const next: Record<string, string> = {};
     if (!customerName.trim()) next.customerName = "Nhập hoặc chọn khách hàng";
-    if (!line1.trim()) next.line1 = "Nhập địa chỉ giao hàng";
-    if (!ward.trim()) next.ward = "Nhập phường/xã";
-    if (!district.trim()) next.district = "Nhập quận/huyện";
-    if (!city.trim()) next.city = "Nhập tỉnh/thành";
+    if (!address.street.trim()) next.line1 = "Nhập địa chỉ giao hàng";
+    if (!address.wardCode.trim()) next.ward = "Chọn phường/xã";
+    if (!address.provinceCode.trim()) next.city = "Chọn tỉnh/thành";
     if (!country.trim()) next.country = "Nhập mã quốc gia";
     if (!warehouseId) next.warehouseId = "Chọn kho xuất";
     const p = Number(priority);
@@ -78,10 +95,10 @@ export default function NewOrderPage() {
       const res = await createSalesOrder({
         customerName: customerName.trim(),
         shippingAddress: {
-          line1: line1.trim(),
-          ward: ward.trim(),
-          district: district.trim(),
-          city: city.trim(),
+          line1: address.street.trim(),
+          ward: address.wardName,
+          district: address.districtName, 
+          city: address.provinceName,
           country: country.trim().toUpperCase(),
         },
         warehouseId,
@@ -101,8 +118,12 @@ export default function NewOrderPage() {
   return (
     <div className="w-full space-y-6 pb-20">
       <PageHeader
-        title="Tạo vận đơn / Hành trình"
-        description="Khởi tạo lệnh xuất kho và điều phối vận chuyển mới."
+        title="Tạo đơn hàng xuất kho"
+        description={
+          warehouseIdFromUrl
+            ? "Khởi tạo đơn xuất kho mới. Kho xuất có thể đã được gợi ý từ liên kết (?warehouseId=)."
+            : "Khởi tạo đơn xuất kho mới và chuẩn bị luồng giao nhận."
+        }
         actions={
           <Button
             render={<Link href="/orders" />}
@@ -170,64 +191,15 @@ export default function NewOrderPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase">
                   Địa chỉ giao hàng <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Textarea
-                    value={line1}
-                    onChange={(e) => {
-                      setLine1(e.target.value);
-                      setErrors((prev) => ({ ...prev, line1: "" }));
-                    }}
-                    placeholder="Số nhà, đường..."
-                    aria-invalid={Boolean(errors.line1)}
-                    className="min-h-[92px] border-slate-200 bg-slate-50/50 pl-10 text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                </div>
+                <AddressForm
+                  value={address}
+                  onChange={setAddress}
+                  required
+                />
                 {errors.line1 ? <p className="text-xs font-medium text-rose-600">{errors.line1}</p> : null}
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                    Phường/xã <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    value={ward}
-                    onChange={(e) => setWard(e.target.value)}
-                    placeholder="VD: Bến Nghé"
-                    aria-invalid={Boolean(errors.ward)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                  {errors.ward ? <p className="text-xs font-medium text-rose-600">{errors.ward}</p> : null}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                    Quận/huyện <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    placeholder="VD: Quận 1"
-                    aria-invalid={Boolean(errors.district)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                  {errors.district ? <p className="text-xs font-medium text-rose-600">{errors.district}</p> : null}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                    Tỉnh/thành <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="VD: TP.HCM"
-                    aria-invalid={Boolean(errors.city)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
-                  {errors.city ? <p className="text-xs font-medium text-rose-600">{errors.city}</p> : null}
-                </div>
+                {errors.ward ? <p className="text-xs font-medium text-rose-600">{errors.ward}</p> : null}
+                {errors.district ? <p className="text-xs font-medium text-rose-600">{errors.district}</p> : null}
+                {errors.city ? <p className="text-xs font-medium text-rose-600">{errors.city}</p> : null}
               </div>
             </div>
           </div>
@@ -261,6 +233,15 @@ export default function NewOrderPage() {
                   className="focus:ring-indigo-500/30"
                 />
                 {errors.warehouseId ? <p className="text-xs font-medium text-rose-600">{errors.warehouseId}</p> : null}
+                {warehouseIdFromUrl && warehouseId === warehouseIdFromUrl ? (
+                  <p className="text-[11px] text-indigo-700 dark:text-indigo-300">
+                    Kho xuất đang theo liên kết <span className="font-mono">?warehouseId=</span> — có thể đổi tay nếu cần.
+                  </p>
+                ) : warehouseIdFromUrl && !warehousesLoading && !warehouses.some((w) => String(w.id) === warehouseIdFromUrl) ? (
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                    Tham số warehouseId trên URL không khớp kho nào — chọn kho thủ công.
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
@@ -328,5 +309,17 @@ export default function NewOrderPage() {
         </aside>
       </form>
     </div>
+  );
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center pb-20 text-sm text-slate-500">Đang tải form…</div>
+      }
+    >
+      <NewOrderFormContent />
+    </Suspense>
   );
 }

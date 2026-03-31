@@ -5,6 +5,7 @@ export interface PickingItem {
   soItemId: string;
   productId: string;
   locationId: string;
+  lotNumber?: string | null;
   qtyToPick: number;
   qtyPicked?: number | null;
   status: PickingItemStatus;
@@ -23,9 +24,16 @@ export type CreatePickingItemPayload = {
   pickSequence?: number;
 };
 
+/** Khớp UpdatePickingItemRequest (outbound-service): PUT bắt buộc đủ các trường, không chỉ qtyPicked/status. */
 export type UpdatePickingItemPayload = {
   id: string;
+  soItemId: string;
+  productId: string;
+  locationId: string;
+  qtyToPick: number;
   qtyPicked: number;
   status: PickingItemStatus;
+  pickSequence?: number | null;
+  lotNumber?: string | null;
 };
 

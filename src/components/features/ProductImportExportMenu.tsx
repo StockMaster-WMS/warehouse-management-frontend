@@ -7,25 +7,51 @@ import {
   PRODUCT_XLSX_IMPORT_CONFIG,
   PRODUCT_XLSX_SHEET_NAME,
   getProductImportTemplateAoA,
-  productExportRows,
 } from "@/lib/product-xlsx";
-import { useImportProductsXlsxMutation } from "@/store/services/product.service";
+import {
+  useImportProductsXlsxMutation,
+  useExportProductsXlsxMutation,
+  type GetProductsParams,
+} from "@/store/services/product.service";
 import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
 
 export type ProductImportExportMenuProps = {
   products: Product[];
   pageIndex: number;
+  listParams?: GetProductsParams;
 };
 
-export function ProductImportExportMenu({ products, pageIndex }: ProductImportExportMenuProps) {
+export function ProductImportExportMenu({ products, listParams }: ProductImportExportMenuProps) {
   const [importProductsXlsx, { isLoading: importUploading }] = useImportProductsXlsxMutation();
+  const [exportProductsXlsx] = useExportProductsXlsxMutation();
 
-  const getExportMatrix = useCallback(() => productExportRows(products), [products]);
-  const getExportFilename = useCallback(() => {
-    const stamp = new Date().toISOString().slice(0, 10);
-    return `san-pham-trang-${pageIndex + 1}-${stamp}`;
-  }, [pageIndex]);
+  const handleExportFromServer = useCallback(async () => {
+    try {
+      const toastId = toast.loading("Đang xuất dữ liệu...");
+      const params = listParams ? { ...listParams } : {};
+      delete params.page;
+      delete params.size;
+      delete params.sort;
+      
+      const blob = await exportProductsXlsx(params).unwrap();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const stamp = new Date().toISOString().slice(0, 10);
+      link.setAttribute("download", `products-export-${stamp}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Xuất dữ liệu thành công", { id: toastId });
+    } catch (e) {
+      toast.error(apiErrMessage(e) || "Lỗi khi xuất dữ liệu");
+    }
+  }, [exportProductsXlsx, listParams]);
+
   const getTemplateMatrix = useCallback(() => getProductImportTemplateAoA(), []);
 
   const dialogDescription = useMemo(
@@ -79,14 +105,13 @@ export function ProductImportExportMenu({ products, pageIndex }: ProductImportEx
 
   return (
     <ImportExportXlsxMenu
+      onExport={handleExportFromServer}
       sheetName={PRODUCT_XLSX_SHEET_NAME}
-      getExportMatrix={getExportMatrix}
       exportDisabled={products.length === 0}
-      getExportFilename={getExportFilename}
       getTemplateMatrix={getTemplateMatrix}
       templateBasename="mau-nhap-san-pham"
       importConfig={PRODUCT_XLSX_IMPORT_CONFIG}
-      exportItemLabel="Xuất .xlsx — trang hiện tại"
+      exportItemLabel="Xuất tất cả kết quả (.xlsx)"
       dialogTitle="Kiểm tra file nhập sản phẩm"
       importPreviewCountLabel="dòng sản phẩm"
       dialogDescription={dialogDescription}

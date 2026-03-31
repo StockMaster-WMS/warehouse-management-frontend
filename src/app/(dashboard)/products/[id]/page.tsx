@@ -1,14 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Boxes,
   CalendarClock,
   ChevronRight,
   Copy,
   Edit2,
-  Layers,
   ListOrdered,
   Package,
   Ruler,
@@ -19,8 +19,13 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetProductByIdQuery } from "@/store/services/product.service";
+import { useGetStocksQuery } from "@/store/services/stock.service";
+import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
+import { apiErrMessage } from "@/types/api";
 import { getProductCategoryDisplayName } from "@/types/product";
 import type { Product } from "@/types/product";
+import type { Stock } from "@/types/stock";
+import type { Location } from "@/types/location";
 
 export default function ProductDetailPage({
   params: paramsPromise,
@@ -31,6 +36,19 @@ export default function ProductDetailPage({
   const { id } = params;
   const { data, error, isLoading, refetch, isFetching } = useGetProductByIdQuery(id);
   const product = data?.data;
+  const {
+    data: stocksResponse,
+    error: stockError,
+    isLoading: isStocksLoading,
+  } = useGetStocksQuery(
+    { productId: id },
+    {
+      skip: !id,
+    },
+  );
+  const [triggerGetLocationById] = useLazyGetLocationByIdQuery();
+  const [locationMap, setLocationMap] = useState<Record<string, Location>>({});
+  const [isLocationsLoading, setIsLocationsLoading] = useState(false);
 
   const formatDateTime = (value?: string) => {
     if (!value) return "--";
@@ -44,6 +62,52 @@ export default function ProductDetailPage({
       /* ignore */
     }
   };
+
+  const stocks = useMemo(() => stocksResponse?.data?.content ?? [], [stocksResponse]);
+
+  useEffect(() => {
+    const uniqueLocationIds = Array.from(
+      new Set(stocks.map((item) => item.locationId).filter(Boolean)),
+    );
+
+    if (uniqueLocationIds.length === 0) return;
+
+    const missingLocationIds = uniqueLocationIds.filter((id) => !locationMap[id]);
+    if (missingLocationIds.length === 0) return;
+
+    let cancelled = false;
+
+    const loadLocations = async () => {
+      setIsLocationsLoading(true);
+      try {
+        const responses = await Promise.all(
+          missingLocationIds.map((locationId) =>
+            triggerGetLocationById(locationId).unwrap(),
+          ),
+        );
+        if (cancelled) return;
+        setLocationMap((prev) => {
+          const next = { ...prev };
+          for (const response of responses) {
+            const location = response?.data;
+            if (!location?.id) continue;
+            next[location.id] = location;
+          }
+          return next;
+        });
+      } catch {
+        /* ignore location details fetch failures, fallback to UUID */
+      } finally {
+        if (!cancelled) setIsLocationsLoading(false);
+      }
+    };
+
+    loadLocations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locationMap, stocks, triggerGetLocationById]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -214,6 +278,21 @@ export default function ProductDetailPage({
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+                  <Boxes className="h-4 w-4 shrink-0 text-indigo-600" />
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                    Tồn theo vị trí
+                  </h2>
+                </div>
+                <StockByLocationList
+                  stocks={stocks}
+                  locationMap={locationMap}
+                  isLoading={isStocksLoading || isLocationsLoading}
+                  errorMessage={stockError ? apiErrMessage(stockError) : null}
+                />
+              </section>
+
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
+                <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
                   <CalendarClock className="h-4 w-4 shrink-0 text-amber-500" />
                   <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                     Lịch sử
@@ -232,12 +311,283 @@ export default function ProductDetailPage({
   );
 }
 
+function formatLocationCode(location?: Location) {
+  if (!location) return "--";
+  if (location.code?.trim()) return location.code.trim();
+  const pieces = [
+    location.zone,
+    location.aisle,
+    location.rack,
+    location.level != null ? String(location.level) : "",
+    location.bin,
+  ]
+    .map((v) => (typeof v === "string" ? v.trim() : v))
+    .filter(Boolean);
+  return pieces.length ? pieces.join("-") : "--";
+}
+
+function getLocationParts(location?: Location, fallbackLocationId?: string) {
+  const parseFromCode = (code?: string | null) => {
+    const normalized = code?.trim();
+    if (!normalized) return null;
+    const chunks = normalized
+      .split(/[-_/.\s]+/)
+      .map((v) => v.trim())
+      .filter(Boolean);
+    if (chunks.length < 3) return null;
+    return {
+      zone: chunks[0],
+      rack: chunks[1],
+      aisle: chunks[2],
+      level: undefined as string | undefined,
+      bin: chunks[3],
+    };
+  };
+
+  if (!location) {
+    return {
+      zone: "",
+      rack: "",
+      aisle: "",
+      level: "",
+      bin: "",
+      fallback: fallbackLocationId
+        ? `Mã vị trí: ...${fallbackLocationId.slice(-6).toUpperCase()}`
+        : "Chưa có thông tin vị trí",
+    };
+  }
+
+  const direct = {
+    zone: location.zone?.trim() || "",
+    rack: location.rack?.trim() || "",
+    aisle: location.aisle?.trim() || "",
+    level:
+      location.level != null && String(location.level).trim()
+        ? String(location.level).trim()
+        : "",
+    bin: location.bin?.trim() || "",
+  };
+
+  if (direct.zone || direct.rack || direct.aisle || direct.level || direct.bin) {
+    return { ...direct, fallback: "" };
+  }
+
+  const parsed = parseFromCode(location.code);
+  if (parsed) return { ...parsed, fallback: "" };
+
+  return {
+    zone: "",
+    rack: "",
+    aisle: "",
+    level: "",
+    bin: "",
+    fallback: location.id
+      ? `Mã vị trí: ...${location.id.slice(-6).toUpperCase()}`
+      : "Chưa có thông tin vị trí",
+  };
+}
+
+function StockByLocationList({
+  stocks,
+  locationMap,
+  isLoading,
+  errorMessage,
+}: {
+  stocks: Stock[];
+  locationMap: Record<string, Location>;
+  isLoading: boolean;
+  errorMessage: string | null;
+}) {
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={`stock-location-loading-${i}`} className="h-10 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+        {errorMessage}
+      </p>
+    );
+  }
+
+  if (stocks.length === 0) {
+    return (
+      <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+        Chưa có tồn kho theo vị trí cho sản phẩm này.
+      </p>
+    );
+  }
+
+  const sortedStocks = [...stocks].sort((a, b) => {
+    const availableDiff = Number(b.qtyAvailable || 0) - Number(a.qtyAvailable || 0);
+    if (availableDiff !== 0) return availableDiff;
+    return Number(b.qtyOnHand || 0) - Number(a.qtyOnHand || 0);
+  });
+  const totalOnHand = stocks.reduce((sum, item) => sum + Number(item.qtyOnHand || 0), 0);
+  const totalAvailable = stocks.reduce(
+    (sum, item) => sum + Number(item.qtyAvailable || 0),
+    0,
+  );
+
+  const maxOnHand = Math.max(...stocks.map((item) => Number(item.qtyOnHand || 0)), 1);
+
+  const getAvailabilityState = (onHand: number, available: number) => {
+    if (onHand <= 0) return "Hết hàng";
+    if (available <= 0) return "Đã giữ hết";
+    if (available / onHand < 0.3) return "Sắp hết";
+    return "Đủ hàng";
+  };
+
+  const getAvailabilityClass = (state: string) => {
+    if (state === "Đủ hàng") {
+      return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+    }
+    if (state === "Sắp hết") {
+      return "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300";
+    }
+    return "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300";
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Số vị trí
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {stocks.length}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Tổng tồn thực
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {totalOnHand.toLocaleString("vi-VN")}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Tổng khả dụng
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {totalAvailable.toLocaleString("vi-VN")}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-b border-slate-100 px-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
+        <span>Vị trí</span>
+        <span className="text-right">Tồn thực</span>
+        <span className="text-right">Khả dụng</span>
+      </div>
+
+      <div className="space-y-2">
+        {sortedStocks.map((stock, index) => {
+          const location = locationMap[stock.locationId];
+          const locationParts = getLocationParts(location, stock.locationId);
+          const onHand = Number(stock.qtyOnHand || 0);
+          const available = Number(stock.qtyAvailable || 0);
+          const ratio = onHand > 0 ? Math.min(100, Math.round((available / onHand) * 100)) : 0;
+          const usageScale = Math.min(100, Math.round((onHand / maxOnHand) * 100));
+          const state = getAvailabilityState(onHand, available);
+
+        return (
+          <div
+            key={`${stock.locationId}-${stock.id}`}
+              className={`grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border px-3 py-2.5 ${
+                index === 0 && available > 0
+                  ? "border-indigo-300 bg-indigo-50/70 dark:border-indigo-700 dark:bg-indigo-950/20"
+                  : "border-slate-200/90 bg-slate-50/70 dark:border-slate-700/90 dark:bg-slate-900/55"
+              }`}
+          >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-100">
+                    {formatLocationCode(location)}
+                  </p>
+                  {index === 0 && available > 0 ? (
+                    <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                      Ưu tiên lấy
+                    </span>
+                  ) : null}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${getAvailabilityClass(
+                      state,
+                    )}`}
+                  >
+                    {state}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-1">
+                  {locationParts.zone ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Khu: {locationParts.zone}
+                    </span>
+                  ) : null}
+                  {locationParts.rack ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Kệ: {locationParts.rack}
+                    </span>
+                  ) : null}
+                  {locationParts.aisle ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Hàng: {locationParts.aisle}
+                    </span>
+                  ) : null}
+                  {locationParts.level ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Tầng: {locationParts.level}
+                    </span>
+                  ) : null}
+                  {locationParts.bin ? (
+                    <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      Ô: {locationParts.bin}
+                    </span>
+                  ) : null}
+                  {locationParts.fallback ? (
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {locationParts.fallback}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div
+                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    style={{ width: `${Math.max(8, usageScale)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-right text-xs font-semibold text-slate-800 dark:text-slate-100">
+                {onHand.toLocaleString("vi-VN")}
+              </p>
+              <div className="text-right">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  {available.toLocaleString("vi-VN")}
+                </p>
+                <p className="text-[10px] text-slate-400">{ratio}%</p>
+              </div>
+          </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProductHero({ product, onCopySku }: { product: Product; onCopySku: () => void }) {
   const initials = (product.name || product.sku || "?").trim().slice(0, 2).toUpperCase();
   const category = getProductCategoryDisplayName(product);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/40 to-indigo-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 sm:p-8">
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-white via-slate-50/40 to-indigo-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 sm:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4 sm:gap-5">
           <div
@@ -258,7 +608,7 @@ function ProductHero({ product, onCopySku }: { product: Product; onCopySku: () =
               <span className="truncate text-slate-600 dark:text-slate-300">Chi tiết</span>
             </nav>
             <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-              <span className="break-words">{product.name}</span>
+              <span className="wrap-break-word">{product.name}</span>
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
@@ -353,7 +703,7 @@ function InfoField({
         {label}
       </p>
       <p
-        className={`mt-1 break-words text-sm font-semibold text-slate-800 dark:text-slate-100 ${mono ? "break-all font-mono text-xs" : ""}`}
+        className={`mt-1 wrap-break-word text-sm font-semibold text-slate-800 dark:text-slate-100 ${mono ? "break-all font-mono text-xs" : ""}`}
       >
         {value}
       </p>

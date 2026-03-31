@@ -20,6 +20,15 @@ export interface SalesOrder {
   updatedAt?: string | null;
 }
 
+export type UpdateSalesOrderPayload = {
+  soNumber: string;
+  customerName: string;
+  shippingAddress: ShippingAddress;
+  warehouseId: string;
+  priority?: number | null;
+  status?: string | null;
+};
+
 export function salesOrderStatusLabel(status: SalesOrderStatus | null | undefined): string {
   switch (status) {
     case "PENDING": return "Chờ xử lý";

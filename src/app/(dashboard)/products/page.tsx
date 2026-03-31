@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -8,15 +8,14 @@ import {
   MapPin,
   AlertCircle,
   Hash,
-  Filter,
-  ListOrdered,
-  X,
+  ListOrdered
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { ProductTableRow } from "@/components/features/ProductTableRow";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 
 const DeleteConfirmDialog = dynamic(
   () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
@@ -45,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { apiErrMessage } from "@/types/api";
 
@@ -61,7 +61,7 @@ function ProductTableSkeleton() {
             <Skeleton className="mx-auto h-5 w-6 rounded" />
           </TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-full max-w-[240px]" /></TableCell>
+          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-full max-w-60" /></TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell className="px-3 py-3 text-center"><Skeleton className="mx-auto h-4 w-8" /></TableCell>
@@ -81,10 +81,8 @@ export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
-
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedKeyword, statusFilter, categoryFilter]);
+  const [warehouseFilter, setWarehouseFilter] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const listParams = useMemo(
     () => ({
@@ -94,8 +92,9 @@ export default function ProductsPage() {
       keyword: debouncedKeyword || undefined,
       status: statusFilter || undefined,
       categoryId: categoryFilter || undefined,
+      warehouseId: warehouseFilter || undefined,
     }),
-    [page, debouncedKeyword, statusFilter, categoryFilter],
+    [page, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
   );
 
   const { data, error, isLoading, isFetching, refetch } = useGetProductsQuery(listParams);
@@ -111,18 +110,36 @@ export default function ProductsPage() {
     error: categoriesError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
+  const {
+    data: warehouseOptionsData,
+    isLoading: warehousesLoading,
+    error: warehousesError,
+    refetch: refetchWarehouses,
+  } = useGetWarehousesQuery({
+    page: 0,
+    size: 200,
+    sort: "createdAt",
+    sortDir: "desc",
+  });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState("");
 
   const hasAnyFilter =
-    searchInput.trim().length > 0 || Boolean(statusFilter) || Boolean(categoryFilter);
+    searchInput.trim().length > 0 ||
+    Boolean(statusFilter) ||
+    Boolean(categoryFilter) ||
+    Boolean(warehouseFilter);
+  const advancedCount =
+    Number(Boolean(statusFilter)) + Number(Boolean(categoryFilter)) + Number(Boolean(warehouseFilter));
 
   const clearFilters = () => {
     setSearchInput("");
     setStatusFilter("");
     setCategoryFilter("");
+    setWarehouseFilter("");
     setPage(0);
+    setAdvancedOpen(false);
   };
 
   const handleRequestDelete = useCallback((name: string) => {
@@ -149,7 +166,7 @@ export default function ProductsPage() {
         description="Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ."
         actions={
           <div className="flex items-center gap-2">
-            <ProductImportExportMenu products={products} pageIndex={page} />
+            <ProductImportExportMenu products={products} pageIndex={page} listParams={listParams} />
             <Button
               render={<Link href="/products/new" />}
               nativeButton={false}
@@ -185,20 +202,65 @@ export default function ProductsPage() {
       <SearchToolbar
         placeholder="Tìm kiếm sản phẩm"
         value={searchInput}
-        onValueChange={setSearchInput}
+        onValueChange={(value) => {
+          setSearchInput(value);
+          setPage(0);
+        }}
+        right={
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={clearFilters}
+          />
+        }
         filters={
-          <div className="flex w-full flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-              <Filter className="h-4 w-4 text-indigo-500" />
-              Bộ lọc
-            </div>
+          <AdvancedFilterPanel
+            open={advancedOpen}
+            summary={
+              advancedCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {statusFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Trạng thái:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {statusFilter === "ACTIVE" ? "Hoạt động" : "Ngưng"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {categoryFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Nhóm:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.code ??
+                          categoryOptionsData?.data?.content?.find((x) => x.id === categoryFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                  {warehouseFilter ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                      Kho:{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                        {warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.code ??
+                          warehouseOptionsData?.data?.content?.find((x) => x.id === warehouseFilter)?.name ??
+                          "—"}
+                      </span>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          >
             <Select
               value={statusFilter}
-              onValueChange={(v) =>
-                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "")
-              }
+              onValueChange={(v) => {
+                setStatusFilter(v === "ACTIVE" || v === "INACTIVE" ? v : "");
+                setPage(0);
+              }}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-[168px] dark:border-slate-800 dark:bg-slate-900">
+              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-42 dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue placeholder="Trạng thái">
                   {(val) =>
                     val === "ACTIVE"
@@ -215,8 +277,15 @@ export default function ProductsPage() {
                 <SelectItem value="INACTIVE" className="rounded-lg">Ngưng</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "")}>
-              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
+
+            <Select
+              value={categoryFilter}
+              onValueChange={(v) => {
+                setCategoryFilter(v ?? "");
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue
                   placeholder={
                     categoriesLoading
@@ -255,18 +324,53 @@ export default function ProductsPage() {
                 ) : null}
               </SelectContent>
             </Select>
-            {hasAnyFilter ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-                onClick={clearFilters}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Xoá lọc
-              </Button>
-            ) : null}
-          </div>
+
+            <Select
+              value={warehouseFilter}
+              onValueChange={(v) => {
+                setWarehouseFilter(v ?? "");
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
+                <SelectValue
+                  placeholder={
+                    warehousesLoading
+                      ? "Đang tải kho..."
+                      : warehousesError
+                        ? "Lỗi tải kho"
+                        : "Tất cả kho"
+                  }
+                >
+                  {(val) => {
+                    if (!val) return "Tất cả kho";
+                    const w = warehouseOptionsData?.data?.content?.find((x) => x.id === val);
+                    return w ? `${w.name} (${w.code || "—"})` : "Đang tải…";
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-72 rounded-xl">
+                {warehousesError ? (
+                  <div className="px-2 py-1.5 text-xs text-rose-500">
+                    Không tải được danh sách kho.
+                    <button
+                      type="button"
+                      onClick={() => refetchWarehouses()}
+                      className="ml-1 underline"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                ) : null}
+                <SelectItem value="" className="rounded-lg">Tất cả kho</SelectItem>
+                {warehouseOptionsData?.data?.content?.map((w) => (
+                  <SelectItem key={w.id} value={w.id} className="rounded-lg">
+                    {w.name} {w.code ? `(${w.code})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AdvancedFilterPanel>
         }
       />
 
@@ -277,18 +381,18 @@ export default function ProductsPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[1040px] text-left">
+          <Table className="min-w-260 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
-                <TableHead className="w-[120px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã SKU</TableHead>
-                <TableHead className="min-w-[200px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</TableHead>
-                <TableHead className="w-[132px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</TableHead>
-                <TableHead className="min-w-[140px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhóm hàng</TableHead>
+                <TableHead className="w-[30 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã SKU</TableHead>
+                <TableHead className="min-w-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</TableHead>
+                <TableHead className="w-[33 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</TableHead>
+                <TableHead className="min-w-35 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhóm hàng</TableHead>
                 <TableHead className="w-16 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">ĐVT</TableHead>
-                <TableHead className="w-[100px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">NCC chính</TableHead>
-                <TableHead className="w-[120px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="w-[108px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</TableHead>
+                <TableHead className="w-25 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">NCC chính</TableHead>
+                <TableHead className="w-30 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                <TableHead className="w-25 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</TableHead>
                 <TableHead className="w-12 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   <span className="sr-only">Thao tác</span>
                 </TableHead>

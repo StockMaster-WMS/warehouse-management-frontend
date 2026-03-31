@@ -13,6 +13,7 @@ export type GetProductsParams = {
   sort?: string;
   keyword?: string;
   categoryId?: string;
+  warehouseId?: string;
   status?: "ACTIVE" | "INACTIVE";
 };
 
@@ -23,6 +24,7 @@ function buildProductsQueryParams(params: GetProductsParams) {
     sort = "updatedAt",
     keyword,
     categoryId,
+    warehouseId,
     status,
   } = params;
 
@@ -30,6 +32,7 @@ function buildProductsQueryParams(params: GetProductsParams) {
   const k = keyword?.trim();
   if (k) query.keyword = k;
   if (categoryId?.trim()) query.categoryId = categoryId.trim();
+  if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
   if (status) query.status = status;
   return query;
 }
@@ -88,6 +91,14 @@ const productApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "Product", id: "LIST" }],
     }),
+    exportProductsXlsx: builder.mutation<Blob, Omit<GetProductsParams, "page" | "size" | "sort">>({
+      query: (params) => ({
+        url: "/products/export",
+        method: "GET",
+        params: buildProductsQueryParams(params),
+        responseType: "blob",
+      }),
+    }),
   }),
 });
 
@@ -96,4 +107,5 @@ export const {
   useGetProductByIdQuery,
   useUpdateProductMutation,
   useImportProductsXlsxMutation,
+  useExportProductsXlsxMutation,
 } = productApi;

@@ -274,41 +274,33 @@ export default function PurchaseOrdersPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>Mã PO</TableHead>
-                <TableHead>Nhà cung cấp</TableHead>
-                <TableHead>Kho</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Ngày đặt</TableHead>
-                <TableHead className="text-right">Tổng tiền</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
+          <Table className="min-w-[860px] text-left">
+            <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+              <TableRow>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={`po-skel-${i}`}>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Skeleton className="h-4 w-28" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-20" />
+                    <TableCell className="px-3 py-3">
+                      <Skeleton className="h-4 w-28" />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Skeleton className="h-5 w-20 rounded-full" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="ml-auto h-4 w-20" />
-                    </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="px-3 py-3 text-right">
                       <Skeleton className="ml-auto h-8 w-16 rounded-lg" />
                     </TableCell>
                   </TableRow>
@@ -359,17 +351,11 @@ export default function PurchaseOrdersPage() {
                 </TableRow>
               ) : (
                 rows.map((po: PurchaseOrder) => (
-                  <TableRow key={po.id}>
-                    <TableCell className="font-medium">{po.poNumber}</TableCell>
-                    <TableCell>
-                      {supplierMap.get(po.supplierId) ??
-                        po.supplierId.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>
-                      {warehouseMap.get(po.warehouseId) ??
-                        po.warehouseId.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>
+                  <TableRow key={po.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
+                    <TableCell className="px-3 py-3 font-medium">{po.poNumber}</TableCell>
+                    <TableCell className="px-3 py-3">{po.orderDate}</TableCell>
+                    <TableCell className="px-3 py-3">{po.expectedDate ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-3">
                       <Badge
                         variant="secondary"
                         className={`font-normal ${statusBadgeClass(po.status)}`}
@@ -377,13 +363,7 @@ export default function PurchaseOrdersPage() {
                         {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{po.orderDate}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {po.totalAmount != null
-                        ? po.totalAmount.toLocaleString("vi-VN")
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="px-3 py-3 text-right">
                       <Button
                         render={<Link href={`/purchase-orders/${po.id}`} />}
                         nativeButton={false}
