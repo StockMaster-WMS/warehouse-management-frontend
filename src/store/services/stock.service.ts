@@ -4,7 +4,7 @@ import {
   type ApiResponse,
   type PagedResponse,
 } from "@/types/api";
-import type { Stock, StockExpanded } from "@/types/stock";
+import type { StockExpanded } from "@/types/stock";
 
 export type GetStocksParams = {
   productId: string;
@@ -53,7 +53,7 @@ const stockApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV !== "production",
   endpoints: (builder) => ({
     getStocks: builder.query<
-      ApiResponse<PagedResponse<Stock>>,
+      ApiResponse<PagedResponse<StockExpanded>>,
       GetStocksParams
     >({
       query: (params) => ({
@@ -61,7 +61,7 @@ const stockApi = baseApi.injectEndpoints({
         method: "GET",
         params: buildStocksQueryParams(params),
       }),
-      transformResponse: (r: ApiResponse<Stock[] | PagedResponse<Stock>>) =>
+      transformResponse: (r: ApiResponse<StockExpanded[] | PagedResponse<StockExpanded>>) =>
         normalizeApiResponsePaged(r),
       providesTags: (result) =>
         result?.data?.content?.length

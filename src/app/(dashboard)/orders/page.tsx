@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   MapPin,
   AlertCircle,
@@ -25,9 +25,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetSalesOrdersQuery } from "@/store/services/order.service";
+import { useGetSalesOrdersQuery, useLazyGetSalesOrderBySoNumberQuery } from "@/store/services/order.service";
 import { formatShippingShort, salesOrderStatusColor, salesOrderStatusLabel } from "@/types/sales-order";
 import { apiErrMessage } from "@/types/api";
+import { Input } from "@/components/ui/input";
 
 const PAGE_SIZE = 20;
 const SKELETON_ROWS = 5;
@@ -69,9 +70,12 @@ function OrderTableSkeleton() {
 }
 
 export default function OrderPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const createdId = searchParams.get("created") || "";
   const [query, setQuery] = useState("");
+  const [soNumberLookup, setSoNumberLookup] = useState("");
+  const [lookupByNumber, { isFetching: lookingUpByNumber }] = useLazyGetSalesOrderBySoNumberQuery();
   const debouncedKeyword = useDebouncedValue(query.trim());
   const [statusFilter, setStatusFilter] = useState("Tất cả trạng thái");
   const [page, setPage] = useState(0);
@@ -117,6 +121,24 @@ export default function OrderPage() {
     setStatusFilter("Tất cả trạng thái");
     setPage(0);
   };
+
+  async function goToOrderBySoNumber() {
+    const q = soNumberLookup.trim();
+    if (!q) {
+      toast.error("Nhập mã đơn (soNumber)");
+      return;
+    }
+    try {
+      const res = await lookupByNumber(q).unwrap();
+      if (!res.success || !res.data?.id) {
+        toast.error(res.message || "Không tìm thấy đơn");
+        return;
+      }
+      router.push(`/orders/${res.data.id}`);
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không tìm thấy đơn theo mã."));
+    }
+  }
 
   function formatRelativeTime(dateStr: string | null | undefined): string {
     if (!dateStr) return "—";
@@ -202,6 +224,27 @@ export default function OrderPage() {
           </AdvancedFilterPanel>
         }
       />
+
+      <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:gap-3 dark:border-slate-800 dark:bg-slate-900/40">
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Tìm nhanh theo mã đơn (soNumber)</p>
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <Input
+            value={soNumberLookup}
+            onChange={(e) => setSoNumberLookup(e.target.value)}
+            placeholder="VD: SO-2024-001"
+            className="max-w-xs"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                goToOrderBySoNumber();
+              }
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" disabled={lookingUpByNumber} onClick={goToOrderBySoNumber}>
+            {lookingUpByNumber ? "Đang tìm…" : "Mở đơn"}
+          </Button>
+        </div>
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {isFetching && !isLoading ? (

@@ -8,7 +8,6 @@ import {
   Boxes,
   ChevronDown,
   ChevronUp,
-  FileSpreadsheet,
   Filter,
   History,
   Plus,
@@ -323,17 +322,6 @@ export default function InventoryPage() {
                 Xoá lọc
               </Button>
             ) : null}
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-11 rounded-xl border-slate-200"
-              onClick={() => toast.success("Đã xuất dữ liệu (demo).")}
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Xuất dữ liệu
-            </Button>
           </div>
         }
         filters={
