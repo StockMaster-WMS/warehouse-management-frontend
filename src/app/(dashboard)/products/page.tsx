@@ -8,8 +8,7 @@ import {
   MapPin,
   AlertCircle,
   Hash,
-  ListOrdered,
-  X,
+  ListOrdered
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ function ProductTableSkeleton() {
             <Skeleton className="mx-auto h-5 w-6 rounded" />
           </TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-full max-w-[240px]" /></TableCell>
+          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-full max-w-60" /></TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell className="px-3 py-3 text-center"><Skeleton className="mx-auto h-4 w-8" /></TableCell>
@@ -161,13 +160,13 @@ export default function ProductsPage() {
   }, [totalElements, page, data?.data?.total_pages]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Sản phẩm"
         description="Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ."
         actions={
           <div className="flex items-center gap-2">
-            <ProductImportExportMenu products={products} pageIndex={page} />
+            <ProductImportExportMenu products={products} pageIndex={page} listParams={listParams} />
             <Button
               render={<Link href="/products/new" />}
               nativeButton={false}
@@ -181,19 +180,19 @@ export default function ProductsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 {stat.label}
               </span>
               <stat.icon className={`h-4 w-4 ${stat.color} opacity-70`} />
             </div>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               {stat.value}
             </div>
           </div>
@@ -261,7 +260,7 @@ export default function ProductsPage() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-[168px] dark:border-slate-800 dark:bg-slate-900">
+              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-42 dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue placeholder="Trạng thái">
                   {(val) =>
                     val === "ACTIVE"
@@ -286,7 +285,7 @@ export default function ProductsPage() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue
                   placeholder={
                     categoriesLoading
@@ -333,7 +332,7 @@ export default function ProductsPage() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-[240px] sm:w-[220px] dark:border-slate-800 dark:bg-slate-900">
+              <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
                 <SelectValue
                   placeholder={
                     warehousesLoading
@@ -382,18 +381,18 @@ export default function ProductsPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[1040px] text-left">
+          <Table className="min-w-260 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
-                <TableHead className="w-[120px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã SKU</TableHead>
-                <TableHead className="min-w-[200px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</TableHead>
-                <TableHead className="w-[132px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</TableHead>
-                <TableHead className="min-w-[140px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhóm hàng</TableHead>
+                <TableHead className="w-[30 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã SKU</TableHead>
+                <TableHead className="min-w-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</TableHead>
+                <TableHead className="w-[33 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</TableHead>
+                <TableHead className="min-w-35 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhóm hàng</TableHead>
                 <TableHead className="w-16 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">ĐVT</TableHead>
-                <TableHead className="w-[100px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">NCC chính</TableHead>
-                <TableHead className="w-[120px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="w-[108px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</TableHead>
+                <TableHead className="w-25 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">NCC chính</TableHead>
+                <TableHead className="w-30 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                <TableHead className="w-25 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</TableHead>
                 <TableHead className="w-12 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   <span className="sr-only">Thao tác</span>
                 </TableHead>

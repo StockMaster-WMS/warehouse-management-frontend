@@ -101,7 +101,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Khách hàng"
         description="Duy trì mối quan hệ và quản lý thông tin khách hàng/nhà cung cấp."

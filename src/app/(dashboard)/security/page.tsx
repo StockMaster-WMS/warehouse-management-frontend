@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 
 export default function SecurityPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Bảo mật & Phân quyền"
         description="Quản lý quyền truy cập và bảo vệ dữ liệu kho an toàn tuyệt đối."

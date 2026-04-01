@@ -38,15 +38,31 @@ import type { PurchaseOrder } from "@/types/purchase-order";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 
-const STATUS_OPTIONS = ["DRAFT", "RECEIVING", "RECEIVED", "CANCELLED"] as const;
+const STATUS_OPTIONS = [
+  "DRAFT",
+  "APPROVED",
+  "PARTIAL",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
+
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Nháp",
+  APPROVED: "Đã duyệt",
+  PARTIAL: "Nhận một phần",
+  COMPLETED: "Hoàn tất",
+  CANCELLED: "Đã hủy",
+};
 
 function statusBadgeClass(status: string | null | undefined): string {
   switch (status) {
     case "DRAFT":
       return "bg-slate-100 text-slate-700";
-    case "RECEIVING":
+    case "APPROVED":
+      return "bg-blue-100 text-blue-700";
+    case "PARTIAL":
       return "bg-amber-100 text-amber-700";
-    case "RECEIVED":
+    case "COMPLETED":
       return "bg-emerald-100 text-emerald-700";
     case "CANCELLED":
       return "bg-rose-100 text-rose-700";
@@ -90,6 +106,17 @@ export default function PurchaseOrdersPage() {
   const suppliers = suppliersRes?.data?.content ?? [];
   const warehouses = warehousesRes?.data?.content ?? [];
 
+  const supplierMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of suppliers) map.set(s.id, s.name ?? s.code ?? s.id);
+    return map;
+  }, [suppliers]);
+  const warehouseMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const w of warehouses) map.set(w.id, w.name);
+    return map;
+  }, [warehouses]);
+
   const paged = useMemo((): Pick<
     PagedResponse<PurchaseOrder>,
     "page" | "size" | "total_elements" | "total_pages"
@@ -124,7 +151,7 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Đơn nhập hàng"
         description="Purchase Order — quản lý đơn đặt hàng từ nhà cung cấp."
@@ -152,12 +179,12 @@ export default function PurchaseOrdersPage() {
         }
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
           <Filter className="h-4 w-4 text-indigo-500" />
           Bộ lọc PO
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-5">
           <div className="relative lg:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -185,7 +212,7 @@ export default function PurchaseOrdersPage() {
               <SelectItem value="__all__">Tất cả trạng thái</SelectItem>
               {STATUS_OPTIONS.map((st) => (
                 <SelectItem key={st} value={st}>
-                  {st}
+                  {STATUS_LABEL[st] ?? st}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -247,7 +274,7 @@ export default function PurchaseOrdersPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px] text-left">
+          <Table className="min-w-215 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
@@ -280,7 +307,7 @@ export default function PurchaseOrdersPage() {
                 ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="p-0">
+                  <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách đơn nhập"
@@ -303,7 +330,7 @@ export default function PurchaseOrdersPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="p-0">
+                  <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={FileText}
                       title="Chưa có đơn nhập"
@@ -333,7 +360,7 @@ export default function PurchaseOrdersPage() {
                         variant="secondary"
                         className={`font-normal ${statusBadgeClass(po.status)}`}
                       >
-                        {po.status ?? "—"}
+                        {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-3 py-3 text-right">

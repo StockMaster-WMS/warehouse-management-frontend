@@ -39,7 +39,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Hero Header Section */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 p-8 text-white shadow-lg">
         <div className="absolute inset-0 bg-black/10"></div>

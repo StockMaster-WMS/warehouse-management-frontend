@@ -1,5 +1,4 @@
 /** Tiện ích .xlsx dùng chung mọi entity (đọc/ghi file). */
-import * as XLSX from "xlsx";
 
 export type AoA = (string | number | boolean | null | undefined)[][];
 
@@ -25,6 +24,7 @@ function yieldThread(): Promise<void> {
  */
 export async function downloadAoAAsXlsx(filename: string, sheetName: string, rows: AoA) {
   if (rows.length === 0) return;
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.aoa_to_sheet(rows);
   await yieldThread();
   const wb = XLSX.utils.book_new();
@@ -38,6 +38,7 @@ export async function downloadAoAAsXlsx(filename: string, sheetName: string, row
  * matrix, yielding between parse → JSON → map steps.
  */
 export async function readXlsxFirstSheetMatrix(data: ArrayBuffer): Promise<string[][]> {
+  const XLSX = await import("xlsx");
   const wb = XLSX.read(data, { type: "array" });
   await yieldThread();
 

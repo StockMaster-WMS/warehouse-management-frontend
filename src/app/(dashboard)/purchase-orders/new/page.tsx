@@ -262,7 +262,6 @@ export default function NewPurchaseOrderPage() {
         productId: selectedProduct.id,
         productSku: selectedProduct.sku,
         orderedQty: qty,
-        receivedQty: 0,
         ...(unitPrice != null ? { unitPrice } : {}),
       }).unwrap();
 
@@ -294,7 +293,7 @@ export default function NewPurchaseOrderPage() {
   }
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Tạo đơn nhập hàng"
         description="Bước 1: Lưu header đơn. Bước 2: Thêm từng dòng hàng (POST /api/po-items)."

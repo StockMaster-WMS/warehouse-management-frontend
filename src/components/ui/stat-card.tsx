@@ -23,17 +23,17 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900",
+        "group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
         <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <p className="text-xs sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <div className="flex items-baseline gap-1 sm:gap-2">
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               {value}
             </p>
             {trend ? (

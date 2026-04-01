@@ -3,8 +3,6 @@
  * Thêm màn/entity khác: không sửa file này — tạo module riêng (vd. `category-xlsx.ts`) hoặc
  * cấu hình `XlsxImportPreviewConfig` + `getExportMatrix` ngay tại page với `ImportExportXlsxMenu`.
  */
-import type { Product } from "@/types/product";
-import { getProductCategoryDisplayName } from "@/types/product";
 import type { XlsxImportPreviewConfig } from "@/lib/xlsx-import-preview";
 import type { AoA } from "@/lib/xlsx-utils";
 
@@ -22,24 +20,6 @@ export const PRODUCT_IMPORT_TEMPLATE_HEADERS = [
   "heightCm",
   "minStockQty",
   "status",
-] as const;
-
-const EXPORT_HEADERS = [
-  "id",
-  "sku",
-  "name",
-  "barcodeEan13",
-  "categoryId",
-  "categoryName",
-  "baseUnit",
-  "status",
-  "primarySupplierId",
-  "weightKg",
-  "lengthCm",
-  "widthCm",
-  "heightCm",
-  "minStockQty",
-  "updatedAt",
 ] as const;
 
 export const PRODUCT_XLSX_SHEET_NAME = "SanPham";
@@ -67,28 +47,6 @@ export const PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
     status: "trạng thái",
   },
 };
-
-export function productExportRows(products: Product[]): string[][] {
-  const headerRow = [...EXPORT_HEADERS];
-  const dataRows = products.map((p) => [
-    p.id,
-    p.sku,
-    p.name,
-    p.barcodeEan13 ?? "",
-    p.categoryId ?? "",
-    getProductCategoryDisplayName(p),
-    p.baseUnit ?? "",
-    p.status,
-    p.primarySupplierId ?? "",
-    String(p.weightKg ?? ""),
-    String(p.lengthCm ?? ""),
-    String(p.widthCm ?? ""),
-    String(p.heightCm ?? ""),
-    String(p.minStockQty ?? ""),
-    p.updatedAt ?? "",
-  ]);
-  return [headerRow, ...dataRows];
-}
 
 export function getProductImportTemplateAoA(): AoA {
   const headerRow = [...PRODUCT_IMPORT_TEMPLATE_HEADERS];

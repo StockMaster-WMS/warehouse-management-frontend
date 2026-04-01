@@ -181,7 +181,7 @@ export default function EditProductPage({
   }
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa sản phẩm"
         description={`SKU ${data.data.sku} · ${data.data.name}`}

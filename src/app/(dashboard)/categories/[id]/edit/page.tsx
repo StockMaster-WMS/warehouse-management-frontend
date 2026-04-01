@@ -199,7 +199,7 @@ export default function EditCategoryPage({
   }
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa nhóm / loại"
         description={`Mã ${data.data.code} · ${data.data.name}`}

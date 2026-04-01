@@ -9,6 +9,7 @@ export type ApiQueryArgs = {
   data?: AxiosRequestConfig["data"];
   params?: AxiosRequestConfig["params"];
   timeout?: number;
+  responseType?: AxiosRequestConfig["responseType"];
 };
 
 export type ApiQueryError = {
@@ -18,7 +19,7 @@ export type ApiQueryError = {
 
 const axiosBaseQuery =
   (): BaseQueryFn<ApiQueryArgs, unknown, ApiQueryError> =>
-  async ({ url, method, data, params, timeout }, api) => {
+  async ({ url, method, data, params, timeout, responseType }, api) => {
     try {
       const result = await axiosInstance({
         url,
@@ -26,6 +27,7 @@ const axiosBaseQuery =
         data,
         params,
         timeout,
+        responseType,
         signal: api.signal,
       });
       return { data: result.data };
@@ -41,24 +43,23 @@ const axiosBaseQuery =
   };
 
 export const baseApi = createApi({
-    reducerPath: "api",
-    baseQuery: axiosBaseQuery(),
-    tagTypes: [
-        "Category",
-        "Product",
-        "Warehouse",
-        "Supplier",
-        "Customer",
-        "PurchaseOrder",
-        "PoItem",
-        "PutawayTask",
-        "InboundReceipt",
-        "SalesOrder",
-        "SoItem",
-        "PickingItem",
-      "Location",
-    "Stock",
+  reducerPath: "api",
+  baseQuery: axiosBaseQuery(),
+  tagTypes: [
+    "Category",
+    "Product",
+    "Warehouse",
+    "Supplier",
+    "Customer",
+    "PurchaseOrder",
+    "PoItem",
+    "PutawayTask",
+    "InboundReceipt",
+    "SalesOrder",
+    "SoItem",
+    "PickingItem",
+    "Location",
     "Order",
-    ],
-    endpoints: () => ({}),
+  ],
+  endpoints: () => ({}),
 });

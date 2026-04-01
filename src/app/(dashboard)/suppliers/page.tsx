@@ -89,7 +89,7 @@ export default function SuppliersPage() {
   const hasAnyFilter = searchInput.trim().length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Nhà cung cấp"
         description="Quản lý thông tin đối tác cung ứng và lịch sử giao dịch."
@@ -202,7 +202,7 @@ export default function SuppliersPage() {
                       <Skeleton className="h-3 w-20" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-3 w-full max-w-[180px]" />
+                      <Skeleton className="h-3 w-full max-w-45" />
                     </td>
                     <td className="px-6 py-4 text-center">
                       <Skeleton className="mx-auto h-5 w-16 rounded-full" />
@@ -281,7 +281,7 @@ export default function SuppliersPage() {
                         <div>TT: {sup.paymentTerms != null ? `${sup.paymentTerms} ngày` : "—"}</div>
                         <div className="mt-0.5 text-slate-500">Lead: {sup.leadTimeDays != null ? `${sup.leadTimeDays} ngày` : "—"}</div>
                       </td>
-                      <td className="max-w-[220px] px-6 py-4">
+                      <td className="max-w-55 px-6 py-4">
                         <span className="line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
                           {sup.address ?? "—"}
                         </span>

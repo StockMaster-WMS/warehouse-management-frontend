@@ -13,8 +13,11 @@ export interface PagedResponse<T> {
   total_pages: number;
 }
 
-/** Mảng phẳng hoặc body phân trang → luôn `PagedResponse` (dùng chung cho `transformResponse`). */
-export function asPagedResponse<T>(data: T[] | PagedResponse<T>): PagedResponse<T> {
+/** Mảng phẳng hoặc body phân trang → luôn `PagedResponse` (dùng chung cho `transformResponse`).
+ *  Backend có thể trả camelCase (totalElements) hoặc snake_case (total_elements). */
+export function asPagedResponse<T>(
+  data: T[] | PagedResponse<T>,
+): PagedResponse<T> {
   if (Array.isArray(data)) {
     const n = data.length;
     return {
@@ -25,23 +28,41 @@ export function asPagedResponse<T>(data: T[] | PagedResponse<T>): PagedResponse<
       total_pages: n === 0 ? 0 : 1,
     };
   }
-  return data;
+  const d = data as unknown as Record<string, unknown>;
+  return {
+    content: (d.content ?? []) as T[],
+    page: Number(d.page ?? 0),
+    size: Number(d.size ?? 0),
+    total_elements: Number(d.total_elements ?? d.totalElements ?? 0),
+    total_pages: Number(d.total_pages ?? d.totalPages ?? 0),
+  };
 }
 
 /** `ApiResponse.data` là mảng hoặc `PagedResponse` → luôn `PagedResponse`. */
-export function normalizeApiResponsePaged<T>(r: ApiResponse<T[] | PagedResponse<T>>): ApiResponse<PagedResponse<T>> {
+export function normalizeApiResponsePaged<T>(
+  r: ApiResponse<T[] | PagedResponse<T>>,
+): ApiResponse<PagedResponse<T>> {
   const inner = r.data;
   if (inner == null) {
     return {
       ...r,
-      data: { content: [], page: 0, size: 0, total_elements: 0, total_pages: 0 },
+      data: {
+        content: [],
+        page: 0,
+        size: 0,
+        total_elements: 0,
+        total_pages: 0,
+      },
     };
   }
   return { ...r, data: asPagedResponse(inner) };
 }
 
 /** Message từ RTK/axios (`error.data.message`, v.v.). */
-export function apiErrMessage(error: unknown, fallback = "Đã xảy ra lỗi. Vui lòng thử lại."): string {
+export function apiErrMessage(
+  error: unknown,
+  fallback = "Đã xảy ra lỗi. Vui lòng thử lại.",
+): string {
   if (typeof error === "string" && error.trim()) return error;
   if (error && typeof error === "object") {
     const e = error as { data?: unknown; message?: string; error?: string };
@@ -49,7 +70,12 @@ export function apiErrMessage(error: unknown, fallback = "Đã xảy ra lỗi. V
     if (typeof e.message === "string" && e.message.trim()) return e.message;
     const d = e.data;
     if (typeof d === "string" && d.trim()) return d;
-    if (d && typeof d === "object" && "message" in d && typeof (d as { message: string }).message === "string") {
+    if (
+      d &&
+      typeof d === "object" &&
+      "message" in d &&
+      typeof (d as { message: string }).message === "string"
+    ) {
       const m = (d as { message: string }).message;
       if (m) return m;
     }
