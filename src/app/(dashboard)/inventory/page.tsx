@@ -240,7 +240,7 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Theo dõi tồn kho"
         description="Giám sát tồn kho, cảnh báo và điều chỉnh nhanh theo SKU."

@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 export default function HistoryPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Nhật ký hoạt động"
         description="Ghi lại mọi thay đổi và hoạt động trong hệ thống theo thời gian thực."

@@ -59,7 +59,7 @@ function OrderTableSkeleton() {
           </TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
           <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-3 w-full max-w-[240px]" /></TableCell>
+          <TableCell className="px-3 py-3"><Skeleton className="h-3 w-full max-w-60" /></TableCell>
           <TableCell className="px-3 py-3 text-center"><Skeleton className="mx-auto h-5 w-24 rounded-full" /></TableCell>
           <TableCell className="px-3 py-3 text-right"><Skeleton className="ml-auto h-3 w-20" /></TableCell>
           <TableCell className="px-3 py-3 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
@@ -253,7 +253,7 @@ export default function OrderPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[980px] text-left">
+          <Table className="min-w-245 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
@@ -338,7 +338,7 @@ export default function OrderPage() {
                       <TableCell className="px-3 py-3 text-sm text-slate-700 dark:text-slate-200">
                         {item.customerName || "—"}
                       </TableCell>
-                      <TableCell className="max-w-[320px] px-3 py-3">
+                      <TableCell className="max-w-80 px-3 py-3">
                         <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
                           <MapPin className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate">

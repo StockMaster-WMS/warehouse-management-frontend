@@ -457,7 +457,7 @@ export default function PurchaseOrderDetailPage({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <Table className="min-w-[860px] text-left">
+              <Table className="min-w-215 text-left">
                 <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
                   <TableRow>
                     <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dòng</TableHead>
@@ -536,7 +536,7 @@ export default function PurchaseOrderDetailPage({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <Table className="min-w-[980px] text-left">
+              <Table className="min-w-245 text-left">
                 <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
                   <TableRow>
                     <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>

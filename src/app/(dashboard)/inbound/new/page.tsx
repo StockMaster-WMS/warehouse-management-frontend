@@ -83,7 +83,7 @@ export default function NewInboundReceiptPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Tạo phiếu nhập"
         description="Chọn PO ở trạng thái DRAFT và Confirm PO để bắt đầu nhận hàng."
@@ -139,7 +139,7 @@ export default function NewInboundReceiptPage() {
         ) : null}
 
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px] text-left">
+          <Table className="min-w-215 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>

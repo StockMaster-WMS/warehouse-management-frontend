@@ -15,7 +15,7 @@ export default function DashboardLayout({
         <Navbar />
         <main
           id="main-content"
-          className="flex-1 overflow-y-auto px-4 py-6 lg:px-8"
+          className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8"
         >
           <Suspense>
             <div className="mx-auto w-full max-w-8xl">{children}</div>

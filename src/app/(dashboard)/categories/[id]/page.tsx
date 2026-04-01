@@ -152,7 +152,7 @@ export default function CategoryDetailPage({
                 />
               </Card>
 
-              <section className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/90 to-white p-6 shadow-sm dark:border-indigo-900/40 dark:from-indigo-950/40 dark:to-slate-900">
+              <section className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50/90 to-white p-6 shadow-sm dark:border-indigo-900/40 dark:from-indigo-950/40 dark:to-slate-900">
                 <div className="mb-4 flex items-center gap-2">
                   <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   <h2 className="text-sm font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-200">
@@ -199,7 +199,7 @@ function CategoryHero({
   const initials = (category.name || category.code || "?").trim().slice(0, 2).toUpperCase();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/40 to-indigo-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 sm:p-8">
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-white via-slate-50/40 to-indigo-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 sm:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4 sm:gap-5">
           <div
@@ -219,7 +219,7 @@ function CategoryHero({
               <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
               <span className="truncate text-slate-600 dark:text-slate-300">Chi tiết</span>
             </nav>
-            <h1 className="mt-1.5 break-words text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            <h1 className="mt-1.5 wrap-break-word text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               {category.name}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -255,7 +255,7 @@ function CategoryHero({
             render={<Link href={`/categories/${category.id}/edit`} />}
             nativeButton={false}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm sm:min-w-[132px]"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm sm:min-w-33"
           >
             <Edit2 className="mr-2 h-4 w-4" />
             Chỉnh sửa
@@ -265,7 +265,7 @@ function CategoryHero({
             nativeButton={false}
             variant="outline"
             size="sm"
-            className="border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900 sm:min-w-[132px]"
+            className="border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900 sm:min-w-33"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Danh sách
@@ -313,7 +313,7 @@ function Info({
         {label}
       </p>
       <p
-        className={`mt-1 break-words text-sm font-semibold text-slate-800 dark:text-slate-100 ${mono ? "break-all font-mono text-xs" : ""}`}
+        className={`mt-1 wrap-break-word text-sm font-semibold text-slate-800 dark:text-slate-100 ${mono ? "break-all font-mono text-xs" : ""}`}
       >
         {value}
       </p>

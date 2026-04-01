@@ -20,7 +20,7 @@ export default function EditWarehousePage({ params: paramsPromise }: { params: P
   const { id } = params;
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Cập nhật thông tin kho"
         description={`Điều chỉnh cấu trúc và thông tin quản lý của kho (ID: ${id}).`}
@@ -78,7 +78,7 @@ export default function EditWarehousePage({ params: paramsPromise }: { params: P
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Textarea
                            defaultValue="KCN Quang Minh, Mê Linh, Hà Nội"
-                           className="pl-10 min-h-[80px] py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                           className="pl-10 min-h-20 py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                         />
                     </div>
                </div>

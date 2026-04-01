@@ -18,18 +18,18 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+        "flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between",
         className,
       )}
     >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+      <div className="space-y-0.5 sm:space-y-1 min-w-0">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white break-words">
           {title}
         </h1>
-        <p className="text-sm font-medium text-slate-500">{description}</p>
+        <p className="text-xs sm:text-sm font-medium text-slate-500 break-words">{description}</p>
       </div>
       {actions ? (
-        <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div>
+        <div className={cn("flex flex-wrap items-center gap-2 shrink-0", actionsClassName)}>{actions}</div>
       ) : null}
     </div>
   );

@@ -158,7 +158,7 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Nhóm / loại hàng"
         description="Cây phân loại: nhóm gốc và loại con — dùng khi gán sản phẩm và báo cáo."
@@ -175,9 +175,9 @@ export default function CategoriesPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{stat.label}</span>
               <stat.icon className={`h-4 w-4 ${stat.color} opacity-70`} />
@@ -216,7 +216,7 @@ export default function CategoriesPage() {
           <div
             role="tree"
             aria-label="Cây nhóm và loại hàng"
-            className="min-w-[720px]"
+            className="min-w-180"
           >
             {isLoading ? (
               Array.from({ length: 4 }).map((_, idx) => (

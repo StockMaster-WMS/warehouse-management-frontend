@@ -98,7 +98,7 @@ export function PoLinesSection({
               lines.map((row: PoItem) => (
                 <TableRow key={row.id}>
                   <TableCell>{row.lineNumber}</TableCell>
-                  <TableCell className="max-w-[200px] truncate font-mono text-xs">{row.productId}</TableCell>
+                  <TableCell className="max-w-50 truncate font-mono text-xs">{row.productId}</TableCell>
                   <TableCell className="font-mono text-sm">{row.productSku}</TableCell>
                   <TableCell className="text-right">{row.orderedQty}</TableCell>
                   <TableCell className="text-right">{row.unitPrice ?? "—"}</TableCell>

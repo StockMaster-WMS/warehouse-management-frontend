@@ -166,7 +166,7 @@ export default function WarehousesPage() {
   }, [page, size, warehouses.length]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Danh sách kho"
         description="Hệ thống quản lý không gian lưu trữ và mạng lưới kho bãi."

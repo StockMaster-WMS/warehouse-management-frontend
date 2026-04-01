@@ -110,7 +110,7 @@ export default function ProductDetailPage({
   }, [locationMap, stocks, triggerGetLocationById]);
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-4 sm:space-y-6 pb-20">
       {isLoading ? (
         <>
           <div className="space-y-3">
@@ -645,7 +645,7 @@ function ProductHero({ product, onCopySku }: { product: Product; onCopySku: () =
             render={<Link href={`/products/${product.id}/edit`} />}
             nativeButton={false}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm sm:min-w-[140px]"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm sm:min-w-35"
           >
             <Edit2 className="mr-2 h-4 w-4" />
             Chỉnh sửa
@@ -655,7 +655,7 @@ function ProductHero({ product, onCopySku }: { product: Product; onCopySku: () =
             nativeButton={false}
             variant="outline"
             size="sm"
-            className="border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900 sm:min-w-[140px]"
+            className="border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900 sm:min-w-35"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Danh sách
