@@ -3,7 +3,8 @@ import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from 
 import type { CreatePickingItemPayload, PickingItem, UpdatePickingItemPayload } from "@/types/picking-item";
 
 export type GetPickingItemsParams = {
-  soItemId: string;
+  soItemId?: string;
+  status?: string;
   page?: number;
   size?: number;
 };
@@ -11,10 +12,10 @@ export type GetPickingItemsParams = {
 const pickingItemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPickingItems: builder.query<ApiResponse<PagedResponse<PickingItem>>, GetPickingItemsParams>({
-      query: ({ soItemId, page = 0, size = 50 }) => ({
+      query: ({ soItemId, status, page = 0, size = 50 }) => ({
         url: "/picking-items",
         method: "GET",
-        params: { soItemId, page, size },
+        params: { soItemId, status, page, size },
       }),
       transformResponse: (r: ApiResponse<PickingItem[] | PagedResponse<PickingItem>>) => normalizeApiResponsePaged(r),
       providesTags: (result, _e, arg) => {

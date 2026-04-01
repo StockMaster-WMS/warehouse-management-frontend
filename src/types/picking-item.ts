@@ -12,6 +12,24 @@ export interface PickingItem {
   pickSequence?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  salesOrderNumber?: string | null;
+  
+  // Extended fields from detailed API
+  productSku?: string | null;
+  productCode?: string | null;
+  productName?: string | null;
+  barcodeEan13?: string | null;
+  categoryName?: string | null;
+  baseUnit?: string | null;
+  
+  locationCode?: string | null;
+  locationName?: string | null;
+  zone?: string | null;
+  aisle?: string | null;
+  shelf?: string | null;
+  position?: string | null;
+  
+  qtyAvailable?: number | null;
 }
 
 export type CreatePickingItemPayload = {

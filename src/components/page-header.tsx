@@ -4,7 +4,6 @@ type PageHeaderProps = {
   title: string;
   description: string;
   className?: string;
-  /** Extra classes for the actions row (e.g. w-full justify-end on mobile). */
   actionsClassName?: string;
   actions?: React.ReactNode;
 };
