@@ -262,7 +262,6 @@ export default function NewPurchaseOrderPage() {
         productId: selectedProduct.id,
         productSku: selectedProduct.sku,
         orderedQty: qty,
-        receivedQty: 0,
         ...(unitPrice != null ? { unitPrice } : {}),
       }).unwrap();
 

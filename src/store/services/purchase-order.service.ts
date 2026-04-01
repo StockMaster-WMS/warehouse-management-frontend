@@ -21,23 +21,34 @@ import type {
 } from "@/types/purchase-order";
 import type { Warehouse } from "@/types/warehouse";
 
-type GetPoItemsArgs = { purchaseOrderId?: string };
-type GetPutawayTasksArgs = { poItemId?: string; status?: string };
+type GetPoItemsArgs = {
+  purchaseOrderId?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+  sortDir?: string;
+  keyword?: string;
+};
+type GetPutawayTasksArgs = {
+  page?: number;
+  size?: number;
+  sort?: string;
+  sortDir?: string;
+  poItemId?: string;
+  status?: string;
+};
 type GetPurchaseOrdersArgs = {
   page?: number;
   size?: number;
+  sort?: string;
+  sortDir?: string;
   keyword?: string;
   status?: string;
   supplierId?: string;
   warehouseId?: string;
 };
 
-type GetLocationsArgs = { warehouseId: string };
-type GetStocksArgs = {
-  warehouseId: string;
-  locationId?: string;
-  productId?: string;
-};
+type GetLocationsArgs = { warehouseId?: string };
 
 function asNumber(v: unknown): number {
   const n = Number(v ?? 0);
@@ -135,12 +146,19 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       query: ({
         page = 0,
         size = 20,
+        sort = "createdAt",
+        sortDir = "desc",
         keyword,
         status,
         supplierId,
         warehouseId,
       } = {}) => {
-        const params: Record<string, string | number> = { page, size };
+        const params: Record<string, string | number> = {
+          page,
+          size,
+          sort,
+          sortDir,
+        };
         if (keyword?.trim()) params.keyword = keyword.trim();
         if (status?.trim()) params.status = status.trim();
         if (supplierId?.trim()) params.supplierId = supplierId.trim();
@@ -236,9 +254,9 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       ],
     }),
 
-    confirmPurchaseOrder: builder.mutation<ApiResponse<PurchaseOrder>, string>({
+    approvePurchaseOrder: builder.mutation<ApiResponse<PurchaseOrder>, string>({
       query: (id) => ({
-        url: `/purchase-orders/${id}/confirm`,
+        url: `/purchase-orders/${id}/approve`,
         method: "POST",
       }),
       invalidatesTags: (_r, _e, id) => [
@@ -263,10 +281,23 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       ApiResponse<PagedResponse<PoItem>>,
       GetPoItemsArgs
     >({
-      query: ({ purchaseOrderId }) => {
-        const params: Record<string, string> = {};
+      query: ({
+        purchaseOrderId,
+        page = 0,
+        size = 100,
+        sort = "lineNumber",
+        sortDir = "asc",
+        keyword,
+      }) => {
+        const params: Record<string, string | number> = {
+          page,
+          size,
+          sort,
+          sortDir,
+        };
         if (purchaseOrderId?.trim())
           params.purchaseOrderId = purchaseOrderId.trim();
+        if (keyword?.trim()) params.keyword = keyword.trim();
         return {
           url: "/po-items",
           method: "GET",
@@ -279,7 +310,10 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         const items = result?.data?.content ?? [];
         return [
           ...items.map((i) => ({ type: "PoItem" as const, id: i.id })),
-          { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${purchaseOrderId}` },
+          {
+            type: "PoItem" as const,
+            id: `PARENT-PurchaseOrder:${purchaseOrderId}`,
+          },
         ];
       },
     }),
@@ -298,59 +332,58 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           productSku: body.productSku,
           orderedQty: body.orderedQty,
         };
-        if (body.receivedQty != null) payload.receivedQty = body.receivedQty;
         if (body.unitPrice != null && !Number.isNaN(body.unitPrice))
           payload.unitPrice = body.unitPrice;
         return { url: "/po-items", method: "POST", data: payload };
       },
-      invalidatesTags: (_r, _e, arg) => [{ type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` }],
+      invalidatesTags: (_r, _e, arg) => [
+        {
+          type: "PoItem" as const,
+          id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
+        },
+        { type: "PurchaseOrder", id: arg.purchaseOrderId },
+      ],
     }),
-
     deletePoItem: builder.mutation<
       ApiResponse<unknown>,
       { id: string; purchaseOrderId: string }
     >({
       query: ({ id }) => ({ url: `/po-items/${id}`, method: "DELETE" }),
       invalidatesTags: (_r, _e, arg) => [
-        { type: "PoItem" as const, id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}` },
-        { type: "PutawayTask" as const, id: "LIST" },      ],
+        {
+          type: "PoItem" as const,
+          id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
+        },
+        { type: "PurchaseOrder", id: arg.purchaseOrderId },
+      ],
     }),
-
-    receivePoItem: builder.mutation<ApiResponse<unknown>, ReceivePoItemPayload>(
-      {
-        query: ({ poItemId, body }) => ({
-          url: `/po-items/${poItemId}/receive`,
-          method: "POST",
-          data: {
-            qty: body.qty,
-            ...(body.suggestedLocationId?.trim()
-              ? { suggestedLocationId: body.suggestedLocationId.trim() }
-              : {}),
-          },
-        }),
-        invalidatesTags: (_r, _e, arg) => [
-          { type: "PurchaseOrder", id: arg.purchaseOrderId },
-          { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
-          { type: "PutawayTask", id: "LIST" },
-          { type: "PutawayTask", id: `PO-${arg.purchaseOrderId}` },
-        ],
-      },
-    ),
 
     getPutawayTasks: builder.query<
       ApiResponse<PagedResponse<PutawayTask>>,
       GetPutawayTasksArgs
     >({
-      query: (params) => ({
-        url: "/putaway-tasks",
-        method: "GET",
-        params: {
-          ...(params.poItemId?.trim()
-            ? { poItemId: params.poItemId.trim() }
-            : {}),
-          ...(params.status?.trim() ? { status: params.status.trim() } : {}),
-        },
-      }),
+      query: ({
+        page = 0,
+        size = 20,
+        sort = "id",
+        sortDir = "desc",
+        poItemId,
+        status,
+      }) => {
+        const params: Record<string, string | number> = {
+          page,
+          size,
+          sort,
+          sortDir,
+        };
+        if (poItemId?.trim()) params.poItemId = poItemId.trim();
+        if (status?.trim()) params.status = status.trim();
+        return {
+          url: "/putaway-tasks",
+          method: "GET",
+          params,
+        };
+      },
       transformResponse: (
         r: ApiResponse<PutawayTask[] | PagedResponse<PutawayTask>>,
       ) => normalizeApiResponsePaged(r),
@@ -403,11 +436,15 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       ApiResponse<LocationOption[]>,
       GetLocationsArgs
     >({
-      query: ({ warehouseId }) => ({
-        url: "/locations",
-        method: "GET",
-        params: { warehouseId },
-      }),
+      query: ({ warehouseId } = {}) => {
+        const params: Record<string, string | number> = { page: 0, size: 200 };
+        if (warehouseId?.trim()) params.warehouseId = warehouseId.trim();
+        return {
+          url: "/locations",
+          method: "GET",
+          params,
+        };
+      },
       transformResponse: (
         r: ApiResponse<unknown>,
       ): ApiResponse<LocationOption[]> => ({
@@ -416,27 +453,6 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       }),
       providesTags: (_result, _error, arg) => [
         { type: "Location", id: `WH-${arg.warehouseId}` },
-      ],
-    }),
-
-    getStocks: builder.query<
-      ApiResponse<PagedResponse<StockSnapshot>>,
-      GetStocksArgs
-    >({
-      query: ({ warehouseId, locationId, productId }) => ({
-        url: "/stocks",
-        method: "GET",
-        params: {
-          warehouseId,
-          ...(locationId?.trim() ? { locationId: locationId.trim() } : {}),
-          ...(productId?.trim() ? { productId: productId.trim() } : {}),
-        },
-      }),
-      transformResponse: (
-        r: ApiResponse<StockSnapshot[] | PagedResponse<StockSnapshot>>,
-      ) => normalizeApiResponsePaged(r),
-      providesTags: (_result, _error, arg) => [
-        { type: "Stock", id: `WH-${arg.warehouseId}` },
       ],
     }),
   }),
@@ -451,17 +467,15 @@ export const {
   useCreatePurchaseOrderMutation,
   useUpdatePurchaseOrderMutation,
   useDeletePurchaseOrderMutation,
-  useConfirmPurchaseOrderMutation,
+  useApprovePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,
   useGetPoItemsQuery,
   useGetPoItemByIdQuery,
   useCreatePoItemMutation,
   useDeletePoItemMutation,
-  useReceivePoItemMutation,
   useGetPutawayTasksQuery,
   useGetPutawayTaskByIdQuery,
   usePatchPutawayTaskMutation,
   useCompletePutawayTaskMutation,
   useGetLocationsQuery,
-  useGetStocksQuery,
 } = purchaseOrderApi;

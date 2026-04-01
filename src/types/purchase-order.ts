@@ -2,9 +2,8 @@ import type { ApiResponse, PagedResponse } from "@/types/api";
 
 export type PurchaseOrderStatus =
   | "DRAFT"
-  | "PENDING"
   | "APPROVED"
-  | "RECEIVING"
+  | "PARTIAL"
   | "COMPLETED"
   | "CANCELLED";
 
@@ -13,6 +12,8 @@ export interface PurchaseOrder {
   poNumber: string;
   supplierId: string;
   warehouseId: string;
+  supplierName?: string | null;
+  warehouseName?: string | null;
   orderDate: string;
   expectedDate?: string | null;
   status?: PurchaseOrderStatus | null;
@@ -47,12 +48,10 @@ export type CreatePurchaseOrderPayload = CreatePurchaseOrderRequest;
 export interface UpdatePurchaseOrderPayload {
   id: string;
   body: Partial<{
-    poNumber: string;
     supplierId: string;
     warehouseId: string;
     orderDate: string;
     expectedDate: string | null;
-    status: PurchaseOrderStatus;
     totalAmount: number | null;
   }>;
 }
@@ -74,27 +73,17 @@ export interface CreatePoItemPayload {
   productId: string;
   productSku: string;
   orderedQty: number;
-  receivedQty?: number;
   unitPrice?: number;
 }
 
 export interface UpdatePoItemPayload {
   id: string;
-  purchaseOrderId: string;
-  body: Partial<{
-    lineNumber: number;
-    productId: string;
-    productSku: string;
-    orderedQty: number;
-    receivedQty: number;
-    unitPrice: number | null;
-  }>;
-}
-
-export interface ReceivePoItemPayload {
-  poItemId: string;
-  purchaseOrderId: string;
-  body: { qty: number; suggestedLocationId?: string };
+  body: {
+    productId?: string;
+    productSku?: string;
+    orderedQty?: number;
+    unitPrice?: number | null;
+  };
 }
 
 export type PutawayTaskStatus =
@@ -107,6 +96,7 @@ export interface PutawayTask {
   id: string;
   poItemId?: string | null;
   purchaseOrderId?: string | null;
+  inboundReceiptId?: string | null;
   status: PutawayTaskStatus;
   suggestedLocationId?: string | null;
   actualLocationId?: string | null;
@@ -120,15 +110,14 @@ export interface LocationOption {
   warehouseId: string;
   code?: string;
   name?: string;
-}
-
-export interface StockSnapshot {
-  id?: string;
-  warehouseId?: string;
-  locationId?: string;
-  productId?: string;
-  qty?: number;
-  availableQty?: number;
+  zone?: string;
+  aisle?: string;
+  rack?: string;
+  level?: number;
+  bin?: string;
+  locationType?: string;
+  status?: string;
+  isActive?: boolean;
 }
 
 export interface PatchPutawayTaskPayload {
@@ -144,11 +133,6 @@ export interface CompletePutawayPayload {
   id: string;
   body: { actualLocationId: string };
 }
-
-export type ReceivePoItemResponse = ApiResponse<{
-  poItem: PoItem;
-  putawayTask?: PutawayTask | null;
-}>;
 
 export type PurchaseOrderListResponse = ApiResponse<
   PurchaseOrder[] | PagedResponse<PurchaseOrder>

@@ -1,10 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
-import { Loader2, MapPin, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -40,40 +47,66 @@ import {
 import type { PutawayTask } from "@/types/purchase-order";
 
 const completeSchema = z.object({
-  actualLocationId: z.string().min(1, "Nhập UUID vị trí thực tế"),
+  actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
 });
 
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "Chờ xử lý",
+  IN_PROGRESS: "Đang thực hiện",
+  COMPLETED: "Hoàn tất",
+  CANCELLED: "Đã hủy",
+};
+
+function statusBadgeClass(s: string): string {
+  switch (s) {
+    case "PENDING":
+      return "bg-amber-100 text-amber-700";
+    case "IN_PROGRESS":
+      return "bg-blue-100 text-blue-700";
+    case "COMPLETED":
+      return "bg-emerald-100 text-emerald-700";
+    case "CANCELLED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
 export default function PutawayPage() {
+  const [page, setPage] = useState(0);
+  const [size] = useState(20);
   const [poItemFilter, setPoItemFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const queryArgs = useMemo(
-    () => ({
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetPutawayTasksQuery({
+      page,
+      size,
       ...(poItemFilter.trim() ? { poItemId: poItemFilter.trim() } : {}),
       ...(statusFilter.trim() ? { status: statusFilter.trim() } : {}),
-    }),
-    [poItemFilter, statusFilter]
-  );
-
-  const { data, isLoading, isFetching, isError, error, refetch } = useGetPutawayTasksQuery(queryArgs);
+    });
 
   const tasks = data?.data?.content ?? [];
+  const totalPages = data?.data?.total_pages ?? 0;
 
   const [completeOpen, setCompleteOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<PutawayTask | null>(null);
   const [actualLocationId, setActualLocationId] = useState("");
-  const [completeErrors, setCompleteErrors] = useState<Record<string, string>>({});
+  const [completeErrors, setCompleteErrors] = useState<Record<string, string>>(
+    {},
+  );
 
   const [editOpen, setEditOpen] = useState(false);
   const [editSuggested, setEditSuggested] = useState("");
   const [editStatus, setEditStatus] = useState<string>("PENDING");
 
-  const [completeTask, { isLoading: completing }] = useCompletePutawayTaskMutation();
+  const [completeTask, { isLoading: completing }] =
+    useCompletePutawayTaskMutation();
   const [patchTask, { isLoading: patching }] = usePatchPutawayTaskMutation();
 
   function openComplete(t: PutawayTask) {
     setActiveTask(t);
-    setActualLocationId(t.actualLocationId ?? "");
+    setActualLocationId(t.actualLocationId ?? t.suggestedLocationId ?? "");
     setCompleteErrors({});
     setCompleteOpen(true);
   }
@@ -89,7 +122,9 @@ export default function PutawayPage() {
     e.preventDefault();
     if (!activeTask) return;
     setCompleteErrors({});
-    const parsed = completeSchema.safeParse({ actualLocationId: actualLocationId.trim() });
+    const parsed = completeSchema.safeParse({
+      actualLocationId: actualLocationId.trim(),
+    });
     if (!parsed.success) {
       const err: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -105,10 +140,14 @@ export default function PutawayPage() {
         body: { actualLocationId: parsed.data.actualLocationId },
       }).unwrap();
       if (!res.success) {
-        toast.error((res as { message?: string }).message || "Hoàn tất thất bại");
+        toast.error(
+          (res as { message?: string }).message || "Hoàn tất thất bại",
+        );
         return;
       }
-      toast.success((res as { message?: string }).message || "Đã hoàn tất putaway");
+      toast.success(
+        (res as { message?: string }).message || "Đã hoàn tất putaway",
+      );
       setCompleteOpen(false);
       refetch();
     } catch (err) {
@@ -124,7 +163,9 @@ export default function PutawayPage() {
         id: activeTask.id,
         body: {
           status: editStatus as PutawayTask["status"],
-          ...(editSuggested.trim() ? { suggestedLocationId: editSuggested.trim() } : { suggestedLocationId: null }),
+          ...(editSuggested.trim()
+            ? { suggestedLocationId: editSuggested.trim() }
+            : { suggestedLocationId: null }),
         },
       }).unwrap();
       if (!res.success) {
@@ -143,33 +184,44 @@ export default function PutawayPage() {
     <div className="space-y-6 pb-16">
       <PageHeader
         title="Putaway"
-        description="Danh sách task putaway từ gateway — lọc theo dòng PO hoặc trạng thái."
+        description="Danh sách task sắp xếp hàng vào vị trí kho."
       />
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-end">
         <div className="flex-1 space-y-1">
-          <label className="text-xs font-semibold text-slate-500">poItemId (UUID)</label>
+          <label className="text-xs font-semibold text-slate-500">
+            PO Item ID
+          </label>
           <Input
             value={poItemFilter}
-            onChange={(e) => setPoItemFilter(e.target.value)}
+            onChange={(e) => {
+              setPoItemFilter(e.target.value);
+              setPage(0);
+            }}
             placeholder="Lọc theo dòng PO…"
             className="font-mono text-xs"
           />
         </div>
         <div className="w-full md:w-56 space-y-1">
-          <label className="text-xs font-semibold text-slate-500">Trạng thái</label>
+          <label className="text-xs font-semibold text-slate-500">
+            Trạng thái
+          </label>
           <Select
             value={statusFilter || "__all__"}
-            onValueChange={(v) => setStatusFilter(!v || v === "__all__" ? "" : v)}
+            onValueChange={(v) => {
+              setStatusFilter(!v || v === "__all__" ? "" : v);
+              setPage(0);
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả</SelectItem>
-              <SelectItem value="PENDING">PENDING</SelectItem>
-              <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-              <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+              <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+              <SelectItem value="IN_PROGRESS">Đang thực hiện</SelectItem>
+              <SelectItem value="COMPLETED">Hoàn tất</SelectItem>
+              <SelectItem value="CANCELLED">Đã hủy</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -198,7 +250,7 @@ export default function PutawayPage() {
             </TableHeader>
             <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+                Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={`putaway-skel-${i}`}>
                     <TableCell className="px-3 py-3">
                       <Skeleton className="h-3 w-full max-w-25" />
@@ -225,13 +277,17 @@ export default function PutawayPage() {
                 ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
+                  <TableCell colSpan={5} className="p-0">
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách putaway"
                       description={apiErrMessage(error)}
                       action={
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetch()}
+                        >
                           Thử lại
                         </Button>
                       }
@@ -241,13 +297,18 @@ export default function PutawayPage() {
                 </TableRow>
               ) : tasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
+                  <TableCell colSpan={5} className="p-0">
                     <EmptyState
                       icon={MapPin}
                       title="Không có task putaway"
-                      description="Thử bỏ bộ lọc hoặc nhận hàng từ đơn PO trước."
+                      description="Thử bỏ bộ lọc hoặc nhập hàng từ đơn PO trước."
                       action={
-                        <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetch()}
+                        >
                           Làm mới
                         </Button>
                       }
@@ -271,7 +332,17 @@ export default function PutawayPage() {
                       <Button type="button" variant="outline" size="sm" onClick={() => openEdit(t)} disabled={patching}>
                         Sửa
                       </Button>
-                      <Button type="button" size="sm" className="bg-indigo-600" onClick={() => openComplete(t)}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                        onClick={() => openComplete(t)}
+                        disabled={
+                          !(
+                            t.status === "PENDING" || t.status === "IN_PROGRESS"
+                          )
+                        }
+                      >
                         Hoàn tất
                       </Button>
                     </TableCell>
@@ -281,75 +352,145 @@ export default function PutawayPage() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+            <span className="text-xs text-slate-500">
+              Trang {page + 1} / {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0 || isFetching}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Trước
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages - 1 || isFetching}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Complete Dialog */}
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <form onSubmit={submitComplete}>
             <DialogHeader>
               <DialogTitle>Hoàn tất putaway</DialogTitle>
+              {activeTask && (
+                <p className="text-xs text-slate-500">
+                  Task: {activeTask.id.slice(0, 8)}…
+                </p>
+              )}
             </DialogHeader>
             <div className="py-2">
-              <label className="text-xs font-semibold text-slate-500">actualLocationId * (UUID)</label>
+              <label className="text-xs font-semibold text-slate-500">
+                Vị trí thực tế *
+              </label>
               <Input
                 value={actualLocationId}
                 onChange={(e) => setActualLocationId(e.target.value)}
+                placeholder="UUID vị trí thực tế"
                 className={`mt-1 font-mono text-xs ${completeErrors.actualLocationId ? "border-rose-400" : ""}`}
               />
               {completeErrors.actualLocationId && (
-                <p className="text-xs text-rose-600">{completeErrors.actualLocationId}</p>
+                <p className="text-xs text-rose-600">
+                  {completeErrors.actualLocationId}
+                </p>
               )}
-              <p className="mt-2 text-xs text-slate-500">
-                TODO: thay bằng dropdown vị trí khi có GET /api/locations.
-              </p>
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setCompleteOpen(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setCompleteOpen(false)}
+              >
                 Huỷ
               </Button>
-              <Button type="submit" disabled={completing} className="bg-indigo-600">
-                {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi complete"}
+              <Button
+                type="submit"
+                disabled={completing}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {completing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Hoàn tất"
+                )}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <form onSubmit={submitEdit}>
             <DialogHeader>
-              <DialogTitle>Cập nhật task (PATCH)</DialogTitle>
+              <DialogTitle>Cập nhật task</DialogTitle>
             </DialogHeader>
             <div className="grid gap-3 py-2">
               <div>
-                <label className="text-xs font-semibold text-slate-500">Trạng thái</label>
-                <Select value={editStatus} onValueChange={(v) => setEditStatus(v ?? "PENDING")}>
+                <label className="text-xs font-semibold text-slate-500">
+                  Trạng thái
+                </label>
+                <Select
+                  value={editStatus}
+                  onValueChange={(v) => setEditStatus(v ?? "PENDING")}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PENDING">PENDING</SelectItem>
-                    <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                    <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                    <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+                    <SelectItem value="IN_PROGRESS">Đang thực hiện</SelectItem>
+                    <SelectItem value="CANCELLED">Đã hủy</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500">Vị trí gợi ý (UUID)</label>
+                <label className="text-xs font-semibold text-slate-500">
+                  Vị trí gợi ý (UUID)
+                </label>
                 <Input
                   value={editSuggested}
                   onChange={(e) => setEditSuggested(e.target.value)}
+                  placeholder="UUID vị trí gợi ý"
                   className="mt-1 font-mono text-xs"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setEditOpen(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setEditOpen(false)}
+              >
                 Huỷ
               </Button>
-              <Button type="submit" disabled={patching} className="bg-indigo-600">
-                {patching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lưu"}
+              <Button
+                type="submit"
+                disabled={patching}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {patching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Lưu"
+                )}
               </Button>
             </DialogFooter>
           </form>
