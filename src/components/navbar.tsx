@@ -86,8 +86,8 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-indigo-500/20 bg-indigo-600 text-white shadow-sm transition-all duration-300 dark:border-indigo-500/20 dark:bg-indigo-950">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
-        <div className="flex min-w-0 items-center gap-4">
+      <div className="flex h-16 items-center justify-between gap-6 px-4 lg:px-6">
+        <div className="flex min-w-0 items-center gap-5">
           <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
 
           <Button
@@ -135,7 +135,7 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-5">
           <div className="hidden items-center pr-2 lg:flex">
             <div className="flex max-w-[min(100%,20rem)] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
               <Sparkles className="h-3.5 w-3.5 shrink-0 fill-indigo-300 text-indigo-300" />
@@ -143,7 +143,7 @@ export function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button
               render={<Link href="/settings" />}
@@ -226,7 +226,7 @@ export function Navbar() {
                 <UserCog className="mr-2 h-4 w-4 text-slate-500" />
                 <span>Trang cá nhân</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-lg py-2">
+              <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
                 <Settings className="mr-2 h-4 w-4 text-slate-500" />
                 <span>Cài đặt hệ thống</span>
               </DropdownMenuItem>
