@@ -182,12 +182,20 @@ export default function InboundPage() {
         ) : null}
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow className="hover:bg-transparent">
-                <TableHead>Mã phiếu</TableHead>
-                <TableHead>PO liên quan</TableHead>
-                <TableHead>Ngày nhập</TableHead>
-                <TableHead>Trạng thái</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Mã phiếu
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  PO liên quan
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Ngày nhập
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Trạng thái
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

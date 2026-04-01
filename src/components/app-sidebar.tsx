@@ -77,10 +77,8 @@ const mainItems: MenuItem[] = [
     icon: ClipboardList,
     tag: "Mới",
     children: [
-      { label: "Tạo đơn nhập", href: "/purchase-orders/new" },
       { label: "Đơn nhập hàng (PO)", href: "/purchase-orders" },
-      { label: "Tạo phiếu nhập", href: "/inbound/new" },
-      { label: "Danh sách phiếu nhập", href: "/inbound" },
+      { label: "Danh sách phiếu nhập kho", href: "/inbound" },
       { label: "Putaway", href: "/putaway" },
     ],
   },
