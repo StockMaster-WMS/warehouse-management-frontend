@@ -86,28 +86,66 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-indigo-500/20 bg-indigo-600 text-white shadow-sm transition-all duration-300 dark:border-indigo-500/20 dark:bg-indigo-950">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
-        <div className="flex min-w-0 items-center gap-4">
+      {/* Mobile layout - single row */}
+      <div className="flex h-16 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:hidden lg:hidden">
+        <div className="flex min-w-0 items-center gap-2 flex-1">
           <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
 
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0 text-indigo-100 hover:bg-white/10 hover:text-white md:hidden"
+            className="shrink-0 text-indigo-100 hover:bg-white/10 hover:text-white"
             onClick={() => setQuickSearchOpen(true)}
             aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
           >
             <Search className="h-5 w-5" />
           </Button>
 
-          <div className="hidden min-w-0 md:flex md:flex-col md:gap-0.5">
+          <span className="text-xs sm:text-sm font-medium text-white truncate flex-1">
+            {pageTitle}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
+          <Button
+            render={<Link href="/settings" />}
+            nativeButton={false}
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+            aria-label="Cài đặt"
+          >
+            <CircleHelp className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="relative rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+            aria-label="Thông báo"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-1 right-1 flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+            </span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Tablet/Desktop layout */}
+      <div className="hidden md:flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
+        <div className="flex min-w-0 items-center gap-4 flex-1">
+          <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
+
+          <div className="hidden min-w-0 md:flex md:flex-col md:gap-0.5 flex-1">
             <div className="flex min-w-0 items-center gap-1 text-[11px] text-indigo-100">
-              <Home className="h-3.5 w-3.5" />
+              <Home className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">StockMaster</span>
-              {pathSegments.map((segment) => (
+              {pathSegments.slice(0, 2).map((segment) => (
                 <div key={segment} className="flex min-w-0 items-center gap-1">
-                  <span>/</span>
+                  <span className="shrink-0">/</span>
                   <span className="truncate">{toTitle(segment)}</span>
                 </div>
               ))}
@@ -115,17 +153,17 @@ export function Navbar() {
             <p className="truncate text-sm font-semibold text-white">{pageTitle}</p>
           </div>
 
-          <div className="hidden items-center gap-2 md:flex">
-            <div className="relative flex items-center">
+          <div className="hidden items-center gap-2 lg:flex flex-1 lg:max-w-md">
+            <div className="relative flex items-center w-full">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-indigo-200" />
               <button
                 type="button"
                 onClick={() => setQuickSearchOpen(true)}
-                className="flex h-9 w-64 cursor-pointer items-center rounded-full border border-transparent bg-white/10 py-0 pr-20 pl-10 text-left text-sm text-indigo-100/95 transition-colors hover:bg-white/15 focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none lg:w-80"
+                className="flex h-9 w-full cursor-pointer items-center rounded-full border border-transparent bg-white/10 py-0 pr-20 pl-10 text-left text-sm text-indigo-100/95 transition-colors hover:bg-white/15 focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
                 aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
               >
-                <span className="truncate text-indigo-100/90">
-                  Tìm kiếm nhanh… ({searchShortcut})
+                <span className="truncate text-xs sm:text-sm text-indigo-100/90">
+                  Tìm kiếm…
                 </span>
               </button>
               <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 sm:flex">
@@ -135,9 +173,9 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="hidden items-center pr-2 lg:flex">
-            <div className="flex max-w-[min(100%,20rem)] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
+          <div className="hidden items-center pr-2 xl:flex">
+            <div className="flex max-w-[20rem] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
               <Sparkles className="h-3.5 w-3.5 shrink-0 fill-indigo-300 text-indigo-300" />
               <span className="truncate">StockMaster — sẵn sàng vận hành</span>
             </div>
@@ -151,9 +189,9 @@ export function Navbar() {
               variant="ghost"
               size="icon-sm"
               className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
-              aria-label="Hỗ trợ"
+              aria-label="Giúp đỡ"
             >
-              <CircleHelp className="h-5.5 w-5.5" />
+              <CircleHelp className="h-5 w-5" />
             </Button>
 
             <Button
@@ -162,7 +200,7 @@ export function Navbar() {
               className="relative rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
               aria-label="Thông báo"
             >
-              <Bell className="h-5.5 w-5.5" />
+              <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
@@ -191,7 +229,7 @@ export function Navbar() {
                       AN
                     </AvatarFallback>
                   </Avatar>
-                  <div className="hidden flex-col items-start pr-1 text-left md:flex">
+                  <div className="hidden flex-col items-start pr-1 text-left lg:flex">
                     <span className="text-sm font-semibold leading-none text-white">
                       An Nguyen
                     </span>
@@ -207,7 +245,7 @@ export function Navbar() {
             <DropdownMenuContent
               sideOffset={8}
               align="end"
-              className="w-64 rounded-xl p-2 shadow-xl ring-1 ring-slate-200 dark:ring-slate-800"
+              className="w-60 sm:w-64 rounded-xl p-2 shadow-xl ring-1 ring-slate-200 dark:ring-slate-800"
             >
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="px-2 py-1.5 font-normal">
@@ -215,7 +253,7 @@ export function Navbar() {
                     <p className="text-sm font-semibold leading-none">
                       An Nguyen
                     </p>
-                    <p className="text-xs leading-none text-slate-500 font-medium">
+                    <p className="text-xs leading-none text-slate-500 font-medium truncate">
                       an.nguyen@stockmaster.vn
                     </p>
                   </div>
@@ -223,21 +261,21 @@ export function Navbar() {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/profile" />}>
-                <UserCog className="mr-2 h-4 w-4 text-slate-500" />
-                <span>Trang cá nhân</span>
+                <UserCog className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                <span className="truncate">Trang cá nhân</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="rounded-lg py-2">
-                <Settings className="mr-2 h-4 w-4 text-slate-500" />
-                <span>Cài đặt hệ thống</span>
+                <Settings className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                <span className="truncate">Cài đặt hệ thống</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="rounded-lg py-2">
-                <Languages className="mr-2 h-4 w-4 text-slate-500" />
-                <span>Ngôn ngữ: Tiếng Việt</span>
+                <Languages className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                <span className="truncate">Ngôn ngữ: Tiếng Việt</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="rounded-lg py-2 text-red-600 focus:bg-red-50 focus:text-red-600">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Đăng xuất</span>
+                <LogOut className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">Đăng xuất</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

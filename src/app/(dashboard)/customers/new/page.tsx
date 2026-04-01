@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function NewCustomerPage() {
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Thêm khách hàng"
         description="Tạo hồ sơ khách hàng mới để quản lý thông tin liên hệ và lịch sử mua hàng."
@@ -123,7 +123,7 @@ export default function NewCustomerPage() {
                     </label>
                     <Textarea
                         placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
-                        className="min-h-[100px] border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                        className="min-h-25 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                     />
                </div>
             </div>
@@ -162,7 +162,7 @@ export default function NewCustomerPage() {
                 </label>
                 <Textarea
                   placeholder="Đặc điểm nhận dạng, sở thích, yêu cầu riêng..."
-                  className="min-h-[80px] border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  className="min-h-20 border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </div>
             </div>

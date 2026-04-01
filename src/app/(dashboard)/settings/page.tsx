@@ -718,7 +718,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="lg:col-span-3">
-          <div className="min-h-[100px] rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="min-h-25 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center justify-between border-b pb-4 dark:border-slate-800">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {activeTab === "personal" && "Thông tin cá nhân"}

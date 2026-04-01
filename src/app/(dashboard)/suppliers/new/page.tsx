@@ -25,7 +25,7 @@ import {
 
 export default function NewSupplierPage() {
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Thêm nhà cung cấp"
         description="Khởi tạo hồ sơ đối tác cung ứng và thông tin liên hệ."

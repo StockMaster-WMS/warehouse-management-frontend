@@ -94,7 +94,7 @@ export default function NewCategoryPage() {
   };
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Thêm nhóm / loại"
         description="Thêm nút trên cây phân loại — có thể là nhóm gốc hoặc loại thuộc nhóm cha."

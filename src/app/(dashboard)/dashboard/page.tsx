@@ -42,13 +42,13 @@ function NoticeIcon({ type }: { type: (typeof NOTICES)[number]["type"] }) {
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Xin chào, An Nguyen!"
         description="Hệ thống StockMaster đang hoạt động ổn định. Xem báo cáo hôm nay."
       />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
         {[
           {
             label: "Doanh thu ngày",
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2">
         <PageSection
           title="Lưu lượng xuất/nhập"
           description="Theo ngày trong tuần (dữ liệu mẫu — kết nối API sau)."

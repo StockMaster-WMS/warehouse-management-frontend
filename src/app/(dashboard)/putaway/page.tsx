@@ -237,7 +237,7 @@ export default function PutawayPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[980px] text-left">
+          <Table className="min-w-245 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>
@@ -253,10 +253,10 @@ export default function PutawayPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={`putaway-skel-${i}`}>
                     <TableCell className="px-3 py-3">
-                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                      <Skeleton className="h-3 w-full max-w-25" />
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Skeleton className="h-3 w-full max-w-[100px]" />
+                      <Skeleton className="h-3 w-full max-w-25" />
                     </TableCell>
                     <TableCell className="px-3 py-3">
                       <Skeleton className="h-4 w-24" />
@@ -319,13 +319,13 @@ export default function PutawayPage() {
               ) : (
                 tasks.map((t: PutawayTask) => (
                   <TableRow key={t.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                    <TableCell className="max-w-[120px] truncate px-3 py-3 font-mono text-xs">{t.id}</TableCell>
-                    <TableCell className="max-w-[120px] truncate px-3 py-3 font-mono text-xs">{t.poItemId ?? "—"}</TableCell>
+                    <TableCell className="max-w-30 truncate px-3 py-3 font-mono text-xs">{t.id}</TableCell>
+                    <TableCell className="max-w-30 truncate px-3 py-3 font-mono text-xs">{t.poItemId ?? "—"}</TableCell>
                     <TableCell className="px-3 py-3">{t.status}</TableCell>
-                    <TableCell className="max-w-[100px] truncate px-3 py-3 font-mono text-xs">
+                    <TableCell className="max-w-25 truncate px-3 py-3 font-mono text-xs">
                       {t.suggestedLocationId ?? "—"}
                     </TableCell>
-                    <TableCell className="max-w-[100px] truncate px-3 py-3 font-mono text-xs">
+                    <TableCell className="max-w-25 truncate px-3 py-3 font-mono text-xs">
                       {t.actualLocationId ?? "—"}
                     </TableCell>
                     <TableCell className="space-x-1 px-3 py-3 text-right">

@@ -5,7 +5,7 @@ import { ComingSoonCard } from "@/components/ui/coming-soon-card";
 
 export default function ReportsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Báo cáo"
         description="Dữ liệu phân tích giúp bạn đưa ra những quyết định quản lý kho hiệu quả hơn."

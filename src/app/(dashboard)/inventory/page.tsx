@@ -203,7 +203,7 @@ export default function InventoryPage() {
         setPage(0);
       }}
     >
-      <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-[240px] dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
+      <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-60:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
         <SelectValue
           placeholder={warehousesLoading ? "Đang tải kho..." : warehousesError ? "Lỗi tải kho" : "Chọn kho"}
         >
@@ -240,7 +240,7 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Theo dõi tồn kho"
         description="Giám sát tồn kho, cảnh báo và điều chỉnh nhanh theo SKU."
@@ -358,7 +358,7 @@ export default function InventoryPage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-[220px] dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
+                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:w-55 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80">
                     <SelectValue placeholder="Lý do điều chỉnh" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
@@ -389,28 +389,28 @@ export default function InventoryPage() {
           </p>
         ) : null}
         <div className="overflow-x-auto">
-          <Table className="min-w-[980px] text-left">
+          <Table className="min-w-245 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
                 <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   STT
                 </TableHead>
-                <TableHead className="min-w-[280px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="min-w-70 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Thông tin hàng hóa
                 </TableHead>
-                <TableHead className="w-[140px] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="w-35 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Vị trí
                 </TableHead>
-                <TableHead className="w-[140px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="w-35 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Tồn thực tế
                 </TableHead>
-                <TableHead className="w-[140px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="w-35 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Khả dụng
                 </TableHead>
-                <TableHead className="w-[170px] px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="w-42.5 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Trạng thái
                 </TableHead>
-                <TableHead className="w-[120px] px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="w-30 px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Thao tác
                 </TableHead>
               </TableRow>

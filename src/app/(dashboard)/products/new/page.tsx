@@ -99,7 +99,7 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Tạo sản phẩm mới"
         description="Thiết lập thông tin định danh và cấu hình vận hành cho mặt hàng mới."

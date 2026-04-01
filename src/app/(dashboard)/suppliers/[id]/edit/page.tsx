@@ -28,7 +28,7 @@ export default function EditSupplierPage({ params: paramsPromise }: { params: Pr
   const { id } = params;
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa nhà cung cấp"
         description={`Cập nhật thông tin định danh và hồ sơ năng lực của đối tác (ID: ${id}).`}
@@ -85,7 +85,7 @@ export default function EditSupplierPage({ params: paramsPromise }: { params: Pr
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Textarea
                            defaultValue="Quận 1, TP. Hồ Chí Minh, Việt Nam"
-                           className="pl-10 min-h-[80px] py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                           className="pl-10 min-h-20 py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                         />
                     </div>
                </div>

@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function NewWarehousePage() {
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Thêm kho hàng mới"
         description="Định dạng khu vực lưu trữ, chi nhánh và thông tin quản lý."
@@ -80,7 +80,7 @@ export default function NewWarehousePage() {
                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Textarea
                            placeholder="Nhập địa chỉ đầy đủ (Số nhà, đường, phường, quận...)"
-                           className="pl-10 min-h-[80px] py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                           className="pl-10 min-h-20 py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                         />
                     </div>
                </div>
