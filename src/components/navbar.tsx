@@ -181,7 +181,7 @@ export function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button
               render={<Link href="/settings" />}
@@ -264,7 +264,7 @@ export function Navbar() {
                 <UserCog className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
                 <span className="truncate">Trang cá nhân</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-lg py-2">
+              <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
                 <Settings className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
                 <span className="truncate">Cài đặt hệ thống</span>
               </DropdownMenuItem>

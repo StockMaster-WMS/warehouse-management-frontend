@@ -83,12 +83,14 @@ export default function ProfilePage() {
 
           <div className="md:ml-auto flex flex-col gap-3">
             <Dialog>
-              <DialogTrigger>
-                <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30 transition-all duration-200 hover:shadow-md">
-                  <Edit className="mr-2 size-4" />
-                  Chỉnh sửa hồ sơ
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30 transition-all duration-200 hover:shadow-md">
+                    <Edit className="mr-2 size-4" />
+                    Chỉnh sửa hồ sơ
+                  </Button>
+                }
+              />
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Chỉnh sửa thông tin cá nhân</DialogTitle>
