@@ -1,10 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { SalesOrderDetailView } from "./_components/sales-order-detail-view";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Link } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function SalesOrderDetailPage() {
   const params = useParams<{ id: string }>();
