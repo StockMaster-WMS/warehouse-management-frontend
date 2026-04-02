@@ -7,6 +7,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import type { ApiResponse, PagedResponse } from "@/types/api";
+import type { Category } from "@/types/category";
+import type { Warehouse } from "@/types/warehouse";
+
+type OptionResponse<T> = ApiResponse<PagedResponse<T>> | undefined;
+
+function findById<T extends { id: string }>(items: T[] | undefined, id: string) {
+  return items?.find((item) => item.id === id);
+}
 
 interface ProductFiltersPanelProps {
   open: boolean;
@@ -17,13 +26,13 @@ interface ProductFiltersPanelProps {
   onStatusChange: (status: "" | "ACTIVE" | "INACTIVE" | null) => void;
   onCategoryChange: (categoryId: string | null) => void;
   onWarehouseChange: (warehouseId: string | null) => void;
-  categoryOptionsData: any;
+  categoryOptionsData: OptionResponse<Category>;
   categoriesLoading: boolean;
-  categoriesError: any;
+  categoriesError: unknown;
   onRefetchCategories: () => void;
-  warehouseOptionsData: any;
+  warehouseOptionsData: OptionResponse<Warehouse>;
   warehousesLoading: boolean;
-  warehousesError: any;
+  warehousesError: unknown;
   onRefetchWarehouses: () => void;
 }
 
@@ -45,6 +54,9 @@ export function ProductFiltersPanel({
   warehousesError,
   onRefetchWarehouses,
 }: ProductFiltersPanelProps) {
+  const categoryItems = categoryOptionsData?.data?.content;
+  const warehouseItems = warehouseOptionsData?.data?.content;
+
   return (
     <AdvancedFilterPanel
       open={open}
@@ -63,12 +75,8 @@ export function ProductFiltersPanel({
               <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
                 Nhóm:{" "}
                 <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  {categoryOptionsData?.data?.content?.find(
-                    (x: any) => x.id === categoryFilter
-                  )?.code ??
-                    categoryOptionsData?.data?.content?.find(
-                      (x: any) => x.id === categoryFilter
-                    )?.name ??
+                  {findById(categoryItems, categoryFilter)?.code ??
+                    findById(categoryItems, categoryFilter)?.name ??
                     "—"}
                 </span>
               </span>
@@ -77,12 +85,8 @@ export function ProductFiltersPanel({
               <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
                 Kho:{" "}
                 <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  {warehouseOptionsData?.data?.content?.find(
-                    (x: any) => x.id === warehouseFilter
-                  )?.code ??
-                    warehouseOptionsData?.data?.content?.find(
-                      (x: any) => x.id === warehouseFilter
-                    )?.name ??
+                  {findById(warehouseItems, warehouseFilter)?.code ??
+                    findById(warehouseItems, warehouseFilter)?.name ??
                     "—"}
                 </span>
               </span>
@@ -129,9 +133,7 @@ export function ProductFiltersPanel({
           >
             {(val) => {
               if (!val) return "Tất cả nhóm hàng";
-              const c = categoryOptionsData?.data?.content?.find(
-                (x: any) => x.id === val
-              );
+              const c = findById(categoryItems, val);
               return c ? `${c.name} (${c.code})` : "Đang tải…";
             }}
           </SelectValue>
@@ -152,9 +154,9 @@ export function ProductFiltersPanel({
           <SelectItem value="" className="rounded-lg">
             Tất cả nhóm hàng
           </SelectItem>
-          {categoryOptionsData?.data?.content?.length ? (
+          {categoryItems?.length ? (
             <CategoryTreeSelectItems
-              categories={categoryOptionsData.data.content}
+              categories={categoryItems}
               itemClassName="rounded-lg"
             />
           ) : null}
@@ -174,9 +176,7 @@ export function ProductFiltersPanel({
           >
             {(val) => {
               if (!val) return "Tất cả kho";
-              const w = warehouseOptionsData?.data?.content?.find(
-                (x: any) => x.id === val
-              );
+              const w = findById(warehouseItems, val);
               return w ? `${w.name} (${w.code || "—"})` : "Đang tải…";
             }}
           </SelectValue>
@@ -197,7 +197,7 @@ export function ProductFiltersPanel({
           <SelectItem value="" className="rounded-lg">
             Tất cả kho
           </SelectItem>
-          {warehouseOptionsData?.data?.content?.map((w: any) => (
+          {warehouseItems?.map((w) => (
             <SelectItem key={w.id} value={w.id} className="rounded-lg">
               {w.name} {w.code ? `(${w.code})` : ""}
             </SelectItem>

@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
-import {  useProductCreateForm } from "@/components/features/products";
+import { ProductFormField, useProductCreateForm } from "@/components/features/products";
 import {
   Select,
   SelectContent,
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { Controller } from "react-hook-form";
-import { ProductFormField } from "@/components/features/products/components/ProductFormField";
 
 export default function NewProductPage() {
   const {

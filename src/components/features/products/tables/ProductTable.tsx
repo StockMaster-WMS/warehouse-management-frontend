@@ -14,17 +14,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProductTableRow } from "./ProductTableRow";
 import { Plus } from "lucide-react";
 import { apiErrMessage } from "@/types/api";
+import type { Product } from "@/types/product";
 
 const SKELETON_ROWS = 6;
 const COL_COUNT = 10;
 
 interface ProductTableProps {
-    products: any[];
+    products: Product[];
     isLoading: boolean;
     isFetching: boolean;
     error: any;
     hasAnyFilter: boolean;
-    onRequestDelete: (name: string) => void;
+    onRequestDelete: (target: { id: string; name: string }) => void;
     onRetry: () => void;
     onClearFilters: () => void;
     pageIndex: number;

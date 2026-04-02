@@ -7,11 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import { useDeleteProductMutation } from "@/store/services/product.service";
-import { useProductsPageLogic } from "@/components/features/products/hooks/useProductsPage";
-import { ProductStatsGrid } from "@/components/features/products/components/ProductStatsGrid";
-import { ProductFiltersPanel } from "@/components/features/products/components/ProductFiltersPanel";
-import { ProductTable } from "@/components/features/products/tables/ProductTable";
-import { ProductPagination } from "@/components/features/products/tables/ProductPagination";
+import {
+  useProductsPageLogic,
+  ProductStatsGrid,
+  ProductFiltersPanel,
+  ProductTable,
+  ProductPagination,
+} from "@/components/features/products";
 
 const DeleteConfirmDialog = dynamic(
   () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
@@ -116,14 +118,14 @@ export default function ProductsPage() {
         onOpenChange={logic.setIsDeleteDialogOpen}
         onConfirm={async () => {
           try {
-            if (logic.itemToDelete) {
-              await deleteProduct(logic.itemToDelete).unwrap();
+            if (logic.deleteTarget?.id) {
+              await deleteProduct(logic.deleteTarget.id).unwrap();
             }
           } catch (err) {
             console.error("Xóa sản phẩm thất bại:", err);
           }
         }}
-        itemName={logic.itemToDelete}
+        itemName={logic.deleteTarget?.name}
       />
     </div>
   );

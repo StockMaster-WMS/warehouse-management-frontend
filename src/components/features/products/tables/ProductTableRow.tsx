@@ -22,7 +22,7 @@ import type { Product } from "@/types/product";
 type ProductTableRowProps = {
   product: Product;
   rowNumber: number;
-  onRequestDelete: (name: string) => void;
+  onRequestDelete: (target: { id: string; name: string }) => void;
 };
 
 function formatDate(value?: string) {
@@ -141,7 +141,7 @@ export const ProductTableRow = memo(function ProductTableRow({
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="rounded-lg text-rose-600 focus:text-rose-600"
-                onClick={() => onRequestDelete(product.name)}
+                onClick={() => onRequestDelete({ id: product.id, name: product.name })}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Xóa SKU
@@ -260,7 +260,7 @@ export const ProductTableRow = memo(function ProductTableRow({
               <DropdownMenuContent align="end" className="w-40 rounded-xl">
                 <DropdownMenuItem
                   className="text-rose-600 focus:text-rose-600"
-                  onClick={() => onRequestDelete(product.name)}
+                  onClick={() => onRequestDelete({ id: product.id, name: product.name })}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Xóa

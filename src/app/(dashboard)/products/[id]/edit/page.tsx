@@ -16,11 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-import { useProductEditForm } from "@/components/features/products";
+import { ProductFormField, useProductEditForm } from "@/components/features/products";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
 import { AlertCircle } from "lucide-react";
 import { Controller } from "react-hook-form";
-import { ProductFormField } from "@/components/features/products/components/ProductFormField";
 
 export default function EditProductPage({
   params: paramsPromise,

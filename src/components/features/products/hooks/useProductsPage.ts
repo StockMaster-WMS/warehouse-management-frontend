@@ -6,6 +6,11 @@ import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 
 const PAGE_SIZE = 20;
 
+type DeleteTarget = {
+  id: string;
+  name: string;
+};
+
 export function useProductsPageLogic() {
   // State giao diện cục bộ cho tìm kiếm, bộ lọc, phân trang và hộp thoại xoá.
   const [searchInput, setSearchInput] = useState("");
@@ -16,7 +21,7 @@ export function useProductsPageLogic() {
   const [warehouseFilter, setWarehouseFilter] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   // Giữ object query ổn định để RTK Query chỉ gọi lại khi dữ liệu đầu vào thực sự thay đổi.
   const listParams = useMemo(
@@ -98,8 +103,8 @@ export function useProductsPageLogic() {
     setAdvancedOpen(false);
   }, []);
 
-  const handleRequestDelete = useCallback((name: string) => {
-    setItemToDelete(name);
+  const handleRequestDelete = useCallback((target: DeleteTarget) => {
+    setDeleteTarget(target);
     setIsDeleteDialogOpen(true);
   }, []);
 
@@ -125,7 +130,7 @@ export function useProductsPageLogic() {
     warehouseFilter,
     advancedOpen,
     isDeleteDialogOpen,
-    itemToDelete,
+    deleteTarget,
 
     // Các setter bao bọc state gốc để trang có thể reset phân trang nhất quán.
     setSearchInput: handleSearchChange,
