@@ -25,6 +25,7 @@ import {
 } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import { ProductFormField } from "@/components/features/products/ProductFormField";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
 import { apiErrMessage } from "@/types/api";
 
@@ -112,6 +113,7 @@ export default function EditProductPage({
     });
   }, [data, reset]);
 
+  // Cập nhật dữ liệu sản phẩm hiện tại; chỉ submit khi form đã có dữ liệu gốc từ API.
   const onValid = async (formValues: EditProductFormValues) => {
     setSubmitMessage("");
     const current = data?.data;
@@ -212,6 +214,7 @@ export default function EditProductPage({
 
       <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit(onValid, onInvalid)} noValidate>
         <div className="space-y-6 md:col-span-2">
+          {/* Khối 1: Thông tin định danh */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Info className="h-4 w-4 text-indigo-600" />
@@ -220,7 +223,7 @@ export default function EditProductPage({
               </h3>
             </div>
             <div className="space-y-4">
-              <Field label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode?.message}>
+              <ProductFormField label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode?.message}>
                 <Input
                   id="barcode"
                   placeholder="0123456789012"
@@ -228,8 +231,8 @@ export default function EditProductPage({
                   aria-invalid={!!errors.barcode}
                   className="border-slate-200 bg-slate-50/50 font-mono text-sm focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
-              <Field label="Tên sản phẩm *" htmlFor="name" error={errors.name?.message}>
+              </ProductFormField>
+              <ProductFormField label="Tên sản phẩm *" htmlFor="name" error={errors.name?.message}>
                 <Input
                   id="name"
                   placeholder="Nhập tên đầy đủ của mặt hàng..."
@@ -237,9 +240,9 @@ export default function EditProductPage({
                   aria-invalid={!!errors.name}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
+              </ProductFormField>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Nhóm hàng *" htmlFor="category" error={errors.category?.message}>
+                <ProductFormField label="Nhóm hàng *" htmlFor="category" error={errors.category?.message}>
                   <Controller
                     name="category"
                     control={control}
@@ -294,8 +297,8 @@ export default function EditProductPage({
                       </Select>
                     )}
                   />
-                </Field>
-                <Field label="Đơn vị tính (ĐVT) *" htmlFor="base-unit" error={errors.baseUnit?.message}>
+                </ProductFormField>
+                <ProductFormField label="Đơn vị tính (ĐVT) *" htmlFor="base-unit" error={errors.baseUnit?.message}>
                   <Input
                     id="base-unit"
                     placeholder="VD: goi, thung, kg..."
@@ -303,11 +306,12 @@ export default function EditProductPage({
                     aria-invalid={!!errors.baseUnit}
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
-                </Field>
+                </ProductFormField>
               </div>
             </div>
           </div>
 
+          {/* Khối 2: Quy cách và kích thước */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Ruler className="h-4 w-4 text-indigo-600" />
@@ -316,7 +320,7 @@ export default function EditProductPage({
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Field label="Dài (cm)" htmlFor="length" error={errors.lengthCm?.message}>
+              <ProductFormField label="Dài (cm)" htmlFor="length" error={errors.lengthCm?.message}>
                 <Input
                   id="length"
                   type="number"
@@ -324,8 +328,8 @@ export default function EditProductPage({
                   {...register("lengthCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
-              <Field label="Rộng (cm)" htmlFor="width" error={errors.widthCm?.message}>
+              </ProductFormField>
+              <ProductFormField label="Rộng (cm)" htmlFor="width" error={errors.widthCm?.message}>
                 <Input
                   id="width"
                   type="number"
@@ -333,8 +337,8 @@ export default function EditProductPage({
                   {...register("widthCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
-              <Field label="Cao (cm)" htmlFor="height" error={errors.heightCm?.message}>
+              </ProductFormField>
+              <ProductFormField label="Cao (cm)" htmlFor="height" error={errors.heightCm?.message}>
                 <Input
                   id="height"
                   type="number"
@@ -342,8 +346,8 @@ export default function EditProductPage({
                   {...register("heightCm")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
-              <Field label="Nặng (kg)" htmlFor="weight" error={errors.weightKg?.message}>
+              </ProductFormField>
+              <ProductFormField label="Nặng (kg)" htmlFor="weight" error={errors.weightKg?.message}>
                 <Input
                   id="weight"
                   type="number"
@@ -351,18 +355,19 @@ export default function EditProductPage({
                   {...register("weightKg")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
+              </ProductFormField>
             </div>
           </div>
         </div>
 
+        {/* Cột phụ: Trạng thái, ngưỡng tồn và nút lưu */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
               Trạng thái & ngưỡng
             </h3>
             <div className="space-y-4">
-              <Field label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock?.message}>
+              <ProductFormField label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock?.message}>
                 <Input
                   id="min-stock"
                   type="number"
@@ -370,8 +375,8 @@ export default function EditProductPage({
                   {...register("minStock")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-              </Field>
-              <Field label="Trạng thái" htmlFor="status" error={errors.status?.message}>
+              </ProductFormField>
+              <ProductFormField label="Trạng thái" htmlFor="status" error={errors.status?.message}>
                 <Controller
                   name="status"
                   control={control}
@@ -397,7 +402,7 @@ export default function EditProductPage({
                     </Select>
                   )}
                 />
-              </Field>
+              </ProductFormField>
             </div>
           </div>
 
