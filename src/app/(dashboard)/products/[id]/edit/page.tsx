@@ -1,12 +1,8 @@
 "use client";
 
-import { ReactNode, use, useEffect, useState } from "react";
+import { use, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, Info, Ruler, Save } from "lucide-react";
-import { toast } from "sonner";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { ArrowLeft, Info, Ruler, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -19,41 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useGetProductByIdQuery,
-  useUpdateProductMutation,
-} from "@/store/services/product.service";
-import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-import { ProductFormField } from "@/components/features/products/ProductFormField";
+import { useProductEditForm } from "@/components/features/products";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
-import { apiErrMessage } from "@/types/api";
-
-const nonNegativeNumericString = z
-  .string()
-  .optional()
-  .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) >= 0), {
-    message: "Giá trị phải là số không âm.",
-  });
-
-const editProductSchema = z.object({
-  barcode: z
-    .string()
-    .regex(/^(\d{8,13})?$/, "Mã vạch phải có từ 8 đến 13 chữ số.")
-    .optional()
-    .or(z.literal("")),
-  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
-  category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
-  baseUnit: z.string().trim().min(1, "Đơn vị tính là bắt buộc."),
-  lengthCm: nonNegativeNumericString,
-  widthCm: nonNegativeNumericString,
-  heightCm: nonNegativeNumericString,
-  weightKg: nonNegativeNumericString,
-  minStock: nonNegativeNumericString,
-  status: z.enum(["ACTIVE", "INACTIVE"]),
-});
-
-type EditProductFormValues = z.infer<typeof editProductSchema>;
+import { AlertCircle } from "lucide-react";
+import { Controller } from "react-hook-form";
+import { ProductFormField } from "@/components/features/products/components/ProductFormField";
 
 export default function EditProductPage({
   params: paramsPromise,
@@ -67,85 +34,22 @@ export default function EditProductPage({
     register,
     handleSubmit,
     control,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<EditProductFormValues>({
-    resolver: zodResolver(editProductSchema),
-    defaultValues: {
-      barcode: "",
-      name: "",
-      category: "",
-      baseUnit: "",
-      lengthCm: "",
-      widthCm: "",
-      heightCm: "",
-      weightKg: "",
-      minStock: "",
-      status: "ACTIVE",
-    },
-  });
+      formState,
+    submitMessage,
+    data,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+    categoryData,
+    isLoadingCategories,
+    categoryError,
+    refetchCategories,
+    onValid,
+    onInvalid,
+  } = useProductEditForm(id);
 
-  const [submitMessage, setSubmitMessage] = useState("");
-
-  const { data, error, isLoading, isFetching, refetch } = useGetProductByIdQuery(id);
-  const [updateProduct] = useUpdateProductMutation();
-  const {
-    data: categoryData,
-    isLoading: isLoadingCategories,
-    error: categoryError,
-    refetch: refetchCategories,
-  } = useGetCategoriesQuery();
-
-  useEffect(() => {
-    if (!data?.data) return;
-    const p = data.data;
-    reset({
-      barcode: p.barcodeEan13 ?? "",
-      name: p.name ?? "",
-      category: p.categoryId ?? "",
-      baseUnit: p.baseUnit ?? "",
-      lengthCm: p.lengthCm != null ? String(p.lengthCm) : "",
-      widthCm: p.widthCm != null ? String(p.widthCm) : "",
-      heightCm: p.heightCm != null ? String(p.heightCm) : "",
-      weightKg: p.weightKg != null ? String(p.weightKg) : "",
-      minStock: p.minStockQty != null ? String(p.minStockQty) : "",
-      status: p.status ?? "ACTIVE",
-    });
-  }, [data, reset]);
-
-  // Cập nhật dữ liệu sản phẩm hiện tại; chỉ submit khi form đã có dữ liệu gốc từ API.
-  const onValid = async (formValues: EditProductFormValues) => {
-    setSubmitMessage("");
-    const current = data?.data;
-    if (!current) return;
-
-    try {
-      await updateProduct({
-        id,
-        sku: current.sku,
-        barcodeEan13: formValues.barcode?.trim() || undefined,
-        name: formValues.name.trim(),
-        categoryId: formValues.category.trim(),
-        baseUnit: formValues.baseUnit.trim(),
-        weightKg: formValues.weightKg ? Number(formValues.weightKg) : null,
-        lengthCm: formValues.lengthCm ? Number(formValues.lengthCm) : null,
-        widthCm: formValues.widthCm ? Number(formValues.widthCm) : null,
-        heightCm: formValues.heightCm ? Number(formValues.heightCm) : null,
-        minStockQty: formValues.minStock ? Number(formValues.minStock) : null,
-        status: formValues.status,
-      }).unwrap();
-      setSubmitMessage("Cập nhật sản phẩm thành công.");
-      toast.success("Đã cập nhật sản phẩm");
-    } catch (submitError) {
-      const message = apiErrMessage(submitError, "Không thể cập nhật sản phẩm. Vui lòng thử lại.");
-      setSubmitMessage(message);
-      toast.error(message);
-    }
-  };
-
-  const onInvalid = () => {
-    toast.error("Kiểm tra lại thông tin đã nhập.");
-  };
+    const { errors, isSubmitting } = formState;
 
   if (isLoading) {
     return (

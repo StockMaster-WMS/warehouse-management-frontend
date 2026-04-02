@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
 import {
   DropdownMenu,
@@ -44,7 +43,6 @@ export const ProductTableRow = memo(function ProductTableRow({
 
   return (
     <>
-      {/* Desktop Table Row */}
       <TableRow className="hidden md:table-row group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70 border-0">
         <TableCell className="px-3 py-3 text-center align-middle">
           <span className="tabular-nums text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -153,12 +151,10 @@ export const ProductTableRow = memo(function ProductTableRow({
         </TableCell>
       </TableRow>
 
-      {/* Mobile Card View - wrapped in TableRow for valid HTML */}
       <TableRow className="md:hidden border-0 hover:bg-transparent">
         <TableCell colSpan={12} className="px-0 py-2 p-0 border-0">
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 m-2">
             <div className="space-y-3">
-          {/* SKU and Name */}
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</p>
             <p className="font-mono text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -166,7 +162,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </p>
           </div>
 
-          {/* Product Name */}
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</p>
             <p className="font-medium text-slate-900 dark:text-white line-clamp-2">
@@ -174,7 +169,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </p>
           </div>
 
-          {/* Barcode */}
           {product.barcodeEan13?.trim() && (
             <div className="space-y-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</p>
@@ -184,7 +178,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </div>
           )}
 
-          {/* Category and Unit */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Danh mục</p>
@@ -198,7 +191,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </div>
           </div>
 
-          {/* Status and Supplier */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</p>
@@ -225,7 +217,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </div>
           </div>
 
-          {/* Last Updated */}
           <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</p>
             <p className="text-xs text-slate-600 dark:text-slate-300">
@@ -233,7 +224,6 @@ export const ProductTableRow = memo(function ProductTableRow({
             </p>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button
               render={<Link href={`/products/${product.id}`} />}
@@ -259,34 +249,29 @@ export const ProductTableRow = memo(function ProductTableRow({
               <DropdownMenuTrigger
                 render={
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    aria-label="Thêm hành động"
-                    className="rounded-lg"
+                    className="rounded-lg px-3"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-48 rounded-xl">
+              <DropdownMenuContent align="end" className="w-40 rounded-xl">
                 <DropdownMenuItem
-                  className="rounded-lg text-rose-600 focus:text-rose-600"
+                  className="text-rose-600 focus:text-rose-600"
                   onClick={() => onRequestDelete(product.name)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Xóa SKU
+                  Xóa
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {/* End of Actions */}
+            </div>
           </div>
-          {/* End of space-y-3 */}
-        </div>
-        {/* End of rounded-xl card */}
         </TableCell>
       </TableRow>
     </>
   );
 });
-

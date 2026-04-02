@@ -6,20 +6,19 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
-import {
-  useProductsPageLogic,
-  ProductStatsGrid,
-  ProductTable,
-  ProductPagination,
-  ProductFiltersPanel,
-} from "@/components/features/products";
+import { useDeleteProductMutation } from "@/store/services/product.service";
+import { useProductsPageLogic } from "@/components/features/products/hooks/useProductsPage";
+import { ProductStatsGrid } from "@/components/features/products/components/ProductStatsGrid";
+import { ProductFiltersPanel } from "@/components/features/products/components/ProductFiltersPanel";
+import { ProductTable } from "@/components/features/products/tables/ProductTable";
+import { ProductPagination } from "@/components/features/products/tables/ProductPagination";
 
 const DeleteConfirmDialog = dynamic(
   () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
   { ssr: false },
 );
 const ProductImportExportMenu = dynamic(
-  () => import("@/components/features/ProductImportExportMenu").then((m) => m.ProductImportExportMenu),
+  () => import("@/components/features/products").then((m) => m.ProductImportExportMenu),
   { ssr: false },
 );
 
@@ -27,6 +26,7 @@ const PAGE_SIZE = 20;
 
 export default function ProductsPage() {
   const logic = useProductsPageLogic();
+  const [deleteProduct] = useDeleteProductMutation();
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -114,8 +114,14 @@ export default function ProductsPage() {
       <DeleteConfirmDialog
         open={logic.isDeleteDialogOpen}
         onOpenChange={logic.setIsDeleteDialogOpen}
-        onConfirm={() => {
-          logic.setIsDeleteDialogOpen(false);
+        onConfirm={async () => {
+          try {
+            if (logic.itemToDelete) {
+              await deleteProduct(logic.itemToDelete).unwrap();
+            }
+          } catch (err) {
+            console.error("Xóa sản phẩm thất bại:", err);
+          }
         }}
         itemName={logic.itemToDelete}
       />

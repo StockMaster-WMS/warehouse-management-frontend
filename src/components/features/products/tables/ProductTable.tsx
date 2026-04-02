@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ProductTableRow } from "@/components/features/ProductTableRow";
+import { ProductTableRow } from "./ProductTableRow";
 import { Plus } from "lucide-react";
 import { apiErrMessage } from "@/types/api";
 
@@ -98,13 +98,13 @@ export function ProductTable({
                             <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 STT
                             </TableHead>
-                            <TableHead className="w-[30 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <TableHead className="w-24 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Mã SKU
                             </TableHead>
                             <TableHead className="min-w-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Tên sản phẩm
                             </TableHead>
-                            <TableHead className="w-[33 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <TableHead className="w-32 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Mã vạch
                             </TableHead>
                             <TableHead className="min-w-35 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">

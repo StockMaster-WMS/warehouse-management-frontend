@@ -12,13 +12,7 @@ import { useGetStocksQuery } from "@/store/services/stock.service";
 import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
 import { apiErrMessage } from "@/types/api";
 import type { Location } from "@/types/location";
-import type { Stock } from "@/types/stock";
-import {
-  ProductHero as ProductHeroSection,
-  InfoField as ProductInfoField,
-  StockByLocationList as ProductStockByLocationList,
-} from "@/components/features/products/ProductDetailSections";
-
+import { ProductHeroSection, ProductInfoField, ProductStockByLocationList } from "@/components/features/products";
 export default function ProductDetailPage({
   params: paramsPromise,
 }: {
@@ -69,16 +63,19 @@ export default function ProductDetailPage({
     const loadLocations = async () => {
       setIsLocationsLoading(true);
       try {
-        const responses = await Promise.all(
+        const results = await Promise.allSettled(
           missingLocationIds.map((locationId) => triggerGetLocationById(locationId).unwrap()),
         );
         if (cancelled) return;
         setLocationMap((prev) => {
           const next = { ...prev };
-          for (const response of responses) {
-            const location = response?.data;
-            if (!location?.id) continue;
-            next[location.id] = location;
+          for (const result of results) {
+            if (result.status === "fulfilled") {
+              const response = result.value;
+              const location = response?.data;
+              if (!location?.id) continue;
+              next[location.id] = location;
+            }
           }
           return next;
         });
@@ -274,3 +271,4 @@ export default function ProductDetailPage({
     </div>
   );
 }
+
