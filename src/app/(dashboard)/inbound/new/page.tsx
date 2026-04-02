@@ -50,6 +50,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 /* ===== Step 1: Select PO ===== */
 function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
+  const router = useRouter();
   const [page, setPage] = useState(0);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");

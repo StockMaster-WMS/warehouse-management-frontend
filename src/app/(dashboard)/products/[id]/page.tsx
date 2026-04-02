@@ -22,7 +22,7 @@ import { useGetProductByIdQuery } from "@/store/services/product.service";
 import { useGetStocksQuery } from "@/store/services/stock.service";
 import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
 import { apiErrMessage } from "@/types/api";
-import { getProductCategoryDisplayName } from "@/types/product";
+import { getProductCategoryDisplayName } from "@/lib/product-display";
 import type { Product } from "@/types/product";
 import type { Stock } from "@/types/stock";
 import type { Location } from "@/types/location";

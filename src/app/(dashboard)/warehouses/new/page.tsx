@@ -134,7 +134,7 @@ export default function NewWarehousePage() {
                 </div>
               </div>
                <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase text-rose-500">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">
                    Tổng khay sức chứa
                 </label>
                 <Input

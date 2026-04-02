@@ -25,7 +25,7 @@ import {
 } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-import { getProductCategoryDisplayName } from "@/types/product";
+import { getProductCategoryDisplayName } from "@/lib/product-display";
 import { apiErrMessage } from "@/types/api";
 
 const nonNegativeNumericString = z

@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { getProductCategoryDisplayName } from "@/lib/product-display";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Product } from "@/types/product";
-import { getProductCategoryDisplayName } from "@/types/product";
 
 type ProductTableRowProps = {
   product: Product;
@@ -45,7 +45,7 @@ export const ProductTableRow = memo(function ProductTableRow({
   return (
     <>
       {/* Desktop Table Row */}
-      <TableRow className="hidden md:table-row group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
+      <TableRow className="hidden md:table-row group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70 border-0">
         <TableCell className="px-3 py-3 text-center align-middle">
           <span className="tabular-nums text-xs font-medium text-slate-500 dark:text-slate-400">
             {rowNumber}
@@ -153,9 +153,11 @@ export const ProductTableRow = memo(function ProductTableRow({
         </TableCell>
       </TableRow>
 
-      {/* Mobile Card View */}
-      <div className="md:hidden rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <div className="space-y-3">
+      {/* Mobile Card View - wrapped in TableRow for valid HTML */}
+      <TableRow className="md:hidden border-0 hover:bg-transparent">
+        <TableCell colSpan={12} className="px-0 py-2 p-0 border-0">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 m-2">
+            <div className="space-y-3">
           {/* SKU and Name */}
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</p>
@@ -277,8 +279,13 @@ export const ProductTableRow = memo(function ProductTableRow({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          {/* End of Actions */}
+          </div>
+          {/* End of space-y-3 */}
         </div>
-      </div>
+        {/* End of rounded-xl card */}
+        </TableCell>
+      </TableRow>
     </>
   );
 });

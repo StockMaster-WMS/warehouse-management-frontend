@@ -23,10 +23,10 @@ export function PageHeader({
       )}
     >
       <div className="space-y-0.5 sm:space-y-1 min-w-0">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white break-words">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white wrap-break-word">
           {title}
         </h1>
-        <p className="text-xs sm:text-sm font-medium text-slate-500 break-words">{description}</p>
+        <p className="text-xs sm:text-sm font-medium text-slate-500 wrap-break-word">{description}</p>
       </div>
       {actions ? (
         <div className={cn("flex flex-wrap items-center gap-2 shrink-0", actionsClassName)}>{actions}</div>
