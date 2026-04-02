@@ -3,6 +3,7 @@ import {
   Product,
   ProductImportResponse,
   UpdateProductPayload,
+  CreateProductPayload,
   normalizeProductImportResponse,
 } from "@/types/product";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
@@ -69,6 +70,24 @@ const productApi = baseApi.injectEndpoints({
         { type: "Product", id: "LIST" },
       ],
     }),
+    createProduct: builder.mutation<ApiResponse<Product>, CreateProductPayload>({
+      query: (body) => ({
+        url: "/products",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: [{ type: "Product", id: "LIST" }],
+    }),
+    deleteProduct: builder.mutation<ApiResponse<void>, string>({
+      query: (id) => ({
+        url: `/products/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _err, id) => [
+        { type: "Product", id },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
     importProductsXlsx: builder.mutation<
       ApiResponse<ProductImportResponse>,
       { file: File; createdBy?: string }
@@ -106,6 +125,8 @@ export const {
   useGetProductsQuery,
   useGetProductByIdQuery,
   useUpdateProductMutation,
+  useCreateProductMutation,
+  useDeleteProductMutation,
   useImportProductsXlsxMutation,
   useExportProductsXlsxMutation,
 } = productApi;

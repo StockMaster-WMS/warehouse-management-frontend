@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -9,13 +8,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
+import { ProductFormField, useProductCreateForm } from "@/components/features/products";
 import {
   Select,
   SelectContent,
@@ -23,80 +19,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-
-const nonNegativeNumericString = z
-  .string()
-  .optional()
-  .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) >= 0), {
-    message: "Giá trị phải là số không âm.",
-  });
-
-const productSchema = z.object({
-  barcode: z
-    .string()
-    .regex(/^(\d{8,13})?$/, "Mã vạch phải có từ 8 đến 13 chữ số.")
-    .optional()
-    .or(z.literal("")),
-  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
-  category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
-  baseUnit: z.string().min(1, "Vui lòng chọn đơn vị tính."),
-  lengthCm: nonNegativeNumericString,
-  widthCm: nonNegativeNumericString,
-  heightCm: nonNegativeNumericString,
-  weightGram: nonNegativeNumericString,
-  minStock: nonNegativeNumericString,
-  maxStock: nonNegativeNumericString,
-});
-
-type ProductFormValues = z.infer<typeof productSchema>;
+import { Controller } from "react-hook-form";
 
 export default function NewProductPage() {
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
-  } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      barcode: "",
-      name: "",
-      category: "",
-      baseUnit: "cai",
-      lengthCm: "",
-      widthCm: "",
-      heightCm: "",
-      weightGram: "",
-      minStock: "5",
-      maxStock: "100",
-    },
-  });
+    formState,
+    submitMessage,
+    onValid,
+    onInvalid,
+    categoryData,
+    isLoadingCategories,
+    categoryError,
+    refetchCategories,
+  } = useProductCreateForm();
 
-  const [submitMessage, setSubmitMessage] = useState("");
-
-  const {
-    data: categoryData,
-    isLoading: isLoadingCategories,
-    error: categoryError,
-    refetch: refetchCategories,
-  } = useGetCategoriesQuery();
-
-  const onValid = async (_data: ProductFormValues) => {
-    setSubmitMessage("");
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setSubmitMessage(
-      "Đã lưu thông tin sản phẩm ở mức giao diện. Bước tiếp theo: kết nối API tạo sản phẩm.",
-    );
-    toast.success("Đã lưu bản nháp", {
-      description: "Kết nối API tạo sản phẩm sẽ bật ở bước sau.",
-    });
-  };
-
-  const onInvalid = () => {
-    toast.error("Kiểm tra lại thông tin đã nhập.");
-  };
+  const { errors, isSubmitting } = formState;
 
   return (
     <div className="w-full space-y-4 sm:space-y-6 pb-20">
@@ -124,7 +65,7 @@ export default function NewProductPage() {
 
       <form className="grid grid-cols-1 gap-6 md:grid-cols-3" onSubmit={handleSubmit(onValid, onInvalid)} noValidate>
         <div className="md:col-span-2 space-y-6">
-          {/* Section 1: Thông tin cơ bản */}
+          {/* Khối 1: Thông tin định danh */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Info className="h-4 w-4 text-indigo-600" />
@@ -133,13 +74,7 @@ export default function NewProductPage() {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="barcode"
-                  className="text-xs font-bold text-slate-500 uppercase"
-                >
-                  Mã vạch (EAN/UPC)
-                </label>
+                <ProductFormField label="Mã vạch (EAN/UPC)" htmlFor="barcode" error={errors.barcode?.message}>
                 <Input
                   id="barcode"
                   placeholder="0123456789012"
@@ -147,17 +82,8 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.barcode}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.barcode?.message ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.barcode.message}</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="product-name"
-                  className="text-xs font-bold text-slate-500 uppercase"
-                >
-                  Tên sản phẩm <span className="text-rose-500">*</span>
-                </label>
+                </ProductFormField>
+                <ProductFormField label="Tên sản phẩm *" htmlFor="product-name" error={errors.name?.message}>
                 <Input
                   id="product-name"
                   placeholder="Nhập tên đầy đủ của mặt hàng..."
@@ -165,15 +91,9 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.name}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.name?.message ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.name.message}</p>
-                ) : null}
-              </div>
+                </ProductFormField>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="category" className="text-xs font-bold text-slate-500 uppercase">
-                    Nhóm hàng
-                  </label>
+                <ProductFormField label="Nhóm hàng" htmlFor="category" error={errors.category?.message}>
                   <Controller
                     name="category"
                     control={control}
@@ -223,14 +143,8 @@ export default function NewProductPage() {
                       </Select>
                     )}
                   />
-                  {errors.category?.message ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.category.message}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="base-unit" className="text-xs font-bold text-slate-500 uppercase">
-                    Đơn vị tính
-                  </label>
+                </ProductFormField>
+                <ProductFormField label="Đơn vị tính" htmlFor="base-unit" error={errors.baseUnit?.message}>
                   <Controller
                     name="baseUnit"
                     control={control}
@@ -264,15 +178,13 @@ export default function NewProductPage() {
                       </Select>
                     )}
                   />
-                  {errors.baseUnit?.message ? (
-                    <p className="text-xs font-medium text-rose-600">{errors.baseUnit.message}</p>
-                  ) : null}
-                </div>
+                </ProductFormField>
               </div>
             </div>
           </div>
 
-          {/* Section 2: Thông số vận hành */}
+          {/* Khối 2: Quy cách và kích thước */}
+          {/* Khối 2: Quy cách và kích thước */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Ruler className="h-4 w-4 text-indigo-600" />
@@ -281,13 +193,7 @@ export default function NewProductPage() {
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="length-cm"
-                  className="text-[10px] font-bold text-slate-500 uppercase"
-                >
-                  Dài (cm)
-                </label>
+              <ProductFormField label="Dài (cm)" htmlFor="length-cm" error={errors.lengthCm?.message}>
                 <Input
                   id="length-cm"
                   type="number"
@@ -296,17 +202,8 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.lengthCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.lengthCm?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.lengthCm.message}</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="width-cm"
-                  className="text-[10px] font-bold text-slate-500 uppercase"
-                >
-                  Rộng (cm)
-                </label>
+              </ProductFormField>
+              <ProductFormField label="Rộng (cm)" htmlFor="width-cm" error={errors.widthCm?.message}>
                 <Input
                   id="width-cm"
                   type="number"
@@ -315,17 +212,8 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.widthCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.widthCm?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.widthCm.message}</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="height-cm"
-                  className="text-[10px] font-bold text-slate-500 uppercase"
-                >
-                  Cao (cm)
-                </label>
+              </ProductFormField>
+              <ProductFormField label="Cao (cm)" htmlFor="height-cm" error={errors.heightCm?.message}>
                 <Input
                   id="height-cm"
                   type="number"
@@ -334,34 +222,22 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.heightCm}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.heightCm?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.heightCm.message}</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="weight-gram"
-                  className="text-[10px] font-bold text-slate-500 uppercase"
-                >
-                  Nặng (gr)
-                </label>
+              </ProductFormField>
+              <ProductFormField label="Nặng (kg)" htmlFor="weight-kg" error={errors.weightKg?.message}>
                 <Input
-                  id="weight-gram"
+                  id="weight-kg"
                   type="number"
                   placeholder="0"
-                  {...register("weightGram")}
-                  aria-invalid={!!errors.weightGram}
+                  {...register("weightKg")}
+                  aria-invalid={!!errors.weightKg}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.weightGram?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.weightGram.message}</p>
-                ) : null}
-              </div>
+              </ProductFormField>
             </div>
           </div>
         </div>
 
-        {/* Cột phụ: Cấu hình tồn kho */}
+        {/* Cột phụ: Ngưỡng tồn kho và hành động lưu */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
@@ -371,13 +247,7 @@ export default function NewProductPage() {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="min-stock"
-                  className="text-xs font-bold text-slate-500 uppercase"
-                >
-                  Tồn tối thiểu
-                </label>
+              <ProductFormField label="Tồn tối thiểu" htmlFor="min-stock" error={errors.minStock?.message}>
                 <Input
                   id="min-stock"
                   type="number"
@@ -385,34 +255,10 @@ export default function NewProductPage() {
                   aria-invalid={!!errors.minStock}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
-                {errors.minStock?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.minStock.message}</p>
-                ) : null}
                 <p className="text-[10px] font-medium text-slate-400 italic">
                   Cảnh báo khi kho thấp hơn mức này.
                 </p>
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="max-stock"
-                  className="text-xs font-bold text-slate-500 uppercase"
-                >
-                  Tồn tối đa
-                </label>
-                <Input
-                  id="max-stock"
-                  type="number"
-                  {...register("maxStock")}
-                  aria-invalid={!!errors.maxStock}
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                />
-                {errors.maxStock?.message ? (
-                  <p className="text-[10px] font-medium text-rose-600">{errors.maxStock.message}</p>
-                ) : null}
-                <p className="text-[10px] font-medium text-slate-400 italic">
-                  Dùng để tính tỷ lệ lấp đầy kho.
-                </p>
-              </div>
+              </ProductFormField>
             </div>
           </div>
 

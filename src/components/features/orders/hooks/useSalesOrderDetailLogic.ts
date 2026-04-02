@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
-
 import {
   useGetSalesOrderByIdQuery,
   useDeleteSalesOrderMutation,
@@ -17,25 +16,15 @@ import { useGetSoItemsQuery } from "@/store/services/so-item.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 
-import { OrderDetailSkeleton } from "./order-detail-skeleton";
-import { OrderDetailError } from "./order-detail-error";
-import { OrderHero } from "./order-hero";
-import { OrderLinesSection } from "./order-lines-section";
-import { OrderPickingSection } from "./order-picking-section";
-import { OrderSidebar } from "./order-sidebar";
-
-type SalesOrderDetailViewProps = {
-  salesOrderId: string;
-};
-
-export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps) {
+export function useSalesOrderDetailLogic(salesOrderId: string) {
   const router = useRouter();
+
   const { data: soRes, isLoading, isError, error, refetch, isFetching } = useGetSalesOrderByIdQuery(salesOrderId);
   const so = soRes?.data;
 
   const { data: itemsRes, isFetching: itemsFetching } = useGetSoItemsQuery(
     { salesOrderId },
-    { skip: !so }
+    { skip: !so },
   );
   const soItems = useMemo(() => itemsRes?.data?.content ?? [], [itemsRes]);
 
@@ -45,26 +34,27 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
 
   const { data: warehousesRes } = useGetWarehousesQuery(
     { page: 0, size: 200, sort: "name", sortDir: "asc" },
-    { skip: !so }
+    { skip: !so },
   );
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
   const warehouseOptions = useMemo(
     () => warehouses.map((w) => ({ value: String(w.id), label: String(w.name ?? w.id) })),
-    [warehouses]
+    [warehouses],
   );
+
   const warehouseById = useMemo(() => {
-    const m = new Map<string, { name: string; code?: string }>();
-    for (const w of warehousesRes?.data?.content ?? []) {
-      m.set(w.id, { name: w.name, code: w.code });
+    const map = new Map<string, { name: string; code?: string }>();
+    for (const w of warehouses) {
+      map.set(w.id, { name: w.name, code: w.code });
     }
-    return m;
-  }, [warehousesRes]);
+    return map;
+  }, [warehouses]);
 
   const warehouseLabel = useMemo(() => {
-    if (!so) return "—";
-    const w = warehouseById.get(so.warehouseId);
-    if (!w) return "—";
-    return w.code ? `${w.name} (${w.code})` : w.name;
+    if (!so) return "-";
+    const warehouse = warehouseById.get(so.warehouseId);
+    if (!warehouse) return "-";
+    return warehouse.code ? `${warehouse.name} (${warehouse.code})` : warehouse.name;
   }, [so, warehouseById]);
 
   const [deleteSalesOrder, { isLoading: deletingOrder }] = useDeleteSalesOrderMutation();
@@ -72,12 +62,13 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
   const [markPacked, { isLoading: packing }] = useMarkPackedMutation();
   const [markShipped, { isLoading: shipping }] = useMarkShippedMutation();
 
-  async function onDeleteSalesOrder() {
+  const onDeleteSalesOrder = async () => {
     if (!so) return;
     const ok = window.confirm(
-      "Xóa đơn xuất? Chỉ thực hiện được khi đơn PENDING và chưa có dòng picking (theo backend)."
+      "Xóa đơn xuất? Chỉ thực hiện được khi đơn PENDING và chưa có dòng picking (theo backend).",
     );
     if (!ok) return;
+
     try {
       const res = await deleteSalesOrder(so.id).unwrap();
       if (!res.success) {
@@ -89,14 +80,15 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
-  }
+  };
 
-  async function onStartPicking() {
+  const onStartPicking = async () => {
     if (!so) return;
     if (soItems.length === 0) {
       toast.error("Thêm ít nhất 1 dòng hàng trước khi bắt đầu lấy hàng.");
       return;
     }
+
     try {
       const res = await startPicking({ salesOrderId: so.id }).unwrap();
       if (!res.success) toast.error(res.message || "Không thể bắt đầu lấy hàng");
@@ -104,20 +96,19 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
-  }
+  };
 
-  async function onMarkPacked() {
+  const onMarkPacked = async () => {
     if (!so) return;
     if (soItems.length === 0) {
       toast.error("Không thể đóng gói khi đơn chưa có dòng hàng.");
       return;
     }
     if (so.status === "PICKING") {
-      const ok = window.confirm(
-        "Đơn đang PICKING. Chỉ đóng gói khi đã lấy đủ (PICKED). Tiếp tục?"
-      );
+      const ok = window.confirm("Đơn đang PICKING. Chỉ đóng gói khi đã lấy đủ (PICKED). Tiếp tục?");
       if (!ok) return;
     }
+
     try {
       const res = await markPacked({ salesOrderId: so.id }).unwrap();
       if (!res.success) toast.error(res.message || "Đóng gói thất bại");
@@ -125,9 +116,9 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
-  }
+  };
 
-  async function onMarkShipped() {
+  const onMarkShipped = async () => {
     if (!so) return;
     if (soItems.length === 0) {
       toast.error("Không thể xuất kho khi đơn chưa có dòng hàng.");
@@ -135,6 +126,7 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
     }
     const ok = window.confirm("Xác nhận xuất kho đơn này?");
     if (!ok) return;
+
     try {
       const res = await markShipped({ salesOrderId: so.id }).unwrap();
       if (!res.success) toast.error(res.message || "Xuất kho thất bại");
@@ -142,54 +134,28 @@ export function SalesOrderDetailView({ salesOrderId }: SalesOrderDetailViewProps
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
-  }
+  };
 
-  if (isLoading) {
-    return <OrderDetailSkeleton />;
-  }
-
-  if (isError || !so) {
-    return <OrderDetailError error={error} onRetry={() => refetch()} />;
-  }
-
-  return (
-    <div className="mx-auto max-w-8xl space-y-5">
-      <OrderHero
-        so={so}
-        lineCount={soItems.length}
-        warehouseLabel={warehouseLabel}
-        warehouseOptions={warehouseOptions}
-        isFetching={isFetching}
-      />
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
-        <div className="min-w-0 space-y-5">
-          <OrderLinesSection
-            salesOrder={so}
-            soItems={soItems}
-            products={products}
-            itemsFetching={itemsFetching}
-          />
-          <OrderPickingSection
-            soItems={soItems}
-            salesOrderStatus={so.status}
-            productsById={productsById}
-          />
-        </div>
-
-        <OrderSidebar
-          status={so.status}
-          lineCount={soItems.length}
-          starting={starting}
-          packing={packing}
-          shipping={shipping}
-          deletingOrder={deletingOrder}
-          onDeleteSalesOrder={onDeleteSalesOrder}
-          onStartPicking={onStartPicking}
-          onMarkPacked={onMarkPacked}
-          onMarkShipped={onMarkShipped}
-        />
-      </div>
-    </div>
-  );
+  return {
+    so,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    soItems,
+    itemsFetching,
+    products,
+    productsById,
+    warehouseOptions,
+    warehouseLabel,
+    deletingOrder,
+    starting,
+    packing,
+    shipping,
+    onDeleteSalesOrder,
+    onStartPicking,
+    onMarkPacked,
+    onMarkShipped,
+  };
 }

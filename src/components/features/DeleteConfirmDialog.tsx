@@ -9,61 +9,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
 
-interface DeleteConfirmDialogProps {
+type DeleteConfirmDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
+  itemName?: string;
   title?: string;
   description?: string;
-  itemName?: string;
-}
+  confirmText?: string;
+  cancelText?: string;
+};
 
 export function DeleteConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
-  title = "Xác nhận xóa",
-  description = "Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa mục này khỏi hệ thống?",
   itemName,
+  title = "Xác nhận xóa",
+  description = "Hành động này không thể hoàn tác.",
+  confirmText = "Xóa",
+  cancelText = "Hủy",
 }: DeleteConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-106 rounded-2xl">
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/30">
-              <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">{title}</DialogTitle>
-          </div>
-          <DialogDescription className="text-sm text-slate-500 py-2">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
             {description}
-            {itemName && (
-              <span className="block mt-2 font-bold text-slate-900 dark:text-slate-200">
-                &quot;{itemName}&quot;
-              </span>
-            )}
+            {itemName ? (
+              <span className="mt-2 block font-medium text-foreground">{itemName}</span>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="rounded-xl font-bold"
-          >
-            Hủy bỏ
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {cancelText}
           </Button>
           <Button
+            type="button"
             variant="destructive"
-            onClick={() => {
-                onConfirm();
-                onOpenChange(false);
+            onClick={async () => {
+              await onConfirm();
+              onOpenChange(false);
             }}
-            className="rounded-xl bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-200 dark:shadow-none font-bold text-white"
           >
-            Xác nhận xóa
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

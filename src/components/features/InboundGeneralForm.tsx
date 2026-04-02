@@ -189,7 +189,7 @@ export function InboundGeneralForm({
               onChange={(e) => setNote(e.target.value)}
               placeholder="VD: Hàng dễ vỡ, giao buổi sáng…"
               rows={2}
-              className="min-h-[4.5rem] border-slate-200 bg-slate-50/50 dark:border-slate-700 dark:bg-slate-950/50"
+              className="min-h-18 border-slate-200 bg-slate-50/50 dark:border-slate-700 dark:bg-slate-950/50"
             />
           </div>
         </div>

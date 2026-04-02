@@ -16,13 +16,13 @@ import { apiErrMessage } from "@/types/api";
 import type { SoItem } from "@/types/so-item";
 import { useUpdateSoItemMutation } from "@/store/services/so-item.service";
 
-type SoLineEditDialogProps = {
+type OrderLineEditDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   line: SoItem | null;
 };
 
-export function SoLineEditDialog({ open, onOpenChange, line }: SoLineEditDialogProps) {
+export function OrderLineEditDialog({ open, onOpenChange, line }: OrderLineEditDialogProps) {
   const [updateLine, { isLoading }] = useUpdateSoItemMutation();
   const [orderedQtyStr, setOrderedQtyStr] = useState("");
   const [shippedQtyStr, setShippedQtyStr] = useState("");

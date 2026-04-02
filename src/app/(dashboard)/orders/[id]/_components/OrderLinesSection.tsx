@@ -22,8 +22,8 @@ import {
   parsePositiveNumber,
   soLineSchema,
   stockRowLocationLabel,
-} from "./order-detail-utils";
-import { SoLineEditDialog } from "./so-line-edit-dialog";
+} from "./OrderDetailUtils";
+import { OrderLineEditDialog } from "./OrderLineEditDialog";
 
 type OrderLinesSectionProps = {
   salesOrder: SalesOrder;
@@ -205,7 +205,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
   return (
     <>
-    <SoLineEditDialog open={editingLine != null} onOpenChange={(o) => !o && setEditingLine(null)} line={editingLine} />
+    <OrderLineEditDialog open={editingLine != null} onOpenChange={(o) => !o && setEditingLine(null)} line={editingLine} />
     <Card className="gap-0 py-0 shadow-sm">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3 pt-5">
         <div className="flex min-w-0 gap-2.5">

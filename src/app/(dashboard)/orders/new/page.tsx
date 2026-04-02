@@ -4,116 +4,41 @@ import {
   ArrowLeft,
   Loader2,
   Save,
-  MapPin,
   User,
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { AddressForm, AddressValue } from "@/components/features/AddressForm";
-import { apiErrMessage } from "@/types/api";
-import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
-import { useCreateSalesOrderMutation } from "@/store/services/order.service";
+import { AddressForm } from "@/components/features/AddressForm";
+import { useCreateOrderForm } from "@/components/features/orders";
 
 function NewOrderFormContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
-  const appliedWarehouseFromUrl = useRef(false);
-
-  const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState<AddressValue>({
-    street: "",
-    provinceCode: "",
-    provinceName: "",
-    districtCode: "",
-    districtName: "",
-    wardCode: "",
-    wardName: "",
-  });
-  const [country, setCountry] = useState("VN");
-  const [warehouseId, setWarehouseId] = useState("");
-  const [priority, setPriority] = useState("5");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const { data: warehousesRes, isFetching: warehousesLoading } = useGetWarehousesQuery({
-    page: 0,
-    size: 200,
-    sort: "name",
-    sortDir: "asc",
-  });
-  const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
-
-  const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
-
-  useEffect(() => {
-    if (appliedWarehouseFromUrl.current || !warehouseIdFromUrl || warehousesLoading) return;
-    const exists = warehouses.some((w) => String(w.id) === warehouseIdFromUrl);
-    if (exists) {
-      setWarehouseId(warehouseIdFromUrl);
-      appliedWarehouseFromUrl.current = true;
-    }
-  }, [warehouseIdFromUrl, warehousesLoading, warehouses]);
-
-  const warehouseOptions = useMemo(
-    () =>
-      warehouses.map((w) => ({
-        value: String(w.id),
-        label: String(w.name ?? w.id),
-      })),
-    [warehouses]
-  );
-
-  function validate() {
-    const next: Record<string, string> = {};
-    if (!customerName.trim()) next.customerName = "Nhập hoặc chọn khách hàng";
-    if (!address.street.trim()) next.line1 = "Nhập địa chỉ giao hàng";
-    if (!address.wardCode.trim()) next.ward = "Chọn phường/xã";
-    if (!address.provinceCode.trim()) next.city = "Chọn tỉnh/thành";
-    if (!country.trim()) next.country = "Nhập mã quốc gia";
-    if (!warehouseId) next.warehouseId = "Chọn kho xuất";
-    const p = Number(priority);
-    if (!Number.isInteger(p) || p < 1) next.priority = "Độ ưu tiên phải là số nguyên >= 1";
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) {
-      toast.error("Vui lòng kiểm tra lại thông tin đơn xuất");
-      return;
-    }
-    try {
-      const res = await createSalesOrder({
-        customerName: customerName.trim(),
-        shippingAddress: {
-          line1: address.street.trim(),
-          ward: address.wardName,
-          district: address.districtName, 
-          city: address.provinceName,
-          country: country.trim().toUpperCase(),
-        },
-        warehouseId,
-        priority: Number(priority),
-      }).unwrap();
-      if (!res.success) {
-        toast.error(res.message || "Tạo đơn xuất thất bại");
-        return;
-      }
-      toast.success(res.message || "Đã tạo đơn xuất thành công");
-      router.push(`/orders/${res.data.id}`);
-    } catch (err) {
-      toast.error(apiErrMessage(err, "Không thể tạo đơn xuất"));
-    }
-  }
+  const {
+    customerName,
+    setCustomerName,
+    phone,
+    setPhone,
+    address,
+    setAddress,
+    country,
+    setCountry,
+    warehouseId,
+    setWarehouseId,
+    priority,
+    setPriority,
+    errors,
+    clearFieldError,
+    warehouses,
+    warehousesLoading,
+    warehouseOptions,
+    warehouseIdFromUrl,
+    creating,
+    onSubmit,
+  } = useCreateOrderForm();
 
   return (
     <div className="w-full space-y-6 pb-20">
@@ -162,7 +87,7 @@ function NewOrderFormContent() {
                     value={customerName}
                     onChange={(e) => {
                       setCustomerName(e.target.value);
-                      setErrors((prev) => ({ ...prev, customerName: "" }));
+                      clearFieldError("customerName");
                     }}
                     aria-invalid={Boolean(errors.customerName)}
                     placeholder="Nhập tên khách hàng/đối tác..."
@@ -221,7 +146,10 @@ function NewOrderFormContent() {
                 </label>
                 <SearchableSelect
                   value={warehouseId}
-                  onValueChange={setWarehouseId}
+                  onValueChange={(value) => {
+                    setWarehouseId(value);
+                    clearFieldError("warehouseId");
+                  }}
                   options={warehouseOptions}
                   dialogTitle="Chọn kho xuất"
                   placeholder={warehousesLoading ? "Đang tải kho..." : "Chọn hoặc gõ để tìm..."}
@@ -253,7 +181,10 @@ function NewOrderFormContent() {
                     type="number"
                     min={1}
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
+                    onChange={(e) => {
+                      setPriority(e.target.value);
+                      clearFieldError("priority");
+                    }}
                     placeholder="5"
                     aria-invalid={Boolean(errors.priority)}
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
@@ -274,7 +205,10 @@ function NewOrderFormContent() {
                 </label>
                 <Input
                   value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    clearFieldError("country");
+                  }}
                   placeholder="VN"
                   maxLength={2}
                   aria-invalid={Boolean(errors.country)}

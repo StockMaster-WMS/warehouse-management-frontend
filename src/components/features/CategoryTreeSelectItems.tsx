@@ -46,7 +46,7 @@ export function CategoryTreeSelectItems({
                 <CornerDownRight className="mb-0.5 size-3.5 shrink-0 text-muted-foreground/55" />
               ) : null}
             </span>
-            <span className="min-w-0 break-words">
+            <span className="min-w-0 wrap-break-word">
               {category.name}{" "}
               <span className="font-mono text-xs text-muted-foreground">
                 ({category.code})
