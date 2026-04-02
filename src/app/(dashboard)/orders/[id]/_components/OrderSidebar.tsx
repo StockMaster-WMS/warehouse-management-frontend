@@ -54,16 +54,20 @@ export function OrderSidebar({
   onMarkShipped,
 }: OrderSidebarProps) {
   return (
-    <aside className="lg:sticky lg:top-4 lg:self-start">
+    <aside className="lg:sticky lg:top-5 lg:self-start">
       <Card className="gap-0 py-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3 pt-4">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Trạng thái</CardTitle>
-          <Badge variant="outline" className={cn("rounded-md px-2 py-0.5 text-[11px] font-semibold", statusBadgeClass(status))}>
-            {salesOrderStatusLabel(status)}
-          </Badge>
+        <CardHeader className="gap-2 border-b border-border/70 bg-slate-50/70 pb-3 pt-4 dark:bg-slate-900/30">
+          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hành động điều phối</CardTitle>
+          <div className="flex flex-row items-center justify-between gap-2">
+            <Badge variant="outline" className={cn("rounded-md px-2 py-0.5 text-[11px] font-semibold", statusBadgeClass(status))}>
+              {salesOrderStatusLabel(status)}
+            </Badge>
+            <span className="text-[11px] text-muted-foreground">{lineCount} dòng</span>
+          </div>
         </CardHeader>
-        <Separator />
+
         <CardContent className="pb-4 pt-3">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Hành động</p>
           <div className="grid gap-2">
             {status === "PENDING" ? (
               <Button
