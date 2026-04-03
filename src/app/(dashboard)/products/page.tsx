@@ -12,7 +12,6 @@ import {
   ProductStatsGrid,
   ProductFiltersPanel,
   ProductTable,
-  ProductPagination,
 } from "@/components/features/products";
 
 const DeleteConfirmDialog = dynamic(
@@ -99,16 +98,11 @@ export default function ProductsPage() {
         onClearFilters={logic.clearFilters}
         pageIndex={logic.page}
         pageSize={PAGE_SIZE}
-      />
-
-      <ProductPagination
         page={logic.page}
         totalElements={logic.totalElements}
         totalPages={logic.serverTotalPages}
-        pageSize={PAGE_SIZE}
         canGoPrev={logic.canGoPrev}
         canGoNext={logic.canGoNext}
-        isFetching={logic.isFetching}
         onPrevPage={logic.handlePrevPage}
         onNextPage={logic.handleNextPage}
       />

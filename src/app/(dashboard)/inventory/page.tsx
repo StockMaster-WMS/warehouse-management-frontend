@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import {
   Table,
   TableBody,
@@ -568,51 +569,19 @@ export default function InventoryPage() {
           </Table>
         </div>
 
-        <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {rows.length > 0 ? (
-                <>
-                  Hiển thị{" "}
-                  <span className="tabular-nums font-semibold text-slate-700 dark:text-slate-200">
-                    {page * PAGE_SIZE + 1}–{page * PAGE_SIZE + rows.length}
-                  </span>{" "}
-                  / <span className="tabular-nums">{totalElements}</span> mặt hàng
-                  {totalPages > 1 ? (
-                    <span className="text-slate-400">
-                      {" "}· Trang{" "}
-                      <span className="tabular-nums font-medium text-slate-600 dark:text-slate-300">
-                        {page + 1}/{totalPages}
-                      </span>
-                    </span>
-                  ) : null}
-                </>
-              ) : (
-                <>Không có bản ghi · Tổng {totalElements} mặt hàng</>
-              )}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!canGoPrev || isFetching}
-                className="h-8 px-3 text-xs border-slate-200"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                Trước
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!canGoNext || isFetching}
-                className="h-8 px-3 text-xs border-slate-200"
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Tiếp theo
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PaginationFooter
+          itemLabel="mặt hàng"
+          rowsCount={rows.length}
+          page={page}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+          isFetching={isFetching}
+          onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => setPage((p) => p + 1)}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

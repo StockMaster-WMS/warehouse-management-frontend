@@ -18,10 +18,6 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
-  Loader2,
-  ArrowUpDown,
-  ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +27,7 @@ import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { apiErrMessage } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -155,15 +152,6 @@ export default function WarehousesPage() {
     setPage(0);
     setSize(PAGE_SIZE);
   };
-
-  const paginationMeta = useMemo(() => {
-    if (warehouses.length === 0) {
-      return { from: 0, to: 0 };
-    }
-    const from = page * size + 1;
-    const to = page * size + warehouses.length;
-    return { from, to };
-  }, [page, size, warehouses.length]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -545,70 +533,23 @@ export default function WarehousesPage() {
               </Button>
             </div>
 
-            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {paginationMeta.from}-{paginationMeta.to}
-                </span>
-                / {totalElements} kho
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-900">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="text-xs font-medium text-slate-500">
-                    Số dòng
-                  </span>
-                  <Select
-                    value={String(size)}
-                    onValueChange={(value) => {
-                      setSize(Number(value));
-                      setPage(0);
-                    }}
-                  >
-                    <SelectTrigger className="h-8 min-w-18 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {[10, 20, 50, 100].map((value) => (
-                        <SelectItem key={value} value={String(value)}>
-                          {value}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 px-3"
-                    onClick={() => setPage(Math.max(0, page - 1))}
-                    disabled={page <= 0 || totalPages === 0 || isFetching}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                    {totalPages === 0 ? 0 : page + 1}/{totalPages}
-                    {isFetching ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : null}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 px-3"
-                    onClick={() => setPage(page + 1)}
-                    disabled={
-                      totalPages === 0 || page + 1 >= totalPages || isFetching
-                    }
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <PaginationFooter
+              itemLabel="kho"
+              rowsCount={warehouses.length}
+              page={page}
+              totalElements={totalElements}
+              totalPages={totalPages}
+              canGoPrev={page > 0}
+              canGoNext={totalPages > 0 && page + 1 < totalPages}
+              isFetching={isFetching}
+              onPrevPage={() => setPage(Math.max(0, page - 1))}
+              onNextPage={() => setPage(page + 1)}
+              pageSize={size}
+              onPageSizeChange={(nextSize) => {
+                setSize(nextSize);
+                setPage(0);
+              }}
+            />
           </>
         )}
       </div>

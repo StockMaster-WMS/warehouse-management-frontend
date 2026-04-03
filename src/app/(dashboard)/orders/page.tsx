@@ -10,7 +10,6 @@ import {
   OrdersFiltersPanel,
   OrdersLookupBar,
   OrdersTable,
-  OrdersPaginationFooter,
 } from "@/components/features/orders";
 
 export default function OrderPage() {
@@ -87,16 +86,10 @@ export default function OrderPage() {
         error={logic.error}
         onRetry={logic.refetch}
         onClearFilters={logic.clearFilters}
-      />
-
-      <OrdersPaginationFooter
-        rowsCount={logic.rows.length}
-        page={logic.page}
         totalElements={logic.totalElements}
         totalPages={logic.totalPages}
         canGoPrev={logic.canGoPrev}
         canGoNext={logic.canGoNext}
-        isFetching={logic.isFetching}
         onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
         onNextPage={() => logic.setPage((p) => p + 1)}
       />

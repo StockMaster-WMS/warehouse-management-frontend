@@ -105,6 +105,12 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
     group: "Đối tác & nhật ký",
   },
   {
+    id: "locations",
+    label: "Vị trí lưu trữ",
+    href: "/locations",
+    group: "Đối tác & nhật ký",
+  },
+  {
     id: "history",
     label: "Nhật ký hoạt động",
     href: "/history",
