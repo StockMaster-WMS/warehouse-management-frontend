@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
     AlertCircle,
@@ -48,6 +48,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { useGetLocationsQuery } from "@/store/services/purchase-order.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import {
@@ -60,6 +61,7 @@ import type { LocationOption } from "@/types/purchase-order";
 
 const ALL_WAREHOUSES = "__all_warehouses__";
 const UNSELECTED_WAREHOUSE = "__select_warehouse__";
+const PAGE_SIZE = 12;
 
 type LocationFormState = {
     warehouseId: string;
@@ -90,6 +92,7 @@ const DEFAULT_FORM_STATE: LocationFormState = {
 export default function LocationsPage() {
     const [searchInput, setSearchInput] = useState("");
     const [warehouseFilter, setWarehouseFilter] = useState(ALL_WAREHOUSES);
+    const [page, setPage] = useState(0);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<LocationOption | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -166,6 +169,24 @@ export default function LocationsPage() {
             return searchable.includes(keyword);
         });
     }, [debouncedKeyword, locations]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredLocations.length / PAGE_SIZE));
+    const canGoPrev = page > 0;
+    const canGoNext = page + 1 < totalPages;
+    const visibleLocations = useMemo(() => {
+        const start = page * PAGE_SIZE;
+        return filteredLocations.slice(start, start + PAGE_SIZE);
+    }, [filteredLocations, page]);
+
+    useEffect(() => {
+        if (page >= totalPages) {
+            setPage(Math.max(0, totalPages - 1));
+        }
+    }, [page, totalPages]);
+
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedKeyword, selectedWarehouseId]);
 
     const formatZoneLine = (location: (typeof filteredLocations)[number]) => {
         const zone = location.zone || "-";
@@ -300,39 +321,7 @@ export default function LocationsPage() {
                 }
             />
 
-            <SearchToolbar
-                placeholder="Tìm theo mã vị trí, zone, aisle, rack, bin..."
-                value={searchInput}
-                onValueChange={setSearchInput}
-                right={
-                    <div className="w-full sm:w-70">
-                        <Select
-                            value={warehouseFilter}
-                            onValueChange={(value) =>
-                                setWarehouseFilter(value ?? ALL_WAREHOUSES)
-                            }
-                        >
-                            <SelectTrigger className="h-10 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                                <SelectValue
-                                    placeholder={
-                                        isWarehousesLoading ? "Đang tải danh sách kho..." : "Lọc theo kho"
-                                    }
-                                >
-                                    {selectedWarehouseLabel}
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL_WAREHOUSES}>Tất cả kho</SelectItem>
-                                {warehouses.map((warehouse) => (
-                                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                                        {warehouse.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                }
-            />
+
 
             {isLocationsFetching && !isLocationsLoading ? (
                 <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
@@ -366,7 +355,39 @@ export default function LocationsPage() {
                     </div>
                 </div>
             ) : null}
-
+            <SearchToolbar
+                placeholder="Tìm theo mã vị trí, zone, aisle, rack, bin..."
+                value={searchInput}
+                onValueChange={setSearchInput}
+                right={
+                    <div className="w-full sm:w-70">
+                        <Select
+                            value={warehouseFilter}
+                            onValueChange={(value) =>
+                                setWarehouseFilter(value ?? ALL_WAREHOUSES)
+                            }
+                        >
+                            <SelectTrigger className="h-10 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                                <SelectValue
+                                    placeholder={
+                                        isWarehousesLoading ? "Đang tải danh sách kho..." : "Lọc theo kho"
+                                    }
+                                >
+                                    {selectedWarehouseLabel}
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_WAREHOUSES}>Tất cả kho</SelectItem>
+                                {warehouses.map((warehouse) => (
+                                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                                        {warehouse.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                }
+            />
             {isLocationsLoading ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -418,28 +439,28 @@ export default function LocationsPage() {
                     />
                 </div>
             ) : (
-                <div className="space-y-4">
-                    <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 md:block">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="hidden md:block">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Mã vị trí</TableHead>
-                                    <TableHead>Kho</TableHead>
-                                    <TableHead>Khu vực</TableHead>
-                                    <TableHead>Bin / Level</TableHead>
-                                    <TableHead>Loại</TableHead>
-                                    <TableHead className="text-right">Trạng thái</TableHead>
-                                    <TableHead className="text-right">Thao tác</TableHead>
+                                    <TableHead className="px-3 py-3 text-center">Mã vị trí</TableHead>
+                                    <TableHead className="px-3 py-3">Kho</TableHead>
+                                    <TableHead className="px-3 py-3">Khu vực</TableHead>
+                                    <TableHead className="px-3 py-3 text-center">Bin / Level</TableHead>
+                                    <TableHead className="px-3 py-3 text-center">Loại</TableHead>
+                                    <TableHead className="px-3 py-3 text-center">Trạng thái</TableHead>
+                                    <TableHead className="px-3 py-3 text-right">Thao tác</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredLocations.map((location) => {
+                                {visibleLocations.map((location) => {
                                     const warehouseName = warehouseNameMap[location.warehouseId];
                                     const locationCode = location.code || location.name || "--";
 
                                     return (
                                         <TableRow key={location.id}>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-3 text-center align-top">
                                                 <div>
                                                     <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
                                                         {locationCode}
@@ -449,25 +470,25 @@ export default function LocationsPage() {
                                                     </p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-3 align-top">
                                                 <span className="text-xs text-slate-700 dark:text-slate-200">
                                                     {warehouseName || "Kho chưa xác định"}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-3 align-top">
                                                 <span className="font-mono text-xs text-slate-700 dark:text-slate-200">
                                                     {formatZoneLine(location)}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-3 text-center align-top">
                                                 <span className="text-xs text-slate-700 dark:text-slate-200">
                                                     Bin {location.bin || "-"} / Lv {location.level ?? "-"}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-3 text-center align-top">
                                                 <Badge variant="outline">{location.locationType || "-"}</Badge>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="px-3 py-3 text-center align-top">
                                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
                                                     {location.isActive === false ? (
                                                         <>
@@ -482,7 +503,7 @@ export default function LocationsPage() {
                                                     )}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="px-3 py-3 text-right align-top">
                                                 <div className="inline-flex items-center gap-1">
                                                     <Button
                                                         type="button"
@@ -515,8 +536,8 @@ export default function LocationsPage() {
                         </Table>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {filteredLocations.map((location) => {
+                    <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+                        {visibleLocations.map((location) => {
                             const warehouseName = warehouseNameMap[location.warehouseId];
                             const locationCode = location.code || location.name || "--";
 
@@ -586,6 +607,20 @@ export default function LocationsPage() {
                             );
                         })}
                     </div>
+
+                    <PaginationFooter
+                        itemLabel="vị trí"
+                        rowsCount={visibleLocations.length}
+                        page={page}
+                        totalElements={filteredLocations.length}
+                        totalPages={totalPages}
+                        canGoPrev={canGoPrev}
+                        canGoNext={canGoNext}
+                        isFetching={isLocationsFetching}
+                        onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+                        onNextPage={() => setPage((p) => p + 1)}
+                        pageSize={PAGE_SIZE}
+                    />
                 </div>
             )}
 
@@ -605,7 +640,7 @@ export default function LocationsPage() {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-xl" showCloseButton={!isSubmitting}>
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle>{editingLocation ? "Sửa vị trí" : "Thêm vị trí mới"}</DialogTitle>
                         <DialogDescription>
@@ -622,22 +657,15 @@ export default function LocationsPage() {
                                     onValueChange={(value) =>
                                         setFormState((prev) => ({
                                             ...prev,
-                                            warehouseId:
-                                                !value || value === UNSELECTED_WAREHOUSE
-                                                    ? ""
-                                                    : value,
+                                            warehouseId: !value || value === UNSELECTED_WAREHOUSE ? "" : value,
                                         }))
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn kho">
-                                            {formWarehouseLabel}
-                                        </SelectValue>
+                                        <SelectValue>{formWarehouseLabel}</SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={UNSELECTED_WAREHOUSE}>
-                                            Chọn kho
-                                        </SelectItem>
+                                        <SelectItem value={UNSELECTED_WAREHOUSE}>Chọn kho</SelectItem>
                                         {warehouses.map((warehouse) => (
                                             <SelectItem key={warehouse.id} value={warehouse.id}>
                                                 {warehouse.name}
