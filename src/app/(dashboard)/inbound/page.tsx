@@ -152,7 +152,9 @@ export default function InboundPage() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Tất cả trạng thái" />
+              <span className="flex flex-1 truncate text-left">
+                {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả trạng thái</SelectItem>

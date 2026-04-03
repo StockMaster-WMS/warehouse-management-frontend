@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import {
   Loader2,
@@ -41,10 +41,13 @@ import {
 import { apiErrMessage } from "@/types/api";
 import {
   useCompletePutawayTaskMutation,
+  useGetLocationsQuery,
+  useGetPoItemsQuery,
+  useGetPurchaseOrdersQuery,
   useGetPutawayTasksQuery,
   usePatchPutawayTaskMutation,
 } from "@/store/services/purchase-order.service";
-import type { PutawayTask } from "@/types/purchase-order";
+import type { PoItem, PutawayTask } from "@/types/purchase-order";
 
 const completeSchema = z.object({
   actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
@@ -88,6 +91,54 @@ export default function PutawayPage() {
 
   const tasks = data?.data?.content ?? [];
   const totalPages = data?.data?.total_pages ?? 0;
+
+  /* ── Locations lookup ── */
+  const { data: locationsRes } = useGetLocationsQuery({});
+  const locationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const loc of locationsRes?.data ?? []) {
+      const label =
+        loc.code ||
+        loc.name ||
+        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
+      map.set(loc.id, label);
+    }
+    return map;
+  }, [locationsRes]);
+
+  /* ── PO Items & PO lookup (resolve poItemId → SKU, purchaseOrderId → poNumber) ── */
+  const uniquePoIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of tasks) {
+      if (t.purchaseOrderId) ids.add(t.purchaseOrderId);
+    }
+    return Array.from(ids);
+  }, [tasks]);
+
+  const { data: poItemsRes } = useGetPoItemsQuery(
+    { size: 200 },
+    { skip: tasks.length === 0 },
+  );
+  const { data: posRes } = useGetPurchaseOrdersQuery(
+    { size: 200 },
+    { skip: uniquePoIds.length === 0 },
+  );
+
+  const poItemMap = useMemo(() => {
+    const map = new Map<string, PoItem>();
+    for (const item of poItemsRes?.data?.content ?? []) {
+      map.set(item.id, item);
+    }
+    return map;
+  }, [poItemsRes]);
+
+  const poMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const po of posRes?.data?.content ?? []) {
+      map.set(po.id, po.poNumber);
+    }
+    return map;
+  }, [posRes]);
 
   const [completeOpen, setCompleteOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<PutawayTask | null>(null);
@@ -214,7 +265,11 @@ export default function PutawayPage() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Tất cả" />
+              <span className="flex flex-1 truncate text-left">
+                {statusFilter
+                  ? (STATUS_LABEL[statusFilter] ?? statusFilter)
+                  : "Tất cả"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả</SelectItem>
@@ -240,12 +295,24 @@ export default function PutawayPage() {
           <Table className="min-w-245 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">poItemId</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
-                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Task ID
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Sản phẩm (SKU)
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Trạng thái
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Vị trí ban đầu
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Vị trí sau khi xếp lên kệ
+                </TableHead>
+                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Thao tác
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -318,18 +385,48 @@ export default function PutawayPage() {
                 </TableRow>
               ) : (
                 tasks.map((t: PutawayTask) => (
-                  <TableRow key={t.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                    <TableCell className="max-w-30 truncate px-3 py-3 font-mono text-xs">{t.id}</TableCell>
-                    <TableCell className="max-w-30 truncate px-3 py-3 font-mono text-xs">{t.poItemId ?? "—"}</TableCell>
-                    <TableCell className="px-3 py-3">{t.status}</TableCell>
-                    <TableCell className="max-w-25 truncate px-3 py-3 font-mono text-xs">
-                      {t.suggestedLocationId ?? "—"}
+                  <TableRow
+                    key={t.id}
+                    className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70"
+                  >
+                    <TableCell className="px-3 py-3 font-mono text-xs font-medium">
+                      PUT-{t.id.slice(0, 8).toUpperCase()}…
                     </TableCell>
-                    <TableCell className="max-w-25 truncate px-3 py-3 font-mono text-xs">
-                      {t.actualLocationId ?? "—"}
+                    <TableCell className="px-3 py-3 text-sm">
+                      {t.poItemId && poItemMap.has(t.poItemId)
+                        ? poItemMap.get(t.poItemId)!.productSku
+                        : t.poItemId
+                          ? t.poItemId.slice(0, 8) + "…"
+                          : "—"}
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <Badge
+                        variant="secondary"
+                        className={`font-normal ${statusBadgeClass(t.status)}`}
+                      >
+                        {STATUS_LABEL[t.status] ?? t.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-sm">
+                      {t.suggestedLocationId
+                        ? (locationMap.get(t.suggestedLocationId) ??
+                          t.suggestedLocationId.slice(0, 8) + "…")
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-sm">
+                      {t.actualLocationId
+                        ? (locationMap.get(t.actualLocationId) ??
+                          t.actualLocationId.slice(0, 8) + "…")
+                        : "—"}
                     </TableCell>
                     <TableCell className="space-x-1 px-3 py-3 text-right">
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(t)} disabled={patching}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEdit(t)}
+                        disabled={patching}
+                      >
                         Sửa
                       </Button>
                       <Button
@@ -463,7 +560,7 @@ export default function PutawayPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-500">
-                  Vị trí gợi ý (UUID)
+                  Vị trí gợi ý
                 </label>
                 <Input
                   value={editSuggested}

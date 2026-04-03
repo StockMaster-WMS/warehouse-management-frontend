@@ -61,6 +61,7 @@ export interface PoItem {
   purchaseOrderId: string;
   lineNumber: number;
   productId: string;
+  productName?: string | null;
   productSku: string;
   orderedQty: number;
   receivedQty?: number | null;
@@ -137,3 +138,21 @@ export interface CompletePutawayPayload {
 export type PurchaseOrderListResponse = ApiResponse<
   PurchaseOrder[] | PagedResponse<PurchaseOrder>
 >;
+
+export interface ImportProductsExcelResult {
+  totalRows: number;
+  successCount: number;
+  failureCount: number;
+  createdItems: Array<{
+    lineNumber: number;
+    productId: string;
+    productSku: string;
+    orderedQty: number;
+    unitPrice?: number | null;
+  }>;
+  errors: Array<{
+    row: number;
+    field?: string;
+    message: string;
+  }>;
+}

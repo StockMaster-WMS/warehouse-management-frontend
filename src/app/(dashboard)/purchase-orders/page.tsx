@@ -206,7 +206,9 @@ export default function PurchaseOrdersPage() {
             }}
           >
             <SelectTrigger id="po-status-select-trigger">
-              <SelectValue placeholder="Tất cả trạng thái" />
+              <span className="flex flex-1 truncate text-left">
+                {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả trạng thái</SelectItem>
@@ -226,7 +228,9 @@ export default function PurchaseOrdersPage() {
             }}
           >
             <SelectTrigger id="po-supplier-select-trigger">
-              <SelectValue placeholder="Tất cả nhà cung cấp" />
+              <span className="flex flex-1 truncate text-left">
+                {supplierId ? (supplierMap.get(supplierId) ?? supplierId) : "Tất cả nhà cung cấp"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả nhà cung cấp</SelectItem>
@@ -246,7 +250,9 @@ export default function PurchaseOrdersPage() {
             }}
           >
             <SelectTrigger id="po-warehouse-select-trigger">
-              <SelectValue placeholder="Tất cả kho" />
+              <span className="flex flex-1 truncate text-left">
+                {warehouseId ? (warehouseMap.get(warehouseId) ?? warehouseId) : "Tất cả kho"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tất cả kho</SelectItem>

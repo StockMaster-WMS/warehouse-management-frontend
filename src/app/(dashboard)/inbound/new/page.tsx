@@ -77,22 +77,6 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <PageHeader
-        title="Tạo phiếu nhập"
-        description="Chọn PO ở trạng thái DRAFT và Confirm PO để bắt đầu nhận hàng."
-        actions={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full hover:bg-slate-100"
-            onClick={() => router.push("/inbound")}
-          >
-            <FileText className="h-4 w-4" />
-          </Button>
-        }
-      />
-
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           <Filter className="h-4 w-4 text-indigo-500" />
@@ -119,10 +103,16 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
             }}
           >
             <SelectTrigger>
-              <SelectValue />
+              <span className="flex flex-1 truncate text-left">
+                {statusFilter === "APPROVED"
+                  ? "Đã duyệt"
+                  : statusFilter === "PARTIAL"
+                    ? "Nhận một phần"
+                    : "Tất cả"}
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Đã duyệt & Nhận 1 phần</SelectItem>
+              <SelectItem value="ALL">Tất cả</SelectItem>
               <SelectItem value="APPROVED">Đã duyệt</SelectItem>
               <SelectItem value="PARTIAL">Nhận một phần</SelectItem>
             </SelectContent>
@@ -156,11 +146,21 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           <Table className="min-w-215 text-left">
             <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
               <TableRow>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Mã PO
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Ngày đặt
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Dự kiến
+                </TableHead>
+                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Trạng thái
+                </TableHead>
+                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Thao tác
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -220,11 +220,20 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
                 </TableRow>
               ) : (
                 rows.map((po: PurchaseOrder) => (
-                  <TableRow key={po.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                    <TableCell className="px-3 py-3 font-medium">{po.poNumber}</TableCell>
+                  <TableRow
+                    key={po.id}
+                    className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70"
+                  >
+                    <TableCell className="px-3 py-3 font-medium">
+                      {po.poNumber}
+                    </TableCell>
                     <TableCell className="px-3 py-3">{po.orderDate}</TableCell>
-                    <TableCell className="px-3 py-3">{po.expectedDate ?? "—"}</TableCell>
-                    <TableCell className="px-3 py-3">{po.status ?? "DRAFT"}</TableCell>
+                    <TableCell className="px-3 py-3">
+                      {po.expectedDate ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      {po.status ?? "DRAFT"}
+                    </TableCell>
                     <TableCell className="px-3 py-3 text-right">
                       <Button
                         size="sm"
@@ -552,7 +561,15 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn vị trí" />
+                    <span className="flex flex-1 text-left">
+                      {locationId
+                        ? (locationOptions.find((l) => l.id === locationId)
+                            ?.code ??
+                          locationOptions.find((l) => l.id === locationId)
+                            ?.name ??
+                          locationId)
+                        : "Chọn vị trí"}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     {locationOptions.map((loc) => (

@@ -67,6 +67,47 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELLED: "Đã hủy",
 };
 
+const GRN_STATUS_LABEL: Record<string, string> = {
+  RECEIVED: "Đã nhận",
+  PENDING: "Chờ xử lý",
+  CANCELLED: "Đã hủy",
+};
+
+const PUTAWAY_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Chờ xếp kệ",
+  IN_PROGRESS: "Đang xếp",
+  COMPLETED: "Hoàn tất",
+  CANCELLED: "Đã hủy",
+};
+
+function putawayStatusClass(status: string): string {
+  switch (status) {
+    case "PENDING":
+      return "bg-amber-100 text-amber-700";
+    case "IN_PROGRESS":
+      return "bg-blue-100 text-blue-700";
+    case "COMPLETED":
+      return "bg-emerald-100 text-emerald-700";
+    case "CANCELLED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
+function grnStatusClass(status: string): string {
+  switch (status) {
+    case "RECEIVED":
+      return "bg-emerald-100 text-emerald-700";
+    case "PENDING":
+      return "bg-amber-100 text-amber-700";
+    case "CANCELLED":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
 function statusClass(status: string | null | undefined): string {
   switch (status) {
     case "DRAFT":
@@ -140,6 +181,18 @@ export default function PurchaseOrderDetailPage({
   const tasks = detail?.putawayTasks ?? [];
   const progress = detail?.progress;
   const receipts: InboundReceipt[] = receiptsRes?.data ?? [];
+
+  const computedTotal = items.reduce((sum, row) => {
+    const qty = Number(row.orderedQty ?? 0);
+    const price = Number(row.unitPrice ?? 0);
+    return sum + qty * price;
+  }, 0);
+  const displayTotal =
+    po?.totalAmount != null && po.totalAmount > 0
+      ? po.totalAmount
+      : computedTotal > 0
+        ? computedTotal
+        : null;
 
   const poStatus = po?.status ?? "";
   const isDraft = poStatus === "DRAFT";
@@ -477,8 +530,8 @@ export default function PurchaseOrderDetailPage({
             <div>
               <span className="text-slate-500">Tổng tiền</span>
               <p className="mt-1 font-medium">
-                {po.totalAmount != null
-                  ? po.totalAmount.toLocaleString("vi-VN") + " ₫"
+                {displayTotal != null
+                  ? displayTotal.toLocaleString("vi-VN") + " ₫"
                   : "—"}
               </p>
             </div>
@@ -667,9 +720,11 @@ export default function PurchaseOrderDetailPage({
                             <TableCell>
                               <Badge
                                 variant="secondary"
-                                className="font-normal"
+                                className={`font-normal ${grnStatusClass(r.status ?? "")}`}
                               >
-                                {r.status ?? "—"}
+                                {GRN_STATUS_LABEL[r.status ?? ""] ??
+                                  r.status ??
+                                  "—"}
                               </Badge>
                             </TableCell>
                             <TableCell className="max-w-50 truncate">
@@ -718,15 +773,16 @@ export default function PurchaseOrderDetailPage({
                       ) : (
                         tasks.map((task) => (
                           <TableRow key={task.id}>
-                            <TableCell className="max-w-30 truncate font-mono text-xs">
-                              {task.id.slice(0, 8)}…
+                            <TableCell className="max-w-36 truncate font-mono text-xs">
+                              PUT-{task.id.slice(0, 8).toUpperCase()}…
                             </TableCell>
                             <TableCell>
                               <Badge
                                 variant="secondary"
-                                className="font-normal"
+                                className={`font-normal ${putawayStatusClass(task.status)}`}
                               >
-                                {task.status}
+                                {PUTAWAY_STATUS_LABEL[task.status] ??
+                                  task.status}
                               </Badge>
                             </TableCell>
                             <TableCell className="font-mono text-xs">
@@ -865,7 +921,17 @@ export default function PurchaseOrderDetailPage({
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn vị trí" />
+                        <span className="flex flex-1 text-left">
+                          {grnLocationId
+                            ? (locationOptions.find(
+                                (l) => l.id === grnLocationId,
+                              )?.code ??
+                              locationOptions.find(
+                                (l) => l.id === grnLocationId,
+                              )?.name ??
+                              grnLocationId)
+                            : "Chọn vị trí"}
+                        </span>
                       </SelectTrigger>
                       <SelectContent>
                         {locationOptions.map((loc) => (
