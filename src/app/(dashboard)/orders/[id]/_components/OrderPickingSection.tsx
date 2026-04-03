@@ -5,8 +5,7 @@ import type { Product } from "@/types/product";
 import type { SoItem } from "@/types/so-item";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { SoItemPickingBlock } from "./so-item-picking-block";
-
+import { OrderItemPickingBlock } from "./OrderItemPickingBlock";
 type OrderPickingSectionProps = {
   soItems: SoItem[];
   salesOrderStatus: string;
@@ -31,7 +30,7 @@ export function OrderPickingSection({ soItems, salesOrderStatus, productsById }:
           <p className="text-sm text-muted-foreground">Thêm dòng hàng để xem lệnh lấy.</p>
         ) : (
           soItems.map((l) => (
-            <SoItemPickingBlock
+            <OrderItemPickingBlock
               key={`pick-${l.id}`}
               soItem={l}
               salesOrderStatus={salesOrderStatus}

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Input } from '../ui/input';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../ui/select';
+import React, { useEffect, useState } from "react";
+import { Input } from "../ui/input";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
 
 
 interface AddressFormProps {
@@ -20,54 +20,107 @@ export interface AddressValue {
     wardName: string;
 }
 
+type SelectOption = {
+    label: string;
+    value: string;
+};
+
+function getOptionLabel(list: SelectOption[], value: string) {
+    return list.find((item) => item.value === value)?.label || "";
+}
+
+async function loadProvinceOptions(): Promise<SelectOption[]> {
+    const response = await fetch("https://provinces.open-api.vn/api/v2/p/");
+    if (!response.ok) throw new Error("Không tải được danh sách tỉnh/thành");
+
+    const data = (await response.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+
+    return data
+        .map((item) => ({
+            label: String((item as { name?: string }).name || ""),
+            value: String((item as { code?: string | number }).code || ""),
+        }))
+        .filter((item) => item.label && item.value);
+}
+
+async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
+    const response = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`);
+    if (!response.ok) throw new Error("Không tải được danh sách phường/xã");
+
+    const data = (await response.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+
+    return data
+        .map((item) => ({
+            label: String((item as { name?: string }).name || ""),
+            value: String((item as { code?: string | number }).code || ""),
+        }))
+        .filter((item) => item.label && item.value);
+}
+
 
 export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, required }) => {
-    const [provinces, setProvinces] = useState<{ label: string; value: string }[]>([]);
-    const [wards, setWards] = useState<{ label: string; value: string }[]>([]);
+    const [provinces, setProvinces] = useState<SelectOption[]>([]);
+    const [wards, setWards] = useState<SelectOption[]>([]);
+    const [loadingProvinces, setLoadingProvinces] = useState(true);
     const [address, setAddress] = useState<AddressValue>(
-        value || { street: '', provinceCode: '', provinceName: '', districtCode: '', districtName: '', wardCode: '', wardName: '' }
+        value || { street: "", provinceCode: "", provinceName: "", districtCode: "", districtName: "", wardCode: "", wardName: "" }
     );
 
-
-    // Fetch provinces
     useEffect(() => {
-        fetch('https://provinces.open-api.vn/api/v2/p/')
-            .then(res => res.json())
-            .then((data) => {
-                setProvinces(data.map((p: any) => ({ label: p.name, value: String(p.code) })));
-            });
-    }, []);
+        let active = true;
 
+        async function init() {
+            try {
+                const options = await loadProvinceOptions();
+                if (!active) return;
+                setProvinces(options);
+            } finally {
+                if (active) setLoadingProvinces(false);
+            }
+        }
+
+        void init();
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     // Fetch wards when province changes (API mới chỉ cho phép lấy wards theo province)
     useEffect(() => {
-        if (address.provinceCode) {
-            fetch(`https://provinces.open-api.vn/api/v2/w/?province=${address.provinceCode}`)
-                .then(res => res.json())
-                .then((data) => {
-                    const wards = Array.isArray(data) ? data : [];
-                    setWards(wards.map((w: any) => ({ label: w.name, value: String(w.code) })));
-                });
-        } else {
+        if (!address.provinceCode) {
             setWards([]);
+            setAddress((current) => ({ ...current, provinceName: "", districtCode: "", districtName: "", wardCode: "", wardName: "" }));
+            return;
         }
-        // Reset district và ward code, đồng thời cập nhật tên tỉnh
-        const provinceName = getLabel(provinces, address.provinceCode);
-        setAddress(a => ({ ...a, provinceName, districtCode: '', districtName: '', wardCode: '', wardName: '' }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [address.provinceCode]);
+
+        let active = true;
+
+        async function loadWardsForProvince() {
+            try {
+                const wardOptions = await loadWardOptions(address.provinceCode);
+                if (active) setWards(wardOptions);
+            } catch {
+                if (active) setWards([]);
+            }
+        }
+
+        const provinceName = getOptionLabel(provinces, address.provinceCode);
+        setAddress((current) => ({ ...current, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
+        void loadWardsForProvince();
+
+        return () => {
+            active = false;
+        };
+    }, [address.provinceCode, provinces]);
 
 
     // Propagate changes
     useEffect(() => {
         onChange?.(address);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [address]);
-
-    // Helper to get label by value
-    const getLabel = (list: { label: string; value: string }[], value: string) => {
-        return list.find((item) => item.value === value)?.label || '';
-    };
 
     return (
         <div className="space-y-3">
@@ -79,16 +132,16 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     value={address.provinceCode}
                     onValueChange={(val) => {
                         if (val) {
-                            const provinceName = getLabel(provinces, val);
-                            setAddress(a => ({ ...a, provinceCode: val, provinceName, districtCode: '', districtName: '', wardCode: '', wardName: '' }));
+                            const provinceName = getOptionLabel(provinces, val);
+                            setAddress(a => ({ ...a, provinceCode: val, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
                         }
                     }}
                     required={required}
-                    disabled={provinces.length === 0}
+                    disabled={loadingProvinces || provinces.length === 0}
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Chọn tỉnh/thành">
-                            {getLabel(provinces, address.provinceCode)}
+                            {getOptionLabel(provinces, address.provinceCode)}
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -106,7 +159,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     value={address.wardCode}
                     onValueChange={(val) => {
                         if (val) {
-                            const wardName = getLabel(wards, val);
+                            const wardName = getOptionLabel(wards, val);
                             setAddress(a => ({ ...a, wardCode: val, wardName }));
                         }
                     }}
@@ -115,7 +168,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Chọn phường/xã">
-                            {getLabel(wards, address.wardCode)}
+                            {getOptionLabel(wards, address.wardCode)}
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>

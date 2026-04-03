@@ -52,10 +52,6 @@ export interface CreateProductPayload {
   heightCm: number;
 }
 
-export function getProductCategoryDisplayName(product: Product): string {
-  return product.categoryName?.trim() ?? "";
-}
-
 export interface ProductImportRowError {
   rowNumber: number;
   message: string;

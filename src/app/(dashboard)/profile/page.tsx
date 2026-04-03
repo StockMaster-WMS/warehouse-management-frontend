@@ -41,7 +41,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Hero Header Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 p-8 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-indigo-600 via-blue-600 to-purple-700 p-8 text-white shadow-lg">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative flex flex-col items-center space-y-6 md:flex-row md:items-start md:space-x-8 md:space-y-0">
           <Avatar className="size-28 border-4 border-white/20 shadow-xl transition-transform duration-200 hover:scale-105">
@@ -127,7 +127,7 @@ export default function ProfilePage() {
 
       {/* Stats Section */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border-emerald-200 dark:border-emerald-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+        <Card className="bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border-emerald-200 dark:border-emerald-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
               <Package className="size-4" />
@@ -142,7 +142,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+        <Card className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-2">
               <Activity className="size-4" />
@@ -157,7 +157,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+        <Card className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-2">
               <CheckCircle className="size-4" />
@@ -172,7 +172,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 border-amber-200 dark:border-amber-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+        <Card className="bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 border-amber-200 dark:border-amber-800 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2">
               <TrendingUp className="size-4" />

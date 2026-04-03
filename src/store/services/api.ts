@@ -48,6 +48,7 @@ export const baseApi = createApi({
   tagTypes: [
     "Category",
     "Product",
+    "Stock",
     "Warehouse",
     "Supplier",
     "Customer",

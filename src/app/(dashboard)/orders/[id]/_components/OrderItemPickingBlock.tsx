@@ -19,20 +19,20 @@ import type { Product } from "@/types/product";
 import type { SoItem } from "@/types/so-item";
 import type { PickingItem, PickingItemStatus } from "@/types/picking-item";
 import {
-  useGetPickingItemsQuery,
-  useCreatePickingItemMutation,
-  useUpdatePickingItemMutation,
-  useDeletePickingItemMutation,
-} from "@/store/services/picking-item.service";
-import {
   computePickedSummary,
   formatLotLine,
   parseNonNegativeNumber,
   parsePositiveNumber,
   pickingCreateSchema,
-} from "./order-detail-utils";
+} from "./OrderDetailUtils";
+import {
+  useCreatePickingItemMutation,
+  useDeletePickingItemMutation,
+  useGetPickingItemsQuery,
+  useUpdatePickingItemMutation,
+} from "@/store/services/picking-item.service";
 
-export function SoItemPickingBlock({
+export function OrderItemPickingBlock({
   soItem,
   salesOrderStatus,
   productsById,
