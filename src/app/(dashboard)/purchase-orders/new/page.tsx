@@ -78,6 +78,9 @@ export default function NewPurchaseOrderPage() {
     ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
   });
 
+  // Separate large fetch for product name lookup (not affected by search keyword)
+  const { data: allProductsRes } = useGetProductsForPoQuery({ size: 200 });
+
   const suppliers = useMemo(
     () =>
       (suppliersRes?.data?.content ?? []).map((s) => ({
@@ -126,6 +129,18 @@ export default function NewPurchaseOrderPage() {
       })),
     [products],
   );
+
+  // Merged product name map: combines all products fetch + search results
+  const productNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of allProductsRes?.data?.content ?? []) {
+      map.set(String(p.id), p.name);
+    }
+    for (const p of products) {
+      map.set(p.id, p.name);
+    }
+    return map;
+  }, [allProductsRes, products]);
 
   const { data: poItemsRes, isFetching: itemsLoading } = useGetPoItemsQuery(
     { purchaseOrderId: purchaseOrderId! },
@@ -357,6 +372,7 @@ export default function NewPurchaseOrderPage() {
         isDeletingLine={isDeletingLine}
         onAddLine={onAddLine}
         onDeleteLine={onDeleteLine}
+        productNameMap={productNameMap}
       />
 
       {purchaseOrderId && (

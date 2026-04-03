@@ -6,4 +6,13 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
+
+// OpenNext CloudFlare dev shim — only enable when explicitly needed.
+// The Workers SSR runtime generates different React root identifiers,
+// causing @base-ui/react useId() hydration mismatches in `next dev`.
+// Run with CF_DEV=1 when you want to test CloudFlare-specific behaviour.
+if (process.env.CF_DEV) {
+  import("@opennextjs/cloudflare").then((m) =>
+    m.initOpenNextCloudflareForDev(),
+  );
+}

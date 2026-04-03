@@ -9,6 +9,7 @@ import type {
   CompletePutawayPayload,
   CreatePoItemPayload,
   CreatePurchaseOrderPayload,
+  ImportProductsExcelResult,
   LocationOption,
   PatchPutawayTaskPayload,
   PoItem,
@@ -123,7 +124,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       ApiResponse<PagedResponse<Product>>,
       { size?: number; keyword?: string }
     >({
-      query: ({ size = 50, keyword }) => ({
+      query: ({ size = 200, keyword }) => ({
         url: "/products",
         method: "GET",
         params: {
@@ -329,6 +330,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           productId: body.productId,
           productSku: body.productSku,
           orderedQty: body.orderedQty,
+          receivedQty: 0,
         };
         if (body.unitPrice != null && !Number.isNaN(body.unitPrice))
           payload.unitPrice = body.unitPrice;
@@ -430,6 +432,29 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       ],
     }),
 
+    importProductsExcel: builder.mutation<
+      ApiResponse<ImportProductsExcelResult>,
+      { purchaseOrderId: string; file: File }
+    >({
+      query: ({ purchaseOrderId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/po-items/import/${purchaseOrderId}`,
+          method: "POST",
+          data: formData,
+        };
+      },
+      invalidatesTags: (_r, _e, { purchaseOrderId }) => [
+        {
+          type: "PoItem" as const,
+          id: `PARENT-PurchaseOrder:${purchaseOrderId}`,
+        },
+        { type: "PurchaseOrder", id: purchaseOrderId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+
     getLocations: builder.query<
       ApiResponse<LocationOption[]>,
       GetLocationsArgs
@@ -471,6 +496,7 @@ export const {
   useGetPoItemByIdQuery,
   useCreatePoItemMutation,
   useDeletePoItemMutation,
+  useImportProductsExcelMutation,
   useGetPutawayTasksQuery,
   useGetPutawayTaskByIdQuery,
   usePatchPutawayTaskMutation,
