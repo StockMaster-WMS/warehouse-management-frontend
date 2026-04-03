@@ -137,11 +137,14 @@ export function PoHeaderForm({
             <SelectTrigger
               className={headerErrors.warehouseId ? "border-rose-400" : ""}
             >
-              <SelectValue
-                placeholder={
-                  warehousesErr ? "Lỗi GET /api/warehouses" : "Chọn kho"
-                }
-              />
+              <span className="flex flex-1 truncate text-left">
+                {warehouseId
+                  ? (warehouses.find((w) => w.id === warehouseId)?.name ??
+                    warehouseId)
+                  : warehousesErr
+                    ? "Lỗi GET /api/warehouses"
+                    : "Chọn kho"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               {warehouses.map((w) => (
