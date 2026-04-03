@@ -1,10 +1,11 @@
 import { useMemo, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetProductsQuery } from "@/store/services/product.service";
+import { apiErrMessage } from "@/types/api";
+import { useDeleteProductMutation, useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
-
-const PAGE_SIZE = 20;
+import { PRODUCTS_PAGE_SIZE } from "@/components/features/products/constants";
 
 type DeleteTarget = {
   id: string;
@@ -22,12 +23,13 @@ export function useProductsPageLogic() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleteProduct] = useDeleteProductMutation();
 
   // Giữ object query ổn định để RTK Query chỉ gọi lại khi dữ liệu đầu vào thực sự thay đổi.
   const listParams = useMemo(
     () => ({
       page,
-      size: PAGE_SIZE,
+      size: PRODUCTS_PAGE_SIZE,
       sort: "updatedAt",
       keyword: debouncedKeyword || undefined,
       status: statusFilter || undefined,
@@ -108,6 +110,21 @@ export function useProductsPageLogic() {
     setIsDeleteDialogOpen(true);
   }, []);
 
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget?.id) {
+      return;
+    }
+
+    try {
+      await deleteProduct(deleteTarget.id).unwrap();
+      toast.success(`Đã xóa sản phẩm ${deleteTarget.name}`);
+      setIsDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Xóa sản phẩm thất bại"));
+    }
+  }, [deleteProduct, deleteTarget]);
+
   const handlePrevPage = useCallback(() => {
     setPage((p) => Math.max(0, p - 1));
   }, []);
@@ -182,6 +199,7 @@ export function useProductsPageLogic() {
     // Các thao tác được dùng bởi trang và từng dòng trong bảng.
     clearFilters,
     handleRequestDelete,
+    handleConfirmDelete,
     handlePrevPage,
     handleNextPage,
     refetch,

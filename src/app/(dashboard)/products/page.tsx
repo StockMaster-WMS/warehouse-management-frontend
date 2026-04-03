@@ -4,30 +4,22 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
-import { useDeleteProductMutation } from "@/store/services/product.service";
 import {
+  PRODUCTS_PAGE_SIZE,
+  ProductDeleteDialog,
   useProductsPageLogic,
   ProductStatsGrid,
-  ProductFiltersPanel,
+  ProductsSearchSection,
   ProductTable,
 } from "@/components/features/products";
 
-const DeleteConfirmDialog = dynamic(
-  () => import("@/components/features/DeleteConfirmDialog").then((m) => m.DeleteConfirmDialog),
-  { ssr: false },
-);
 const ProductImportExportMenu = dynamic(
   () => import("@/components/features/products").then((m) => m.ProductImportExportMenu),
   { ssr: false },
 );
 
-const PAGE_SIZE = 20;
-
 export default function ProductsPage() {
   const logic = useProductsPageLogic();
-  const [deleteProduct] = useDeleteProductMutation();
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -52,39 +44,28 @@ export default function ProductsPage() {
 
       <ProductStatsGrid stats={logic.stats} />
 
-      <SearchToolbar
-        placeholder="Tìm kiếm sản phẩm"
-        value={logic.searchInput}
-        onValueChange={logic.setSearchInput}
-        right={
-          <AdvancedFilterActions
-            open={logic.advancedOpen}
-            onToggle={() => logic.setAdvancedOpen((v) => !v)}
-            activeCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClear={logic.clearFilters}
-          />
-        }
-        filters={
-          <ProductFiltersPanel
-            open={logic.advancedOpen}
-            statusFilter={logic.statusFilter}
-            categoryFilter={logic.categoryFilter}
-            warehouseFilter={logic.warehouseFilter}
-            advancedCount={logic.advancedCount}
-            onStatusChange={logic.setStatusFilter}
-            onCategoryChange={logic.setCategoryFilter}
-            onWarehouseChange={logic.setWarehouseFilter}
-            categoryOptionsData={logic.categoryOptionsData}
-            categoriesLoading={logic.categoriesLoading}
-            categoriesError={logic.categoriesError}
-            onRefetchCategories={logic.refetchCategories}
-            warehouseOptionsData={logic.warehouseOptionsData}
-            warehousesLoading={logic.warehousesLoading}
-            warehousesError={logic.warehousesError}
-            onRefetchWarehouses={logic.refetchWarehouses}
-          />
-        }
+      <ProductsSearchSection
+        searchInput={logic.searchInput}
+        onSearchChange={logic.setSearchInput}
+        advancedOpen={logic.advancedOpen}
+        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+        advancedCount={logic.advancedCount}
+        hasAnyFilter={logic.hasAnyFilter}
+        onClearFilters={logic.clearFilters}
+        statusFilter={logic.statusFilter}
+        categoryFilter={logic.categoryFilter}
+        warehouseFilter={logic.warehouseFilter}
+        onStatusChange={logic.setStatusFilter}
+        onCategoryChange={logic.setCategoryFilter}
+        onWarehouseChange={logic.setWarehouseFilter}
+        categoryOptionsData={logic.categoryOptionsData}
+        categoriesLoading={logic.categoriesLoading}
+        categoriesError={logic.categoriesError}
+        onRefetchCategories={logic.refetchCategories}
+        warehouseOptionsData={logic.warehouseOptionsData}
+        warehousesLoading={logic.warehousesLoading}
+        warehousesError={logic.warehousesError}
+        onRefetchWarehouses={logic.refetchWarehouses}
       />
 
       <ProductTable
@@ -97,7 +78,7 @@ export default function ProductsPage() {
         onRetry={logic.refetch}
         onClearFilters={logic.clearFilters}
         pageIndex={logic.page}
-        pageSize={PAGE_SIZE}
+        pageSize={PRODUCTS_PAGE_SIZE}
         page={logic.page}
         totalElements={logic.totalElements}
         totalPages={logic.serverTotalPages}
@@ -107,18 +88,10 @@ export default function ProductsPage() {
         onNextPage={logic.handleNextPage}
       />
 
-      <DeleteConfirmDialog
+      <ProductDeleteDialog
         open={logic.isDeleteDialogOpen}
         onOpenChange={logic.setIsDeleteDialogOpen}
-        onConfirm={async () => {
-          try {
-            if (logic.deleteTarget?.id) {
-              await deleteProduct(logic.deleteTarget.id).unwrap();
-            }
-          } catch (err) {
-            console.error("Xóa sản phẩm thất bại:", err);
-          }
-        }}
+        onConfirm={logic.handleConfirmDelete}
         itemName={logic.deleteTarget?.name}
       />
     </div>

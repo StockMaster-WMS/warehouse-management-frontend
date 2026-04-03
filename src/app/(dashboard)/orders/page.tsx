@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import {
   useOrdersPageLogic,
-  OrdersFiltersPanel,
+  OrdersSearchSection,
   OrdersLookupBar,
   OrdersTable,
 } from "@/components/features/orders";
@@ -32,41 +30,25 @@ export default function OrderPage() {
         }
       />
 
-      <SearchToolbar
-        placeholder="Tìm theo số đơn, khách hàng, địa chỉ..."
-        value={logic.searchInput}
-        onValueChange={(value) => {
+      <OrdersSearchSection
+        searchInput={logic.searchInput}
+        onSearchChange={(value) => {
           logic.setSearchInput(value);
           logic.setPage(0);
         }}
-        right={
-          <AdvancedFilterActions
-            open={logic.advancedOpen}
-            onToggle={() => logic.setAdvancedOpen((v) => !v)}
-            activeCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
-        filters={
-          <OrdersFiltersPanel
-            open={logic.advancedOpen}
-            advancedCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            statusFilter={logic.statusFilter}
-            onStatusChange={(value) => {
-              logic.setStatusFilter(value);
-              logic.setPage(0);
-            }}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
+        advancedOpen={logic.advancedOpen}
+        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+        advancedCount={logic.advancedCount}
+        hasAnyFilter={logic.hasAnyFilter}
+        statusFilter={logic.statusFilter}
+        onStatusChange={(value) => {
+          logic.setStatusFilter(value);
+          logic.setPage(0);
+        }}
+        onClearFilters={() => {
+          logic.clearFilters();
+          logic.setAdvancedOpen(false);
+        }}
       />
 
       <OrdersLookupBar
