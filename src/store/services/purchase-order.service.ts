@@ -474,9 +474,13 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         ...r,
         data: normalizeLocationList(r.data),
       }),
-      providesTags: (_result, _error, arg) => [
-        { type: "Location", id: `WH-${arg.warehouseId}` },
-      ],
+      providesTags: (_result, _error, arg) => {
+        const warehouseId = arg?.warehouseId?.trim();
+        return [
+          { type: "Location", id: "LIST" },
+          { type: "Location", id: warehouseId ? `WH-${warehouseId}` : "WH-ALL" },
+        ];
+      },
     }),
   }),
 });
