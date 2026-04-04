@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductTableRow } from "./ProductTableRow";
+import { ProductPagination } from "./ProductPagination";
 import { Plus } from "lucide-react";
 import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
@@ -30,6 +31,13 @@ interface ProductTableProps {
     onClearFilters: () => void;
     pageIndex: number;
     pageSize: number;
+    page: number;
+    totalElements: number;
+    totalPages: number;
+    canGoPrev: boolean;
+    canGoNext: boolean;
+    onPrevPage: () => void;
+    onNextPage: () => void;
 }
 
 function ProductTableSkeleton() {
@@ -84,6 +92,13 @@ export function ProductTable({
     onClearFilters,
     pageIndex,
     pageSize,
+    page,
+    totalElements,
+    totalPages,
+    canGoPrev,
+    canGoNext,
+    onPrevPage,
+    onNextPage,
 }: ProductTableProps) {
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -203,6 +218,18 @@ export function ProductTable({
                     </TableBody>
                 </Table>
             </div>
+
+            <ProductPagination
+                page={page}
+                totalElements={totalElements}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                canGoPrev={canGoPrev}
+                canGoNext={canGoNext}
+                isFetching={isFetching}
+                onPrevPage={onPrevPage}
+                onNextPage={onNextPage}
+            />
         </div>
     );
 }

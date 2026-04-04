@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import {
   useOrdersPageLogic,
-  OrdersFiltersPanel,
+  OrdersSearchSection,
   OrdersLookupBar,
   OrdersTable,
-  OrdersPaginationFooter,
 } from "@/components/features/orders";
 
 export default function OrderPage() {
@@ -33,41 +30,25 @@ export default function OrderPage() {
         }
       />
 
-      <SearchToolbar
-        placeholder="Tìm theo số đơn, khách hàng, địa chỉ..."
-        value={logic.searchInput}
-        onValueChange={(value) => {
+      <OrdersSearchSection
+        searchInput={logic.searchInput}
+        onSearchChange={(value) => {
           logic.setSearchInput(value);
           logic.setPage(0);
         }}
-        right={
-          <AdvancedFilterActions
-            open={logic.advancedOpen}
-            onToggle={() => logic.setAdvancedOpen((v) => !v)}
-            activeCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
-        filters={
-          <OrdersFiltersPanel
-            open={logic.advancedOpen}
-            advancedCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            statusFilter={logic.statusFilter}
-            onStatusChange={(value) => {
-              logic.setStatusFilter(value);
-              logic.setPage(0);
-            }}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
+        advancedOpen={logic.advancedOpen}
+        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+        advancedCount={logic.advancedCount}
+        hasAnyFilter={logic.hasAnyFilter}
+        statusFilter={logic.statusFilter}
+        onStatusChange={(value) => {
+          logic.setStatusFilter(value);
+          logic.setPage(0);
+        }}
+        onClearFilters={() => {
+          logic.clearFilters();
+          logic.setAdvancedOpen(false);
+        }}
       />
 
       <OrdersLookupBar
@@ -87,16 +68,10 @@ export default function OrderPage() {
         error={logic.error}
         onRetry={logic.refetch}
         onClearFilters={logic.clearFilters}
-      />
-
-      <OrdersPaginationFooter
-        rowsCount={logic.rows.length}
-        page={logic.page}
         totalElements={logic.totalElements}
         totalPages={logic.totalPages}
         canGoPrev={logic.canGoPrev}
         canGoNext={logic.canGoNext}
-        isFetching={logic.isFetching}
         onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
         onNextPage={() => logic.setPage((p) => p + 1)}
       />

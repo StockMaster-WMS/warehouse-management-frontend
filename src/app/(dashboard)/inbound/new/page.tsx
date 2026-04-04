@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import {
   AlertCircle,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   Filter,
   Loader2,
@@ -38,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 import {
@@ -251,49 +250,22 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           </Table>
         </div>
 
-        {/* Pagination footer */}
-        <div className="border-t border-slate-100 dark:border-slate-800">
-          <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-slate-500">
-              {isLoading ? (
-                <span>Đang tải danh sách…</span>
-              ) : isError ? (
-                <span className="text-rose-600 dark:text-rose-400">
-                  Không tải được dữ liệu.
-                </span>
-              ) : (
-                <span>
-                  Hiển thị {rows.length}/{totalElements} đơn
-                  {totalPages > 1 ? ` · Trang ${page + 1}/${totalPages}` : ""}
-                </span>
-              )}
-            </div>
-            {totalPages > 1 ? (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page === 0 || isFetching}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Trước
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages - 1 || isFetching}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Sau
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <PaginationFooter
+          itemLabel="đơn"
+          rowsCount={rows.length}
+          page={page}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          canGoPrev={page > 0}
+          canGoNext={totalPages > 0 && page < totalPages - 1}
+          isLoading={isLoading}
+          isError={isError}
+          isFetching={isFetching}
+          errorText="Không tải được dữ liệu."
+          onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => setPage((p) => p + 1)}
+          pageSize={20}
+        />
       </div>
     </div>
   );
