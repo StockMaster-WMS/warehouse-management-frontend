@@ -20,6 +20,7 @@ import { ProductFormField, useProductEditForm } from "@/components/features/prod
 import { getProductCategoryDisplayName } from "@/lib/product-display";
 import { AlertCircle } from "lucide-react";
 import { Controller } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
 
 export default function EditProductPage({
   params: paramsPromise,
@@ -214,7 +215,7 @@ export default function EditProductPage({
             </div>
           </div>
 
-          {/* Khối 2: Quy cách và kích thước */}
+          {/* Khối 2: Quy cách và vận hành */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
               <Ruler className="h-4 w-4 text-indigo-600" />
@@ -222,43 +223,90 @@ export default function EditProductPage({
                 Quy cách & Vận chuyển
               </h3>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <ProductFormField label="Dài (cm)" htmlFor="length" error={errors.lengthCm?.message}>
-                <Input
-                  id="length"
-                  type="number"
-                  placeholder="0"
-                  {...register("lengthCm")}
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                />
-              </ProductFormField>
-              <ProductFormField label="Rộng (cm)" htmlFor="width" error={errors.widthCm?.message}>
-                <Input
-                  id="width"
-                  type="number"
-                  placeholder="0"
-                  {...register("widthCm")}
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                />
-              </ProductFormField>
-              <ProductFormField label="Cao (cm)" htmlFor="height" error={errors.heightCm?.message}>
-                <Input
-                  id="height"
-                  type="number"
-                  placeholder="0"
-                  {...register("heightCm")}
-                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                />
-              </ProductFormField>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ProductFormField label="Nặng (kg)" htmlFor="weight" error={errors.weightKg?.message}>
                 <Input
                   id="weight"
                   type="number"
+                  step="any"
                   placeholder="0"
                   {...register("weightKg")}
                   className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                 />
               </ProductFormField>
+              <ProductFormField label="Thể tích (cm³)" htmlFor="volume-cm3" error={errors.volumeCm3?.message}>
+                <Input
+                  id="volume-cm3"
+                  type="number"
+                  step="any"
+                  placeholder="0"
+                  {...register("volumeCm3")}
+                  className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                />
+              </ProductFormField>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Controller
+                name="isLotTracked"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Theo dõi lô</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+              <Controller
+                name="isExpiryTracked"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Theo dõi hạn dùng</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+              <Controller
+                name="isFrozen"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Hàng đông lạnh</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+              <Controller
+                name="isFragile"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Dễ vỡ</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+              <Controller
+                name="isHazmat"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Hàng nguy hiểm</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+              <Controller
+                name="isHeavy"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+                    <span className="text-sm text-slate-700">Hàng nặng</span>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
             </div>
           </div>
         </div>

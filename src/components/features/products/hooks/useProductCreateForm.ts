@@ -23,11 +23,15 @@ export function useProductCreateForm() {
             name: "",
             category: "",
             baseUnit: "cai",
-            lengthCm: "",
-            widthCm: "",
-            heightCm: "",
             weightKg: "",
+            volumeCm3: "",
             minStock: "5",
+            isLotTracked: false,
+            isExpiryTracked: false,
+            isFrozen: false,
+            isFragile: false,
+            isHazmat: false,
+            isHeavy: false,
         },
     });
 
@@ -44,15 +48,20 @@ export function useProductCreateForm() {
         setSubmitMessage("");
         try {
             await createProduct({
-                barcodeEan13: formValues.barcode?.trim() || "",
+                barcodeEan13: formValues.barcode?.trim() || undefined,
                 name: formValues.name.trim(),
                 categoryId: formValues.category.trim(),
                 primarySupplierId: null,
                 baseUnit: formValues.baseUnit.trim(),
-                weightKg: formValues.weightKg ? Number(formValues.weightKg) : 0,
-                lengthCm: formValues.lengthCm ? Number(formValues.lengthCm) : 0,
-                widthCm: formValues.widthCm ? Number(formValues.widthCm) : 0,
-                heightCm: formValues.heightCm ? Number(formValues.heightCm) : 0,
+                weightKg: formValues.weightKg ? Number(formValues.weightKg) : null,
+                volumeCm3: formValues.volumeCm3 ? Number(formValues.volumeCm3) : null,
+                minStockQty: formValues.minStock ? Number(formValues.minStock) : 0,
+                isLotTracked: Boolean(formValues.isLotTracked),
+                isExpiryTracked: Boolean(formValues.isExpiryTracked),
+                isFrozen: Boolean(formValues.isFrozen),
+                isFragile: Boolean(formValues.isFragile),
+                isHazmat: Boolean(formValues.isHazmat),
+                isHeavy: Boolean(formValues.isHeavy),
             }).unwrap();
             setSubmitMessage("Tạo sản phẩm thành công.");
             toast.success("Đã tạo sản phẩm mới");
