@@ -1,16 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useGetCategoriesQuery } from "@/store/services/category.service";
+import {
+  useDeleteCategoryMutation,
+  useGetCategoriesQuery,
+} from "@/store/services/category.service";
+import { apiErrMessage } from "@/types/api";
 import type { Category } from "@/types/category";
+import { toast } from "sonner";
+
+type CategoryDeleteItem = {
+  id: string;
+  name: string;
+};
 
 export function useCategoriesPageLogic() {
   const [query, setQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState("");
+  const [itemToDelete, setItemToDelete] = useState<CategoryDeleteItem | null>(null);
 
   const { data, error, isLoading, isFetching, refetch } = useGetCategoriesQuery();
+  const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const categories = useMemo(() => data?.data?.content ?? [], [data]);
 
   const categoriesById = useMemo(
@@ -128,6 +139,23 @@ export function useCategoriesPageLogic() {
     });
   }, []);
 
+  const prepareDelete = useCallback((category: Category) => {
+    setItemToDelete({ id: category.id, name: category.name });
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!itemToDelete?.id) return;
+
+    try {
+      await deleteCategory(itemToDelete.id).unwrap();
+      toast.success(`Đã xóa nhóm hàng \"${itemToDelete.name}\"`);
+      setItemToDelete(null);
+    } catch (deleteError) {
+      toast.error(apiErrMessage(deleteError, "Không thể xóa nhóm hàng. Vui lòng thử lại."));
+    }
+  }, [deleteCategory, itemToDelete]);
+
   const clearQuery = useCallback(() => setQuery(""), []);
 
   return {
@@ -148,5 +176,8 @@ export function useCategoriesPageLogic() {
     setIsDeleteDialogOpen,
     itemToDelete,
     setItemToDelete,
+    prepareDelete,
+    confirmDelete,
+    isDeleting,
   };
 }

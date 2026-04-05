@@ -18,8 +18,10 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useCategoryEditForm } from "@/components/features/categories";
-import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import {
+  CategoryTreeSelectItems,
+  useCategoryEditForm,
+} from "@/components/features/categories";
 
 export default function EditCategoryPage({
   params: paramsPromise,

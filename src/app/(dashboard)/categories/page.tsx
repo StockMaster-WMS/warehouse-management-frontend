@@ -50,17 +50,14 @@ export default function CategoriesPage() {
         error={logic.error}
         onRetry={logic.refetch}
         onToggleExpanded={logic.toggleExpanded}
-        onDeleteCategory={(category) => {
-          logic.setItemToDelete(category.name);
-          logic.setIsDeleteDialogOpen(true);
-        }}
+        onDeleteCategory={logic.prepareDelete}
       />
 
       <CategoryDeleteDialog
         open={logic.isDeleteDialogOpen}
         onOpenChange={logic.setIsDeleteDialogOpen}
-        itemName={logic.itemToDelete}
-        onConfirm={() => logic.setIsDeleteDialogOpen(false)}
+        itemName={logic.itemToDelete?.name}
+        onConfirm={logic.confirmDelete}
       />
     </div>
   );
