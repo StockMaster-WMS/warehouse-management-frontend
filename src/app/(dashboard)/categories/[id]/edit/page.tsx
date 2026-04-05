@@ -1,12 +1,9 @@
 "use client";
 
-import { ReactNode, use, useEffect, useMemo, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { ReactNode, use } from "react";
+import { Controller } from "react-hook-form";
 import Link from "next/link";
 import { ArrowLeft, Save, Tag } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,21 +18,8 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import {
-  useGetCategoriesQuery,
-  useGetCategoryByIdQuery,
-  useUpdateCategoryMutation,
-} from "@/store/services/category.service";
+import { useCategoryEditForm } from "@/components/features/categories";
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-import { apiErrMessage } from "@/types/api";
-
-const categoryEditSchema = z.object({
-  code: z.string(),
-  name: z.string().trim().min(1, "Tên nhóm hàng là bắt buộc."),
-  parentId: z.string(),
-  isActive: z.boolean(),
-});
-type CategoryEditFormData = z.infer<typeof categoryEditSchema>;
 
 export default function EditCategoryPage({
   params: paramsPromise,
@@ -45,126 +29,29 @@ export default function EditCategoryPage({
   const params = use(paramsPromise);
   const { id } = params;
 
-  const { data, error, isLoading, refetch } = useGetCategoryByIdQuery(id);
-  const {
-    data: allCategoriesData,
-    isLoading: isLoadingCategories,
-    error: categoriesError,
-    refetch: refetchCategories,
-  } = useGetCategoriesQuery();
-  const allCategories = allCategoriesData?.data?.content ?? [];
-
-  const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
-
   const {
     register,
     handleSubmit,
     control,
-    watch,
-    reset,
     formState: { errors },
-  } = useForm<CategoryEditFormData>({
-    resolver: zodResolver(categoryEditSchema),
-    defaultValues: { code: "", name: "", parentId: "", isActive: true },
-  });
-
-  const [submitMessage, setSubmitMessage] = useState("");
-
-  useEffect(() => {
-    if (!data?.data) return;
-    const c = data.data;
-    reset({
-      code: c.code ?? "",
-      name: c.name ?? "",
-      parentId: c.parentId ?? "",
-      isActive: Boolean(c.isActive),
-    });
-  }, [data, reset]);
-
-  const categoriesById = useMemo(() => {
-    return new Map(allCategories.map((c) => [c.id, c] as const));
-  }, [allCategories]);
-
-  const watchedCode = watch("code");
-  const watchedParentId = watch("parentId");
-  const watchedName = watch("name");
-
-  const codeUpper = useMemo(() => watchedCode.trim().toUpperCase(), [watchedCode]);
-  const parentCategory = watchedParentId ? categoriesById.get(watchedParentId) ?? null : null;
-
-  const computedLevel = useMemo(() => {
-    if (!parentCategory) return 0;
-    return (parentCategory.level ?? 0) + 1;
-  }, [parentCategory]);
-
-  const computedPath = useMemo(() => {
-    if (!codeUpper) return "";
-    if (!parentCategory) return codeUpper;
-    const parentPath = parentCategory.path ?? "";
-    return parentPath ? `${parentPath}/${codeUpper}` : codeUpper;
-  }, [codeUpper, parentCategory]);
-
-  const descendantIds = useMemo(() => {
-    if (!id) return new Set<string>();
-    const childrenByParentId = new Map<string, typeof allCategories>();
-    allCategories.forEach((cat) => {
-      const p = cat.parentId ?? "";
-      const prev = childrenByParentId.get(p) ?? [];
-      prev.push(cat);
-      childrenByParentId.set(p, prev);
-    });
-
-    const out = new Set<string>();
-    const stack: string[] = [id];
-    while (stack.length > 0) {
-      const cur = stack.pop();
-      if (!cur) continue;
-      const children = childrenByParentId.get(cur) ?? [];
-      for (const ch of children) {
-        if (ch.id === id) continue;
-        if (out.has(ch.id)) continue;
-        out.add(ch.id);
-        stack.push(ch.id);
-      }
-    }
-    out.delete(id);
-    return out;
-  }, [allCategories, id]);
-
-  const parentSelectExcludeIds = useMemo(() => {
-    const s = new Set<string>([id]);
-    for (const x of descendantIds) s.add(x);
-    return s;
-  }, [id, descendantIds]);
-
-  const isSaveDisabled = useMemo(() => {
-    return isUpdating || !watchedName.trim();
-  }, [isUpdating, watchedName]);
-
-  const onValid = async (formData: CategoryEditFormData) => {
-    setSubmitMessage("");
-
-    try {
-      await updateCategory({
-        id,
-        body: {
-          code: codeUpper,
-          name: formData.name.trim(),
-          parentId: formData.parentId ? formData.parentId : null,
-          path: computedPath,
-          level: computedLevel,
-          isActive: formData.isActive,
-        },
-      }).unwrap();
-
-      setSubmitMessage("Cập nhật nhóm hàng thành công.");
-      toast.success("Đã cập nhật nhóm hàng");
-    } catch (submitError) {
-      const msg = apiErrMessage(submitError, "Không thể cập nhật nhóm hàng. Vui lòng thử lại.");
-      setSubmitMessage(msg);
-      toast.error(msg);
-    }
-  };
+    submitMessage,
+    onValid,
+    onInvalid,
+    data,
+    error,
+    isLoading,
+    refetch,
+    allCategories,
+    categoriesById,
+    isLoadingCategories,
+    categoriesError,
+    refetchCategories,
+    computedLevel,
+    computedPath,
+    parentSelectExcludeIds,
+    isSaveDisabled,
+    isUpdating,
+  } = useCategoryEditForm(id);
 
   if (isLoading) {
     return (
@@ -226,7 +113,7 @@ export default function EditCategoryPage({
 
       <form
         className="grid grid-cols-1 gap-6 md:grid-cols-3"
-        onSubmit={handleSubmit(onValid)}
+        onSubmit={handleSubmit(onValid, onInvalid)}
         noValidate
       >
         <div className="space-y-6 md:col-span-2">
