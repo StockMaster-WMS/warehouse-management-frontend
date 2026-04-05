@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCategoryCreateForm } from "@/components/features/categories";
-import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
+import {
+  CategoryTreeSelectItems,
+  useCategoryCreateForm,
+} from "@/components/features/categories";
 
 export default function NewCategoryPage() {
   const {

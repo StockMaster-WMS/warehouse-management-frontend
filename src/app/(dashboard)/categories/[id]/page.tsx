@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use } from "react";
 import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -17,10 +17,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useGetCategoriesQuery,
-  useGetCategoryByIdQuery,
-} from "@/store/services/category.service";
+import { useCategoryDetailLogic } from "@/components/features/categories";
 import type { Category } from "@/types/category";
 
 export default function CategoryDetailPage({
@@ -30,27 +27,8 @@ export default function CategoryDetailPage({
 }) {
   const params = use(paramsPromise);
   const { id } = params;
-  const { data, error, isLoading, refetch } = useGetCategoryByIdQuery(id);
-  const { data: allCategoriesData } = useGetCategoriesQuery();
-  const category = data?.data;
-  const allCategories = allCategoriesData?.data?.content ?? [];
-
-  const categoriesById = useMemo(
-    () => new Map(allCategories.map((c) => [c.id, c] as const)),
-    [allCategories],
-  );
-
-  const parentLabel = useMemo(() => {
-    if (!category?.parentId) return "Nhóm gốc (không thuộc nhóm cha)";
-    const p = categoriesById.get(category.parentId);
-    return p ? `${p.name} (${p.code})` : category.parentId;
-  }, [category, categoriesById]);
-
-  const parentResolved = useMemo(() => {
-    if (!category) return true;
-    if (!category.parentId) return true;
-    return categoriesById.has(category.parentId);
-  }, [category, categoriesById]);
+  const { category, error, isLoading, refetch, parentLabel, parentResolved } =
+    useCategoryDetailLogic(id);
 
   return (
     <div className="space-y-6 pb-20">
