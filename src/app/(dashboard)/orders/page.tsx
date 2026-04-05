@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/page-header";
 import {
   useOrdersPageLogic,
   OrdersSearchSection,
-  OrdersLookupBar,
   OrdersTable,
 } from "@/components/features/orders";
 
@@ -50,14 +49,6 @@ export default function OrderPage() {
           logic.setAdvancedOpen(false);
         }}
       />
-
-      <OrdersLookupBar
-        soNumberLookup={logic.soNumberLookup}
-        onSoNumberLookupChange={logic.setSoNumberLookup}
-        lookingUpByNumber={logic.lookingUpByNumber}
-        onOpenOrderBySoNumber={logic.openOrderBySoNumber}
-      />
-
       <OrdersTable
         rows={logic.rows}
         page={logic.page}
