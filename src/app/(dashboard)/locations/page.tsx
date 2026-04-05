@@ -1,10 +1,9 @@
 "use client";
 
-import { AlertCircle, Layers3, Plus, SearchX } from "lucide-react";
+import { Layers3, Plus, SearchX } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
     LocationFormDialog,
@@ -108,44 +107,7 @@ export default function LocationsPage() {
                 warehouses={warehouses}
             />
 
-            {isLocationsLoading ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                        <div
-                            key={`location-skeleton-${index}`}
-                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                        >
-                            <div className="space-y-3">
-                                <Skeleton className="h-5 w-36" />
-                                <Skeleton className="h-4 w-52" />
-                                <Skeleton className="h-4 w-44" />
-                                <div className="grid grid-cols-2 gap-2 pt-1">
-                                    <Skeleton className="h-7 w-full rounded-lg" />
-                                    <Skeleton className="h-7 w-full rounded-lg" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : locationsError ? (
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <EmptyState
-                        icon={AlertCircle}
-                        title="Không thể tải danh sách vị trí"
-                        description={apiErrMessage(locationsError, "Đã xảy ra lỗi khi tải vị trí lưu trữ.")}
-                        action={
-                            <button
-                                type="button"
-                                onClick={() => refetchLocations()}
-                                className="inline-flex h-9 items-center rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                                Thử lại
-                            </button>
-                        }
-                        className="py-10"
-                    />
-                </div>
-            ) : filteredLocations.length === 0 ? (
+            {!isLocationsLoading && !locationsError && filteredLocations.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <EmptyState
                         icon={searchInput.trim() ? SearchX : Layers3}
@@ -164,23 +126,23 @@ export default function LocationsPage() {
                     warehouseNameMap={warehouseNameMap}
                     page={page}
                     totalPages={totalPages}
-                    totalElements={filteredLocations.length}
+                    totalElements={isLocationsLoading || locationsError ? 0 : filteredLocations.length}
                     canGoPrev={canGoPrev}
                     canGoNext={canGoNext}
+                    isLoading={isLocationsLoading}
+                    errorMessage={
+                        locationsError
+                            ? apiErrMessage(locationsError, "Unable to find instance for warehouse-service")
+                            : null
+                    }
                     isFetching={isLocationsFetching}
                     onPrevPage={() => setPage((current) => Math.max(0, current - 1))}
                     onNextPage={() => setPage((current) => current + 1)}
+                    onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}
                 />
             )}
-
-            {warehousesError ? (
-                <p className="text-xs text-amber-600 dark:text-amber-300">
-                    Không thể tải đầy đủ tên kho. Dữ liệu vị trí vẫn hiển thị bình thường.
-                </p>
-            ) : null}
-
             <LocationFormDialog
                 open={isFormOpen}
                 onOpenChange={handleOpenFormChange}
