@@ -184,7 +184,7 @@ export function useLocationsPageLogic() {
                 id: deleteTarget.id,
                 warehouseId: deleteTarget.warehouseId,
             }).unwrap();
-            toast.success(`Đã xóa vị trí ${deleteTarget.code || deleteTarget.name || ""}`);
+            toast.success(`Đã xóa vị trí ${deleteTarget.code || ""}`);
         } catch (err) {
             toast.error(apiErrMessage(err, "Không thể xóa vị trí"));
         } finally {

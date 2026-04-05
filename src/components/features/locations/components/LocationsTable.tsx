@@ -131,14 +131,9 @@ export function LocationsTable({
                                 return (
                                     <TableRow key={location.id}>
                                         <TableCell className="px-3 py-3 text-center align-top">
-                                            <div>
-                                                <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
-                                                    {locationCode}
-                                                </p>
-                                                <p className="mt-0.5 text-xs text-slate-500">
-                                                    {location.name?.trim() || "Chưa đặt tên vị trí"}
-                                                </p>
-                                            </div>
+                                            <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                                                {locationCode}
+                                            </p>
                                         </TableCell>
                                         <TableCell className="px-3 py-3 align-top">
                                             <span className="text-xs text-slate-700 dark:text-slate-200">
@@ -241,9 +236,6 @@ export function LocationsTable({
                                       <div>
                                           <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">
                                               {locationCode}
-                                          </p>
-                                          <p className="mt-1 text-xs text-slate-500">
-                                              {location.name?.trim() || "Chưa đặt tên vị trí"}
                                           </p>
                                       </div>
                                       <Badge variant={location.isActive === false ? "secondary" : "default"}>

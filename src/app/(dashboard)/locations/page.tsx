@@ -160,7 +160,7 @@ export default function LocationsPage() {
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={handleDeleteLocation}
-                itemName={deleteTarget?.code || deleteTarget?.name || ""}
+                itemName={deleteTarget?.code || ""}
                 title="Xóa vị trí"
                 description="Hành động này không thể hoàn tác."
             />

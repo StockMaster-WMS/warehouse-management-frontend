@@ -107,20 +107,6 @@ export function LocationFormDialog({
                             />
                         </div>
 
-                        <div className="space-y-1.5 sm:col-span-2">
-                            <Label>Tên vị trí</Label>
-                            <Input
-                                value={formState.name}
-                                onChange={(e) =>
-                                    setFormState((prev) => ({
-                                        ...prev,
-                                        name: e.target.value,
-                                    }))
-                                }
-                                placeholder="VD: Kệ hàng nhanh"
-                            />
-                        </div>
-
                         <div className="space-y-1.5">
                             <Label>Zone</Label>
                             <Input
