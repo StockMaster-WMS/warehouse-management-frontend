@@ -87,7 +87,7 @@ export function OrderSidebar({
             <Button
               type="button"
               onClick={onMarkPacked}
-              disabled={packing || (status !== "PICKING" && status !== "PICKED")}
+              disabled={packing || status !== "PICKED"}
               variant="outline"
               className="w-full justify-center"
             >

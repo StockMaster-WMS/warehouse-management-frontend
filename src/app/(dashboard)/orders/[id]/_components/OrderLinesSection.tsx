@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { ClipboardList, Loader2, PackagePlus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -39,7 +38,6 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   const [lineProductId, setLineProductId] = useState("");
   const [lineQtyStr, setLineQtyStr] = useState("1");
   const [linePriceStr, setLinePriceStr] = useState("");
-  const [autoAllocatePicking, setAutoAllocatePicking] = useState(true);
   const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
   const [editingLine, setEditingLine] = useState<SoItem | null>(null);
 
@@ -73,8 +71,11 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     {
       productId: lineProductId.trim() || "—",
       warehouseId: salesOrder.warehouseId,
+      expand: "location,warehouse,product",
       page: 0,
       size: 100,
+      sort: "updatedAt",
+      sortDir: "desc",
     },
     { skip: !canQueryLineStock }
   );
@@ -90,7 +91,14 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
   const canQueryProductStockHint = Boolean(lineProductId.trim());
   const { data: productStocksRes, isFetching: productStocksLoading } = useGetStocksQuery(
-    { productId: lineProductId.trim() || "—", page: 0, size: 100 },
+    {
+      productId: lineProductId.trim() || "—",
+      expand: "location,warehouse,product",
+      page: 0,
+      size: 100,
+      sort: "updatedAt",
+      sortDir: "desc",
+    },
     { skip: !canQueryProductStockHint }
   );
   const stockHintByWarehouse = useMemo(() => {
@@ -163,26 +171,23 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
         productId: String(prod.id),
         productSku: String(prod.sku ?? ""),
         orderedQty: qty,
-        autoAllocatePicking,
         ...(unitPrice != null ? { unitPrice } : {}),
       }).unwrap();
       if (!res.success) {
         toast.error(res.message || "Thêm dòng thất bại");
         return;
       }
-      toast.success(
-        autoAllocatePicking ? "Đã thêm dòng và phân bổ picking theo tồn" : "Đã thêm dòng (picking thêm tay sau nếu cần)"
-      );
+      toast.success("Đã thêm dòng");
       setLineProductId("");
       setLineQtyStr("");
       setLinePriceStr("");
     } catch (err) {
       const msg = apiErrMessage(err);
-      const hint =
-        /khả dụng|tồn|picking/i.test(msg) && autoAllocatePicking
-          ? " — Gợi ý: đối chiếu «Tồn tại kho đơn» với màn tồn kho; hoặc tắt tự phân bổ."
-          : "";
-      toast.error(msg + hint);
+      if (msg.includes("Không đủ tồn khả dụng để tự tạo picking")) {
+        toast.error("Không đủ tồn kho");
+        return;
+      }
+      toast.error(msg);
     }
   }
 
@@ -273,19 +278,6 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
             </div>
           </div>
 
-          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-md border border-border bg-background px-3 py-2">
-            <Checkbox
-              checked={autoAllocatePicking}
-              onCheckedChange={(v) => setAutoAllocatePicking(v === true)}
-              disabled={!allowLineMutation}
-              className="mt-0.5"
-              aria-label="Tự phân bổ picking từ tồn kho"
-            />
-            <span className="text-xs leading-snug text-foreground">
-              <span className="font-semibold">Tự phân bổ picking từ tồn</span>
-            </span>
-          </label>
-
           {canQueryLineStock ? (
             <div className="mt-3 rounded-md border border-border bg-card px-3 py-2">
               <p className="text-[11px] font-bold uppercase text-muted-foreground">Tồn tại kho đơn</p>
@@ -298,7 +290,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
               ) : lineStockRows.length === 0 ? (
                 <div className="mt-2 space-y-2">
                   <p className="text-xs text-amber-900 dark:text-amber-100/90">
-                    <span className="font-semibold">Không có tồn</span> cho SP này tại kho đơn — tự phân bổ có thể lỗi.
+                    <span className="font-semibold">Không có tồn</span> cho SP này tại kho đơn.
                   </p>
                   {productStocksLoading ? (
                     <p className="text-[11px] text-slate-500">Đang tìm tồn các kho khác…</p>
@@ -340,7 +332,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                     Khả dụng:{" "}
                     <span className="font-semibold tabular-nums text-slate-900 dark:text-white">{lineStockTotalAvailable}</span>
                   </p>
-                  {autoAllocatePicking && lineOrderQty != null && lineOrderQty > lineStockTotalAvailable ? (
+                  {lineOrderQty != null && lineOrderQty > lineStockTotalAvailable ? (
                     <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
                       Đặt ({lineOrderQty}) &gt; khả dụng ({lineStockTotalAvailable}) — có thể bị từ chối.
                     </p>
@@ -373,7 +365,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
           <div className="mt-3 flex justify-end">
             <Button type="submit" size="sm" disabled={!allowLineMutation || creatingLine}>
               {creatingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Thêm dòng (#{nextLineNumber})
+              Thêm dòng
             </Button>
           </div>
         </form>

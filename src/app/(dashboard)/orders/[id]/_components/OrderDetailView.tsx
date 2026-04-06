@@ -52,11 +52,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                Điều hướng chi tiết đơn xuất
-              </p>
-            </div>
             <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
               {so.status}
             </Badge>
@@ -70,10 +65,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <LayoutGrid className="h-4 w-4 shrink-0" />
                 Tổng quan
-              </span>
-              <span className="text-xs text-slate-500 group-data-[state=active]:text-slate-600 dark:text-slate-400 dark:group-data-[state=active]:text-slate-300">
-                Thông tin chung và thao tác chính
-              </span>
+              </span>   
             </TabsTrigger>
             <TabsTrigger
               value="lines"
@@ -83,9 +75,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
                 <ListChecks className="h-4 w-4 shrink-0" />
                 Dòng hàng
               </span>
-              <span className="text-xs text-slate-500 group-data-[state=active]:text-slate-600 dark:text-slate-400 dark:group-data-[state=active]:text-slate-300">
-                Quản lý từng line của đơn xuất
-              </span>
             </TabsTrigger>
             <TabsTrigger
               value="picking"
@@ -94,9 +83,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <ScanBarcode className="h-4 w-4 shrink-0" />
                 Picking
-              </span>
-              <span className="text-xs text-slate-500 group-data-[state=active]:text-slate-600 dark:text-slate-400 dark:group-data-[state=active]:text-slate-300">
-                Luồng thực thi lấy hàng trong kho
               </span>
             </TabsTrigger>
           </TabsList>
@@ -140,6 +126,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
           <OrderPickingSection
             soItems={soItems}
             salesOrderStatus={so.status}
+            warehouseId={so.warehouseId}
             productsById={productsById}
           />
         </TabsContent>

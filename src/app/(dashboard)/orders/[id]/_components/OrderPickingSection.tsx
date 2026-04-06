@@ -9,10 +9,11 @@ import { OrderItemPickingBlock } from "./OrderItemPickingBlock";
 type OrderPickingSectionProps = {
   soItems: SoItem[];
   salesOrderStatus: string;
+  warehouseId: string;
   productsById: Map<string, Product>;
 };
 
-export function OrderPickingSection({ soItems, salesOrderStatus, productsById }: OrderPickingSectionProps) {
+export function OrderPickingSection({ soItems, salesOrderStatus, warehouseId, productsById }: OrderPickingSectionProps) {
   return (
     <Card className="gap-0 py-0 shadow-sm">
       <CardHeader className="flex flex-row flex-wrap items-start gap-3 pb-3 pt-5">
@@ -34,6 +35,7 @@ export function OrderPickingSection({ soItems, salesOrderStatus, productsById }:
               key={`pick-${l.id}`}
               soItem={l}
               salesOrderStatus={salesOrderStatus}
+              warehouseId={warehouseId}
               productsById={productsById}
             />
           ))
