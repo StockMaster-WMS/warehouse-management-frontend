@@ -8,6 +8,6 @@ export {
 } from "./constants";
 export { formatOrderCreatedAt } from "./utils";
 export { OrdersFiltersPanel } from "./components/OrdersFiltersPanel";
-export { OrdersLookupBar } from "./components/OrdersLookupBar";
+export { OrdersSearchSection } from "./components/OrdersSearchSection";
 export { OrdersTable } from "./components/OrdersTable";
 export { OrdersPaginationFooter } from "./components/OrdersPaginationFooter";

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
+  MapPin,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -68,7 +69,7 @@ const mainItems: MenuItem[] = [
     icon: Truck,
     children: [
       { label: "Đơn xuất", href: "/orders" },
-      { label: "Picking", href: "/picking" },
+      { label: "Lấy hàng", href: "/picking" },
     ],
   },
   {
@@ -87,6 +88,7 @@ const mainItems: MenuItem[] = [
 const secondaryItems: MenuItem[] = [
   { label: "Khách hàng", href: "/customers", icon: Users2 },
   { label: "Nhà cung cấp", href: "/suppliers", icon: Building2 },
+  { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin },
   { label: "Nhật ký hoạt động", href: "/history", icon: History },
 ];
 

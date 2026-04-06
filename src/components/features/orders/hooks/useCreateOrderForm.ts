@@ -9,7 +9,7 @@ import { useCreateSalesOrderMutation } from "@/store/services/order.service";
 import { type AddressValue } from "@/components/features/AddressForm";
 import { newOrderSchema } from "@/components/features/orders/schemas/newOrderSchema";
 
-export type NewOrderFormErrors = Partial<Record<"customerName" | "line1" | "ward" | "city" | "country" | "warehouseId" | "priority", string>>;
+export type NewOrderFormErrors = Partial<Record<"customerName" | "line1" | "ward" | "district" | "city" | "country" | "warehouseId" | "priority", string>>;
 
 export function useCreateOrderForm() {
   const router = useRouter();

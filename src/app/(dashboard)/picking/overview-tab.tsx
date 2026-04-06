@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useMemo, useState } from "react";
+// removed card imports
+import { type PickingItem } from "@/types/picking-item";
 import { StatCard } from "@/components/ui/stat-card";
-import { Package, Archive, CheckCircle2, AlertTriangle, Eye, Search, Filter } from "lucide-react";
+import { Package, Archive, CheckCircle2, Eye, Filter, MapPin, ChevronDown, ChevronRight, Package2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import {
     Table,
     TableBody,
@@ -15,20 +18,30 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 
 import { useGetPickingItemsQuery, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
 
+interface GroupedPicking {
+    soNumber: string;
+    items: PickingItem[];
+    progress: number;
+    totalToPick: number;
+    totalPicked: number;
+    status: "PENDING" | "PARTIAL" | "PICKED";
+}
+
 export function OverviewTab() {
-    const [filter, setFilter] = useState<string>("all");
+    const [filter] = useState<string>("pending");
+    const [searchTerm, setSearchTerm] = useState("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+    const [advancedOpen, setAdvancedOpen] = useState(false);
 
     const { data, isLoading } = useGetPickingItemsQuery({
         status: filter === "all" ? undefined : filter.toUpperCase()
@@ -38,211 +51,444 @@ export function OverviewTab() {
         selectedId as string,
         { skip: !selectedId }
     );
-    const detailItem = detailData?.data;
 
-    const pickingItems = data?.data?.content || [];
+    const { groupedData, stats } = useMemo(() => {
+        const rawItems = data?.data?.content || [];
+        
+        // 1. Calculate Global Stats
+        const pendingCount = rawItems.filter(i => i.status === "PENDING").length;
+        const pickedCount = rawItems.filter(i => i.status === "PICKED").length;
+        const uniqueSOsCount = new Set(rawItems.map(i => i.salesOrderNumber || i.soItemId)).size;
+
+        // 2. Filter by search
+        let filtered = [...rawItems];
+        if (searchTerm) {
+            const s = searchTerm.toLowerCase();
+            filtered = filtered.filter(item => 
+                item.salesOrderNumber?.toLowerCase().includes(s) ||
+                item.productSku?.toLowerCase().includes(s) ||
+                item.productName?.toLowerCase().includes(s) ||
+                item.locationCode?.toLowerCase().includes(s) ||
+                item.id.toLowerCase().includes(s)
+            );
+        }
+
+        // 3. Group and Consolidate
+        const groups: Record<string, GroupedPicking> = {};
+        
+        filtered.forEach(item => {
+            const soKey = item.salesOrderNumber || item.soItemId || "Unknown SO";
+            if (!groups[soKey]) {
+                groups[soKey] = {
+                    soNumber: soKey,
+                    items: [],
+                    progress: 0,
+                    totalToPick: 0,
+                    totalPicked: 0,
+                    status: "PENDING"
+                };
+            }
+            
+            const group = groups[soKey];
+            
+            // CONSOLIDATION LOGIC: Find existing item with same Product + Location in this SO
+            const existing = group.items.find(i => 
+                i.productId === item.productId && 
+                (i.locationId === item.locationId || i.locationCode === item.locationCode)
+            );
+
+            if (existing) {
+                existing.qtyToPick += item.qtyToPick;
+                existing.qtyPicked = (existing.qtyPicked || 0) + (item.qtyPicked || 0);
+            } else {
+                group.items.push({ ...item });
+            }
+        });
+
+        // 4. Calculate group progress and sort items by pick path
+        const result: GroupedPicking[] = Object.values(groups).map(g => {
+            let totalToPickGroup = 0;
+            let totalPickedGroup = 0;
+            
+            g.items.forEach(i => {
+                totalToPickGroup += i.qtyToPick;
+                totalPickedGroup += (i.qtyPicked || 0);
+            });
+
+            // Sort internal items by smart path
+            g.items.sort((a, b) => {
+                const zoneA = a.zone || "";
+                const zoneB = b.zone || "";
+                if (zoneA !== zoneB) return zoneA.localeCompare(zoneB);
+                const aisleA = a.aisle || "";
+                const aisleB = b.aisle || "";
+                if (aisleA !== aisleB) return aisleA.localeCompare(aisleB);
+                return (a.locationCode || "").localeCompare(b.locationCode || "");
+            });
+
+            const progress = totalToPickGroup > 0 ? (totalPickedGroup / totalToPickGroup) * 100 : 0;
+            const status = progress === 0 ? "PENDING" : progress === 100 ? "PICKED" : "PARTIAL";
+
+            return { ...g, totalToPick: totalToPickGroup, totalPicked: totalPickedGroup, progress, status };
+        });
+
+        // Sort groups: Partial/Pending first
+        result.sort((a, b) => {
+            if (a.status !== b.status) {
+                if (a.status === "PARTIAL") return -1;
+                if (b.status === "PARTIAL") return 1;
+                if (a.status === "PENDING") return -1;
+                return 1;
+            }
+            return a.soNumber.localeCompare(b.soNumber);
+        });
+
+        return { 
+            groupedData: result, 
+            stats: { pending: pendingCount, picked: pickedCount, sos: uniqueSOsCount } 
+        };
+    }, [data, searchTerm]);
+
+    const toggleGroup = (so: string) => {
+        setExpandedGroups(prev => ({ ...prev, [so]: prev[so] === false ? true : false }));
+    };
+
+    const detailItem = detailData?.data;
 
     return (
         <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
-                    label="Đơn đang chờ lấy"
-                    value="12 Wave"
+                    label="Hàng chờ lấy"
+                    value={isLoading ? "..." : `${stats.pending}`}
                     icon={Package}
-                    trend="Đã xác nhận từ Sales"
-                    accentClassName="text-blue-500 bg-blue-100"
+                    description={`Tổng ${stats.sos} đơn hàng`}
+                    iconClassName="text-blue-500"
+                    showAccentBar={false}
                 />
                 <StatCard
                     label="Đang thực hiện"
-                    value="5 Wave"
+                    value={stats.pending > 0 ? "Bận rộn" : "Sẵn sàng"}
                     icon={Archive}
-                    trend="Nhân viên đang pick"
-                    accentClassName="text-amber-500 bg-amber-100"
+                    description={stats.pending > 0 ? "Công việc đang xử lý" : "Không có hàng tồn đọng"}
+                    iconClassName="text-amber-500"
+                    showAccentBar={false}
                 />
                 <StatCard
-                    label="Đã hoàn tất"
-                    value="48 Đơn"
+                    label="Hàng đã lấy"
+                    value={`${stats.picked}`}
                     icon={CheckCircle2}
-                    trend="Sẵn sàng đóng gói"
-                    accentClassName="text-emerald-500 bg-emerald-100"
+                    description="Sẵn sàng đóng gói"
+                    iconClassName="text-emerald-500"
+                    showAccentBar={false}
                 />
                 <StatCard
-                    label="Có ngoại lệ"
-                    value="2 Lỗi"
-                    icon={AlertTriangle}
-                    trend="Cần Supervisor check"
-                    accentClassName="text-rose-500 bg-rose-100"
+                    label="Tổng đơn hàng"
+                    value={`${stats.sos} đơn`}
+                    icon={Filter}
+                    description="Cần xử lý trong hôm nay"
+                    iconClassName="text-indigo-500"
+                    showAccentBar={false}
                 />
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col gap-4 sm:flex-row border-b pb-4 mt-2">
-                        <div className="flex items-center gap-2 flex-1">
-                            <div className="relative w-full max-w-sm">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                                <Input placeholder="Tìm kiếm Wave, SO, Tên nhân viên..." className="pl-9" />
-                            </div>
-                            <Button variant="outline" size="icon">
-                                <Filter className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                        <Tabs defaultValue="all" className="w-100" onValueChange={setFilter}>
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="all">Tất cả</TabsTrigger>
-                                <TabsTrigger value="pending">Chờ Pick</TabsTrigger>
-                                <TabsTrigger value="picked">Hoàn tất</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-0 p-0 overflow-x-auto">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 flex flex-col">
+                <SearchToolbar
+                    noContainer
+                    placeholder="Tìm theo đơn hàng, SKU, vị trí..."
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                    right={
+                        <AdvancedFilterActions
+                            open={advancedOpen}
+                            onToggle={() => setAdvancedOpen(!advancedOpen)}
+                            activeCount={0}
+                            hasAnyFilter={false}
+                            onClear={() => setSearchTerm("")}
+                        />
+                    }
+                />
+                
+                <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-slate-50/50">
+                        <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
                             <TableRow>
-                                <TableHead className="pl-4">Mã Picking</TableHead>
-                                <TableHead>Đơn Bán (SO)</TableHead>
-                                <TableHead>Sản phẩm</TableHead>
-                                <TableHead>Vị trí kho</TableHead>
-                                <TableHead>Tiến độ (Qty)</TableHead>
-                                <TableHead>Trạng thái</TableHead>
-                                <TableHead className="text-right pr-4">Tác vụ</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">Đang tải dữ liệu...</TableCell>
+                                    <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"></TableHead>
+                                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Chi tiết Pick</TableHead>
+                                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vị trí kho</TableHead>
+                                    <TableHead className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Tiến độ</TableHead>
+                                    <TableHead className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Trạng thái</TableHead>
+                                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pr-6 w-[120px]">Thao tác</TableHead>
                                 </TableRow>
-                            ) : pickingItems.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">Không có dữ liệu picking</TableCell>
-                                </TableRow>
-                            ) : pickingItems.map((row) => (
-                                <TableRow key={row.id}>
-                                    <TableCell className="pl-4 font-medium">{row.id.slice(0, 8)}...</TableCell>
-                                    <TableCell className="text-slate-500">{row.salesOrderNumber || row.soItemId}</TableCell>
-                                    <TableCell>
-                                        <div className="font-medium text-sm">{row.productSku || row.productId}</div>
-                                        <div className="text-xs text-slate-500 line-clamp-1">{row.productName}</div>
-                                    </TableCell>
-                                    <TableCell>{row.locationCode || row.locationName || row.locationId}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium">{row.qtyPicked || 0}/{row.qtyToPick}</span>
-                                            <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
-                                                <div
-                                                    className={`h-full ${row.status === "PICKED" ? "bg-emerald-500" : "bg-blue-500"}`}
-                                                    style={{ width: `${Math.round(((row.qtyPicked || 0) / row.qtyToPick) * 100)}%` }}
-                                                />
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-20 text-slate-500">
+                                            <div className="flex flex-col items-center gap-2 animate-pulse">
+                                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+                                                <span className="font-semibold text-xs uppercase tracking-widest">Đang tải dữ liệu...</span>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant="outline"
-                                            className={
-                                                row.status === "PICKED" ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-                                                "border-blue-200 bg-blue-50 text-blue-700"
-                                            }
+                                        </TableCell>
+                                    </TableRow>
+                                ) : groupedData.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-20">
+                                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                <Package2 className="h-10 w-10 opacity-20" />
+                                                <span className="text-sm font-medium">Không tìm thấy dữ liệu picking</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : groupedData.map((group) => (
+                                    <React.Fragment key={group.soNumber}>
+                                        <TableRow 
+                                            className="group cursor-pointer bg-slate-50/50 hover:bg-slate-50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40"
+                                            onClick={() => toggleGroup(group.soNumber)}
                                         >
-                                            {row.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right pr-4">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="h-8 gap-1 text-indigo-600"
-                                            onClick={() => setSelectedId(row.id)}
-                                        >
-                                            <Eye className="h-4 w-4" /> Chi tiết
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                            <TableCell className="pl-4">
+                                                {expandedGroups[group.soNumber] === true ? <ChevronDown className="h-4 w-4 text-indigo-500" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                                            </TableCell>
+                                            <TableCell colSpan={2} className="py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-400 uppercase leading-none mb-1">Đơn hàng</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                                                                {group.soNumber}
+                                                            </span>
+                                                            <Badge variant="outline" className="text-[9px] h-4 px-1 font-bold bg-slate-100/50 text-slate-500 border-slate-200">
+                                                                {group.items.length} SKU
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-black tabular-nums">{group.totalPicked}/{group.totalToPick}</span>
+                                                        <span className={cn(
+                                                            "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                                            group.progress === 100 ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700 font-black"
+                                                        )}>
+                                                            {Math.round(group.progress)}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                                        <div
+                                                            className={cn("h-full transition-all duration-700", group.progress === 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                                                            style={{ width: `${group.progress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge
+                                                    className={cn(
+                                                        "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm border-none",
+                                                        group.status === "PICKED" 
+                                                            ? "bg-emerald-600 text-white" 
+                                                            : group.status === "PARTIAL"
+                                                                ? "bg-amber-400 text-white"
+                                                                : "bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                                                    )}
+                                                >
+                                                    {group.status === "PICKED" ? "Hoàn tất" : group.status === "PARTIAL" ? "Đang lấy" : "Chờ lấy"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right pr-6">
+                                                <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-600">
+                                                    {expandedGroups[group.soNumber] === true ? "Thu gọn" : "Xem dòng"}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Ngoại lệ & Lỗi (Exceptions)</CardTitle>
-                    <CardDescription>Lỗi báo cáo từ máy Scan: Short Pick, Wrong Location, v.v.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex h-32 items-center justify-center rounded-lg border border-dashed text-sm text-slate-500">
-                        [Danh sách chờ xử lý từ Quản lý kho]
-                    </div>
-                </CardContent>
-            </Card>
+                                        {expandedGroups[group.soNumber] !== false && group.items.map((item) => (
+                                            <TableRow 
+                                                key={item.id} 
+                                                className="group/row transition-all animate-in fade-in slide-in-from-left-2 duration-300 odd:bg-white even:bg-slate-50/20 hover:bg-indigo-50/30 dark:odd:bg-slate-900/40 dark:even:bg-slate-900/20"
+                                            >
+                                                <TableCell className="pl-6"></TableCell>
+                                                <TableCell className="py-4 pl-4">
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[13px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{item.productSku}</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-medium text-slate-500 mt-0.5 line-clamp-1 max-w-[250px]">{item.productName}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 font-mono text-xs font-black ring-1 ring-inset ring-indigo-200/40">
+                                                            <MapPin className="h-3 w-3" />
+                                                            {item.locationCode}
+                                                        </div>
+                                                        {item.zone && <span className="text-[10px] font-bold text-slate-400 mt-1 pl-1 capitalize">{item.zone} - {item.aisle}</span>}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-xs font-bold tabular-nums text-slate-600 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full ring-1 ring-slate-200 shadow-sm">
+                                                            {item.qtyPicked || 0} / {item.qtyToPick}
+                                                        </span>
+                                                        <span className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-tighter">{item.baseUnit}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center text-[10px] font-black uppercase text-slate-400 tracking-tighter">
+                                                    {item.status === "PENDING" ? "Cần lấy" : "Đã lấy"}
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className="h-8 w-8 rounded-lg text-indigo-600 hover:text-indigo-700 hover:bg-white shadow-sm ring-1 ring-indigo-100"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedId(item.id);
+                                                        }}
+                                                    >
+                                                        <Eye className="h-4 w-4" /> 
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </React.Fragment>
+                                ))}
+                            </TableBody>
+                    </Table>
+                </div>
+            </div>
 
             <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-                <DialogContent className="sm:max-w-125">
+                <DialogContent className="sm:max-w-125 rounded-2xl border-none shadow-2xl">
                     <DialogHeader>
-                        <DialogTitle>Chi tiết Picking Line</DialogTitle>
-                        <DialogDescription>
-                            {selectedId && <>Mã hệ thống: {selectedId}</>}
-                        </DialogDescription>
+                        <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+                             <Package2 className="h-5 w-5 text-indigo-600" />
+                             Chi tiết Picking Line
+                        </DialogTitle>
                     </DialogHeader>
-
                     {isDetailLoading ? (
-                        <div className="py-8 text-center text-slate-500">Đang tải dữ liệu...</div>
+                        <div className="py-20 text-center">
+                             <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto" />
+                             <p className="mt-4 text-sm font-bold text-slate-400 uppercase tracking-widest">Đang truy xuất dữ liệu...</p>
+                        </div>
                     ) : detailItem ? (
-                        <div className="grid gap-4 py-4 text-sm">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <span className="font-medium text-slate-500">Đơn Bán:</span>
-                                <span className="col-span-3 font-semibold">{detailItem.salesOrderNumber}</span>
-                            </div>
-                            <div className="grid grid-cols-4 gap-4">
-                                <span className="font-medium text-slate-500">Sản phẩm:</span>
-                                <span className="col-span-3 flex flex-col">
-                                    <span className="font-bold">{detailItem.productSku}</span>
-                                    <span className="text-slate-600 truncate">{detailItem.productName}</span>
-                                    <span className="text-xs text-slate-400 mt-0.5">Danh mục: {detailItem.categoryName || "-"}</span>
-                                </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
-                                <span className="font-medium text-slate-500">Vị trí Pick:</span>
-                                <span className="col-span-3 font-bold text-blue-600">
-                                    {detailItem.locationCode} 
-                                    {detailItem.zone && <span className="text-slate-500 font-normal ml-2">({detailItem.zone} - {detailItem.aisle})</span>}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <span className="font-medium text-slate-500">Lô (Lot):</span>
-                                <span className="col-span-3">
-                                    {detailItem.lotNumber ? (
-                                        <Badge variant="secondary">{detailItem.lotNumber}</Badge>
-                                    ) : (
-                                        <span className="text-slate-400">Không yêu cầu</span>
+                        <div className="space-y-5 pb-2">
+                            {/* Header Section: SO & Status */}
+                            <div className="flex items-start justify-between rounded-2xl bg-indigo-50/50 p-4 dark:bg-indigo-950/20">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Đơn bán (Sales Order)</span>
+                                    <p className="text-lg font-black tabular-nums text-indigo-700 dark:text-indigo-400">{detailItem.salesOrderNumber || "—"}</p>
+                                </div>
+                                <div className="text-right">
+                                    <Badge
+                                        className={cn(
+                                            "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border-none shadow-sm",
+                                            detailItem.status === "PICKED" 
+                                                ? "bg-emerald-600 text-white" 
+                                                : (detailItem.qtyPicked || 0) > 0
+                                                    ? "bg-amber-400 text-white"
+                                                    : "bg-slate-500 text-white"
+                                        )}
+                                    >
+                                        {detailItem.status === "PICKED" 
+                                            ? "Hoàn tất" 
+                                            : (detailItem.qtyPicked || 0) > 0 
+                                                ? "Đang lấy" 
+                                                : "Chờ lấy"}
+                                    </Badge>
+                                    {detailItem.createdAt && (
+                                        <p className="mt-1.5 text-[10px] font-medium text-slate-400">
+                                            {new Date(detailItem.createdAt).toLocaleString('vi-VN')}
+                                        </p>
                                     )}
-                                </span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 border-t py-4 mt-2">
-                                <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-lg">
-                                    <span className="text-xs text-slate-500 mb-1">Cần lấy</span>
-                                    <span className="text-xl font-bold">{detailItem.qtyToPick}</span>
-                                    <span className="text-xs text-slate-400 mt-1">{detailItem.baseUnit}</span>
+                            {/* Main Product Info Group */}
+                            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <div className="mb-4 flex items-center gap-2 border-b border-slate-50 pb-4 dark:border-slate-800">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800">
+                                        <Package className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thông tin sản phẩm</p>
+                                        <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">{detailItem.productSku}</h3>
+                                    </div>
+                                    <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-[10px] font-black text-indigo-600 dark:bg-indigo-950/40">Thứ tự: {detailItem.pickSequence || 1}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-3 bg-emerald-50 rounded-lg text-emerald-700">
-                                    <span className="text-xs text-emerald-600 mb-1">Đã lấy</span>
-                                    <span className="text-xl font-bold">{detailItem.qtyPicked || 0}</span>
-                                    <span className="text-xs text-emerald-600/70 mt-1">{detailItem.baseUnit}</span>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Tên mặt hàng</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{detailItem.productName || "—"}</p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Danh mục</p>
+                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{detailItem.categoryName || "—"}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Mã EAN13</p>
+                                            <p className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">{detailItem.barcodeEan13 || "—"}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div className="text-center text-xs text-slate-400">
-                                <p>Tồn kho hiện tại ở vị trí này: <span className="font-semibold">{detailItem.qtyAvailable ?? "..."}</span> {detailItem.baseUnit}</p>
+
+                            {/* Logistics: Location & Lot */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/20 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                                        <MapPin className="h-4 w-4" />
+                                    </div>
+                                    <p className="text-[10px] font-bold uppercase text-indigo-400 mb-1">Vị trí kho</p>
+                                    <p className="text-base font-black tabular-nums text-slate-900 dark:text-indigo-100 uppercase">{detailItem.locationCode || "—"}</p>
+                                    {(detailItem.zone || detailItem.aisle) && (
+                                        <p className="mt-1 text-[10px] font-bold text-indigo-400/80 uppercase">
+                                            {detailItem.zone} - {detailItem.aisle}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
+                                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-500 dark:bg-slate-800">
+                                        <Archive className="h-4 w-4" />
+                                    </div>
+                                    <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Mã Số Lô (Lot)</p>
+                                    <p className="text-base font-black text-slate-900 dark:text-slate-100">{detailItem.lotNumber || "—"}</p>
+                                </div>
+                            </div>
+
+                            {/* Progress & Availability */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800">
+                                    <span className="text-[9px] font-bold uppercase text-slate-400 mb-1">Cần lấy</span>
+                                    <span className="text-xl font-black text-slate-900 dark:text-white tabular-nums">{detailItem.qtyToPick}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{detailItem.baseUnit}</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                                    <span className="text-[9px] font-bold uppercase text-emerald-500 mb-1">Đã lấy</span>
+                                    <span className="text-xl font-black tabular-nums text-emerald-700 dark:text-emerald-400">{detailItem.qtyPicked || 0}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500 mt-1 uppercase">{detailItem.baseUnit}</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+                                    <span className="text-[9px] font-bold uppercase text-amber-600 mb-1">Tồn kho</span>
+                                    <span className="text-xl font-black tabular-nums text-amber-700 dark:text-amber-400">{detailItem.qtyAvailable ?? "—"}</span>
+                                    <span className="text-[10px] font-bold text-amber-600 mt-1 uppercase">{detailItem.baseUnit}</span>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="py-8 text-center text-rose-500">Không thể tải chi tiết, vui lòng thử lại!</div>
+                        <div className="py-20 text-center">
+                            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 mb-4">
+                                <Archive className="h-7 w-7" />
+                            </div>
+                            <h4 className="text-sm font-black uppercase tracking-widest text-rose-600">Dữ liệu không phản hồi</h4>
+                            <p className="mt-2 text-xs text-slate-400">Kiểm tra kết nối hoặc thử lại sau.</p>
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>

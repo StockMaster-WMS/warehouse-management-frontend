@@ -3,14 +3,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import {
   useOrdersPageLogic,
-  OrdersFiltersPanel,
-  OrdersLookupBar,
+  OrdersSearchSection,
   OrdersTable,
-  OrdersPaginationFooter,
 } from "@/components/features/orders";
 
 export default function OrderPage() {
@@ -33,73 +29,47 @@ export default function OrderPage() {
         }
       />
 
-      <SearchToolbar
-        placeholder="Tìm theo số đơn, khách hàng, địa chỉ..."
-        value={logic.searchInput}
-        onValueChange={(value) => {
-          logic.setSearchInput(value);
-          logic.setPage(0);
-        }}
-        right={
-          <AdvancedFilterActions
-            open={logic.advancedOpen}
-            onToggle={() => logic.setAdvancedOpen((v) => !v)}
-            activeCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
-        filters={
-          <OrdersFiltersPanel
-            open={logic.advancedOpen}
-            advancedCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            statusFilter={logic.statusFilter}
-            onStatusChange={(value) => {
-              logic.setStatusFilter(value);
-              logic.setPage(0);
-            }}
-            onClear={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-          />
-        }
-      />
-
-      <OrdersLookupBar
-        soNumberLookup={logic.soNumberLookup}
-        onSoNumberLookupChange={logic.setSoNumberLookup}
-        lookingUpByNumber={logic.lookingUpByNumber}
-        onOpenOrderBySoNumber={logic.openOrderBySoNumber}
-      />
-
-      <OrdersTable
-        rows={logic.rows}
-        page={logic.page}
-        createdId={logic.createdId}
-        hasAnyFilter={logic.hasAnyFilter}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        error={logic.error}
-        onRetry={logic.refetch}
-        onClearFilters={logic.clearFilters}
-      />
-
-      <OrdersPaginationFooter
-        rowsCount={logic.rows.length}
-        page={logic.page}
-        totalElements={logic.totalElements}
-        totalPages={logic.totalPages}
-        canGoPrev={logic.canGoPrev}
-        canGoNext={logic.canGoNext}
-        isFetching={logic.isFetching}
-        onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
-        onNextPage={() => logic.setPage((p) => p + 1)}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <OrdersSearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={(value) => {
+            logic.setSearchInput(value);
+            logic.setPage(0);
+          }}
+          advancedOpen={logic.advancedOpen}
+          onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+          advancedCount={logic.advancedCount}
+          hasAnyFilter={logic.hasAnyFilter}
+          statusFilter={logic.statusFilter}
+          onStatusChange={(value) => {
+            logic.setStatusFilter(value);
+            logic.setPage(0);
+          }}
+          onClearFilters={() => {
+            logic.clearFilters();
+            logic.setAdvancedOpen(false);
+          }}
+        />
+        <OrdersTable
+          noContainer
+          rows={logic.rows}
+          page={logic.page}
+          createdId={logic.createdId}
+          hasAnyFilter={logic.hasAnyFilter}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          error={logic.error}
+          onRetry={logic.refetch}
+          onClearFilters={logic.clearFilters}
+          totalElements={logic.totalElements}
+          totalPages={logic.totalPages}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => logic.setPage((p) => p + 1)}
+        />
+      </div>
     </div>
   );
 }

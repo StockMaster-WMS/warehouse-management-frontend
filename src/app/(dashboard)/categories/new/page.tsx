@@ -1,12 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { Controller } from "react-hook-form";
 import { ArrowLeft, Save, Tag } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,80 +14,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetCategoriesQuery, useCreateCategoryMutation } from "@/store/services/category.service";
-import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
-import { apiErrMessage } from "@/types/api";
-
-const categorySchema = z.object({
-  name: z.string().trim().min(1, "Tên nhóm hàng là bắt buộc."),
-  parentId: z.string(),
-  isActive: z.boolean(),
-});
-type CategoryFormData = z.infer<typeof categorySchema>;
+import {
+  CategoryTreeSelectItems,
+  useCategoryCreateForm,
+} from "@/components/features/categories";
 
 export default function NewCategoryPage() {
   const {
     register,
     handleSubmit,
     control,
-    watch,
-    reset,
     formState: { errors },
-  } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: { name: "", parentId: "", isActive: true },
-  });
-
-  const [submitMessage, setSubmitMessage] = useState("");
-
-  const {
-    data: categoriesData,
-    isLoading: isLoadingCategories,
-    error: categoriesError,
-    refetch: refetchCategories,
-  } = useGetCategoriesQuery();
-  const categories = categoriesData?.data?.content ?? [];
-
-  const categoriesById = useMemo(() => {
-    return new Map(categories.map((c) => [c.id, c] as const));
-  }, [categories]);
-
-  const watchedParentId = watch("parentId");
-  const parentCategory = watchedParentId
-    ? categoriesById.get(watchedParentId) ?? null
-    : null;
-
-  const computedLevel = useMemo(() => {
-    if (!parentCategory) return 0;
-    return (parentCategory.level ?? 0) + 1;
-  }, [parentCategory]);
-
-  const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
-
-  const watchedName = watch("name");
-  const isSaveDisabled = useMemo(() => {
-    return isCreating || !watchedName.trim();
-  }, [isCreating, watchedName]);
-
-  const onValid = async (data: CategoryFormData) => {
-    setSubmitMessage("");
-
-    try {
-      await createCategory({
-        name: data.name.trim(),
-        parentId: data.parentId ? data.parentId : null,
-        isActive: data.isActive,
-      }).unwrap();
-
-      setSubmitMessage("Tạo nhóm hàng thành công.");
-      toast.success("Đã tạo nhóm hàng");
-      reset();
-    } catch (submitError) {
-      const msg = apiErrMessage(submitError, "Không thể tạo nhóm hàng. Vui lòng thử lại.");
-      setSubmitMessage(msg);
-      toast.error(msg);
-    }
-  };
+    submitMessage,
+    onValid,
+    onInvalid,
+    categoryData,
+    categories,
+    isLoadingCategories,
+    categoriesError,
+    refetchCategories,
+    categoriesById,
+    computedLevel,
+    isSaveDisabled,
+    isCreating,
+  } = useCategoryCreateForm();
 
   return (
     <div className="w-full space-y-4 sm:space-y-6 pb-20">
@@ -119,7 +65,7 @@ export default function NewCategoryPage() {
 
       <form
         className="grid grid-cols-1 gap-6 md:grid-cols-3"
-        onSubmit={handleSubmit(onValid)}
+        onSubmit={handleSubmit(onValid, onInvalid)}
         noValidate
       >
         <div className="md:col-span-2 space-y-6">
