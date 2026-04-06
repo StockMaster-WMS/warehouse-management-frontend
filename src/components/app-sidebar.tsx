@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -69,7 +69,7 @@ const mainItems: MenuItem[] = [
     icon: Truck,
     children: [
       { label: "Đơn xuất", href: "/orders" },
-      { label: "Picking", href: "/picking" },
+      { label: "Lấy hàng", href: "/picking" },
     ],
   },
   {

@@ -50,7 +50,8 @@ export function OrderItemPickingBlock({
     const [deletePicking, { isLoading: deletingPick }] = useDeletePickingItemMutation();
     const [creatingFromStockId, setCreatingFromStockId] = useState<string | null>(null);
 
-    const allowPickingMutation = salesOrderStatus === "PENDING" || salesOrderStatus === "PICKING";
+    const allowPickingMutation = salesOrderStatus === "PICKING";
+    const allowDeletePicking = salesOrderStatus === "PENDING" || salesOrderStatus === "PICKING";
     const summary = useMemo(() => computePickedSummary(soItem, picks), [soItem, picks]);
     const product = productsById.get(soItem.productId);
     const remainingQty = Math.max(0, Number(soItem.orderedQty ?? 0) - summary.totalToPick);
@@ -65,7 +66,7 @@ export function OrderItemPickingBlock({
             sort: "updatedAt",
             sortDir: "desc",
         },
-        { skip: !warehouseId || !allowPickingMutation }
+        { skip: !warehouseId || !allowPickingMutation || remainingQty <= 0 }
     );
 
     const stockRows = useMemo(() => {
@@ -82,14 +83,14 @@ export function OrderItemPickingBlock({
 
     async function onCreatePickFromStock(row: StockExpanded) {
         if (!allowPickingMutation) {
-            toast.error("Không thể tạo picking khi đơn đã PACKED/SHIPPED.");
+            toast.error("Chỉ thao tác lấy hàng khi đơn đang ĐANG LẤY HÀNG.");
             return;
         }
 
         const available = Number(row.qtyAvailable ?? 0);
         const qtyToPick = Math.min(available, remainingQty);
         if (qtyToPick <= 0) {
-            toast.error("Không còn số lượng cần tạo picking.");
+            toast.error("Không còn số lượng cần tạo lệnh lấy hàng.");
             return;
         }
 
@@ -106,11 +107,11 @@ export function OrderItemPickingBlock({
             }).unwrap();
 
             if (!res.success) {
-                toast.error(res.message || "Tạo picking thất bại");
+                toast.error(res.message || "Tạo lệnh lấy hàng thất bại");
                 return;
             }
 
-            toast.success(`Đã tạo picking từ ${getRowLabel(row)}`);
+            toast.success(`Đã tạo lệnh lấy hàng từ ${getRowLabel(row)}`);
         } catch (err) {
             toast.error(apiErrMessage(err));
         } finally {
@@ -120,12 +121,12 @@ export function OrderItemPickingBlock({
 
     async function onQuickMarkPicked(p: PickingItem) {
         if (!allowPickingMutation) {
-            toast.error("Không thể cập nhật picking khi đơn đã PACKED/SHIPPED.");
+            toast.error("Chỉ thao tác lấy hàng khi đơn đang ĐANG LẤY HÀNG.");
             return;
         }
         const qtyToPick = Number(p.qtyToPick);
         if (!Number.isFinite(qtyToPick) || qtyToPick <= 0) {
-            toast.error("Dòng picking thiếu số lượng cần lấy (qtyToPick). Tải lại trang.");
+            toast.error("Dòng lệnh lấy hàng thiếu số lượng cần lấy. Tải lại trang.");
             return;
         }
         try {
@@ -141,23 +142,23 @@ export function OrderItemPickingBlock({
                 lotNumber: p.lotNumber ?? undefined,
             }).unwrap();
             if (!res.success) toast.error(res.message || "Cập nhật thất bại");
-            else toast.success("Đã cập nhật PICKED");
+            else toast.success("Đã xác nhận lấy hàng thành công");
         } catch (err) {
             toast.error(apiErrMessage(err));
         }
     }
 
     async function onDeletePicking(p: PickingItem) {
-        if (!allowPickingMutation) {
-            toast.error("Không thể xóa picking khi đơn đã PACKED/SHIPPED.");
+        if (!allowDeletePicking) {
+            toast.error("Chỉ được xóa lệnh lấy hàng khi đơn đang CHỜ XỬ LÝ hoặc ĐANG LẤY HÀNG.");
             return;
         }
-        const ok = window.confirm("Xóa dòng picking này? Hệ thống sẽ nhả giữ chỗ tồn.");
+        const ok = window.confirm("Xóa dòng lệnh lấy hàng này? Hệ thống sẽ giải phóng tồn kho đã giữ.");
         if (!ok) return;
         try {
             const res = await deletePicking({ id: p.id, soItemId: soItem.id }).unwrap();
             if (!res.success) toast.error(typeof res.message === "string" ? res.message : "Xóa thất bại");
-            else toast.success("Đã xóa dòng picking");
+            else toast.success("Đã xóa lệnh lấy hàng");
         } catch (err) {
             toast.error(apiErrMessage(err));
         }
@@ -202,9 +203,82 @@ export function OrderItemPickingBlock({
                 <div className="space-y-3">
                     {picks.length > 0 ? null : (
                         <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                            Chưa có picking cho line này. Chọn vị trí bên dưới để tạo picking.
+                            Chưa có lệnh lấy hàng cho dòng này. Chọn vị trí bên cạnh để tạo lệnh.
                         </div>
                     )}
+
+                    {allowPickingMutation && hasRemainingQty ? (
+                        <div className="rounded-lg border border-border bg-background/80 p-3">
+                            <div className="mb-2 flex items-center justify-end gap-2">
+                                <span className="text-[11px] text-muted-foreground">
+                                    Còn thiếu: <span className="font-semibold tabular-nums">{remainingQty}</span>
+                                </span>
+                            </div>
+
+                            {stocksLoading ? (
+                                <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Đang tải vị trí tồn…
+                                </div>
+                            ) : stocksError ? (
+                                <div className="py-4 text-sm text-rose-600">
+                                    {apiErrMessage(stocksErr, "Không tải được vị trí tồn.")}
+                                </div>
+                            ) : stockRows.length === 0 ? (
+                                <div className="py-4 text-sm text-muted-foreground">
+                                    Không tìm thấy vị trí còn hàng cho sản phẩm này trong kho đang chọn.
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {stockRows.map((row) => {
+                                        const available = Number(row.qtyAvailable ?? 0);
+                                        const suggestedQty = Math.min(available, remainingQty);
+                                        const locationLabel = getRowLabel(row);
+                                        const canCreate = !creatingPick && !creatingFromStockId && suggestedQty > 0;
+
+                                        return (
+                                            <div
+                                                key={row.id}
+                                                className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        <span className="font-mono text-sm font-bold text-foreground">{locationLabel}</span>
+                                                        <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm">
+                                                            Lô hàng: {formatLotLine(row.lotNumber)}
+                                                        </span>
+                                                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                                                            Còn {available}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 text-[11px] text-muted-foreground">
+                                                        Mã SP {row.product?.sku ?? soItem.productSku} · Kho {row.warehouse?.code ?? warehouseId}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex shrink-0 flex-wrap gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        disabled={!canCreate}
+                                                        onClick={() => onCreatePickFromStock(row)}
+                                                    >
+                                                        {creatingFromStockId === row.id ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                                        )}
+                                                        Tạo lệnh lấy hàng từ vị trí này
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    ) : null}
+
                     {picks.length > 0 ? (
                         <div className="space-y-3">
                             {picks.map((p) => {
@@ -259,7 +333,7 @@ export function OrderItemPickingBlock({
                                                 size="sm"
                                                 variant="outline"
                                                 className="text-rose-600"
-                                                disabled={!allowPickingMutation || deletingPick || updatingPick}
+                                                disabled={!allowDeletePicking || deletingPick || updatingPick}
                                                 onClick={() => onDeletePicking(p)}
                                             >
                                                 {deletingPick ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}

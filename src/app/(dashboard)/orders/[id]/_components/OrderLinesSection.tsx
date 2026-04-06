@@ -14,7 +14,8 @@ import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
 import type { SalesOrder } from "@/types/sales-order";
 import type { SoItem } from "@/types/so-item";
-import { useCreateSoItemMutation, useDeleteSoItemMutation } from "@/store/services/so-item.service";
+import { useCreateSoItemMutation, useDeleteSoItemMutation, useUpdateSoItemMutation } from "@/store/services/so-item.service";
+import { useCreatePickingItemMutation } from "@/store/services/picking-item.service";
 import { useGetStocksQuery } from "@/store/services/stock.service";
 import {
   formatLotLine,
@@ -33,7 +34,10 @@ type OrderLinesSectionProps = {
 
 export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching }: OrderLinesSectionProps) {
   const [createSoItem, { isLoading: creatingLine }] = useCreateSoItemMutation();
+  const [updateSoItem, { isLoading: updatingLine }] = useUpdateSoItemMutation();
   const [deleteSoItem, { isLoading: deletingLine }] = useDeleteSoItemMutation();
+  const [createPickingItem] = useCreatePickingItemMutation();
+  const [creatingLineAndPicking, setCreatingLineAndPicking] = useState(false);
 
   const [lineProductId, setLineProductId] = useState("");
   const [lineQtyStr, setLineQtyStr] = useState("1");
@@ -125,10 +129,130 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     return other?.warehouseId ?? null;
   }, [salesOrder, stockHintByWarehouse]);
 
+  async function createLineAndPickingForProduct(productId: string) {
+    if (!allowLineMutation) {
+      toast.error("Chỉ được thêm/xóa dòng khi đơn đang PENDING.");
+      return;
+    }
+
+    const qty = parsePositiveNumber(lineQtyStr);
+    if (qty == null) {
+      setLineErrors({ orderedQtyStr: "Số lượng phải > 0" });
+      toast.error("Số lượng không hợp lệ");
+      return;
+    }
+
+    const prod = productsById.get(productId);
+    if (!prod) {
+      toast.error("Chọn sản phẩm hợp lệ");
+      return;
+    }
+
+    const grouped = new Map<string, { row: (typeof lineStockRows)[number]; avail: number }>();
+    for (const r of lineStockRows) {
+      const avail = Number(r.qtyAvailable ?? 0);
+      if (avail <= 0) continue;
+      const lot = String(r.lotNumber ?? "").trim().toUpperCase();
+      const key = `${r.locationId}__${lot}`;
+      const prev = grouped.get(key);
+      if (prev) prev.avail += avail;
+      else grouped.set(key, { row: r, avail });
+    }
+
+    const availableRows = [...grouped.values()].sort((a, b) => b.avail - a.avail);
+
+    const totalAvail = availableRows.reduce((s, x) => s + x.avail, 0);
+    if (totalAvail < qty) {
+      toast.error("Không đủ tồn kho");
+      return;
+    }
+
+    let unitPrice: number | undefined;
+    if (linePriceStr.trim()) {
+      const p = Number(linePriceStr.replace(",", "."));
+      if (Number.isFinite(p) && p >= 0) unitPrice = p;
+    }
+
+    const existing = soItems.find((i) => String(i.productId) === String(prod.id));
+    let soItemId = "";
+
+    if (existing) {
+      // Merge: Update existing item
+      const updateRes = await updateSoItem({
+        id: existing.id,
+        body: {
+          salesOrderId: salesOrder.id,
+          lineNumber: existing.lineNumber,
+          productId: String(prod.id),
+          productSku: String(prod.sku ?? ""),
+          orderedQty: (existing.orderedQty || 0) + qty,
+          unitPrice: unitPrice ?? (existing.unitPrice || undefined),
+        },
+      }).unwrap();
+
+      if (!updateRes.success || !updateRes.data) {
+        throw new Error(updateRes.message || "Cập nhật dòng thất bại");
+      }
+      soItemId = existing.id;
+    } else {
+      // Create new line
+      const lineNumber = nextLineNumber;
+      const soItemRes = await createSoItem({
+        salesOrderId: salesOrder.id,
+        lineNumber,
+        productId: String(prod.id),
+        productSku: String(prod.sku ?? ""),
+        orderedQty: qty,
+        ...(unitPrice != null ? { unitPrice } : {}),
+      }).unwrap();
+
+      if (!soItemRes.success || !soItemRes.data) {
+        throw new Error(soItemRes.message || "Thêm dòng thất bại");
+      }
+      soItemId = soItemRes.data.id;
+    }
+
+    let remain = qty;
+    let seq = 1;
+    for (const { row, avail } of availableRows) {
+      if (remain <= 0) break;
+      const allocate = Math.min(remain, avail);
+      if (allocate <= 0) continue;
+
+      const pickRes = await createPickingItem({
+        soItemId: soItemId,
+        productId: String(prod.id),
+        locationId: row.locationId,
+        lotNumber: row.lotNumber ?? undefined,
+        qtyToPick: allocate,
+        qtyPicked: 0,
+        status: "PENDING",
+        pickSequence: seq,
+      }).unwrap();
+
+      if (!pickRes.success) {
+        throw new Error(pickRes.message || "Tạo lệnh lấy hàng thất bại");
+      }
+
+      remain -= allocate;
+      seq += 1;
+    }
+
+    if (remain > 0) {
+      throw new Error("Không đủ tồn kho");
+    }
+
+    toast.success("Đã thêm dòng và tự động tạo lệnh lấy hàng");
+    setLineProductId("");
+    setLineQtyStr("1");
+    setLinePriceStr("");
+    setLineErrors({});
+  }
+
   async function onAddLine(e: React.FormEvent) {
     e.preventDefault();
     if (!allowLineMutation) {
-      toast.error("Chỉ được thêm/xóa dòng khi đơn đang PENDING.");
+      toast.error("Chỉ được thêm/xóa dòng khi đơn đang CHỜ XỬ LÝ.");
       return;
     }
     setLineErrors({});
@@ -139,61 +263,28 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     });
     if (!parsed.success) {
       const err: Record<string, string> = {};
-      for (const issue of parsed.error.issues) err[String(issue.path[0] ?? "form")] = issue.message;
+      for (const issue of parsed.error.issues) {
+        const fieldName = issue.path[0]?.toString() ?? "form";
+        err[fieldName] = issue.message;
+      }
       setLineErrors(err);
       toast.error("Kiểm tra dòng hàng");
       return;
     }
 
-    const qty = parsePositiveNumber(parsed.data.orderedQtyStr);
-    if (qty == null) {
-      setLineErrors({ orderedQtyStr: "Số lượng phải > 0" });
-      toast.error("Số lượng không hợp lệ");
-      return;
-    }
-
-    const prod = productsById.get(parsed.data.productId);
-    if (!prod) {
-      toast.error("Chọn sản phẩm hợp lệ");
-      return;
-    }
-
-    let unitPrice: number | undefined;
-    if (parsed.data.unitPriceStr?.trim()) {
-      const p = Number(parsed.data.unitPriceStr.replace(",", "."));
-      if (Number.isFinite(p) && p >= 0) unitPrice = p;
-    }
-
     try {
-      const res = await createSoItem({
-        salesOrderId: salesOrder.id,
-        lineNumber: nextLineNumber,
-        productId: String(prod.id),
-        productSku: String(prod.sku ?? ""),
-        orderedQty: qty,
-        ...(unitPrice != null ? { unitPrice } : {}),
-      }).unwrap();
-      if (!res.success) {
-        toast.error(res.message || "Thêm dòng thất bại");
-        return;
-      }
-      toast.success("Đã thêm dòng");
-      setLineProductId("");
-      setLineQtyStr("");
-      setLinePriceStr("");
+      setCreatingLineAndPicking(true);
+      await createLineAndPickingForProduct(parsed.data.productId);
     } catch (err) {
-      const msg = apiErrMessage(err);
-      if (msg.includes("Không đủ tồn khả dụng để tự tạo picking")) {
-        toast.error("Không đủ tồn kho");
-        return;
-      }
-      toast.error(msg);
+      toast.error(apiErrMessage(err));
+    } finally {
+      setCreatingLineAndPicking(false);
     }
   }
 
   async function onDeleteLine(item: SoItem) {
     if (!allowLineMutation) {
-      toast.error("Chỉ được xóa dòng khi đơn đang PENDING.");
+      toast.error("Chỉ được xóa dòng khi đơn đang CHỜ XỬ LÝ.");
       return;
     }
     try {
@@ -219,7 +310,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
           </div>
           <div>
             <CardTitle className="text-base">Dòng hàng</CardTitle>
-            <CardDescription>Thêm / xóa khi đơn PENDING.</CardDescription>
+            <CardDescription>Thêm / xóa dòng khi đơn đang CHỜ XỬ LÝ.</CardDescription>
           </div>
         </div>
         <Badge variant="secondary" className="rounded-md tabular-nums">
@@ -363,8 +454,8 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
           )}
 
           <div className="mt-3 flex justify-end">
-            <Button type="submit" size="sm" disabled={!allowLineMutation || creatingLine}>
-              {creatingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button type="submit" size="sm" disabled={!allowLineMutation || creatingLine || creatingLineAndPicking || updatingLine}>
+              {creatingLine || creatingLineAndPicking || updatingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Thêm dòng
             </Button>
           </div>

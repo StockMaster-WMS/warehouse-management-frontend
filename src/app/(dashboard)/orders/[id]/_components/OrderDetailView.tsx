@@ -82,7 +82,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <ScanBarcode className="h-4 w-4 shrink-0" />
-                Picking
+                Lấy hàng
               </span>
             </TabsTrigger>
           </TabsList>
