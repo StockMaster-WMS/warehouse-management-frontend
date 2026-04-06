@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { CardContent, CardHeader } from "@/components/ui/card";
+// removed card imports
 import { type PickingItem } from "@/types/picking-item";
 import { StatCard } from "@/components/ui/stat-card";
 import { Package, Archive, CheckCircle2, Eye, Filter, MapPin, ChevronDown, ChevronRight, Package2 } from "lucide-react";
@@ -21,7 +21,6 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -38,7 +37,7 @@ interface GroupedPicking {
 }
 
 export function OverviewTab() {
-    const [filter, setFilter] = useState<string>("pending");
+    const [filter] = useState<string>("pending");
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -193,30 +192,27 @@ export function OverviewTab() {
                 />
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all duration-300">
-                <CardHeader className="p-0">
-                    <SearchToolbar
-                        placeholder="Tìm theo đơn hàng, SKU, vị trí..."
-                        value={searchTerm}
-                        onValueChange={setSearchTerm}
-                        right={
-                            <div className="flex items-center gap-2">
-                                <AdvancedFilterActions
-                                    open={advancedOpen}
-                                    onToggle={() => setAdvancedOpen(!advancedOpen)}
-                                    activeCount={0}
-                                    hasAnyFilter={false}
-                                    onClear={() => setSearchTerm("")}
-                                />
-                            </div>
-                        }
-                    />
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-                                <TableRow>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 flex flex-col">
+                <SearchToolbar
+                    noContainer
+                    placeholder="Tìm theo đơn hàng, SKU, vị trí..."
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                    right={
+                        <AdvancedFilterActions
+                            open={advancedOpen}
+                            onToggle={() => setAdvancedOpen(!advancedOpen)}
+                            activeCount={0}
+                            hasAnyFilter={false}
+                            onClear={() => setSearchTerm("")}
+                        />
+                    }
+                />
+                
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                            <TableRow>
                                     <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"></TableHead>
                                     <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Chi tiết Pick</TableHead>
                                     <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vị trí kho</TableHead>
@@ -360,9 +356,8 @@ export function OverviewTab() {
                                     </React.Fragment>
                                 ))}
                             </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
+                    </Table>
+                </div>
             </div>
 
             <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
@@ -372,77 +367,128 @@ export function OverviewTab() {
                              <Package2 className="h-5 w-5 text-indigo-600" />
                              Chi tiết Picking Line
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-medium text-slate-400 tracking-tight">
-                            ID Hệ thống: {selectedId}
-                        </DialogDescription>
                     </DialogHeader>
-
                     {isDetailLoading ? (
-                        <div className="py-12 text-center">
-                             <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto" />
-                             <p className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Đang tải...</p>
+                        <div className="py-20 text-center">
+                             <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto" />
+                             <p className="mt-4 text-sm font-bold text-slate-400 uppercase tracking-widest">Đang truy xuất dữ liệu...</p>
                         </div>
                     ) : detailItem ? (
-                        <div className="space-y-6 py-4">
+                        <div className="space-y-5 pb-2">
+                            {/* Header Section: SO & Status */}
+                            <div className="flex items-start justify-between rounded-2xl bg-indigo-50/50 p-4 dark:bg-indigo-950/20">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Đơn bán (Sales Order)</span>
+                                    <p className="text-lg font-black tabular-nums text-indigo-700 dark:text-indigo-400">{detailItem.salesOrderNumber || "—"}</p>
+                                </div>
+                                <div className="text-right">
+                                    <Badge
+                                        className={cn(
+                                            "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border-none shadow-sm",
+                                            detailItem.status === "PICKED" 
+                                                ? "bg-emerald-600 text-white" 
+                                                : (detailItem.qtyPicked || 0) > 0
+                                                    ? "bg-amber-400 text-white"
+                                                    : "bg-slate-500 text-white"
+                                        )}
+                                    >
+                                        {detailItem.status === "PICKED" 
+                                            ? "Hoàn tất" 
+                                            : (detailItem.qtyPicked || 0) > 0 
+                                                ? "Đang lấy" 
+                                                : "Chờ lấy"}
+                                    </Badge>
+                                    {detailItem.createdAt && (
+                                        <p className="mt-1.5 text-[10px] font-medium text-slate-400">
+                                            {new Date(detailItem.createdAt).toLocaleString('vi-VN')}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Main Product Info Group */}
+                            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <div className="mb-4 flex items-center gap-2 border-b border-slate-50 pb-4 dark:border-slate-800">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800">
+                                        <Package className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thông tin sản phẩm</p>
+                                        <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">{detailItem.productSku}</h3>
+                                    </div>
+                                    <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-[10px] font-black text-indigo-600 dark:bg-indigo-950/40">Thứ tự: {detailItem.pickSequence || 1}</span>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Tên mặt hàng</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{detailItem.productName || "—"}</p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Danh mục</p>
+                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{detailItem.categoryName || "—"}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">Mã EAN13</p>
+                                            <p className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">{detailItem.barcodeEan13 || "—"}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Logistics: Location & Lot */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Đơn hàng</span>
-                                    <p className="font-black text-sm text-indigo-600 tabular-nums">{detailItem.salesOrderNumber}</p>
+                                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/20 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                                        <MapPin className="h-4 w-4" />
+                                    </div>
+                                    <p className="text-[10px] font-bold uppercase text-indigo-400 mb-1">Vị trí kho</p>
+                                    <p className="text-base font-black tabular-nums text-slate-900 dark:text-indigo-100 uppercase">{detailItem.locationCode || "—"}</p>
+                                    {(detailItem.zone || detailItem.aisle) && (
+                                        <p className="mt-1 text-[10px] font-bold text-indigo-400/80 uppercase">
+                                            {detailItem.zone} - {detailItem.aisle}
+                                        </p>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Ngày tạo</span>
-                                    <p className="font-bold text-sm text-slate-700">{new Date(detailItem.createdAt || "").toLocaleDateString('vi-VN')}</p>
+
+                                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
+                                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-500 dark:bg-slate-800">
+                                        <Archive className="h-4 w-4" />
+                                    </div>
+                                    <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Mã Số Lô (Lot)</p>
+                                    <p className="text-base font-black text-slate-900 dark:text-slate-100">{detailItem.lotNumber || "—"}</p>
                                 </div>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 ring-1 ring-slate-100 space-y-3">
-                                <div className="flex gap-4">
-                                    <div className="h-12 w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                                        <Package className="h-6 w-6 text-slate-400" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{detailItem.productSku}</p>
-                                        <p className="text-xs font-bold text-slate-500 line-clamp-1 mt-0.5">{detailItem.productName}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">EAN: {detailItem.barcodeEan13 || "-"}</p>
-                                    </div>
+                            {/* Progress & Availability */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800">
+                                    <span className="text-[9px] font-bold uppercase text-slate-400 mb-1">Cần lấy</span>
+                                    <span className="text-xl font-black text-slate-900 dark:text-white tabular-nums">{detailItem.qtyToPick}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{detailItem.baseUnit}</span>
                                 </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4 p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 border-dashed">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-100">
-                                    <MapPin className="h-5 w-5 text-white" />
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                                    <span className="text-[9px] font-bold uppercase text-emerald-500 mb-1">Đã lấy</span>
+                                    <span className="text-xl font-black tabular-nums text-emerald-700 dark:text-emerald-400">{detailItem.qtyPicked || 0}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500 mt-1 uppercase">{detailItem.baseUnit}</span>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-[10px] font-bold text-indigo-400 uppercase mb-0.5">Vị trí lấy hàng</p>
-                                    <p className="text-base font-black text-indigo-900 uppercase tracking-tight">{detailItem.locationCode}</p>
+                                <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+                                    <span className="text-[9px] font-bold uppercase text-amber-600 mb-1">Tồn kho</span>
+                                    <span className="text-xl font-black tabular-nums text-amber-700 dark:text-amber-400">{detailItem.qtyAvailable ?? "—"}</span>
+                                    <span className="text-[10px] font-bold text-amber-600 mt-1 uppercase">{detailItem.baseUnit}</span>
                                 </div>
-                                {detailItem.lotNumber && (
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Lô sản phẩm</p>
-                                        <Badge className="bg-white text-slate-900 border-slate-200 text-[10px] font-black">{detailItem.lotNumber}</Badge>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 border-t pt-6">
-                                <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cần lấy</span>
-                                    <span className="text-2xl font-black text-slate-900 tabular-nums">{detailItem.qtyToPick}</span>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase mt-1">{detailItem.baseUnit}</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                    <span className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Đã lấy</span>
-                                    <span className="text-2xl font-black text-emerald-700 tabular-nums">{detailItem.qtyPicked || 0}</span>
-                                    <span className="text-[10px] font-bold text-emerald-500 uppercase mt-1">{detailItem.baseUnit}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="text-center bg-amber-50 p-2 rounded-lg border border-amber-100">
-                                <p className="text-[10px] font-bold text-amber-700">Tồn kho khả dụng: <span className="font-black text-amber-900 text-xs">{detailItem.qtyAvailable ?? "..."} {detailItem.baseUnit}</span></p>
                             </div>
                         </div>
                     ) : (
-                        <div className="py-12 text-center text-rose-500 font-bold uppercase tracking-widest">Không thể kết nối API</div>
+                        <div className="py-20 text-center">
+                            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 mb-4">
+                                <Archive className="h-7 w-7" />
+                            </div>
+                            <h4 className="text-sm font-black uppercase tracking-widest text-rose-600">Dữ liệu không phản hồi</h4>
+                            <p className="mt-2 text-xs text-slate-400">Kiểm tra kết nối hoặc thử lại sau.</p>
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>

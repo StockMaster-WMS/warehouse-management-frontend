@@ -46,31 +46,35 @@ export default function SuppliersPage() {
         }
       />
 
-      <SuppliersSearchSection
-        searchInput={logic.searchInput}
-        onSearchChange={logic.setSearchInput}
-        hasAnyFilter={logic.hasAnyFilter}
-        onClearFilters={logic.clearFilters}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <SuppliersSearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={logic.setSearchInput}
+          hasAnyFilter={logic.hasAnyFilter}
+          onClearFilters={logic.clearFilters}
+        />
 
-      <SuppliersTable
-        rows={logic.rows}
-        page={logic.page}
-        totalElements={logic.paged?.total_elements ?? logic.rows.length}
-        totalPages={logic.paged?.total_pages ?? 1}
-        pageSize={logic.paged?.size ?? SUPPLIERS_PAGE_SIZE}
-        canGoPrev={logic.canGoPrev}
-        canGoNext={logic.canGoNext}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        isError={logic.isError}
-        error={logic.error}
-        hasAnyFilter={logic.hasAnyFilter}
-        onRetry={logic.refetch}
-        onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
-        onNextPage={() => logic.setPage((p) => p + 1)}
-        onRequestDelete={logic.openDeleteDialog}
-      />
+        <SuppliersTable
+          noContainer
+          rows={logic.rows}
+          page={logic.page}
+          totalElements={logic.paged?.total_elements ?? logic.rows.length}
+          totalPages={logic.paged?.total_pages ?? 1}
+          pageSize={logic.paged?.size ?? SUPPLIERS_PAGE_SIZE}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          isError={logic.isError}
+          error={logic.error}
+          hasAnyFilter={logic.hasAnyFilter}
+          onRetry={logic.refetch}
+          onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => logic.setPage((p) => p + 1)}
+          onRequestDelete={logic.openDeleteDialog}
+        />
+      </div>
 
       <SupplierDeleteDialog
         open={logic.isDeleteDialogOpen}

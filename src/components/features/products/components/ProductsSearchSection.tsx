@@ -27,6 +27,7 @@ type ProductsSearchSectionProps = {
     warehousesLoading: boolean;
     warehousesError: unknown;
     onRefetchWarehouses: () => void;
+    noContainer?: boolean;
 };
 
 export function ProductsSearchSection({
@@ -51,9 +52,13 @@ export function ProductsSearchSection({
     warehousesLoading,
     warehousesError,
     onRefetchWarehouses,
+    noContainer = false,
 }: ProductsSearchSectionProps) {
+    const showFilters = advancedOpen || advancedCount > 0;
+
     return (
         <SearchToolbar
+            noContainer={noContainer}
             placeholder="Tìm kiếm sản phẩm"
             value={searchInput}
             onValueChange={onSearchChange}
@@ -67,24 +72,26 @@ export function ProductsSearchSection({
                 />
             }
             filters={
-                <ProductFiltersPanel
-                    open={advancedOpen}
-                    statusFilter={statusFilter}
-                    categoryFilter={categoryFilter}
-                    warehouseFilter={warehouseFilter}
-                    advancedCount={advancedCount}
-                    onStatusChange={onStatusChange}
-                    onCategoryChange={onCategoryChange}
-                    onWarehouseChange={onWarehouseChange}
-                    categoryOptionsData={categoryOptionsData}
-                    categoriesLoading={categoriesLoading}
-                    categoriesError={categoriesError}
-                    onRefetchCategories={onRefetchCategories}
-                    warehouseOptionsData={warehouseOptionsData}
-                    warehousesLoading={warehousesLoading}
-                    warehousesError={warehousesError}
-                    onRefetchWarehouses={onRefetchWarehouses}
-                />
+                showFilters ? (
+                    <ProductFiltersPanel
+                        open={advancedOpen}
+                        statusFilter={statusFilter}
+                        categoryFilter={categoryFilter}
+                        warehouseFilter={warehouseFilter}
+                        advancedCount={advancedCount}
+                        onStatusChange={onStatusChange}
+                        onCategoryChange={onCategoryChange}
+                        onWarehouseChange={onWarehouseChange}
+                        categoryOptionsData={categoryOptionsData}
+                        categoriesLoading={categoriesLoading}
+                        categoriesError={categoriesError}
+                        onRefetchCategories={onRefetchCategories}
+                        warehouseOptionsData={warehouseOptionsData}
+                        warehousesLoading={warehousesLoading}
+                        warehousesError={warehousesError}
+                        onRefetchWarehouses={onRefetchWarehouses}
+                    />
+                ) : null
             }
         />
     );

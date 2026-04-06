@@ -7,6 +7,7 @@ type SuppliersSearchSectionProps = {
   onSearchChange: (value: string) => void;
   hasAnyFilter: boolean;
   onClearFilters: () => void;
+  noContainer?: boolean;
 };
 
 export function SuppliersSearchSection({
@@ -14,9 +15,11 @@ export function SuppliersSearchSection({
   onSearchChange,
   hasAnyFilter,
   onClearFilters,
+  noContainer = false,
 }: SuppliersSearchSectionProps) {
   return (
     <SearchToolbar
+      noContainer={noContainer}
       placeholder="Tìm kiếm (tên, mã, email liên hệ...)"
       value={searchInput}
       onValueChange={onSearchChange}
@@ -29,7 +32,7 @@ export function SuppliersSearchSection({
             onClick={onClearFilters}
           >
             <X className="mr-2 h-4 w-4" />
-            Xoa loc
+            Xoá lọc
           </Button>
         ) : null
       }

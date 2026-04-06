@@ -47,6 +47,7 @@ type SuppliersTableProps = {
   onPrevPage: () => void;
   onNextPage: () => void;
   onRequestDelete: (supplier: Supplier) => void;
+  noContainer?: boolean;
 };
 
 export function SuppliersTable({
@@ -66,9 +67,10 @@ export function SuppliersTable({
   onPrevPage,
   onNextPage,
   onRequestDelete,
+  noContainer = false,
 }: SuppliersTableProps) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu…
@@ -76,7 +78,7 @@ export function SuppliersTable({
       ) : null}
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+          <thead className="border-b border-slate-100 bg-slate-50/90 dark:border-slate-800 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 text-xs font-semibold text-slate-500">
             <tr>
               <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhà cung cấp</th>
               <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Liên hệ</th>
@@ -155,7 +157,7 @@ export function SuppliersTable({
                 return (
                   <tr
                     key={supplier.id}
-                    className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                    className="group transition-colors hover:bg-indigo-50/40 dark:hover:bg-slate-800/50"
                   >
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -251,6 +253,16 @@ export function SuppliersTable({
           pageSize={pageSize}
         />
       </div>
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+      {content}
     </div>
   );
 }
