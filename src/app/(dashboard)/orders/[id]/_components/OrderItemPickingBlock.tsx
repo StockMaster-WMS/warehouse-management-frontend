@@ -21,6 +21,7 @@ import type { PickingItem, PickingItemStatus } from "@/types/picking-item";
 import {
   computePickedSummary,
   formatLotLine,
+  formatPickingLocationLabel,
   parseNonNegativeNumber,
   parsePositiveNumber,
   pickingCreateSchema,
@@ -56,9 +57,10 @@ export function OrderItemPickingBlock({
   const [qtyToPickStr, setQtyToPickStr] = useState("");
   const [pickStatus, setPickStatus] = useState<PickingItemStatus>("PENDING");
   const [qtyPickedStr, setQtyPickedStr] = useState("");
+  const [lotNumber, setLotNumber] = useState("");
   const [pickErrors, setPickErrors] = useState<Record<string, string>>({});
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
-  const [manualPickFormOpen, setManualPickFormOpen] = useState(true);
+  const [manualPickFormOpen, setManualPickFormOpen] = useState(false);
 
   const recentKey = useMemo(() => `recentLocations:soItem:${soItem.id}`, [soItem.id]);
 
@@ -74,10 +76,6 @@ export function OrderItemPickingBlock({
       // ignore
     }
   }, [recentKey]);
-
-  useEffect(() => {
-    setManualPickFormOpen(picks.length === 0);
-  }, [picks.length]);
 
   function rememberLocation(loc: string) {
     const v = String(loc || "").trim().toUpperCase();
@@ -116,6 +114,7 @@ export function OrderItemPickingBlock({
     setPickErrors({});
     const parsed = pickingCreateSchema.safeParse({
       locationId,
+      lotNumber,
       qtyToPickStr,
       status: pickStatus,
       qtyPickedStr: qtyPickedStr || undefined,
@@ -158,6 +157,7 @@ export function OrderItemPickingBlock({
         soItemId: soItem.id,
         productId: soItem.productId,
         locationId: parsed.data.locationId.trim().toUpperCase(),
+        lotNumber: lotNumber.trim() || undefined,
         qtyToPick,
         status: parsed.data.status,
         qtyPicked,
@@ -172,6 +172,7 @@ export function OrderItemPickingBlock({
       setQtyToPickStr("");
       setPickStatus("PENDING");
       setQtyPickedStr("");
+      setLotNumber("");
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
@@ -241,11 +242,6 @@ export function OrderItemPickingBlock({
             <span className="tabular-nums font-semibold">{summary.totalToPick}</span>
             {isFetching ? <span className="ml-2 text-[11px] text-muted-foreground">Đang cập nhật…</span> : null}
           </p>
-          {summary.qtyLineMismatch ? (
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Tổng lệnh lấy ({summary.totalToPick}) ≠ số đặt ({soItem.orderedQty}) — hoàn thành từng dòng bên dưới.
-            </p>
-          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Badge
@@ -270,15 +266,21 @@ export function OrderItemPickingBlock({
               <span className="font-semibold">Xác nhận đủ SL</span> từng dòng. Chỉ mở form dưới khi cần thêm vị trí/lô.
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground">Chưa có picking — dùng form bên dưới hoặc tự phân bổ khi thêm dòng đơn.</p>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              <span>Chưa có picking cho line này. Mở form dưới nếu cần thêm vị trí/lô thủ công.</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => setManualPickFormOpen(true)}>
+                Mở form
+              </Button>
+            </div>
           )}
 
           {picks.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {picks.map((p) => {
                 const picked = Number(p.qtyPicked ?? 0);
                 const need = Number(p.qtyToPick ?? 0);
                 const pct = need > 0 ? Math.min(100, Math.round((picked / need) * 100)) : 0;
+
                 return (
                   <div
                     key={p.id}
@@ -286,7 +288,9 @@ export function OrderItemPickingBlock({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span className="font-mono text-sm font-bold text-foreground">{p.locationId}</span>
+                        <span className="font-mono text-sm font-bold text-foreground">
+                          {formatPickingLocationLabel(p.locationCode, p.locationName, p.locationId)}
+                        </span>
                         <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm">
                           Lô {formatLotLine(p.lotNumber)}
                         </span>
@@ -301,6 +305,7 @@ export function OrderItemPickingBlock({
                           {p.status === "PICKED" ? "Đã lấy" : "Đang lấy"}
                         </span>
                       </div>
+
                       <div className="mt-2 flex items-center gap-3">
                         <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                           <div
@@ -316,8 +321,9 @@ export function OrderItemPickingBlock({
                         </span>
                       </div>
                     </div>
+
                     <div className="flex shrink-0 flex-wrap gap-2">
-                      <Button
+                        <Button
                         type="button"
                         size="sm"
                         variant="outline"
@@ -328,7 +334,7 @@ export function OrderItemPickingBlock({
                         {deletingPick ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                         Xóa lệnh
                       </Button>
-                      <Button
+                        <Button
                         type="button"
                         size="sm"
                         variant="outline"
@@ -351,27 +357,33 @@ export function OrderItemPickingBlock({
             onToggle={(e) => setManualPickFormOpen((e.target as HTMLDetailsElement).open)}
           >
             <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-              <span className="inline-flex items-center gap-2">
-                <PackagePlus className="h-4 w-4 text-primary" />
-                Thêm picking thủ công
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+              <span className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2">
+                  <PackagePlus className="h-4 w-4 text-primary" />
+                  Thêm picking thủ công
+                </span>
+                <span className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                  Chỉ mở khi cần thêm vị trí/lô
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+                </span>
               </span>
             </summary>
 
             <form onSubmit={onCreatePick} className="border-t border-border bg-background p-3">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase text-muted-foreground">Mã vị trí *</label>
                   {recentLocations.length ? (
                     <div className="flex flex-wrap gap-1.5">
-                      {recentLocations.map((loc) => (
+                      {recentLocations.map((loc, index) => (
                         <button
                           key={loc}
                           type="button"
                           onClick={() => setLocationId(loc)}
+                          title={loc}
                           className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-mono text-muted-foreground hover:bg-muted"
                         >
-                          {loc}
+                          Vị trí {index + 1}
                         </button>
                       ))}
                     </div>
@@ -387,6 +399,16 @@ export function OrderItemPickingBlock({
                     placeholder="LOC-001"
                   />
                   {pickErrors.locationId ? <p className="text-xs text-rose-600">{pickErrors.locationId}</p> : null}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase text-muted-foreground">Lô</label>
+                  <Input
+                    value={lotNumber}
+                    onChange={(e) => setLotNumber(e.target.value)}
+                    onBlur={() => setLotNumber((v) => v.trim())}
+                    placeholder="Không lô"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -418,7 +440,7 @@ export function OrderItemPickingBlock({
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 xl:col-span-2">
                   <label className="text-[11px] font-bold uppercase text-muted-foreground">SL đã lấy</label>
                   <Input
                     value={qtyPickedStr}

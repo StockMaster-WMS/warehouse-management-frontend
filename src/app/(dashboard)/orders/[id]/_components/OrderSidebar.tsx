@@ -3,7 +3,7 @@
 import { Loader2, Play, Box, Truck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { salesOrderStatusLabel } from "@/types/sales-order";
 import type { SalesOrderStatus } from "@/types/sales-order";
@@ -57,7 +57,7 @@ export function OrderSidebar({
     <aside className="lg:sticky lg:top-5 lg:self-start">
       <Card className="gap-0 py-0 shadow-sm">
         <CardHeader className="gap-2 border-b border-border/70 bg-slate-50/70 pb-3 pt-4 dark:bg-slate-900/30">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hành động điều phối</CardTitle>
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Thao tác nhanh</CardTitle>
           <div className="flex flex-row items-center justify-between gap-2">
             <Badge variant="outline" className={cn("rounded-md px-2 py-0.5 text-[11px] font-semibold", statusBadgeClass(status))}>
               {salesOrderStatusLabel(status)}
@@ -67,7 +67,6 @@ export function OrderSidebar({
         </CardHeader>
 
         <CardContent className="pb-4 pt-3">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Hành động</p>
           <div className="grid gap-2">
             {status === "PENDING" ? (
               <Button
@@ -100,12 +99,11 @@ export function OrderSidebar({
               Xuất kho
             </Button>
           </div>
-        </CardContent>
-        <CardFooter className="flex-col items-stretch border-t border-border pb-4 pt-3">
+          <Separator className="my-3" />
           <p className="text-[10px] leading-relaxed text-muted-foreground">
-            Đơn: PENDING → PICKING → PACKED → SHIPPED. Sửa dòng đơn chỉ khi PENDING; thao tác picking khi chưa PACKED/SHIPPED.
+            Chỉ xóa/sửa khi PENDING. Các thao tác tiếp theo sẽ tự khóa theo trạng thái.
           </p>
-        </CardFooter>
+        </CardContent>
       </Card>
     </aside>
   );
