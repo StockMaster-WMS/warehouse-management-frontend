@@ -50,9 +50,12 @@ export const ProductTableRow = memo(function ProductTableRow({
           </span>
         </TableCell>
         <TableCell className="px-3 py-3 align-middle">
-          <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-100">
+          <Link
+            href={`/products/${product.id}`}
+            className="font-mono text-xs font-semibold text-slate-800 hover:text-indigo-600 hover:underline dark:text-slate-100 dark:hover:text-indigo-400"
+          >
             {product.sku}
-          </span>
+          </Link>
         </TableCell>
         <TableCell className="max-w-70 px-3 py-3 align-middle">
           <span className="line-clamp-2 text-sm font-medium text-slate-900 dark:text-white">
@@ -144,7 +147,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                 onClick={() => onRequestDelete({ id: product.id, name: product.name })}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Xóa SKU
+                Xóa
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -157,9 +160,12 @@ export const ProductTableRow = memo(function ProductTableRow({
             <div className="space-y-3">
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</p>
-            <p className="font-mono text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <Link
+              href={`/products/${product.id}`}
+              className="font-mono text-sm font-semibold text-slate-800 hover:text-indigo-600 hover:underline dark:text-slate-100 dark:hover:text-indigo-400"
+            >
               {product.sku}
-            </p>
+            </Link>
           </div>
 
           <div className="space-y-1">

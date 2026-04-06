@@ -35,23 +35,25 @@ export default function CategoriesPage() {
 
       <CategoryStatsGrid stats={logic.stats} />
 
-      <CategoriesSearchSection
-        query={logic.query}
-        onQueryChange={logic.setQuery}
-        onClearQuery={logic.clearQuery}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <CategoriesSearchSection
+          noContainer
+          query={logic.query}
+          onQueryChange={logic.setQuery}
+          onClearQuery={logic.clearQuery}
+        />
 
-      <CategoryTreeTable
-        categories={logic.categories}
-        treeModel={logic.treeModel}
-        childrenByParentId={logic.childrenByParentId}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        error={logic.error}
-        onRetry={logic.refetch}
-        onToggleExpanded={logic.toggleExpanded}
-        onDeleteCategory={logic.prepareDelete}
-      />
+        <CategoryTreeTable
+          noContainer
+          treeModel={logic.treeModel}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          error={logic.error}
+          onRetry={logic.refetch}
+          onToggleExpanded={logic.toggleExpanded}
+          onDeleteCategory={logic.prepareDelete}
+        />
+      </div>
 
       <CategoryDeleteDialog
         open={logic.isDeleteDialogOpen}

@@ -35,10 +35,10 @@ type CustomersListProps = {
   error: unknown;
   hasAnyFilter: boolean;
   onRetry: () => void;
-  onClearFilters: () => void;
   onPrevPage: () => void;
   onNextPage: () => void;
   onRequestDelete: (target: { id: string; name: string }) => void;
+  noContainer?: boolean;
 };
 
 export function CustomersList({
@@ -55,13 +55,13 @@ export function CustomersList({
   error,
   hasAnyFilter,
   onRetry,
-  onClearFilters,
   onPrevPage,
   onNextPage,
   onRequestDelete,
+  noContainer = false,
 }: CustomersListProps) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu…
@@ -113,17 +113,17 @@ export function CustomersList({
           rows.map((customer) => (
             <div
               key={customer.id}
-              className="flex items-center justify-between p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center justify-between p-4 hover:bg-indigo-50/40 dark:hover:bg-slate-800 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold">
+                  <AvatarFallback className="bg-white/80 text-indigo-600 font-black shadow-sm ring-1 ring-slate-100">
                     {customer.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">{customer.name}</span>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{customer.name}</span>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                     <Mail className="h-3 w-3" />
                     <span>{customer.email ?? "—"}</span>
                   </div>
@@ -132,11 +132,11 @@ export function CustomersList({
               <div className="hidden md:flex items-center gap-8">
                 <div className="flex flex-col items-start min-w-30">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số điện thoại</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{customer.phone ?? "—"}</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{customer.phone ?? "—"}</span>
                 </div>
                 <div className="flex flex-col items-start min-w-30">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phân loại</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <span className="text-xs font-bold text-slate-500 uppercase">
                     {customerCategoryLabel(customer.category)}
                   </span>
                 </div>
@@ -147,7 +147,7 @@ export function CustomersList({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                      className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -188,6 +188,16 @@ export function CustomersList({
         onNextPage={onNextPage}
         pageSize={pageSize}
       />
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+      {content}
     </div>
   );
 }

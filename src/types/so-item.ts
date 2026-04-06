@@ -18,7 +18,6 @@ export type CreateSoItemPayload = {
   productSku: string;
   orderedQty: number;
   unitPrice?: number;
-  autoAllocatePicking?: boolean;
 };
 
 /** PUT /so-items/{id} — khớp backend UpdateSalesOrderItemRequest */

@@ -36,13 +36,13 @@ export type CreatePickingItemPayload = {
   soItemId: string;
   productId: string;
   locationId: string;
+  lotNumber?: string | null;
   qtyToPick: number;
   status: PickingItemStatus;
   qtyPicked?: number;
   pickSequence?: number;
 };
 
-/** Khớp UpdatePickingItemRequest (outbound-service): PUT bắt buộc đủ các trường, không chỉ qtyPicked/status. */
 export type UpdatePickingItemPayload = {
   id: string;
   soItemId: string;
