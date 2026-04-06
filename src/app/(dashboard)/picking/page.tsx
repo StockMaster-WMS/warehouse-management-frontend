@@ -1,58 +1,58 @@
 "use client";
 
+import React, { useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, ScanBarcode } from "lucide-react";
 import { OverviewTab } from "./overview-tab";
 import { OperationTab } from "./operation-tab";
+import { Button } from "@/components/ui/button";
+import { ScanBarcode, X } from "lucide-react";
 
 export default function PickingPage() {
+    const [isMobileMode, setIsMobileMode] = useState(false);
+
     return (
         <div className="flex h-full flex-col bg-slate-50/50">
+            {/* Mobile View Layer */}
+            {isMobileMode && (
+                <div className="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-950 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between border-b px-4 py-3 bg-white dark:bg-slate-950 sticky top-0 z-10">
+                        <div className="flex items-center gap-2">
+                           <ScanBarcode className="h-5 w-5 text-indigo-600" />
+                           <span className="font-black text-sm uppercase tracking-wider">Picking Task</span>
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setIsMobileMode(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-4 pb-10">
+                        <OperationTab />
+                    </div>
+                </div>
+            )}
+
             <PageHeader
                 title="Quản lý lấy hàng"
-                description="Theo dõi và thao tác lấy hàng theo đơn xuất"
+                description="Theo dõi và điều phối lệnh lấy hàng xuất kho"
+                actions={
+                    <Button 
+                        onClick={() => setIsMobileMode(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none"
+                        size="sm"
+                    >
+                        <ScanBarcode className="mr-2 h-4 w-4" />
+                        Chế độ Mobile
+                    </Button>
+                }
             />
 
-      <div className="flex-1 space-y-6 pt-6">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <div className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/60 transition-all">
-            <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-transparent p-0 sm:grid-cols-2">
-              <TabsTrigger
-                value="overview"
-                className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-600 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
-              >
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <LayoutGrid className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                  Tổng quan (Kho)
-                </div>
-                <p className="text-[10px] sm:text-xs font-medium text-slate-500 group-data-[state=active]:text-indigo-600/80 line-clamp-1">
-                  Quản lý hiệu suất và tiến độ lấy hàng toàn diện.
-                </p>
-              </TabsTrigger>
-              <TabsTrigger
-                value="operation"
-                className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-600 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
-              >
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <ScanBarcode className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                  Tác nghiệp (Mobile)
-                </div>
-                <p className="text-[10px] sm:text-xs font-medium text-slate-500 group-data-[state=active]:text-indigo-600/80 line-clamp-1">
-                  Dành cho nhân viên kho thực hiện quét mã vạch và xác nhận.
-                </p>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="overview" className="mt-0 outline-none">
-            <OverviewTab />
-          </TabsContent>
-          <TabsContent value="operation" className="mt-0 outline-none">
-            <OperationTab />
-          </TabsContent>
-        </Tabs>
-      </div>
+            <div className="flex-1 space-y-6 pt-6">
+                <OverviewTab />
+            </div>
         </div>
     );
 }
