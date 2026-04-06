@@ -1,4 +1,4 @@
-export type SupplierStatus = "ACTIVE" | "INACTIVE";
+export type SupplierStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 /** Một bản ghi nhà cung cấp (khớp JSON backend). */
 export interface Supplier {
@@ -17,6 +17,21 @@ export interface Supplier {
   updatedAt?: string | null;
 }
 
+export interface CreateSupplierRequest {
+  code: string;
+  name: string;
+  taxCode?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  address?: string;
+  paymentTerms?: number;
+  leadTimeDays?: number;
+  status?: SupplierStatus;
+}
+
+export type UpdateSupplierRequest = CreateSupplierRequest;
+
 export function getSupplierDisplayName(s: Supplier): string {
   const n = s.name?.trim();
   if (n) return n;
@@ -25,13 +40,34 @@ export function getSupplierDisplayName(s: Supplier): string {
   return "Nhà cung cấp";
 }
 
-export function supplierStatusLabel(status: SupplierStatus | null | undefined): string {
-  const u = String(status ?? "").toUpperCase();
-  if (u === "ACTIVE") return "Hoạt động";
-  if (u === "INACTIVE") return "Ngưng";
-  return status ? String(status) : "—";
+export const SUPPLIER_STATUS_LABEL: Record<string, string> = {
+  ACTIVE: "Hoạt động",
+  INACTIVE: "Ngưng hoạt động",
+  SUSPENDED: "Tạm ngưng",
+};
+
+export function supplierStatusLabel(
+  status: SupplierStatus | string | null | undefined,
+): string {
+  const key = (status ?? "").toUpperCase();
+  return SUPPLIER_STATUS_LABEL[key] ?? status ?? "—";
 }
 
-export function isSupplierActive(status: SupplierStatus | null | undefined): boolean {
+export function supplierStatusClass(status: string): string {
+  switch (status.toUpperCase()) {
+    case "ACTIVE":
+      return "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400";
+    case "INACTIVE":
+      return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
+    case "SUSPENDED":
+      return "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400";
+    default:
+      return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
+  }
+}
+
+export function isSupplierActive(
+  status: SupplierStatus | null | undefined,
+): boolean {
   return String(status ?? "").toUpperCase() === "ACTIVE";
 }
