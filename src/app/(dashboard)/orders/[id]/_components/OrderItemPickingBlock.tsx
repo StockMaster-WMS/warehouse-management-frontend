@@ -12,6 +12,7 @@ import type { SoItem } from "@/types/so-item";
 import type { PickingItem } from "@/types/picking-item";
 import type { StockExpanded } from "@/types/stock";
 import { useGetStocksQuery } from "@/store/services/stock.service";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
     computePickedSummary,
     formatLotLine,
@@ -49,6 +50,7 @@ export function OrderItemPickingBlock({
     const [updatePicking, { isLoading: updatingPick }] = useUpdatePickingItemMutation();
     const [deletePicking, { isLoading: deletingPick }] = useDeletePickingItemMutation();
     const [creatingFromStockId, setCreatingFromStockId] = useState<string | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<PickingItem | null>(null);
 
     const allowPickingMutation = salesOrderStatus === "PICKING";
     const allowDeletePicking = salesOrderStatus === "PENDING" || salesOrderStatus === "PICKING";
@@ -153,14 +155,19 @@ export function OrderItemPickingBlock({
             toast.error("Chỉ được xóa lệnh lấy hàng khi đơn đang CHỜ XỬ LÝ hoặc ĐANG LẤY HÀNG.");
             return;
         }
-        const ok = window.confirm("Xóa dòng lệnh lấy hàng này? Hệ thống sẽ giải phóng tồn kho đã giữ.");
-        if (!ok) return;
+        setDeleteTarget(p);
+    }
+
+    async function handleConfirmDelete() {
+        if (!deleteTarget) return;
         try {
-            const res = await deletePicking({ id: p.id, soItemId: soItem.id }).unwrap();
+            const res = await deletePicking({ id: deleteTarget.id, soItemId: soItem.id }).unwrap();
             if (!res.success) toast.error(typeof res.message === "string" ? res.message : "Xóa thất bại");
             else toast.success("Đã xóa lệnh lấy hàng");
         } catch (err) {
             toast.error(apiErrMessage(err));
+        } finally {
+            setDeleteTarget(null);
         }
     }
 
@@ -357,6 +364,15 @@ export function OrderItemPickingBlock({
                     ) : null}
                 </div>
             </div>
+            <DeleteConfirmDialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Xóa lệnh lấy hàng"
+                description="Bạn có chắc chắn muốn xóa lệnh lấy hàng này? Hệ thống sẽ giải phóng số lượng tồn kho đã giữ (Reserved) cho đơn hàng."
+                itemName={deleteTarget ? `Vị trí: ${deleteTarget.locationCode || deleteTarget.locationId} - SKU: ${soItem.productSku}` : ""}
+                confirmText="Xác nhận xóa"
+            />
         </details>
     );
 }

@@ -4,7 +4,6 @@ import { Layers3, Plus, SearchX } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
     LocationFormDialog,
     LocationBarcodeModal,
@@ -16,6 +15,7 @@ import {
 import { apiErrMessage } from "@/types/api";
 import { useState } from "react";
 import { LocationOption } from "@/types/purchase-order";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<LocationOption | null>(null);
@@ -165,8 +165,6 @@ export default function LocationsPage() {
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={handleDeleteLocation}
                 itemName={deleteTarget?.code || ""}
-                title="Xóa vị trí"
-                description="Hành động này không thể hoàn tác."
             />
 
             <LocationBarcodeModal

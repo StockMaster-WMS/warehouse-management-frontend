@@ -13,7 +13,11 @@ import {
   MapPin,
   Loader2,
   AlertCircle,
-  CreditCard,
+  Hash,
+  Info,
+  Briefcase,
+  Clock,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +29,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   useGetSupplierByIdQuery,
@@ -33,7 +36,7 @@ import {
 } from "@/store/services/supplier.service";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
-import type { SupplierStatus, UpdateSupplierRequest } from "@/types/supplier";
+import { supplierStatusLabel, type SupplierStatus, type UpdateSupplierRequest } from "@/types/supplier";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;

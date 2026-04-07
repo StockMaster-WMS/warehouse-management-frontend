@@ -12,6 +12,7 @@ import { OrderPickingSection } from "./OrderPickingSection";
 import { LayoutGrid, ListChecks, ScanBarcode } from "lucide-react";
 import { useState } from "react";
 import { OrderPrintModal } from "./OrderPrintModal";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 type OrderDetailViewProps = {
   salesOrderId: string;
@@ -19,6 +20,13 @@ type OrderDetailViewProps = {
 
 export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "delete" | "ship" | "deliver";
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: "danger" | "info" | "warning";
+  } | null>(null);
   const {
     so,
     isLoading,
@@ -114,12 +122,30 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
               confirming={confirming}
               delivering={delivering}
               deletingOrder={deletingOrder}
-              onDeleteSalesOrder={onDeleteSalesOrder}
+              onDeleteSalesOrder={() => setConfirmAction({
+                type: "delete",
+                title: "Xóa đơn xuất",
+                description: "Bạn có chắc chắn muốn xóa đơn xuất hàng này? Mọi dữ liệu liên quan sẽ bị loại bỏ khỏi hệ thống.",
+                confirmText: "Xác nhận xóa",
+                variant: "danger"
+              })}
               onStartPicking={onStartPicking}
               onMarkPacked={onMarkPacked}
-              onMarkShipped={onMarkShipped}
+              onMarkShipped={() => setConfirmAction({
+                type: "ship",
+                title: "Xác nhận xuất kho",
+                description: "Đơn hàng sẽ được chuyển sang trạng thái ĐÃ XUẤT KHO. Bạn có chắc chắn muốn tiếp tục?",
+                confirmText: "Xác nhận xuất",
+                variant: "info"
+              })}
               onConfirmOrder={onConfirmOrder}
-              onMarkDelivered={onMarkDelivered}
+              onMarkDelivered={() => setConfirmAction({
+                type: "deliver",
+                title: "Xác nhận đã giao hàng",
+                description: "Đơn hàng sẽ được xác nhận là đã giao thành công tới khách hàng.",
+                confirmText: "Xác nhận đã giao",
+                variant: "info"
+              })}
               onOpenPrint={() => setIsPrintModalOpen(true)}
             />
           </div>
@@ -151,6 +177,22 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
         warehouseLabel={warehouseLabel}
         items={soItems}
         products={products}
+      />
+
+      <DeleteConfirmDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          if (confirmAction.type === "delete") await onDeleteSalesOrder();
+          else if (confirmAction.type === "ship") await onMarkShipped();
+          else if (confirmAction.type === "deliver") await onMarkDelivered();
+        }}
+        title={confirmAction?.title}
+        description={confirmAction?.description}
+        confirmText={confirmAction?.confirmText}
+        variant={confirmAction?.variant}
+        itemName={confirmAction?.type === "delete" ? `Đơn hàng: ${so.soNumber}` : undefined}
       />
     </div>
   );
