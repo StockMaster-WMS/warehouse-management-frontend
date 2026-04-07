@@ -1,11 +1,12 @@
 "use client";
 
-import { Layers3, Plus, SearchX } from "lucide-react";
+import { Layers3, Plus, SearchX, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
     LocationFormDialog,
+    BulkLocationDialog,
     LocationBarcodeModal,
     LocationsFilters,
     LocationsStats,
@@ -19,6 +20,8 @@ import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<LocationOption | null>(null);
+    const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+    
     const {
         searchInput,
         setSearchInput,
@@ -73,15 +76,27 @@ export default function LocationsPage() {
                 title="Vị trí lưu trữ"
                 description="Quản lý vị trí theo kho và tra cứu nhanh zone/aisle/rack/bin để vận hành nhập - xuất chính xác."
                 actions={
-                    <Button
-                        type="button"
-                        size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700"
-                        onClick={openCreateDialog}
-                    >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Thêm vị trí
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                            onClick={() => setIsBulkDialogOpen(true)}
+                        >
+                            <Sparkles className="mr-1 h-3.5 w-3.5" />
+                            Tạo hàng loạt
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            onClick={openCreateDialog}
+                        >
+                            <Plus className="mr-1 h-4 w-4" />
+                            Thêm vị trí
+                        </Button>
+                    </div>
                 }
             />
 
@@ -118,7 +133,7 @@ export default function LocationsPage() {
                         description={
                             searchInput.trim()
                                 ? "Thử từ khóa khác hoặc đổi bộ lọc kho để tìm lại dữ liệu."
-                                : "Kho hiện tại chưa có dữ liệu vị trí. Bạn có thể tạo vị trí từ API/backoffice."
+                                : "Kho hiện tại chưa có dữ liệu vị trí. Bạn có thể tạo vị trí mới bằng công cụ tạo hàng loạt."
                         }
                         className="py-10"
                     />
@@ -147,6 +162,7 @@ export default function LocationsPage() {
                     onPrintBarcode={setBarcodeLocation}
                 />
             )}
+            
             <LocationFormDialog
                 open={isFormOpen}
                 onOpenChange={handleOpenFormChange}
@@ -158,6 +174,13 @@ export default function LocationsPage() {
                 formWarehouseLabel={formWarehouseLabel}
                 warehouses={warehouses}
                 onSubmit={handleSubmitForm}
+            />
+
+            <BulkLocationDialog
+                open={isBulkDialogOpen}
+                onOpenChange={setIsBulkDialogOpen}
+                warehouses={warehouses}
+                onSuccess={() => refetchLocations()}
             />
 
             <DeleteConfirmDialog

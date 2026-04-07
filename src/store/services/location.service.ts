@@ -67,6 +67,17 @@ const locationApi = baseApi.injectEndpoints({
           : []),
       ],
     }),
+    bulkGenerateLocations: builder.mutation<ApiResponse<string>, any>({
+      query: (body) => ({
+        url: "/locations/bulk-generate",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "Location" as const, id: "LIST" },
+        { type: "Location" as const, id: `WH-${arg.warehouseId}` },
+      ],
+    }),
   }),
 });
 
@@ -75,4 +86,5 @@ export const {
   useCreateLocationMutation,
   useUpdateLocationMutation,
   useDeleteLocationMutation,
+  useBulkGenerateLocationsMutation,
 } = locationApi;
