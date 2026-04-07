@@ -231,7 +231,3 @@ graph LR
     D --> D2[Batch Picking]
     D --> D3[PWA Offline]
 ```
-
----
-
-> **Kết luận:** Dự án đã xây dựng được nền tảng UI/UX tốt và flow nghiệp vụ chính (PO → Inbound → Putaway → Order → Picking) đã hoạt động. Điểm yếu lớn nhất là: (1) chưa có xác thực/phân quyền thực sự, (2) Dashboard dùng dữ liệu giả, (3) ba module quan trọng (Reports, History, Security) còn là placeholder. Ưu tiên hàng đầu nên là tích hợp auth + RBAC trước khi bàn giao.

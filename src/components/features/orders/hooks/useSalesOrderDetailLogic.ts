@@ -11,6 +11,8 @@ import {
   useStartPickingMutation,
   useMarkPackedMutation,
   useMarkShippedMutation,
+  useConfirmOrderMutation,
+  useMarkDeliveredMutation,
 } from "@/store/services/order.service";
 import { useGetSoItemsQuery } from "@/store/services/so-item.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
@@ -61,6 +63,8 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   const [startPicking, { isLoading: starting }] = useStartPickingMutation();
   const [markPacked, { isLoading: packing }] = useMarkPackedMutation();
   const [markShipped, { isLoading: shipping }] = useMarkShippedMutation();
+  const [confirmOrder, { isLoading: confirming }] = useConfirmOrderMutation();
+  const [markDelivered, { isLoading: delivering }] = useMarkDeliveredMutation();
 
   const onDeleteSalesOrder = async () => {
     if (!so) return;
@@ -77,6 +81,21 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       }
       toast.success("Đã xóa đơn");
       router.push("/orders");
+    } catch (err) {
+      toast.error(apiErrMessage(err));
+    }
+  };
+
+  const onConfirmOrder = async () => {
+    if (!so) return;
+    if (soItems.length === 0) {
+      toast.error("Thêm ít nhất 1 dòng hàng trước khi xác nhận đơn.");
+      return;
+    }
+    try {
+      const res = await confirmOrder({ salesOrderId: so.id }).unwrap();
+      if (!res.success) toast.error(res.message || "Xác nhận thất bại");
+      else toast.success("Đã xác nhận đơn");
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
@@ -136,6 +155,20 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     }
   };
 
+  const onMarkDelivered = async () => {
+    if (!so) return;
+    const ok = window.confirm("Xác nhận đã giao hàng thành công?");
+    if (!ok) return;
+
+    try {
+      const res = await markDelivered({ salesOrderId: so.id }).unwrap();
+      if (!res.success) toast.error(res.message || "Giao hàng thất bại");
+      else toast.success("Đã giao hàng");
+    } catch (err) {
+      toast.error(apiErrMessage(err));
+    }
+  };
+
   return {
     so,
     isLoading,
@@ -153,9 +186,13 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     starting,
     packing,
     shipping,
+    confirming,
+    delivering,
     onDeleteSalesOrder,
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
+    onConfirmOrder,
+    onMarkDelivered,
   };
 }

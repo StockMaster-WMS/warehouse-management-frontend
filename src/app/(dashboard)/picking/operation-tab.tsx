@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { useGetPickingItemsQuery, useUpdatePickingItemMutation, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
+import { useGetPickingItemsQuery, useUpdatePickingItemMutation, useGetPickingItemByIdQuery, useReportPickingExceptionMutation } from "@/store/services/picking-item.service";
 
 export function OperationTab() {
     const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({});
@@ -42,6 +42,7 @@ export function OperationTab() {
     }, [activeSummary, detailData]);
 
     const [updatePickingItem] = useUpdatePickingItemMutation();
+    const [reportException] = useReportPickingExceptionMutation();
 
     const [currentStep, setCurrentStep] = useState<"location" | "sku" | "qty">("location");
     const [scannedLoc, setScannedLoc] = useState("");
@@ -69,7 +70,7 @@ export function OperationTab() {
             setScannedSku("");
             return;
         }
-        toast.success("Đúng sản phẩm!");
+        toast.success("Đúng sản phẩm! Vui lòng xác nhận số lượng.");
         setCurrentStep("qty");
         setPickedQty(activeItem.qtyToPick.toString());
     };
@@ -77,6 +78,10 @@ export function OperationTab() {
     const handleConfirmPick = async () => {
         if (!activeItem) return;
         const qty = Number(pickedQty);
+        if (qty < 0 || qty > activeItem.qtyToPick) {
+            toast.error("Số lượng không hợp lệ!");
+            return;
+        }
 
         try {
             await updatePickingItem({
@@ -302,6 +307,26 @@ export function OperationTab() {
                     </div>
                 </div>
 
+                <div className={cn("space-y-1.5", currentStep !== "qty" && "opacity-40")}>
+                    <div className="flex justify-between items-center px-0.5">
+                        <span className={cn("text-[9px] font-bold uppercase tracking-wide", currentStep === "qty" ? "text-indigo-600" : "text-slate-400")}>
+                            3. Nhập số lượng
+                        </span>
+                    </div>
+                    <div className="relative group">
+                        <Input
+                            type="number"
+                            placeholder="SỐ LƯỢNG..."
+                            autoFocus={currentStep === "qty"}
+                            className="h-11 rounded-lg border-slate-200 bg-slate-50/50 pl-3 pr-3 font-mono text-sm uppercase focus:border-indigo-600 focus:bg-white focus:ring-1 focus:ring-indigo-100"
+                            value={pickedQty}
+                            onChange={(e) => setPickedQty(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleConfirmPick()}
+                            disabled={currentStep !== "qty"}
+                        />
+                    </div>
+                </div>
+
                 <div className="flex gap-2 pt-1">
                     <Button variant="secondary" className="flex-1 h-11 rounded-lg font-bold text-xs text-slate-400 bg-slate-100" onClick={() => setIsExceptionOpen(true)}>Báo lỗi</Button>
                     <Button
@@ -327,10 +352,28 @@ export function OperationTab() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-2 py-4">
-                        <Button variant="outline" className="h-12 justify-between rounded-lg border-slate-200 px-4 font-bold text-xs" onClick={() => { setIsExceptionOpen(false); toast.success("Đã ghi nhận!"); }}>
+                        <Button variant="outline" className="h-12 justify-between rounded-lg border-slate-200 px-4 font-bold text-xs" onClick={async () => {
+                            if (!activeItem) return;
+                            try {
+                                await reportException({ id: activeItem.id, soItemId: activeItem.soItemId, reason: "Hàng bị hỏng" }).unwrap();
+                                setIsExceptionOpen(false); 
+                                toast.success("Đã ghi nhận ngoại lệ: Hàng bị hỏng!"); 
+                                setSelectedTaskId(null);
+                                setCurrentStep("location");
+                            } catch { toast.error("Lỗi khi ghi nhận!"); }
+                        }}>
                             Hàng bị hỏng <ChevronRight className="h-3.5 w-3.5 opacity-20" />
                         </Button>
-                        <Button variant="outline" className="h-12 justify-between rounded-lg border-slate-200 px-4 font-bold text-xs" onClick={() => { setIsExceptionOpen(false); toast.success("Lấy thiếu"); }}>
+                        <Button variant="outline" className="h-12 justify-between rounded-lg border-slate-200 px-4 font-bold text-xs" onClick={async () => {
+                            if (!activeItem) return;
+                            try {
+                                await reportException({ id: activeItem.id, soItemId: activeItem.soItemId, reason: "Lấy thiếu" }).unwrap();
+                                setIsExceptionOpen(false); 
+                                toast.success("Đã ghi nhận ngoại lệ: Lấy thiếu!"); 
+                                setSelectedTaskId(null);
+                                setCurrentStep("location");
+                            } catch { toast.error("Lỗi khi ghi nhận!"); }
+                        }}>
                             Lấy thiếu <ChevronRight className="h-3.5 w-3.5 opacity-20" />
                         </Button>
                     </div>

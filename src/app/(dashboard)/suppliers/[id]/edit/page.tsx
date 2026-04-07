@@ -8,16 +8,12 @@ import {
   ArrowLeft,
   Save,
   Building2,
-  Info,
   Phone,
   Mail,
   MapPin,
-  Briefcase,
   Loader2,
-  Hash,
-  Clock,
-  Truck,
   AlertCircle,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +25,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   useGetSupplierByIdQuery,
@@ -37,7 +34,6 @@ import {
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
 import type { SupplierStatus, UpdateSupplierRequest } from "@/types/supplier";
-import { supplierStatusLabel } from "@/types/supplier";
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
@@ -90,7 +86,6 @@ export default function EditSupplierPage({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [updateSupplier, { isLoading: saving }] = useUpdateSupplierMutation();
 
-  /* Sync form when supplier data arrives (no useEffect needed for initial hydration) */
   const [synced, setSynced] = useState(false);
   if (initial && !synced) {
     setCode(initial.code);
@@ -490,8 +485,7 @@ export default function EditSupplierPage({
                   Hủy bỏ
                 </Button>
               </div>
-            </div>
-          </div>
+            </div>          </div>
         </div>
       </form>
     </div>

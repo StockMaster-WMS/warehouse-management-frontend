@@ -12,7 +12,13 @@ import { useGetStocksQuery } from "@/store/services/stock.service";
 import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
 import { apiErrMessage } from "@/types/api";
 import type { Location } from "@/types/location";
-import { ProductHeroSection, ProductInfoField, ProductStockByLocationList } from "@/components/features/products";
+import { 
+  ProductHeroSection, 
+  ProductInfoField, 
+  ProductStockByLocationList,
+  ProductBarcodeModal,
+  ProductStockLedger
+} from "@/components/features/products";
 export default function ProductDetailPage({
   params: paramsPromise,
 }: {
@@ -35,6 +41,7 @@ export default function ProductDetailPage({
   const [triggerGetLocationById] = useLazyGetLocationByIdQuery();
   const [locationMap, setLocationMap] = useState<Record<string, Location>>({});
   const [isLocationsLoading, setIsLocationsLoading] = useState(false);
+  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
 
   const formatDateTime = (value?: string) => {
     if (!value) return "--";
@@ -159,7 +166,11 @@ export default function ProductDetailPage({
             </p>
           ) : null}
 
-          <ProductHeroSection product={product} onCopySku={() => copySku(product.sku)} />
+          <ProductHeroSection 
+            product={product} 
+            onCopySku={() => copySku(product.sku)} 
+            onPrintBarcode={() => setIsBarcodeModalOpen(true)}
+          />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
@@ -183,6 +194,8 @@ export default function ProductDetailPage({
                     value={product.primarySupplierId ?? "Chưa gán"}
                     mono
                   />
+                  <ProductInfoField label="Tạo lúc" value={formatDateTime(product.createdAt)} />
+                  <ProductInfoField label="Cập nhật lúc" value={formatDateTime(product.updatedAt)} />
                   <ProductInfoField label="Người tạo" value={product.createdBy || "—"} mono />
                 </div>
               </section>
@@ -252,20 +265,22 @@ export default function ProductDetailPage({
                   errorMessage={stockError ? apiErrMessage(stockError) : null}
                 />
               </section>
-
-              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
-                <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    Lịch sử
-                  </h2>
-                </div>
-                <div className="space-y-3">
-                  <ProductInfoField label="Tạo lúc" value={formatDateTime(product.createdAt)} />
-                  <ProductInfoField label="Cập nhật lúc" value={formatDateTime(product.updatedAt)} />
-                </div>
-              </section>
             </div>
           </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
+            <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Lịch sử xuất / nhập (Thẻ Kho)
+              </h2>
+            </div>
+            <ProductStockLedger productId={product.id} />
+          </section>
+          <ProductBarcodeModal 
+             open={isBarcodeModalOpen} 
+             onOpenChange={setIsBarcodeModalOpen} 
+             product={product} 
+          />
         </>
       )}
     </div>

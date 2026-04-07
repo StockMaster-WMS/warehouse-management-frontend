@@ -10,12 +10,15 @@ import { OrderSidebar } from "./OrderSidebar";
 import { OrderLinesSection } from "./OrderLinesSection";
 import { OrderPickingSection } from "./OrderPickingSection";
 import { LayoutGrid, ListChecks, ScanBarcode } from "lucide-react";
+import { useState } from "react";
+import { OrderPrintModal } from "./OrderPrintModal";
 
 type OrderDetailViewProps = {
   salesOrderId: string;
 };
 
 export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const {
     so,
     isLoading,
@@ -33,10 +36,14 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
     starting,
     packing,
     shipping,
+    confirming,
+    delivering,
     onDeleteSalesOrder,
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
+    onConfirmOrder,
+    onMarkDelivered,
   } = useSalesOrderDetailLogic(salesOrderId);
 
   if (isLoading) {
@@ -104,11 +111,16 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
               starting={starting}
               packing={packing}
               shipping={shipping}
+              confirming={confirming}
+              delivering={delivering}
               deletingOrder={deletingOrder}
               onDeleteSalesOrder={onDeleteSalesOrder}
               onStartPicking={onStartPicking}
               onMarkPacked={onMarkPacked}
               onMarkShipped={onMarkShipped}
+              onConfirmOrder={onConfirmOrder}
+              onMarkDelivered={onMarkDelivered}
+              onOpenPrint={() => setIsPrintModalOpen(true)}
             />
           </div>
         </TabsContent>
@@ -131,6 +143,15 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
           />
         </TabsContent>
       </Tabs>
+
+      <OrderPrintModal
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+        salesOrder={so}
+        warehouseLabel={warehouseLabel}
+        items={soItems}
+        products={products}
+      />
     </div>
   );
 }

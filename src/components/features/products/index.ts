@@ -14,6 +14,8 @@ export {
     ProductInfoField,
     ProductStockByLocationList,
 } from "./components/ProductHeroSection";
+export { ProductBarcodeModal } from "./components/ProductBarcodeModal";
+export { ProductStockLedger } from "./components/ProductStockLedger";
 export { useProductCreateForm } from "./hooks";
 export { useProductEditForm } from "./hooks";
 export { useProductDetail } from "./hooks";

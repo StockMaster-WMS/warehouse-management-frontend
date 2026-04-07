@@ -11,6 +11,30 @@ export type GetPickingItemsParams = {
 
 const pickingItemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    reportPickingException: builder.mutation<ApiResponse<PickingItem>, { id: string; soItemId: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/picking-items/${id}/exception`,
+        method: "POST",
+        data: { reason },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: arg.id },
+        { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+      ],
+    }),
+
+    assignPickingTask: builder.mutation<ApiResponse<PickingItem>, { id: string; soItemId: string; assigneeId: string }>({
+      query: ({ id, assigneeId }) => ({
+        url: `/picking-items/${id}/assign`,
+        method: "POST",
+        data: { assigneeId },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: arg.id },
+        { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+      ],
+    }),
+
     getPickingItems: builder.query<ApiResponse<PagedResponse<PickingItem>>, GetPickingItemsParams>({
       query: ({ soItemId, status, page = 0, size = 50 }) => ({
         url: "/picking-items",
@@ -77,5 +101,7 @@ export const {
   useCreatePickingItemMutation,
   useUpdatePickingItemMutation,
   useDeletePickingItemMutation,
+  useReportPickingExceptionMutation,
+  useAssignPickingTaskMutation,
 } = pickingItemApi;
 

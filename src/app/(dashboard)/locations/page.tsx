@@ -7,21 +7,24 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
     LocationFormDialog,
+    LocationBarcodeModal,
     LocationsFilters,
     LocationsStats,
     LocationsTable,
     useLocationsPageLogic,
 } from "@/components/features/locations";
 import { apiErrMessage } from "@/types/api";
+import { useState } from "react";
+import { LocationOption } from "@/types/purchase-order";
 
 export default function LocationsPage() {
+    const [barcodeLocation, setBarcodeLocation] = useState<LocationOption | null>(null);
     const {
         searchInput,
         setSearchInput,
         warehouseFilter,
         setWarehouseFilter,
         warehouses,
-        warehousesError,
         isWarehousesLoading,
         selectedWarehouseLabel,
 
@@ -141,6 +144,7 @@ export default function LocationsPage() {
                     onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}
+                    onPrintBarcode={setBarcodeLocation}
                 />
             )}
             <LocationFormDialog
@@ -163,6 +167,13 @@ export default function LocationsPage() {
                 itemName={deleteTarget?.code || ""}
                 title="Xóa vị trí"
                 description="Hành động này không thể hoàn tác."
+            />
+
+            <LocationBarcodeModal
+                open={!!barcodeLocation}
+                onOpenChange={(open) => !open && setBarcodeLocation(null)}
+                location={barcodeLocation}
+                warehouseName={barcodeLocation ? warehouseNameMap[barcodeLocation.warehouseId] || "" : ""}
             />
         </div>
     );

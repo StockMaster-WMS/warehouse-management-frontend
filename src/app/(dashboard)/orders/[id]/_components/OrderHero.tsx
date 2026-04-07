@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { CalendarDays, MapPin, Package, User, Building2 } from "lucide-react";
+import { type LucideIcon, MapPin, Package, User, Building2, Clock, Search, CheckCircle2, Box, Truck } from "lucide-react";
 import { formatShippingShort, salesOrderStatusColor, salesOrderStatusLabel } from "@/types/sales-order";
+import { cn } from "@/lib/utils";
 import type { SalesOrder } from "@/types/sales-order";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,30 @@ type OrderHeroProps = {
 
 export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isFetching }: OrderHeroProps) {
   const [editOpen, setEditOpen] = useState(false);
+
+  const steps = ["DRAFT", "CONFIRMED", "PICKING", "PACKED", "SHIPPED", "DELIVERED"];
+  const stepIcons: Record<string, LucideIcon> = {
+    DRAFT: Clock,
+    CONFIRMED: CheckCircle2,
+    PICKING: Search,
+    PACKED: Box,
+    SHIPPED: Truck,
+    DELIVERED: CheckCircle2,
+  };
+  const stepLabels: Record<string, string> = {
+    DRAFT: "Nháp",
+    CONFIRMED: "Xác nhận",
+    PICKING: "Lấy hàng",
+    PACKED: "Đóng gói",
+    SHIPPED: "Xuất kho",
+    DELIVERED: "Hoàn tất",
+  };
+
+  const currentStepIndex = so.status === "CANCELLED" ? -1 : steps.indexOf(so.status);
+  const getProgressPercentage = () => {
+    if (currentStepIndex <= 0) return 0;
+    return (currentStepIndex / (steps.length - 1)) * 100;
+  };
 
   return (
     <Card className="gap-0 overflow-hidden py-0 shadow-sm">
@@ -115,15 +139,43 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border/70 bg-background px-3 py-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <CalendarDays className="h-3.5 w-3.5" />
-            Giảm số khu vực luôn mở để đọc nhanh trạng thái hiện tại.
-          </span>
-          <Link href="/inventory" className="font-medium text-primary underline-offset-2 hover:underline">
-            Xem tồn kho
-          </Link>
-        </div>
+        {so.status !== "CANCELLED" ? (
+          <div className="pt-2 pb-5 mt-2">
+            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tiến trình vận hành</p>
+            <div className="relative flex items-center justify-between px-2 sm:px-6">
+              <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-slate-100 dark:bg-slate-800" />
+              <div 
+                className="absolute left-0 top-1/2 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all duration-500" 
+                style={{ width: `${getProgressPercentage()}%` }} 
+              />
+              {steps.map((step, index) => {
+                const Icon = stepIcons[step];
+                const isActive = index === currentStepIndex;
+                const isPast = index < currentStepIndex;
+                return (
+                  <div key={step} className="relative flex flex-col items-center">
+                    <div className={cn(
+                      "flex h-8 w-8 relative z-10 items-center justify-center rounded-full border-2 bg-background transition-colors",
+                      isActive ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : isPast ? "border-indigo-500 bg-indigo-500 text-white" : "border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600"
+                    )}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className={cn(
+                      "absolute -bottom-6 w-24 text-center text-[10px] font-semibold uppercase tracking-wider",
+                      isActive ? "text-indigo-600 dark:text-indigo-400" : isPast ? "text-slate-600 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"
+                    )}>
+                      {stepLabels[step]}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
+            <span className="font-semibold">Đơn hàng này đã bị hủy.</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
