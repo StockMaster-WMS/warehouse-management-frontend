@@ -16,7 +16,6 @@ import {
   ExternalLink,
   PackageCheck,
   CalendarClock,
-  X,
   AlertCircle,
   List,
   ChevronLeft,
@@ -30,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   Dialog,
@@ -371,6 +372,7 @@ export default function SuppliersPage() {
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   /* ── Dialogs state ── */
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
@@ -456,15 +458,32 @@ export default function SuppliersPage() {
         title="Nhà cung cấp"
         description="Quản lý thông tin đối tác cung ứng và lịch sử giao dịch."
         actions={
-          <Button
-            render={<Link href="/suppliers/new" />}
-            nativeButton={false}
-            size="sm"
-            className="bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm đối tác mới
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 border-slate-200"
+              disabled={exporting}
+              onClick={handleExport}
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Xuất Excel
+            </Button>
+            <Button
+              render={<Link href="/suppliers/new" />}
+              nativeButton={false}
+              size="sm"
+              className="bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm đối tác mới
+            </Button>
+          </div>
         }
       />
 
@@ -515,75 +534,77 @@ export default function SuppliersPage() {
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end">
-        <div className="flex-1">
-          <SearchToolbar
-            placeholder="Tìm kiếm (tên, mã, MST, email…)"
-            value={searchInput}
-            onValueChange={(v) => {
-              setSearchInput(v);
-              setPage(0);
-            }}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-44">
-            <Select
-              value={statusFilter || "__all__"}
-              onValueChange={(v) => {
-                setStatusFilter(!v || v === "__all__" ? "" : v);
-                setPage(0);
-              }}
-            >
-              <SelectTrigger>
-                <span className="flex flex-1 truncate text-left">
-                  {STATUS_FILTER_LABEL[statusFilter] ?? "Tất cả"}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Tất cả</SelectItem>
-                <SelectItem value="active">Đang hoạt động</SelectItem>
-                <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
-                <SelectItem value="suspended">Tạm ngưng</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={exporting}
-            onClick={handleExport}
-          >
-            {exporting ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-1 h-4 w-4" />
-            )}
-            Xuất Excel
-          </Button>
-          {hasAnyFilter && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-slate-500 hover:bg-rose-50 hover:text-rose-600"
-              onClick={() => {
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        {/* Unified Search Section */}
+        <SearchToolbar
+          noContainer
+          placeholder="Tìm kiếm (tên, mã, MST, email…)"
+          value={searchInput}
+          onValueChange={(v) => {
+            setSearchInput(v || "");
+            setPage(0);
+          }}
+          right={
+            <AdvancedFilterActions
+              open={advancedOpen}
+              onToggle={() => setAdvancedOpen(!advancedOpen)}
+              activeCount={statusFilter ? 1 : 0}
+              hasAnyFilter={hasAnyFilter}
+              onClear={() => {
                 setSearchInput("");
                 setStatusFilter("");
                 setPage(0);
               }}
-            >
-              <X className="mr-1 h-4 w-4" />
-              Xóa lọc
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            />
+          }
+          filters={
+            advancedOpen || statusFilter ? (
+              <AdvancedFilterPanel
+                open={advancedOpen}
+                summary={
+                  statusFilter ? (
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                        Trạng thái:{" "}
+                        <span className="font-semibold text-slate-800 dark:text-slate-100">
+                          {STATUS_FILTER_LABEL[statusFilter] ?? "Tất cả"}
+                        </span>
+                      </span>
+                    </div>
+                  ) : null
+                }
+              >
+                <Select
+                  value={statusFilter || "__all__"}
+                  onValueChange={(v) => {
+                    setStatusFilter(!v || v === "__all__" ? "" : v);
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-44 dark:border-slate-800 dark:bg-slate-900">
+                    <SelectValue placeholder="Tất cả trạng thái">
+                      {STATUS_FILTER_LABEL[statusFilter] ?? "Tất cả trạng thái"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="__all__" className="rounded-lg">
+                      Tất cả trạng thái
+                    </SelectItem>
+                    <SelectItem value="active" className="rounded-lg">
+                      Đang hoạt động
+                    </SelectItem>
+                    <SelectItem value="inactive" className="rounded-lg">
+                      Ngừng hoạt động
+                    </SelectItem>
+                    <SelectItem value="suspended" className="rounded-lg">
+                      Tạm ngưng
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </AdvancedFilterPanel>
+            ) : null
+          }
+        />
         {isFetching && !isLoading ? (
           <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
             Đang cập nhật dữ liệu…

@@ -41,17 +41,12 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
     warehouseOptions,
     warehouseLabel,
     deletingOrder,
-    starting,
-    packing,
-    shipping,
-    confirming,
-    delivering,
+    isExecuting,
     onDeleteSalesOrder,
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
     onConfirmOrder,
-    onMarkDelivered,
   } = useSalesOrderDetailLogic(salesOrderId);
 
   if (isLoading) {
@@ -116,11 +111,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
             <OrderSidebar
               status={so.status}
               lineCount={soItems.length}
-              starting={starting}
-              packing={packing}
-              shipping={shipping}
-              confirming={confirming}
-              delivering={delivering}
+              isExecuting={isExecuting}
               deletingOrder={deletingOrder}
               onDeleteSalesOrder={() => setConfirmAction({
                 type: "delete",
@@ -139,13 +130,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
                 variant: "info"
               })}
               onConfirmOrder={onConfirmOrder}
-              onMarkDelivered={() => setConfirmAction({
-                type: "deliver",
-                title: "Xác nhận đã giao hàng",
-                description: "Đơn hàng sẽ được xác nhận là đã giao thành công tới khách hàng.",
-                confirmText: "Xác nhận đã giao",
-                variant: "info"
-              })}
               onOpenPrint={() => setIsPrintModalOpen(true)}
             />
           </div>
@@ -186,7 +170,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
           if (!confirmAction) return;
           if (confirmAction.type === "delete") await onDeleteSalesOrder();
           else if (confirmAction.type === "ship") await onMarkShipped();
-          else if (confirmAction.type === "deliver") await onMarkDelivered();
         }}
         title={confirmAction?.title}
         description={confirmAction?.description}
