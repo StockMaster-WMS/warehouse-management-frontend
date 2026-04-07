@@ -488,8 +488,7 @@ export default function EditSupplierPage({
                   Hủy bỏ
                 </Button>
               </div>
-            </div>
-          </div>
+            </div>          </div>
         </div>
       </form>
     </div>
