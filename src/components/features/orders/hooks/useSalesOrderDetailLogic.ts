@@ -68,10 +68,6 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
 
   const onDeleteSalesOrder = async () => {
     if (!so) return;
-    const ok = window.confirm(
-      "Xóa đơn xuất? Chỉ thực hiện được khi đơn PENDING và chưa có dòng picking (theo backend).",
-    );
-    if (!ok) return;
 
     try {
       const res = await deleteSalesOrder(so.id).unwrap();
@@ -143,8 +139,6 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       toast.error("Không thể xuất kho khi đơn chưa có dòng hàng.");
       return;
     }
-    const ok = window.confirm("Xác nhận xuất kho đơn này?");
-    if (!ok) return;
 
     try {
       const res = await markShipped({ salesOrderId: so.id }).unwrap();
@@ -157,9 +151,6 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
 
   const onMarkDelivered = async () => {
     if (!so) return;
-    const ok = window.confirm("Xác nhận đã giao hàng thành công?");
-    if (!ok) return;
-
     try {
       const res = await markDelivered({ salesOrderId: so.id }).unwrap();
       if (!res.success) toast.error(res.message || "Giao hàng thất bại");
