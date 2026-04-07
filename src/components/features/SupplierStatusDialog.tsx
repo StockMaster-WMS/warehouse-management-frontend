@@ -30,7 +30,7 @@ type Props = {
 };
 
 export function SupplierStatusDialog({ open, onOpenChange, supplier }: Props) {
-  const [status, setStatus] = useState<SupplierStatus>("ACTIVE");
+  const [status, setStatus] = useState<SupplierStatus>("active");
   const [changeStatus, { isLoading }] = useChangeSupplierStatusMutation();
 
   function handleOpen(v: boolean) {
@@ -89,9 +89,9 @@ export function SupplierStatusDialog({ open, onOpenChange, supplier }: Props) {
               </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-              <SelectItem value="INACTIVE">Ngưng hoạt động</SelectItem>
-              <SelectItem value="SUSPENDED">Tạm ngưng</SelectItem>
+              <SelectItem value="active">Đang hoạt động</SelectItem>
+              <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+              <SelectItem value="suspended">Tạm ngưng</SelectItem>
             </SelectContent>
           </Select>
         </div>
