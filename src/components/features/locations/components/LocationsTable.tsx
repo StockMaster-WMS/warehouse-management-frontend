@@ -2,6 +2,7 @@ import {
     CheckCircle2,
     CircleOff,
     MapPin,
+    MoreHorizontal,
     Pencil,
     Trash2,
     Warehouse,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -47,12 +49,33 @@ function LocationTypeBadge({ type }: { type?: string | null }) {
     return <Badge variant="outline">{type}</Badge>;
 }
 
-// Hàm tính nhanh % lấp đầy giả lập dựa vào ID để giao diện demo sống động
-function getCapacitySeed(id: string): number {
-    if (!id) return 0;
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    return Math.abs(hash) % 101; 
+function CapacityCell({ location }: { location: LocationOption }) {
+    const status = location.status?.toUpperCase();
+
+    const config: Record<string, { label: string; value: number; barClass: string; textClass: string }> = {
+        AVAILABLE: { label: "Còn trống", value: 0,   barClass: "[&>div]:bg-emerald-400", textClass: "text-emerald-600" },
+        RESERVED:  { label: "Đã giữ chỗ", value: 60,  barClass: "[&>div]:bg-amber-400",  textClass: "text-amber-600" },
+        OCCUPIED:  { label: "Đã dùng",  value: 100, barClass: "[&>div]:bg-rose-500",   textClass: "text-rose-600" },
+    };
+
+    const cfg = config[status ?? ""] ?? { label: status ?? "--", value: 0, barClass: "", textClass: "text-slate-400" };
+
+    return (
+        <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex justify-between items-center text-[10px] font-medium text-slate-500">
+                <span>{cfg.label}</span>
+                {status && <span className={cfg.textClass}>{cfg.value}%</span>}
+            </div>
+            <Progress value={cfg.value} className={`h-1.5 ${cfg.barClass}`} />
+            {(location.maxWeightKg != null || location.maxVolumeCm3 != null) && (
+                <span className="text-[9px] text-slate-400 leading-none">
+                    {location.maxWeightKg != null && <>{location.maxWeightKg} kg</>}
+                    {location.maxWeightKg != null && location.maxVolumeCm3 != null && " · "}
+                    {location.maxVolumeCm3 != null && <>{location.maxVolumeCm3} cm³</>}
+                </span>
+            )}
+        </div>
+    );
 }
 
 type LocationsTableProps = {
@@ -97,147 +120,101 @@ export function LocationsTable({
             <div className="hidden md:block">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead className="px-3 py-3 text-center">Mã vị trí</TableHead>
-                            <TableHead className="px-3 py-3">Kho</TableHead>
-                            <TableHead className="px-3 py-3">Khu vực</TableHead>
-                            <TableHead className="px-3 py-3 text-center">Bin / Level</TableHead>
-                            <TableHead className="px-3 py-3">Loại</TableHead>
-                            <TableHead className="px-3 py-3">Sức chứa</TableHead>
-                            <TableHead className="px-3 py-3 text-center">Trạng thái</TableHead>
-                            <TableHead className="px-3 py-3 text-right">Thao tác</TableHead>
+                        <TableRow className="bg-slate-50/70 dark:bg-slate-800/50">
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[30%]">Vị trí</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[22%]">Kho & Vùng</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[14%]">Phân loại</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Trạng thái</TableHead>
+                            <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             Array.from({ length: 6 }).map((_, index) => (
                                 <TableRow key={`location-table-skeleton-${index}`}>
-                                    <TableCell className="px-3 py-3">
-                                        <div className="space-y-2">
-                                            <Skeleton className="h-4 w-24 mx-auto" />
-                                            <Skeleton className="h-3 w-32 mx-auto" />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-4 w-32" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-4 w-40" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-4 w-28 mx-auto" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-6 w-24 rounded-full" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-2 w-20 mb-1 rounded-full" />
-                                        <Skeleton className="h-3 w-8" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <Skeleton className="h-4 w-24 mx-auto" />
-                                    </TableCell>
-                                    <TableCell className="px-3 py-3">
-                                        <div className="ml-auto flex w-max gap-2">
-                                            <Skeleton className="h-8 w-16 rounded-md" />
-                                            <Skeleton className="h-8 w-16 rounded-md" />
-                                        </div>
-                                    </TableCell>
+                                    <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-52" /></div></TableCell>
+                                    <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
+                                    <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                                    <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-2 w-full rounded-full" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                    <TableCell className="px-4 py-3"><div className="ml-auto flex w-max gap-1"><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /></div></TableCell>
                                 </TableRow>
                             ))
                         ) : errorMessage ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="px-4 py-8 text-center">
-                                    <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-                                        Không thể tải danh sách vị trí
-                                    </p>
+                                <TableCell colSpan={5} className="px-4 py-8 text-center">
+                                    <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Không thể tải danh sách vị trí</p>
                                     <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errorMessage}</p>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="mt-3"
-                                        onClick={onRetry}
-                                    >
-                                        Thử lại
-                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onRetry}>Thử lại</Button>
                                 </TableCell>
                             </TableRow>
                         ) : (
                             visibleLocations.map((location) => {
                                 const warehouseName = warehouseNameMap[location.warehouseId];
                                 const locationCode = location.code || location.name || "--";
+                                const crumbs = [
+                                    location.zone,
+                                    location.aisle,
+                                    location.rack,
+                                    location.level != null ? `L${String(location.level).padStart(2, "0")}` : null,
+                                    location.bin,
+                                ].filter(Boolean).join(" › ");
 
                                 return (
-                                    <TableRow key={location.id}>
-                                        <TableCell className="px-3 py-3 text-center align-top">
-                                            <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
-                                                {locationCode}
-                                            </p>
+                                    <TableRow key={location.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                        {/* Col 1: Location code + breadcrumb */}
+                                        <TableCell className="px-4 py-3">
+                                            <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">{locationCode}</p>
+                                            {crumbs && <p className="mt-0.5 font-mono text-[11px] text-slate-400 truncate max-w-[260px]">{crumbs}</p>}
                                         </TableCell>
-                                        <TableCell className="px-3 py-3 align-top">
-                                            <span className="text-xs text-slate-700 dark:text-slate-200">
-                                                {warehouseName || "Kho chưa xác định"}
-                                            </span>
+
+                                        {/* Col 2: Warehouse + zone badges */}
+                                        <TableCell className="px-4 py-3">
+                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{warehouseName || "Chưa xác định"}</p>
+                                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                                {location.isColdZone && <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">🧊 COLD</span>}
+                                                {location.isHazmatZone && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">⚠️ HAZMAT</span>}
+                                                {location.isHeavyZone && <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 border border-orange-200">🏋️ HEAVY</span>}
+                                                {!location.isColdZone && !location.isHazmatZone && !location.isHeavyZone && location.zone && (
+                                                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">{location.zone}</span>
+                                                )}
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="px-3 py-3 align-top">
-                                            <span className="font-mono text-xs text-slate-700 dark:text-slate-200">
-                                                {formatLocationZoneLine(location)}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-3 py-3 text-center align-top">
-                                            <span className="text-xs text-slate-700 dark:text-slate-200">
-                                                Bin {location.bin || "-"} / Lv {location.level ?? "-"}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-3 py-3 align-top">
+
+                                        {/* Col 3: Type */}
+                                        <TableCell className="px-4 py-3">
                                             <LocationTypeBadge type={location.locationType} />
                                         </TableCell>
-                                        <TableCell className="px-3 py-3 align-top min-w-[120px]">
-                                            <div className="flex flex-col gap-1.5 w-full">
-                                                <div className="flex justify-between items-center text-[10px] font-medium text-slate-500">
-                                                    <span>Lấp đầy</span>
-                                                    <span className={getCapacitySeed(location.id) > 90 ? "text-rose-600" : ""}>{getCapacitySeed(location.id)}%</span>
-                                                </div>
-                                                <Progress value={getCapacitySeed(location.id)} className="h-1.5" />
+
+                                        {/* Col 4: Capacity + active state */}
+                                        <TableCell className="px-4 py-3 min-w-[140px]">
+                                            <CapacityCell location={location} />
+                                            <div className="mt-2 flex items-center gap-1">
+                                                {location.isActive === false
+                                                    ? <><CircleOff className="h-3 w-3 text-rose-400" /><span className="text-[10px] text-rose-500">Ngừng dùng</span></>
+                                                    : <><CheckCircle2 className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-500">Đang hoạt động</span></>
+                                                }
                                             </div>
                                         </TableCell>
-                                        <TableCell className="px-3 py-3 text-center align-top">
-                                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-                                                {location.isActive === false ? (
-                                                    <>
-                                                        <CircleOff className="h-3.5 w-3.5 text-rose-500" />
-                                                        <span className="text-rose-600 dark:text-rose-300">Ngừng dùng</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                                                        <span className="text-emerald-600 dark:text-emerald-300">Đang dùng</span>
-                                                    </>
-                                                )}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-3 py-3 text-right align-top">
-                                            <div className="inline-flex items-center gap-1">
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => onEdit(location)}>
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                    Sửa
-                                                </Button>
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => onPrintBarcode(location)} className="text-indigo-600 hover:text-indigo-600">
-                                                    <Printer className="h-3.5 w-3.5" />
-                                                    In Barcode
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-rose-600 hover:text-rose-600"
-                                                    onClick={() => onDelete(location)}
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                    Xóa
-                                                </Button>
-                                            </div>
+
+                                        {/* Col 5: Actions - 3-dot menu */}
+                                        <TableCell className="px-4 py-3 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-40">
+                                                    <DropdownMenuItem onClick={() => onEdit(location)}>
+                                                        <Pencil className="mr-2 h-3.5 w-3.5" />Sửa
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => onPrintBarcode(location)} className="text-indigo-600 focus:text-indigo-600">
+                                                        <Printer className="mr-2 h-3.5 w-3.5" />In Barcode
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => onDelete(location)} className="text-rose-600 focus:text-rose-600">
+                                                        <Trash2 className="mr-2 h-3.5 w-3.5" />Xóa
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -315,11 +292,7 @@ export function LocationsTable({
 
                                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800/80">
                                           <div className="flex w-1/2 flex-col gap-1.5">
-                                              <div className="flex justify-between items-center text-[10px] font-medium text-slate-500">
-                                                  <span>Lấp đầy</span>
-                                                  <span className={getCapacitySeed(location.id) > 90 ? "text-rose-600" : ""}>{getCapacitySeed(location.id)}%</span>
-                                              </div>
-                                              <Progress value={getCapacitySeed(location.id)} className="h-1.5 w-full" />
+                                              <CapacityCell location={location} />
                                           </div>
                                           
                                           <div className="flex items-center gap-1">

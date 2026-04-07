@@ -59,17 +59,7 @@ const mainItems: MenuItem[] = [
     icon: Package,
     children: [
       { label: "Tất cả sản phẩm", href: "/products" },
-      { label: "Tạo sản phẩm mới", href: "/products/new" },
       { label: "Nhóm / loại hàng", href: "/categories" },
-    ],
-  },
-  {
-    label: "Kho xuất",
-    href: "/orders",
-    icon: Truck,
-    children: [
-      { label: "Đơn xuất", href: "/orders" },
-      { label: "Lấy hàng", href: "/picking" },
     ],
   },
   {
@@ -81,6 +71,15 @@ const mainItems: MenuItem[] = [
       { label: "Đơn nhập hàng (PO)", href: "/purchase-orders" },
       { label: "Danh sách phiếu nhập kho", href: "/inbound" },
       { label: "Putaway", href: "/putaway" },
+    ],
+  },
+  {
+    label: "Kho xuất",
+    href: "/orders",
+    icon: Truck,
+    children: [
+      { label: "Đơn xuất", href: "/orders" },
+      { label: "Lấy hàng", href: "/picking" },
     ],
   },
 ];
@@ -106,8 +105,6 @@ function isActivePath(pathname: string, href: string): boolean {
 }
 
 function stableHrefToId(href: string) {
-  // Keep it deterministic across SSR and client.
-  // Also sanitize to a valid HTML id-friendly string.
   return `sidebar-link-${href.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
@@ -317,7 +314,7 @@ const SidebarItem = memo(function SidebarItem({
           "hover:bg-slate-100/90 hover:text-slate-900",
           "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
           active &&
-            "bg-indigo-50 text-indigo-700 font-semibold shadow-[inset_0_0_0_1px_rgba(99,102,241,0.12)] hover:bg-indigo-50 hover:text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400",
+          "bg-indigo-50 text-indigo-700 font-semibold shadow-[inset_0_0_0_1px_rgba(99,102,241,0.12)] hover:bg-indigo-50 hover:text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400",
         )}
       >
         <Icon
@@ -378,7 +375,7 @@ const SidebarItem = memo(function SidebarItem({
                   "flex h-8.5 items-center rounded-md px-2 text-[13px] transition-colors",
                   "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200",
                   childActive &&
-                    "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300",
+                  "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300",
                 )}
               >
                 <Dot

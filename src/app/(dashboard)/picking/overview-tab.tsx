@@ -169,7 +169,7 @@ export function OverviewTab() {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     label="Hàng chờ lấy"
                     value={isLoading ? "..." : `${stats.pending}`}
@@ -202,7 +202,7 @@ export function OverviewTab() {
                     iconClassName="text-indigo-500"
                     showAccentBar={false}
                 />
-            </div>
+            </div> */}
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 flex flex-col">
                 <SearchToolbar
@@ -320,9 +320,6 @@ export function OverviewTab() {
                                                         Giao nhân viên
                                                     </Button>
                                                 )}
-                                                <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-600">
-                                                    {expandedGroups[group.soNumber] === true ? "Thu gọn" : "Xem dòng"}
-                                                </Button>
                                             </TableCell>
                                         </TableRow>
 
@@ -473,15 +470,7 @@ export function OverviewTab() {
                                             {detailItem.zone} - {detailItem.aisle}
                                         </p>
                                     )}
-                                </div>
-
-                                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
-                                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-500 dark:bg-slate-800">
-                                        <Archive className="h-4 w-4" />
-                                    </div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Mã Số Lô (Lot)</p>
-                                    <p className="text-base font-black text-slate-900 dark:text-slate-100">{detailItem.lotNumber || "—"}</p>
-                                </div>
+                                </div>           
                             </div>
 
                             {/* Progress & Availability */}
