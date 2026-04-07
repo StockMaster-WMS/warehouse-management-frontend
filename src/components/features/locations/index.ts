@@ -15,3 +15,4 @@ export { LocationsStats } from "@/components/features/locations/components/Locat
 export { LocationsFilters } from "@/components/features/locations/components/LocationsFilters";
 export { LocationsTable } from "@/components/features/locations/components/LocationsTable";
 export { LocationFormDialog } from "@/components/features/locations/components/LocationFormDialog";
+export { LocationBarcodeModal } from "@/components/features/locations/components/LocationBarcodeModal";

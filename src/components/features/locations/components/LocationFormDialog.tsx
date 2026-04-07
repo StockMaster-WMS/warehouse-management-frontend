@@ -93,22 +93,20 @@ export function LocationFormDialog({
                             </Select>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <Label>Mã vị trí</Label>
-                            <Input
-                                value={formState.code}
-                                onChange={(e) =>
-                                    setFormState((prev) => ({
-                                        ...prev,
-                                        code: e.target.value,
-                                    }))
-                                }
-                                placeholder="VD: Z1-A01-R02"
-                            />
-                        </div>
+                        {editingLocation && (
+                            <div className="space-y-1.5">
+                                <Label>Mã vị trí</Label>
+                                <Input
+                                    value={formState.code}
+                                    disabled
+                                    className="bg-slate-50 font-mono text-slate-500 font-bold dark:bg-slate-800 dark:text-slate-400 border-slate-200"
+                                    placeholder="Được tạo tự động bởi hệ thống"
+                                />
+                            </div>
+                        )}
 
                         <div className="space-y-1.5">
-                            <Label>Zone</Label>
+                            <Label>Khu vực (Zone)</Label>
                             <Input
                                 value={formState.zone}
                                 onChange={(e) =>
@@ -117,10 +115,11 @@ export function LocationFormDialog({
                                         zone: e.target.value,
                                     }))
                                 }
+                                placeholder="VD: A"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label>Aisle</Label>
+                            <Label>Dãy (Aisle)</Label>
                             <Input
                                 value={formState.aisle}
                                 onChange={(e) =>
@@ -129,10 +128,11 @@ export function LocationFormDialog({
                                         aisle: e.target.value,
                                     }))
                                 }
+                                placeholder="VD: 01"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label>Rack</Label>
+                            <Label>Kệ (Rack)</Label>
                             <Input
                                 value={formState.rack}
                                 onChange={(e) =>
@@ -141,22 +141,11 @@ export function LocationFormDialog({
                                         rack: e.target.value,
                                     }))
                                 }
+                                placeholder="VD: R1"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label>Bin</Label>
-                            <Input
-                                value={formState.bin}
-                                onChange={(e) =>
-                                    setFormState((prev) => ({
-                                        ...prev,
-                                        bin: e.target.value,
-                                    }))
-                                }
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Level</Label>
+                            <Label>Tầng (Level)</Label>
                             <Input
                                 type="number"
                                 value={formState.level}
@@ -169,6 +158,20 @@ export function LocationFormDialog({
                                 placeholder="VD: 1"
                             />
                         </div>
+                        <div className="space-y-1.5">
+                            <Label>Ngăn (Bin)</Label>
+                            <Input
+                                value={formState.bin}
+                                onChange={(e) =>
+                                    setFormState((prev) => ({
+                                        ...prev,
+                                        bin: e.target.value,
+                                    }))
+                                }
+                                placeholder="VD: B2"
+                            />
+                        </div>
+
                         <div className="space-y-1.5">
                             <Label>Loại vị trí</Label>
                             <Input
@@ -183,7 +186,7 @@ export function LocationFormDialog({
                             />
                         </div>
 
-                        <div className="space-y-1.5 sm:col-span-2">
+                        <div className="space-y-1.5">
                             <Label>Trạng thái</Label>
                             <Select
                                 value={formState.isActive ? "active" : "inactive"}
