@@ -2,17 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import { cn } from "@/lib/utils";
 import {
   Plus,
   FileText,
   AlertCircle,
-  Search,
-  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,6 +36,8 @@ import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import type { Supplier } from "@/types/supplier";
+import type { Warehouse } from "@/types/warehouse";
 
 const STATUS_OPTIONS = [
   "DRAFT",
@@ -76,14 +78,25 @@ export default function PurchaseOrdersPage() {
   const [status, setStatus] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  const { data: suppliersRes } = useGetSuppliersQuery({
+  const {
+    data: suppliersRes,
+    isLoading: suppliersLoading,
+    isError: suppliersIsError,
+    refetch: refetchSuppliers,
+  } = useGetSuppliersQuery({
     page: 0,
     size: 100,
     sort: "createdAt",
     sortDir: "desc",
   });
-  const { data: warehousesRes } = useGetWarehousesQuery({
+  const {
+    data: warehousesRes,
+    isLoading: warehousesLoading,
+    isError: warehousesIsError,
+    refetch: refetchWarehouses,
+  } = useGetWarehousesQuery({
     page: 0,
     size: 100,
     sort: "createdAt",
@@ -102,19 +115,8 @@ export default function PurchaseOrdersPage() {
 
   const rows = data?.data?.content ?? [];
   const pagedBody = data?.data;
-  const suppliers = suppliersRes?.data?.content ?? [];
-  const warehouses = warehousesRes?.data?.content ?? [];
-
-  const supplierMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const s of suppliers) map.set(s.id, s.name ?? s.code ?? s.id);
-    return map;
-  }, [suppliers]);
-  const warehouseMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const w of warehouses) map.set(w.id, w.name);
-    return map;
-  }, [warehouses]);
+  const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes]);
+  const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
 
   const paged = useMemo((): Pick<
     PagedResponse<PurchaseOrder>,
@@ -137,9 +139,15 @@ export default function PurchaseOrdersPage() {
   const canGoPrev = page > 0;
   const canGoNext =
     paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
-  const hasAnyFilter = Boolean(
-    keyword.trim() || status || supplierId || warehouseId,
-  );
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (status) count++;
+    if (supplierId) count++;
+    if (warehouseId) count++;
+    return count;
+  }, [status, supplierId, warehouseId]);
+
+  const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0);
 
   const clearFilters = () => {
     setKeyword("");
@@ -149,13 +157,16 @@ export default function PurchaseOrdersPage() {
     setPage(0);
   };
 
+  const findSupplier = (id: string) => suppliers.find((s: Supplier) => s.id === id);
+  const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Đơn nhập hàng"
         description="Purchase Order — quản lý đơn đặt hàng từ nhà cung cấp."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2">
             <Button
               render={<Link href="/putaway" />}
               nativeButton={false}
@@ -169,7 +180,7 @@ export default function PurchaseOrdersPage() {
               render={<Link href="/purchase-orders/new" />}
               nativeButton={false}
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
             >
               <Plus className="mr-2 h-4 w-4" />
               Tạo đơn nhập
@@ -178,212 +189,277 @@ export default function PurchaseOrdersPage() {
         }
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-3 flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
-          <Filter className="h-4 w-4 text-indigo-500" />
-          Bộ lọc PO
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-5">
-          <div className="relative lg:col-span-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value);
-                setPage(0);
-              }}
-              placeholder="Tìm theo mã PO..."
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={status || "__all__"}
-            onValueChange={(v) => {
-              const next = String(v ?? "");
-              setStatus(next === "__all__" ? "" : next);
-              setPage(0);
-            }}
-          >
-            <SelectTrigger id="po-status-select-trigger">
-              <span className="flex flex-1 truncate text-left">
-                {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Tất cả trạng thái</SelectItem>
-              {STATUS_OPTIONS.map((st) => (
-                <SelectItem key={st} value={st}>
-                  {STATUS_LABEL[st] ?? st}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={supplierId || "__all__"}
-            onValueChange={(v) => {
-              const next = String(v ?? "");
-              setSupplierId(next === "__all__" ? "" : next);
-              setPage(0);
-            }}
-          >
-            <SelectTrigger id="po-supplier-select-trigger">
-              <span className="flex flex-1 truncate text-left">
-                {supplierId ? (supplierMap.get(supplierId) ?? supplierId) : "Tất cả nhà cung cấp"}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Tất cả nhà cung cấp</SelectItem>
-              {suppliers.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name ?? s.code ?? s.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={warehouseId || "__all__"}
-            onValueChange={(v) => {
-              const next = String(v ?? "");
-              setWarehouseId(next === "__all__" ? "" : next);
-              setPage(0);
-            }}
-          >
-            <SelectTrigger id="po-warehouse-select-trigger">
-              <span className="flex flex-1 truncate text-left">
-                {warehouseId ? (warehouseMap.get(warehouseId) ?? warehouseId) : "Tất cả kho"}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Tất cả kho</SelectItem>
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {hasAnyFilter ? (
-          <div className="mt-3">
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Xóa bộ lọc
-            </Button>
-          </div>
-        ) : null}
-      </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {isFetching && !isLoading ? (
-          <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
-            Đang cập nhật dữ liệu…
-          </p>
-        ) : null}
-        <div className="overflow-x-auto">
-          <Table className="min-w-215 text-left">
-            <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-              <TableRow>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
-                <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={`po-skel-${i}`}>
-                    <TableCell className="px-3 py-3">
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell className="px-3 py-3">
-                      <Skeleton className="h-4 w-28" />
-                    </TableCell>
-                    <TableCell className="px-3 py-3">
-                      <Skeleton className="h-4 w-28" />
-                    </TableCell>
-                    <TableCell className="px-3 py-3">
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </TableCell>
-                    <TableCell className="px-3 py-3 text-right">
-                      <Skeleton className="ml-auto h-8 w-16 rounded-lg" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : isError ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="p-0">
-                    <EmptyState
-                      icon={AlertCircle}
-                      title="Không tải được danh sách đơn nhập"
-                      description={apiErrMessage(
-                        error,
-                        "Lỗi mạng hoặc máy chủ từ chối yêu cầu.",
-                      )}
-                      action={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => refetch()}
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        {/* Unified Search Section */}
+        <SearchToolbar
+          noContainer
+          placeholder="Tìm kiếm theo mã PO..."
+          value={keyword}
+          onValueChange={(v) => {
+            setKeyword(v || "");
+            setPage(0);
+          }}
+          right={
+            <AdvancedFilterActions
+              open={advancedOpen}
+              onToggle={() => setAdvancedOpen(!advancedOpen)}
+              activeCount={activeFiltersCount}
+              hasAnyFilter={hasAnyFilter}
+              onClear={clearFilters}
+            />
+          }
+          filters={
+            advancedOpen || activeFiltersCount > 0 ? (
+              <AdvancedFilterPanel
+                open={advancedOpen}
+                summary={
+                  activeFiltersCount > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                      {status ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                          Trạng thái:{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                            {STATUS_LABEL[status] ?? status}
+                          </span>
+                        </span>
+                      ) : null}
+                      {supplierId ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                          NCC:{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                            {findSupplier(supplierId)?.name ?? "—"}
+                          </span>
+                        </span>
+                      ) : null}
+                      {warehouseId ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                          Kho:{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                            {findWarehouse(warehouseId)?.name ?? "—"}
+                          </span>
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null
+                }
+              >
+                <Select
+                  value={status}
+                  onValueChange={(v) => {
+                    setStatus(v || "");
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-42 dark:border-slate-800 dark:bg-slate-900">
+                    <SelectValue placeholder="Tất cả trạng thái">
+                      {(val) => STATUS_LABEL[val as string] ?? "Tất cả trạng thái"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="" className="rounded-lg">
+                      Tất cả trạng thái
+                    </SelectItem>
+                    {STATUS_OPTIONS.map((st) => (
+                      <SelectItem key={st} value={st} className="rounded-lg">
+                        {STATUS_LABEL[st] ?? st}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={supplierId}
+                  onValueChange={(v) => {
+                    setSupplierId(v || "");
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
+                    <SelectValue
+                      placeholder={
+                        suppliersLoading
+                          ? "Đang tải NCC..."
+                          : suppliersIsError
+                            ? "Lỗi tải NCC"
+                            : "Tất cả nhà cung cấp"
+                      }
+                    >
+                      {(val) => {
+                        if (!val) return "Tất cả nhà cung cấp";
+                        const s = findSupplier(val as string);
+                        return s ? `${s.name} (${s.code || "—"})` : "—";
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72 rounded-xl">
+                    {suppliersIsError ? (
+                      <div className="px-2 py-1.5 text-xs text-rose-500">
+                        Không tải được NCC.
+                        <button
+                          type="button"
+                          onClick={() => refetchSuppliers()}
+                          className="ml-1 underline"
                         >
                           Thử lại
-                        </Button>
+                        </button>
+                      </div>
+                    ) : null}
+                    <SelectItem value="" className="rounded-lg">
+                      Tất cả nhà cung cấp
+                    </SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.id} className="rounded-lg">
+                        {s.name} {s.code ? `(${s.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={warehouseId}
+                  onValueChange={(v) => {
+                    setWarehouseId(v || "");
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
+                    <SelectValue
+                      placeholder={
+                        warehousesLoading
+                          ? "Đang tải kho..."
+                          : warehousesIsError
+                            ? "Lỗi tải kho"
+                            : "Tất cả kho"
                       }
-                      className="py-10"
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="p-0">
-                    <EmptyState
-                      icon={FileText}
-                      title="Chưa có đơn nhập"
-                      description="Chưa có đơn nhập hoặc API trả về rỗng."
-                      action={
-                        <Button
-                          render={<Link href="/purchase-orders/new" />}
-                          nativeButton={false}
-                          size="sm"
-                          className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {(val) => {
+                        if (!val) return "Tất cả kho";
+                        const w = findWarehouse(val as string);
+                        return w ? `${w.name} (${w.code || "—"})` : "—";
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72 rounded-xl">
+                    {warehousesIsError ? (
+                      <div className="px-2 py-1.5 text-xs text-rose-500">
+                        Không tải được kho.
+                        <button
+                          type="button"
+                          onClick={() => refetchWarehouses()}
+                          className="ml-1 underline"
                         >
-                          Tạo đơn đầu tiên
-                        </Button>
-                      }
-                      className="py-10"
-                    />
-                  </TableCell>
+                          Thử lại
+                        </button>
+                      </div>
+                    ) : null}
+                    <SelectItem value="" className="rounded-lg">
+                      Tất cả kho
+                    </SelectItem>
+                    {warehouses.map((w) => (
+                      <SelectItem key={w.id} value={w.id} className="rounded-lg">
+                        {w.name} {w.code ? `(${w.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </AdvancedFilterPanel>
+            ) : null
+          }
+        />
+
+        {/* Updated Table UI */}
+        <div className="flex-1">
+          {isFetching && !isLoading ? (
+            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+              Đang cập nhật dữ liệu…
+            </div>
+          ) : null}
+
+          <div className="overflow-x-auto">
+            <Table className="min-w-px text-left border-collapse">
+              <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
+                  <TableHead className="w-[180px] py-4 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
+                  <TableHead className="w-[200px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
+                  <TableHead className="w-[200px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
+                  <TableHead className="w-[180px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                  <TableHead className="w-[150px] py-4 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
                 </TableRow>
-              ) : (
-                rows.map((po: PurchaseOrder) => (
-                  <TableRow key={po.id} className="group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70">
-                    <TableCell className="px-3 py-3 font-medium">{po.poNumber}</TableCell>
-                    <TableCell className="px-3 py-3">{po.orderDate}</TableCell>
-                    <TableCell className="px-3 py-3">{po.expectedDate ?? "—"}</TableCell>
-                    <TableCell className="px-3 py-3">
-                      <Badge
-                        variant="secondary"
-                        className={`font-normal ${statusBadgeClass(po.status)}`}
-                      >
-                        {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-3 py-3 text-right">
-                      <Button
-                        render={<Link href={`/purchase-orders/${po.id}`} />}
-                        nativeButton={false}
-                        variant="ghost"
-                        size="sm"
-                        className="text-indigo-600"
-                      >
-                        Chi tiết
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={`po-skel-${i}`} className="border-b border-slate-100 dark:border-slate-800">
+                      <TableCell className="py-4 pl-6 pr-3"><Skeleton className="h-4 w-24 rounded" /></TableCell>
+                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
+                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
+                      <TableCell className="px-3 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                      <TableCell className="py-4 pl-3 pr-6 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-12">
+                      <EmptyState
+                        icon={AlertCircle}
+                        title="Không tải được danh sách đơn nhập"
+                        description={apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối yêu cầu.")}
+                        action={<Button variant="outline" size="sm" onClick={() => refetch()}>Thử lại</Button>}
+                      />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-12">
+                      <EmptyState
+                        icon={FileText}
+                        title="Chưa có đơn nhập"
+                        description="Chưa có đơn nhập nào trong hệ thống hoặc cụm từ tìm kiếm không trùng khớp."
+                        action={
+                          <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm" className="bg-indigo-600">
+                            Tạo đơn đầu tiên
+                          </Button>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((po: PurchaseOrder) => (
+                    <TableRow
+                      key={po.id}
+                      className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/70 dark:border-slate-800 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <TableCell className="py-4 pl-6 pr-3 font-semibold text-slate-700 dark:text-slate-200">{po.poNumber}</TableCell>
+                      <TableCell className="px-3 py-4 text-slate-600 dark:text-slate-400">{po.orderDate}</TableCell>
+                      <TableCell className="px-3 py-4 text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
+                      <TableCell className="px-3 py-4">
+                        <Badge
+                          variant="secondary"
+                          className={cn("px-2.5 py-0.5 font-bold text-[11px] rounded-md border-0 shadow-none", statusBadgeClass(po.status))}
+                        >
+                          {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4 pl-3 pr-6 text-right">
+                        <Button
+                          render={<Link href={`/purchase-orders/${po.id}`} />}
+                          nativeButton={false}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-950/30 dark:text-indigo-400"
+                        >
+                          Chi tiết
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         <PaginationFooter
