@@ -8,11 +8,7 @@ import type { Product } from "@/types/product";
 import {
   useGetSalesOrderByIdQuery,
   useDeleteSalesOrderMutation,
-  useStartPickingMutation,
-  useMarkPackedMutation,
-  useMarkShippedMutation,
-  useConfirmOrderMutation,
-  useMarkDeliveredMutation,
+  useExecuteSalesOrderActionMutation,
 } from "@/store/services/order.service";
 import { useGetSoItemsQuery } from "@/store/services/so-item.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
@@ -60,11 +56,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   }, [so, warehouseById]);
 
   const [deleteSalesOrder, { isLoading: deletingOrder }] = useDeleteSalesOrderMutation();
-  const [startPicking, { isLoading: starting }] = useStartPickingMutation();
-  const [markPacked, { isLoading: packing }] = useMarkPackedMutation();
-  const [markShipped, { isLoading: shipping }] = useMarkShippedMutation();
-  const [confirmOrder, { isLoading: confirming }] = useConfirmOrderMutation();
-  const [markDelivered, { isLoading: delivering }] = useMarkDeliveredMutation();
+  const [executeAction, { isLoading: isExecuting }] = useExecuteSalesOrderActionMutation();
 
   const onDeleteSalesOrder = async () => {
     if (!so) return;
@@ -89,7 +81,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       return;
     }
     try {
-      const res = await confirmOrder({ salesOrderId: so.id }).unwrap();
+      const res = await executeAction({ salesOrderId: so.id, action: "confirm" }).unwrap();
       if (!res.success) toast.error(res.message || "Xác nhận thất bại");
       else toast.success("Đã xác nhận đơn");
     } catch (err) {
@@ -105,7 +97,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     }
 
     try {
-      const res = await startPicking({ salesOrderId: so.id }).unwrap();
+      const res = await executeAction({ salesOrderId: so.id, action: "start-picking" }).unwrap();
       if (!res.success) toast.error(res.message || "Không thể bắt đầu lấy hàng");
       else toast.success("Đã chuyển sang PICKING");
     } catch (err) {
@@ -119,13 +111,13 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       toast.error("Không thể đóng gói khi đơn chưa có dòng hàng.");
       return;
     }
-    if (so.status !== "PICKED") {
-      toast.error("Chỉ đóng gói khi đơn đang PICKED");
+    if (so.status !== "PICKING") {
+      toast.error("Chỉ đóng gói khi đơn đang PICKING");
       return;
     }
 
     try {
-      const res = await markPacked({ salesOrderId: so.id }).unwrap();
+      const res = await executeAction({ salesOrderId: so.id, action: "mark-packed" }).unwrap();
       if (!res.success) toast.error(res.message || "Đóng gói thất bại");
       else toast.success("Đã đóng gói");
     } catch (err) {
@@ -141,20 +133,9 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     }
 
     try {
-      const res = await markShipped({ salesOrderId: so.id }).unwrap();
+      const res = await executeAction({ salesOrderId: so.id, action: "mark-shipped" }).unwrap();
       if (!res.success) toast.error(res.message || "Xuất kho thất bại");
       else toast.success("Đã xuất kho");
-    } catch (err) {
-      toast.error(apiErrMessage(err));
-    }
-  };
-
-  const onMarkDelivered = async () => {
-    if (!so) return;
-    try {
-      const res = await markDelivered({ salesOrderId: so.id }).unwrap();
-      if (!res.success) toast.error(res.message || "Giao hàng thất bại");
-      else toast.success("Đã giao hàng");
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
@@ -174,16 +155,11 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     warehouseOptions,
     warehouseLabel,
     deletingOrder,
-    starting,
-    packing,
-    shipping,
-    confirming,
-    delivering,
+    isExecuting,
     onDeleteSalesOrder,
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
     onConfirmOrder,
-    onMarkDelivered,
   };
 }

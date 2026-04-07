@@ -48,7 +48,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   const productsById = useMemo(() => new Map(products.map((p) => [String(p.id), p as Product])), [products]);
 
   const status = salesOrder.status;
-  const allowLineMutation = status === "PENDING";
+  const allowLineMutation = status === "DRAFT" || status === "PENDING";
 
   const nextLineNumber = useMemo(() => {
     if (soItems.length === 0) return 1;
@@ -131,7 +131,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
   async function createLineAndPickingForProduct(productId: string) {
     if (!allowLineMutation) {
-      toast.error("Chỉ được thêm/xóa dòng khi đơn đang PENDING.");
+      toast.error("Chỉ được thêm/xóa dòng khi đơn đang NHÁP hoặc SẴN SÀNG.");
       return;
     }
 
@@ -252,7 +252,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   async function onAddLine(e: React.FormEvent) {
     e.preventDefault();
     if (!allowLineMutation) {
-      toast.error("Chỉ được thêm/xóa dòng khi đơn đang CHỜ XỬ LÝ.");
+      toast.error("Chỉ được thêm/xóa dòng khi đơn đang NHÁP hoặc SẴN SÀNG.");
       return;
     }
     setLineErrors({});
@@ -276,7 +276,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       setCreatingLineAndPicking(true);
       await createLineAndPickingForProduct(parsed.data.productId);
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      toast.error("Không thể ghi nhận sản phẩm hoặc tạo lệnh lấy hàng: " + apiErrMessage(err));
     } finally {
       setCreatingLineAndPicking(false);
     }
@@ -284,7 +284,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
   async function onDeleteLine(item: SoItem) {
     if (!allowLineMutation) {
-      toast.error("Chỉ được xóa dòng khi đơn đang CHỜ XỬ LÝ.");
+      toast.error("Chỉ được xóa dòng khi đơn đang NHÁP hoặc SẴN SÀNG.");
       return;
     }
     try {
@@ -310,7 +310,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
           </div>
           <div>
             <CardTitle className="text-base">Dòng hàng</CardTitle>
-            <CardDescription>Thêm / xóa dòng khi đơn đang CHỜ XỬ LÝ.</CardDescription>
+            <CardDescription>Thêm / xóa dòng khi đơn ở trạng thái NHÁP hoặc SẴN SÀNG.</CardDescription>
           </div>
         </div>
         <Badge variant="secondary" className="rounded-md tabular-nums">
