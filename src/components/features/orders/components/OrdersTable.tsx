@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ORDERS_PAGE_SIZE } from "@/components/features/orders/constants";
+import { OrdersPaginationFooter } from "./OrdersPaginationFooter";
 import {
   Table,
   TableBody,
@@ -48,6 +49,13 @@ type OrdersTableProps = {
   error: unknown;
   onRetry: () => void;
   onClearFilters: () => void;
+  totalElements: number;
+  totalPages: number;
+  canGoPrev: boolean;
+  canGoNext: boolean;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  noContainer?: boolean;
 };
 
 export function OrdersTable({
@@ -60,9 +68,16 @@ export function OrdersTable({
   error,
   onRetry,
   onClearFilters,
+  totalElements,
+  totalPages,
+  canGoPrev,
+  canGoNext,
+  onPrevPage,
+  onNextPage,
+  noContainer = false,
 }: OrdersTableProps) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu...
@@ -188,6 +203,28 @@ export function OrdersTable({
           </TableBody>
         </Table>
       </div>
+
+      <OrdersPaginationFooter
+        rowsCount={rows.length}
+        page={page}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        canGoPrev={canGoPrev}
+        canGoNext={canGoNext}
+        isFetching={isFetching}
+        onPrevPage={onPrevPage}
+        onNextPage={onNextPage}
+      />
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {content}
     </div>
   );
 }

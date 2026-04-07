@@ -16,11 +16,15 @@ export const createProductSchema = z.object({
     name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
     category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
     baseUnit: z.string().min(1, "Vui lòng chọn đơn vị tính."),
-    lengthCm: nonNegativeNumericString,
-    widthCm: nonNegativeNumericString,
-    heightCm: nonNegativeNumericString,
     weightKg: nonNegativeNumericString,
+    volumeCm3: nonNegativeNumericString,
     minStock: nonNegativeNumericString,
+    isLotTracked: z.boolean().optional(),
+    isExpiryTracked: z.boolean().optional(),
+    isFrozen: z.boolean().optional(),
+    isFragile: z.boolean().optional(),
+    isHazmat: z.boolean().optional(),
+    isHeavy: z.boolean().optional(),
 });
 
 export const editProductSchema = z.object({
@@ -32,11 +36,15 @@ export const editProductSchema = z.object({
     name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc."),
     category: z.string().min(1, "Vui lòng chọn nhóm hàng."),
     baseUnit: z.string().trim().min(1, "Đơn vị tính là bắt buộc."),
-    lengthCm: nonNegativeNumericString,
-    widthCm: nonNegativeNumericString,
-    heightCm: nonNegativeNumericString,
     weightKg: nonNegativeNumericString,
+    volumeCm3: nonNegativeNumericString,
     minStock: nonNegativeNumericString,
+    isLotTracked: z.boolean().optional(),
+    isExpiryTracked: z.boolean().optional(),
+    isFrozen: z.boolean().optional(),
+    isFragile: z.boolean().optional(),
+    isHazmat: z.boolean().optional(),
+    isHeavy: z.boolean().optional(),
     status: z.enum(["ACTIVE", "INACTIVE"]),
 });
 

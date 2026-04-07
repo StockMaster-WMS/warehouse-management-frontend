@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   PackagePlus,
   Search,
@@ -32,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { useGetInboundReceiptsQuery } from "@/store/services/inbound.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { InboundReceipt } from "@/types/inbound-receipt";
@@ -294,53 +293,22 @@ export default function InboundPage() {
           </Table>
         </div>
 
-        {/* Pagination footer */}
-        <div className="border-t border-slate-100 dark:border-slate-800">
-          <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              {isLoading ? (
-                <span>Đang tải danh sách…</span>
-              ) : isError ? (
-                <span className="text-rose-600 dark:text-rose-400">
-                  Không tải được dữ liệu.
-                </span>
-              ) : paged ? (
-                <span>
-                  Hiển thị {receipts.length}/{paged.total_elements} phiếu nhập
-                  {paged.total_pages > 1
-                    ? ` · Trang ${paged.page + 1}/${paged.total_pages}`
-                    : ""}
-                </span>
-              ) : (
-                <span>{receipts.length} bản ghi</span>
-              )}
-            </div>
-            {paged && paged.total_pages > 1 ? (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={!canGoPrev || isFetching}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Trước
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={!canGoNext || isFetching}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Sau
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <PaginationFooter
+          itemLabel="phiếu nhập"
+          rowsCount={receipts.length}
+          page={page}
+          totalElements={paged?.total_elements ?? receipts.length}
+          totalPages={paged?.total_pages ?? 1}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+          isLoading={isLoading}
+          isError={isError}
+          isFetching={isFetching}
+          errorText="Không tải được dữ liệu."
+          onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => setPage((p) => p + 1)}
+          pageSize={paged?.size ?? 20}
+        />
       </div>
     </div>
   );

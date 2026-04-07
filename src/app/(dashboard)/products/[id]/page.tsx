@@ -190,22 +190,19 @@ export default function ProductDetailPage({
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
                   <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    Quy cách & kích thước
+                    Quy cách sản phẩm
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   <ProductInfoField label="Nặng (kg)" value={String(product.weightKg ?? "—")} compact />
-                  <ProductInfoField label="Dài (cm)" value={String(product.lengthCm ?? "—")} compact />
-                  <ProductInfoField label="Rộng (cm)" value={String(product.widthCm ?? "—")} compact />
-                  <ProductInfoField label="Cao (cm)" value={String(product.heightCm ?? "—")} compact />
+                  <ProductInfoField
+                    label="Thể tích (cm³)"
+                    value={String(product.volumeCm3 ?? "—")}
+                    compact
+                  />
+                  <ProductInfoField label="Tồn tối thiểu" value={String(product.minStockQty ?? "—")} compact />
                 </div>
-                <p className="mt-4 text-xs text-slate-400">
-                  Thể tích hiển thị trên hệ thống: {" "}
-                  <span className="font-mono font-medium text-slate-600 dark:text-slate-300">
-                    {product.volumeCm3 != null ? `${product.volumeCm3} cm³` : "—"}
-                  </span>
-                </p>
               </section>
             </div>
 
@@ -235,7 +232,10 @@ export default function ProductDetailPage({
                     label="Theo dõi hạn dùng"
                     value={product.isExpiryTracked ? "Có" : "Không"}
                   />
-                  <ProductInfoField label="Tồn tối thiểu" value={String(product.minStockQty ?? "—")} />
+                  <ProductInfoField label="Đông lạnh" value={product.isFrozen ? "Có" : "Không"} />
+                  <ProductInfoField label="Dễ vỡ" value={product.isFragile ? "Có" : "Không"} />
+                  <ProductInfoField label="Hàng nguy hiểm" value={product.isHazmat ? "Có" : "Không"} />
+                  <ProductInfoField label="Hàng nặng" value={product.isHeavy ? "Có" : "Không"} />
                 </div>
               </section>
 

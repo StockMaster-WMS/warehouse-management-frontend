@@ -104,9 +104,9 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       toast.error("Không thể đóng gói khi đơn chưa có dòng hàng.");
       return;
     }
-    if (so.status === "PICKING") {
-      const ok = window.confirm("Đơn đang PICKING. Chỉ đóng gói khi đã lấy đủ (PICKED). Tiếp tục?");
-      if (!ok) return;
+    if (so.status !== "PICKED") {
+      toast.error("Chỉ đóng gói khi đơn đang PICKED");
+      return;
     }
 
     try {

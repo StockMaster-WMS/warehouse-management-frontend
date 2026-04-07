@@ -6,14 +6,13 @@ import {
   Loader2,
   MapPin,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -90,6 +89,7 @@ export default function PutawayPage() {
     });
 
   const tasks = data?.data?.content ?? [];
+  const totalElements = data?.data?.total_elements ?? tasks.length;
   const totalPages = data?.data?.total_pages ?? 0;
 
   /* ── Locations lookup ── */
@@ -450,34 +450,19 @@ export default function PutawayPage() {
           </Table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-            <span className="text-xs text-slate-500">
-              Trang {page + 1} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 0 || isFetching}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Trước
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages - 1 || isFetching}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Sau
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationFooter
+          itemLabel="putaway task"
+          rowsCount={tasks.length}
+          page={page}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          canGoPrev={page > 0}
+          canGoNext={totalPages > 0 && page < totalPages - 1}
+          isFetching={isFetching}
+          onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => setPage((p) => p + 1)}
+          pageSize={size}
+        />
       </div>
 
       {/* Complete Dialog */}
