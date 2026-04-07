@@ -17,13 +17,13 @@ import { useGetPickingItemsQuery, useUpdatePickingItemMutation, useGetPickingIte
 
 export function OperationTab() {
     const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({});
-    
+
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
     const tasks = useMemo(() => allItems.filter(t => t.status === "PENDING"), [allItems]);
     const completedTasks = useMemo(() => allItems.filter(t => t.status === "PICKED"), [allItems]);
-    
+
     const activeSummary = useMemo(() => {
         if (selectedTaskId) {
             return tasks.find(t => t.id === selectedTaskId) || null;
@@ -31,10 +31,10 @@ export function OperationTab() {
         return null;
     }, [tasks, selectedTaskId]);
 
-    const { data: detailData } = useGetPickingItemByIdQuery(activeSummary?.id as string, { 
-        skip: !activeSummary?.id 
+    const { data: detailData } = useGetPickingItemByIdQuery(activeSummary?.id as string, {
+        skip: !activeSummary?.id
     });
-    
+
     const activeItem = useMemo(() => {
         if (!activeSummary) return null;
         if (!detailData?.data) return activeSummary;
@@ -77,7 +77,7 @@ export function OperationTab() {
     const handleConfirmPick = async () => {
         if (!activeItem) return;
         const qty = Number(pickedQty);
-        
+
         try {
             await updatePickingItem({
                 id: activeItem.id,
@@ -88,7 +88,7 @@ export function OperationTab() {
                 qtyPicked: qty,
                 status: "PICKED"
             }).unwrap();
-            
+
             toast.success("Xong!");
             setSelectedTaskId(null);
             setCurrentStep("location");
@@ -198,7 +198,7 @@ export function OperationTab() {
         <div className="mx-auto max-w-sm space-y-3 px-3 py-4 bg-slate-50/10 min-h-screen">
             <div className="flex items-center justify-between px-1 mb-1">
                 <div className="flex items-center gap-2">
-                    <button 
+                    <button
                         onClick={() => {
                             setSelectedTaskId(null);
                             setCurrentStep("location");
@@ -225,8 +225,8 @@ export function OperationTab() {
 
                 <div className="space-y-0">
                     <h2 className="text-sm font-bold text-slate-800 leading-tight">
-                        {activeItem.productName && activeItem.productName !== "Sản phẩm không tên" 
-                            ? activeItem.productName 
+                        {activeItem.productName && activeItem.productName !== "Sản phẩm không tên"
+                            ? activeItem.productName
                             : activeItem.productSku}
                     </h2>
                     <p className="text-[9px] font-medium text-slate-400 uppercase">{activeItem.productSku}</p>
@@ -319,11 +319,11 @@ export function OperationTab() {
                 <DialogContent className="max-w-[calc(100%-2rem)] rounded-xl border-none p-8 shadow-2xl">
                     <DialogHeader className="space-y-3 text-center">
                         <div className="h-14 w-14 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-1">
-                             <Archive className="h-7 w-7 text-rose-500" />
+                            <Archive className="h-7 w-7 text-rose-500" />
                         </div>
                         <DialogTitle className="text-base font-bold text-slate-800 uppercase tracking-tight">Ngoại lệ</DialogTitle>
                         <DialogDescription className="text-xs font-medium text-slate-400 px-2">
-                             Chọn lý do không thể lấy hàng.
+                            Chọn lý do không thể lấy hàng.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-2 py-4">
