@@ -23,6 +23,8 @@ import {
   ChevronRight,
   Loader2,
   ShieldAlert,
+  Download,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +68,7 @@ import {
   useGetSuppliersQuery,
   useDeleteSupplierMutation,
   useChangeSupplierStatusMutation,
+  useExportSuppliersXlsxMutation,
 } from "@/store/services/supplier.service";
 import { useGetPurchaseOrdersQuery } from "@/store/services/purchase-order.service";
 import { apiErrMessage } from "@/types/api";
@@ -80,8 +83,8 @@ import {
 /* ── Status filter labels ── */
 const STATUS_FILTER_LABEL: Record<string, string> = {
   "": "Tất cả",
-  active: "Hoạt động",
-  inactive: "Ngưng hoạt động",
+  active: "Đang hoạt động",
+  inactive: "Ngừng hoạt động",
   suspended: "Tạm ngưng",
 };
 
@@ -281,8 +284,8 @@ function ChangeStatusDialog({
   supplier: Supplier | null;
 }) {
   const currentStatus = (
-    supplier?.status ?? "ACTIVE"
-  ).toUpperCase() as SupplierStatus;
+    supplier?.status ?? "active"
+  ).toLowerCase() as SupplierStatus;
   const [newStatus, setNewStatus] = useState<SupplierStatus>(currentStatus);
   const [changeStatus, { isLoading }] = useChangeSupplierStatusMutation();
 
@@ -335,9 +338,9 @@ function ChangeStatusDialog({
               </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-              <SelectItem value="INACTIVE">Ngưng hoạt động</SelectItem>
-              <SelectItem value="SUSPENDED">Tạm ngưng</SelectItem>
+              <SelectItem value="active">Đang hoạt động</SelectItem>
+              <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+              <SelectItem value="suspended">Tạm ngưng</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -348,7 +351,7 @@ function ChangeStatusDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || newStatus.toUpperCase() === currentStatus}
+            disabled={isLoading || newStatus === currentStatus}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -385,6 +388,8 @@ export default function SuppliersPage() {
     });
 
   const [deleteSupplier] = useDeleteSupplierMutation();
+  const [exportXlsx, { isLoading: exporting }] =
+    useExportSuppliersXlsxMutation();
 
   const pagedBody = data?.data;
   const rows = useMemo(() => pagedBody?.content ?? [], [pagedBody]);
@@ -415,7 +420,33 @@ export default function SuppliersPage() {
       }
       toast.success(res.message || "Đã xóa nhà cung cấp");
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      const msg = apiErrMessage(err);
+      if (msg.includes("đơn nhập hàng")) {
+        toast.error("Không thể xóa nhà cung cấp đang có đơn nhập hàng");
+      } else {
+        toast.error(msg);
+      }
+    }
+  };
+
+  /* ── Export Excel handler ── */
+  const handleExport = async () => {
+    try {
+      const blob = await exportXlsx({
+        keyword: debouncedKeyword || undefined,
+        status: statusFilter || undefined,
+      }).unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "suppliers.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất file Excel");
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Xuất Excel thất bại"));
     }
   };
 
@@ -512,12 +543,26 @@ export default function SuppliersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Tất cả</SelectItem>
-                <SelectItem value="active">Hoạt động</SelectItem>
-                <SelectItem value="inactive">Ngưng hoạt động</SelectItem>
+                <SelectItem value="active">Đang hoạt động</SelectItem>
+                <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
                 <SelectItem value="suspended">Tạm ngưng</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={exporting}
+            onClick={handleExport}
+          >
+            {exporting ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-4 w-4" />
+            )}
+            Xuất Excel
+          </Button>
           {hasAnyFilter && (
             <Button
               type="button"
@@ -692,6 +737,13 @@ export default function SuppliersPage() {
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                           </DropdownMenuGroup>
+                          <DropdownMenuItem
+                            className="rounded-lg"
+                            render={<Link href={`/suppliers/${sup.id}`} />}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Xem chi tiết
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="rounded-lg"
                             render={<Link href={`/suppliers/${sup.id}/edit`} />}

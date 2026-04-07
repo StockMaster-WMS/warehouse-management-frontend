@@ -29,6 +29,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { useCreateSupplierMutation } from "@/store/services/supplier.service";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
 import type { CreateSupplierRequest, SupplierStatus } from "@/types/supplier";
 import { supplierStatusLabel } from "@/types/supplier";
@@ -50,7 +51,17 @@ export default function NewSupplierPage() {
   const [address, setAddress] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("30");
   const [leadTimeDays, setLeadTimeDays] = useState("7");
-  const [status, setStatus] = useState<SupplierStatus>("ACTIVE");
+  const [status, setStatus] = useState<SupplierStatus>("active");
+
+  const isDirty =
+    code.trim().length > 0 ||
+    name.trim().length > 0 ||
+    taxCode.trim().length > 0 ||
+    contactName.trim().length > 0 ||
+    contactPhone.trim().length > 0 ||
+    contactEmail.trim().length > 0 ||
+    address.trim().length > 0;
+  const { confirmLeave } = useUnsavedChanges(isDirty);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createSupplier, { isLoading }] = useCreateSupplierMutation();
@@ -127,11 +138,12 @@ export default function NewSupplierPage() {
         description="Khởi tạo hồ sơ đối tác cung ứng và thông tin liên hệ."
         actions={
           <Button
-            render={<Link href="/suppliers" />}
-            nativeButton={false}
             variant="ghost"
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
+            onClick={() => {
+              if (confirmLeave()) router.push("/suppliers");
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -294,9 +306,9 @@ export default function NewSupplierPage() {
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                  <SelectItem value="INACTIVE">Ngưng hoạt động</SelectItem>
-                  <SelectItem value="SUSPENDED">Tạm ngưng</SelectItem>
+                  <SelectItem value="active">Đang hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                  <SelectItem value="suspended">Tạm ngưng</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -359,10 +371,11 @@ export default function NewSupplierPage() {
                 </Button>
                 <Button
                   type="button"
-                  render={<Link href="/suppliers" />}
-                  nativeButton={false}
                   variant="outline"
                   className="w-full border-slate-200 bg-white"
+                  onClick={() => {
+                    if (confirmLeave()) router.push("/suppliers");
+                  }}
                 >
                   Hủy bỏ
                 </Button>

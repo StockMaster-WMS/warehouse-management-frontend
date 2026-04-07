@@ -34,6 +34,7 @@ import {
   useGetSupplierByIdQuery,
   useUpdateSupplierMutation,
 } from "@/store/services/supplier.service";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
 import type { SupplierStatus, UpdateSupplierRequest } from "@/types/supplier";
 import { supplierStatusLabel } from "@/types/supplier";
@@ -71,7 +72,7 @@ export default function EditSupplierPage({
       address: supplier.address ?? "",
       paymentTerms: String(supplier.paymentTerms ?? 30),
       leadTimeDays: String(supplier.leadTimeDays ?? 7),
-      status: (supplier.status ?? "ACTIVE") as SupplierStatus,
+      status: (supplier.status ?? "active") as SupplierStatus,
     };
   }, [supplier]);
 
@@ -84,7 +85,7 @@ export default function EditSupplierPage({
   const [address, setAddress] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("30");
   const [leadTimeDays, setLeadTimeDays] = useState("7");
-  const [status, setStatus] = useState<SupplierStatus>("ACTIVE");
+  const [status, setStatus] = useState<SupplierStatus>("active");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [updateSupplier, { isLoading: saving }] = useUpdateSupplierMutation();
@@ -104,6 +105,21 @@ export default function EditSupplierPage({
     setStatus(initial.status);
     setSynced(true);
   }
+
+  const isDirty =
+    synced &&
+    initial != null &&
+    (code !== initial.code ||
+      name !== initial.name ||
+      taxCode !== initial.taxCode ||
+      contactName !== initial.contactName ||
+      contactPhone !== initial.contactPhone ||
+      contactEmail !== initial.contactEmail ||
+      address !== initial.address ||
+      paymentTerms !== initial.paymentTerms ||
+      leadTimeDays !== initial.leadTimeDays ||
+      status !== initial.status);
+  const { confirmLeave } = useUnsavedChanges(isDirty);
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -249,11 +265,12 @@ export default function EditSupplierPage({
         description={`${supplier.name} (${supplier.code})`}
         actions={
           <Button
-            render={<Link href="/suppliers" />}
-            nativeButton={false}
             variant="ghost"
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
+            onClick={() => {
+              if (confirmLeave()) router.push("/suppliers");
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -274,8 +291,7 @@ export default function EditSupplierPage({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase text-slate-500">
-                      Mã nhà cung cấp{" "}
-                      <span className="text-rose-500">*</span>
+                      Mã nhà cung cấp <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -290,8 +306,7 @@ export default function EditSupplierPage({
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase text-slate-500">
-                      Tên nhà cung cấp{" "}
-                      <span className="text-rose-500">*</span>
+                      Tên nhà cung cấp <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       value={name}
@@ -403,9 +418,9 @@ export default function EditSupplierPage({
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                  <SelectItem value="INACTIVE">Ngưng hoạt động</SelectItem>
-                  <SelectItem value="SUSPENDED">Tạm ngưng</SelectItem>
+                  <SelectItem value="active">Đang hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                  <SelectItem value="suspended">Tạm ngưng</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -466,10 +481,11 @@ export default function EditSupplierPage({
                 </Button>
                 <Button
                   type="button"
-                  render={<Link href="/suppliers" />}
-                  nativeButton={false}
                   variant="outline"
                   className="w-full border-slate-200 bg-white"
+                  onClick={() => {
+                    if (confirmLeave()) router.push("/suppliers");
+                  }}
                 >
                   Hủy bỏ
                 </Button>
