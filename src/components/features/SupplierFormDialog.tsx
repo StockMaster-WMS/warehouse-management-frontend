@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ import {
 import { apiErrMessage } from "@/types/api";
 import type {
   Supplier,
-  SupplierStatus,
   CreateSupplierRequest,
 } from "@/types/supplier";
 import { SUPPLIER_STATUS_LABEL } from "@/types/supplier";
@@ -48,7 +47,7 @@ const EMPTY: CreateSupplierRequest = {
   address: "",
   paymentTerms: 30,
   leadTimeDays: 7,
-  status: "ACTIVE",
+  status: "active",
 };
 
 export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
@@ -60,27 +59,34 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
   const [updateSupplier, { isLoading: updating }] = useUpdateSupplierMutation();
   const saving = creating || updating;
 
-  useEffect(() => {
+  const [prevSupplier, setPrevSupplier] = useState<Supplier | null | undefined>(
+    undefined
+  );
+  const [prevOpen, setPrevOpen] = useState(false);
+
+  if (open !== prevOpen || supplier !== prevSupplier) {
+    setPrevOpen(open);
+    setPrevSupplier(supplier);
     if (open) {
-      if (supplier) {
-        setForm({
-          code: supplier.code,
-          name: supplier.name,
-          taxCode: supplier.taxCode ?? "",
-          contactName: supplier.contactName ?? "",
-          contactPhone: supplier.contactPhone ?? "",
-          contactEmail: supplier.contactEmail ?? "",
-          address: supplier.address ?? "",
-          paymentTerms: supplier.paymentTerms ?? 30,
-          leadTimeDays: supplier.leadTimeDays ?? 7,
-          status: supplier.status,
-        });
-      } else {
-        setForm(EMPTY);
-      }
+      setForm(
+        supplier
+          ? {
+            code: supplier.code,
+            name: supplier.name,
+            taxCode: supplier.taxCode ?? "",
+            contactName: supplier.contactName ?? "",
+            contactPhone: supplier.contactPhone ?? "",
+            contactEmail: supplier.contactEmail ?? "",
+            address: supplier.address ?? "",
+            paymentTerms: supplier.paymentTerms ?? 30,
+            leadTimeDays: supplier.leadTimeDays ?? 7,
+            status: supplier.status,
+          }
+          : EMPTY
+      );
       setErrors({});
     }
-  }, [open, supplier]);
+  }
 
   function set(field: keyof CreateSupplierRequest, value: string | number) {
     setForm((p) => ({ ...p, [field]: value }));
@@ -225,19 +231,19 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                 Trạng thái
               </Label>
               <Select
-                value={form.status ?? "ACTIVE"}
-                onValueChange={(v) => set("status", v)}
+                value={form.status ?? "active"}
+                onValueChange={(v) => v && set("status", v)}
               >
                 <SelectTrigger>
                   <span className="flex flex-1 truncate text-left">
-                    {SUPPLIER_STATUS_LABEL[form.status ?? "ACTIVE"] ??
-                      "Hoạt động"}
+                    {SUPPLIER_STATUS_LABEL[form.status ?? "active"] ??
+                      "Đang hoạt động"}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ACTIVE">Hoạt động</SelectItem>
-                  <SelectItem value="INACTIVE">Ngưng hoạt động</SelectItem>
-                  <SelectItem value="SUSPENDED">Tạm ngưng</SelectItem>
+                  <SelectItem value="active">Đang hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                  <SelectItem value="suspended">Tạm ngưng</SelectItem>
                 </SelectContent>
               </Select>
             </div>
