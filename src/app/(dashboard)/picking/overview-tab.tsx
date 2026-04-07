@@ -25,7 +25,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useGetPickingItemsQuery, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
+import { toast } from "sonner";
+import { useGetPickingItemsQuery, useGetPickingItemByIdQuery, useAssignPickingTaskMutation } from "@/store/services/picking-item.service";
 
 interface GroupedPicking {
     soNumber: string;
@@ -51,6 +52,17 @@ export function OverviewTab() {
         selectedId as string,
         { skip: !selectedId }
     );
+    const [assignTask] = useAssignPickingTaskMutation();
+
+    const handleAssignGroup = async (e: React.MouseEvent, group: GroupedPicking) => {
+        e.stopPropagation();
+        try {
+            await Promise.all(group.items.map(i => assignTask({ id: i.id, soItemId: i.soItemId, assigneeId: "user-demotask" }).unwrap()));
+            toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
+        } catch {
+            toast.error("Lỗi khi phân công tác vụ!");
+        }
+    };
 
     const { groupedData, stats } = useMemo(() => {
         const rawItems = data?.data?.content || [];
@@ -297,7 +309,17 @@ export function OverviewTab() {
                                                     {group.status === "PICKED" ? "Hoàn tất" : group.status === "PARTIAL" ? "Đang lấy" : "Chờ lấy"}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-right pr-6">
+                                            <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
+                                                {group.status === "PENDING" && (
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 text-[11px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                                                        onClick={(e) => handleAssignGroup(e, group)}
+                                                    >
+                                                        Giao nhân viên
+                                                    </Button>
+                                                )}
                                                 <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-600">
                                                     {expandedGroups[group.soNumber] === true ? "Thu gọn" : "Xem dòng"}
                                                 </Button>

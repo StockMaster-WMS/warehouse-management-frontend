@@ -142,6 +142,28 @@ const orderApi = baseApi.injectEndpoints({
         { type: "SalesOrder", id: "LIST" },
       ],
     }),
+
+    confirmOrder: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
+      query: ({ salesOrderId }) => ({
+        url: `/sales-orders/${salesOrderId}/confirm`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "SalesOrder", id: arg.salesOrderId },
+        { type: "SalesOrder", id: "LIST" },
+      ],
+    }),
+
+    markDelivered: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
+      query: ({ salesOrderId }) => ({
+        url: `/sales-orders/${salesOrderId}/mark-delivered`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "SalesOrder", id: arg.salesOrderId },
+        { type: "SalesOrder", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -155,4 +177,6 @@ export const {
   useStartPickingMutation,
   useMarkPackedMutation,
   useMarkShippedMutation,
+  useConfirmOrderMutation,
+  useMarkDeliveredMutation,
 } = orderApi;
