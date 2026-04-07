@@ -1,23 +1,62 @@
 import { baseApi } from "@/store/services/api";
-import type { ApiResponse } from "@/types/api";
-import type { Location } from "@/types/location";
-import type { LocationOption } from "@/types/purchase-order";
+import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
+import type { Location, CreateLocationRequest } from "@/types/location";
 
-type UpsertLocationPayload = {
-  warehouseId: string;
-  code?: string;
-  name?: string;
+export type GetLocationsParams = {
+  page?: number;
+  size?: number;
+  sort?: string;
+  sortDir?: "asc" | "desc";
+  warehouseId?: string;
   zone?: string;
-  aisle?: string;
-  rack?: string;
-  level?: number;
-  bin?: string;
-  locationType?: string;
-  isActive?: boolean;
+  keyword?: string;
 };
+
+function buildLocationsQueryParams(params: GetLocationsParams) {
+  const {
+    page = 0,
+    size = 20,
+    sort = "createdAt",
+    sortDir = "desc",
+    warehouseId,
+    zone,
+    keyword,
+  } = params;
+
+  const query: Record<string, string | number> = { page, size, sort, sortDir };
+  const wh = warehouseId?.trim();
+  if (wh) query.warehouseId = wh;
+  const z = zone?.trim();
+  if (z) query.zone = z;
+  const k = keyword?.trim();
+  if (k) query.keyword = k;
+  return query;
+}
 
 const locationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getLocationsList: builder.query<
+      ApiResponse<PagedResponse<Location>>,
+      GetLocationsParams
+    >({
+      query: (params) => ({
+        url: "/locations",
+        method: "GET",
+        params: buildLocationsQueryParams(params),
+      }),
+      transformResponse: (r: ApiResponse<Location[] | PagedResponse<Location>>) =>
+        normalizeApiResponsePaged(r),
+      providesTags: (result) =>
+        result?.data?.content?.length
+          ? [
+              ...result.data.content.map((l) => ({
+                type: "Location" as const,
+                id: l.id,
+              })),
+              { type: "Location" as const, id: "LIST" },
+            ]
+          : [{ type: "Location" as const, id: "LIST" }],
+    }),
     getLocationById: builder.query<ApiResponse<Location>, string>({
       query: (id) => ({
         url: `/locations/${id}`,
@@ -25,7 +64,7 @@ const locationApi = baseApi.injectEndpoints({
       }),
       providesTags: (_result, _error, id) => [{ type: "Location" as const, id }],
     }),
-    createLocation: builder.mutation<ApiResponse<LocationOption>, UpsertLocationPayload>({
+    createLocation: builder.mutation<ApiResponse<Location>, CreateLocationRequest>({
       query: (body) => ({
         url: "/locations",
         method: "POST",
@@ -38,8 +77,8 @@ const locationApi = baseApi.injectEndpoints({
       ],
     }),
     updateLocation: builder.mutation<
-      ApiResponse<LocationOption>,
-      { id: string; body: UpsertLocationPayload }
+      ApiResponse<Location>,
+      { id: string; body: CreateLocationRequest }
     >({
       query: ({ id, body }) => ({
         url: `/locations/${id}`,
@@ -71,6 +110,7 @@ const locationApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetLocationsListQuery,
   useLazyGetLocationByIdQuery,
   useCreateLocationMutation,
   useUpdateLocationMutation,

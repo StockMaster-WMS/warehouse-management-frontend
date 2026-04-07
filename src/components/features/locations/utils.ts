@@ -1,13 +1,13 @@
-import type { LocationOption } from "@/types/purchase-order";
+import type { Location } from "@/types/location";
 
-export function formatLocationZoneLine(location: LocationOption) {
+export function formatLocationZoneLine(location: Location) {
     const zone = location.zone || "-";
     const aisle = location.aisle || "-";
     const rack = location.rack || "-";
     return `Z:${zone} - A:${aisle} - R:${rack}`;
 }
 
-export function matchesLocationKeyword(location: LocationOption, keyword: string) {
+export function matchesLocationKeyword(location: Location, keyword: string) {
     if (!keyword) {
         return true;
     }
@@ -15,7 +15,6 @@ export function matchesLocationKeyword(location: LocationOption, keyword: string
     const normalizedKeyword = keyword.toLowerCase();
     const searchable = [
         location.code,
-        location.name,
         location.zone,
         location.aisle,
         location.rack,

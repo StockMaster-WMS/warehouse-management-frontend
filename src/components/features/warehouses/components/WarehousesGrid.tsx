@@ -1,15 +1,12 @@
 import Link from "next/link";
 import {
   AlertCircle,
-  Boxes,
   Building2,
   ChevronRight,
   Edit2,
-  LayoutDashboard,
   MapPin,
   MoreVertical,
   Plus,
-  ThermometerSnowflake,
   Trash2,
   User,
   X,
@@ -29,7 +26,6 @@ import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrMessage } from "@/types/api";
 import type { Warehouse } from "@/types/warehouse";
-import { getCapacityWidthClass } from "@/components/features/warehouses/utils";
 
 type WarehousesGridProps = {
   warehouses: Warehouse[];
@@ -46,7 +42,9 @@ type WarehousesGridProps = {
   onPrevPage: () => void;
   onNextPage: () => void;
   onPageSizeChange: (size: number) => void;
-  onRequestDelete: (warehouseName: string) => void;
+  onRequestDelete: (warehouse: Warehouse) => void;
+  onRequestEdit: (warehouse: Warehouse) => void;
+  onRequestCreate: () => void;
   noContainer?: boolean;
 };
 
@@ -66,6 +64,8 @@ export function WarehousesGrid({
   onNextPage,
   onPageSizeChange,
   onRequestDelete,
+  onRequestEdit,
+  onRequestCreate,
   noContainer = false,
 }: WarehousesGridProps) {
   const content = (
@@ -119,10 +119,9 @@ export function WarehousesGrid({
               </Button>
             ) : (
               <Button
-                render={<Link href="/warehouses/new" />}
-                nativeButton={false}
                 size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={onRequestCreate}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm kho mới
@@ -135,7 +134,9 @@ export function WarehousesGrid({
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {warehouses.map((warehouse) => {
-              const capacity = Math.max(0, Math.min(100, Math.round(warehouse.fillRatePercent ?? 0)));
+              const createdDate = warehouse.createdAt
+                ? new Date(warehouse.createdAt).toLocaleDateString("vi-VN")
+                : "—";
 
               return (
                 <div
@@ -145,11 +146,7 @@ export function WarehousesGrid({
                   <div className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40">
-                        {warehouse.type?.toLowerCase().includes("lạnh") ? (
-                          <ThermometerSnowflake className="h-6 w-6" />
-                        ) : (
-                          <Building2 className="h-6 w-6" />
-                        )}
+                        <Building2 className="h-6 w-6" />
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge
@@ -174,14 +171,16 @@ export function WarehousesGrid({
                             <DropdownMenuGroup>
                               <DropdownMenuLabel>Quản lý kho</DropdownMenuLabel>
                             </DropdownMenuGroup>
-                            <DropdownMenuItem className="rounded-lg" render={<Link href={`/warehouses/${warehouse.id}/edit`} />}>
+                            <DropdownMenuItem
+                              className="rounded-lg"
+                              onClick={() => onRequestEdit(warehouse)}
+                            >
                               <Edit2 className="mr-2 h-4 w-4" />
                               Sửa thông tin
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-lg">Xem bản đồ kho</DropdownMenuItem>
                             <DropdownMenuItem
                               className="rounded-lg text-rose-600 focus:text-rose-600"
-                              onClick={() => onRequestDelete(warehouse.name)}
+                              onClick={() => onRequestDelete(warehouse)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Xóa kho
@@ -197,42 +196,11 @@ export function WarehousesGrid({
                         <MapPin className="h-3.5 w-3.5" />
                         {warehouse.address || "Chưa cập nhật địa chỉ"}
                       </div>
-                      <div className="text-[11px] font-semibold text-slate-400">{warehouse.code || "--"}</div>
+                      <div className="text-[11px] font-semibold text-slate-400">{warehouse.code || "—"}</div>
                     </div>
 
-                    <div className="mt-6 space-y-3">
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-400 uppercase tracking-wider">Tỷ lệ lấp đầy</span>
-                          <span className={capacity > 90 ? "text-rose-500" : "text-slate-900 dark:text-white"}>
-                            {capacity}%
-                          </span>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                          <div
-                            className={`h-full transition-all ${getCapacityWidthClass(capacity)} ${
-                              capacity > 90 ? "bg-rose-500" : "bg-indigo-500"
-                            }`}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
-                          <LayoutDashboard className="h-4 w-4 text-slate-400" />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] leading-none font-bold text-slate-400 uppercase">Zones</span>
-                            <span className="text-sm font-bold text-slate-900 dark:text-white">{warehouse.zonesCount ?? "--"}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
-                          <Boxes className="h-4 w-4 text-slate-400" />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] leading-none font-bold text-slate-400 uppercase">Bins</span>
-                            <span className="text-sm font-bold text-slate-900 dark:text-white">{warehouse.binsCount ?? "--"}</span>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="mt-4 text-xs text-slate-400">
+                      Ngày tạo: {createdDate}
                     </div>
                   </div>
 
@@ -244,15 +212,14 @@ export function WarehousesGrid({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] leading-none font-bold text-slate-400">Quản lý</span>
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{warehouse.managerName ?? "--"}</span>
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{warehouse.managerName ?? "—"}</span>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-8 gap-1.5 text-xs text-indigo-600 transition-all hover:bg-indigo-50 dark:text-indigo-400"
-                        render={<Link href={`/warehouses/${warehouse.id}/edit`} />}
-                        nativeButton={false}
+                        onClick={() => onRequestEdit(warehouse)}
                       >
                         Chi tiết
                         <ChevronRight className="h-3.5 w-3.5" />
@@ -264,9 +231,8 @@ export function WarehousesGrid({
             })}
 
             <Button
-              render={<Link href="/warehouses/new" />}
-              nativeButton={false}
               className="flex min-h-75 h-full w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-transparent text-slate-500 transition-all hover:border-indigo-400 hover:bg-indigo-50/30 hover:text-indigo-600 dark:border-slate-800"
+              onClick={onRequestCreate}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
                 <Plus className="h-6 w-6" />

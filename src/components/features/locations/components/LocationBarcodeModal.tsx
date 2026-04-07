@@ -10,12 +10,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { LocationOption } from "@/types/purchase-order";
+import type { Location } from "@/types/location";
 
 type LocationBarcodeModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  location: LocationOption | null;
+  location: Location | null;
   warehouseName: string;
 };
 

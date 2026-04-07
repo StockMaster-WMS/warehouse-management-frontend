@@ -1,0 +1,309 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { apiErrMessage } from "@/types/api";
+import {
+  useGetStockListQuery,
+  useGetStockSummaryQuery,
+  useGetLowStockAlertsQuery,
+  useGetNearExpiryAlertsQuery,
+  useAdjustStockMutation,
+  useAdjustReservedMutation,
+  useLazyExportStockReportQuery,
+  useLazyExportNearExpiryReportQuery,
+} from "@/store/services/stock.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import { useGetLocationsListQuery } from "@/store/services/location.service";
+import { useGetProductsQuery } from "@/store/services/product.service";
+import {
+  INVENTORY_PAGE_SIZE,
+  NEAR_EXPIRY_DAYS_DEFAULT,
+  DEFAULT_ADJUST_FORM,
+  type AdjustFormState,
+} from "@/components/features/inventory/constants";
+import { downloadBlob } from "@/components/features/inventory/utils";
+
+export type InventoryTab = "stock" | "low-stock" | "near-expiry";
+
+export function useInventoryPageLogic() {
+  // ── Tab ──
+  const [activeTab, setActiveTab] = useState<InventoryTab>("stock");
+
+  // ── Filters ──
+  const [warehouseId, setWarehouseId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedKeyword = useDebouncedValue(searchInput.trim());
+
+  // ── Adjust dialogs ──
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [adjustType, setAdjustType] = useState<"qty" | "reserved">("qty");
+  const [adjustForm, setAdjustForm] = useState<AdjustFormState>(DEFAULT_ADJUST_FORM);
+
+  // ── Advanced filter toggle ──
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const advancedCount = useMemo(() => {
+    let count = 0;
+    if (warehouseId) count++;
+    return count;
+  }, [warehouseId]);
+
+  const hasAnyFilter = !!(searchInput.trim() || warehouseId);
+
+  const clearFilters = useCallback(() => {
+    setSearchInput("");
+    setWarehouseId("");
+    setLocationId("");
+    setPage(0);
+  }, []);
+
+  // ── Summary (6 cards) ──
+  const {
+    data: summaryRes,
+    isLoading: isSummaryLoading,
+  } = useGetStockSummaryQuery({ nearExpiryDays: NEAR_EXPIRY_DAYS_DEFAULT });
+  const summary = summaryRes?.data ?? null;
+
+  // ── Warehouses for dropdown ──
+  const { data: warehousesRes, isLoading: isWarehousesLoading } = useGetWarehousesQuery({
+    page: 0,
+    size: 200,
+    sort: "name",
+    sortDir: "asc",
+  });
+  const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+
+  // ── Locations for adjust dialog (filtered by selected warehouse) ──
+  const { data: locationsRes, isLoading: isLocationsLoading } = useGetLocationsListQuery(
+    { page: 0, size: 500, warehouseId: adjustForm.warehouseId || undefined },
+    { skip: !adjustDialogOpen || !adjustForm.warehouseId },
+  );
+  const adjustLocations = useMemo(() => locationsRes?.data?.content ?? [], [locationsRes]);
+
+  // ── Products for adjust dialog ──
+  const { data: productsRes, isLoading: isProductsLoading } = useGetProductsQuery(
+    { page: 0, size: 500, sort: "name", status: "ACTIVE" },
+    { skip: !adjustDialogOpen },
+  );
+  const adjustProducts = useMemo(() => productsRes?.data?.content ?? [], [productsRes]);
+
+  // ── Stock list (main tab) ──
+  const {
+    data: stockListRes,
+    isLoading: isStockListLoading,
+    isFetching: isStockListFetching,
+    error: stockListError,
+    refetch: refetchStockList,
+  } = useGetStockListQuery({
+    page,
+    size: INVENTORY_PAGE_SIZE,
+    sort: "updatedAt",
+    sortDir: "desc",
+    warehouseId: warehouseId || undefined,
+    locationId: locationId || undefined,
+    keyword: debouncedKeyword || undefined,
+  });
+  const stockList = useMemo(() => stockListRes?.data?.content ?? [], [stockListRes]);
+  const stockTotalElements = stockListRes?.data?.total_elements ?? 0;
+  const stockTotalPages = stockListRes?.data?.total_pages ?? 0;
+
+  // ── Low stock alerts ──
+  const {
+    data: lowStockRes,
+    isLoading: isLowStockLoading,
+    error: lowStockError,
+    refetch: refetchLowStock,
+  } = useGetLowStockAlertsQuery(undefined, { skip: activeTab !== "low-stock" });
+  const lowStockItems = useMemo(() => lowStockRes?.data ?? [], [lowStockRes]);
+
+  // ── Near expiry alerts ──
+  const {
+    data: nearExpiryRes,
+    isLoading: isNearExpiryLoading,
+    error: nearExpiryError,
+    refetch: refetchNearExpiry,
+  } = useGetNearExpiryAlertsQuery(
+    {
+      days: NEAR_EXPIRY_DAYS_DEFAULT,
+      warehouseId: warehouseId || undefined,
+      locationId: locationId || undefined,
+    },
+    { skip: activeTab !== "near-expiry" },
+  );
+  const nearExpiryItems = useMemo(() => nearExpiryRes?.data ?? [], [nearExpiryRes]);
+
+  // ── Adjust mutations ──
+  const [adjustStock, { isLoading: isAdjustingStock }] = useAdjustStockMutation();
+  const [adjustReserved, { isLoading: isAdjustingReserved }] = useAdjustReservedMutation();
+  const isAdjusting = isAdjustingStock || isAdjustingReserved;
+
+  // ── Export ──
+  const [triggerExportStock] = useLazyExportStockReportQuery();
+  const [triggerExportNearExpiry] = useLazyExportNearExpiryReportQuery();
+
+  // ── Reset page when filters change ──
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedKeyword, warehouseId, locationId]);
+
+  // ── Pagination ──
+  const canGoPrev = page > 0;
+  const canGoNext = stockTotalPages > 0 && page + 1 < stockTotalPages;
+
+  // ── Open adjust dialog ──
+  const openAdjustDialog = (type: "qty" | "reserved") => {
+    setAdjustType(type);
+    setAdjustForm({ ...DEFAULT_ADJUST_FORM, warehouseId });
+    setAdjustDialogOpen(true);
+  };
+
+  const handleAdjustSubmit = async () => {
+    const delta = Number(adjustForm.delta);
+    if (!delta || Number.isNaN(delta)) {
+      toast.error("Số lượng thay đổi phải khác 0");
+      return false;
+    }
+    if (!adjustForm.warehouseId.trim()) {
+      toast.error("Vui lòng chọn kho");
+      return false;
+    }
+    if (!adjustForm.locationId.trim()) {
+      toast.error("Vui lòng chọn vị trí");
+      return false;
+    }
+    if (!adjustForm.productId.trim()) {
+      toast.error("Vui lòng chọn sản phẩm");
+      return false;
+    }
+
+    try {
+      if (adjustType === "qty") {
+        await adjustStock({
+          warehouseId: adjustForm.warehouseId,
+          locationId: adjustForm.locationId,
+          productId: adjustForm.productId,
+          lotNumber: adjustForm.lotNumber.trim() || undefined,
+          qtyDelta: delta,
+        }).unwrap();
+        toast.success(`Đã điều chỉnh tồn kho ${delta > 0 ? "+" : ""}${delta}`);
+      } else {
+        await adjustReserved({
+          warehouseId: adjustForm.warehouseId,
+          locationId: adjustForm.locationId,
+          productId: adjustForm.productId,
+          lotNumber: adjustForm.lotNumber.trim() || undefined,
+          reservedDelta: delta,
+        }).unwrap();
+        toast.success(`Đã điều chỉnh giữ chỗ ${delta > 0 ? "+" : ""}${delta}`);
+      }
+      setAdjustDialogOpen(false);
+      setAdjustForm(DEFAULT_ADJUST_FORM);
+      return true;
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể điều chỉnh tồn kho"));
+      return false;
+    }
+  };
+
+  // ── Export handlers ──
+  const handleExportStock = async () => {
+    try {
+      const result = await triggerExportStock({
+        warehouseId: warehouseId || undefined,
+        locationId: locationId || undefined,
+      }).unwrap();
+      downloadBlob(result, `stock-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Đã xuất báo cáo tồn kho");
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xuất báo cáo"));
+    }
+  };
+
+  const handleExportNearExpiry = async () => {
+    try {
+      const result = await triggerExportNearExpiry({
+        days: NEAR_EXPIRY_DAYS_DEFAULT,
+        warehouseId: warehouseId || undefined,
+        locationId: locationId || undefined,
+      }).unwrap();
+      downloadBlob(result, `near-expiry-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Đã xuất báo cáo hàng sắp hết hạn");
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xuất báo cáo"));
+    }
+  };
+
+  return {
+    // Tab
+    activeTab,
+    setActiveTab,
+
+    // Filters
+    warehouseId,
+    setWarehouseId,
+    locationId,
+    setLocationId,
+    searchInput,
+    setSearchInput,
+    warehouses,
+    isWarehousesLoading,
+
+    // Advanced filter
+    advancedOpen,
+    setAdvancedOpen,
+    advancedCount,
+    hasAnyFilter,
+    clearFilters,
+
+    // Summary
+    summary,
+    isSummaryLoading,
+
+    // Stock list (main tab)
+    stockList,
+    stockTotalElements,
+    stockTotalPages,
+    isStockListLoading,
+    isStockListFetching,
+    stockListError,
+    refetchStockList,
+
+    // Pagination
+    page,
+    setPage,
+    canGoPrev,
+    canGoNext,
+
+    // Low stock
+    lowStockItems,
+    isLowStockLoading,
+    lowStockError,
+    refetchLowStock,
+
+    // Near expiry
+    nearExpiryItems,
+    isNearExpiryLoading,
+    nearExpiryError,
+    refetchNearExpiry,
+
+    // Adjust
+    adjustDialogOpen,
+    setAdjustDialogOpen,
+    adjustType,
+    adjustForm,
+    setAdjustForm,
+    isAdjusting,
+    openAdjustDialog,
+    handleAdjustSubmit,
+    adjustLocations,
+    isLocationsLoading,
+    adjustProducts,
+    isProductsLoading,
+
+    // Export
+    handleExportStock,
+    handleExportNearExpiry,
+  };
+}
