@@ -80,7 +80,7 @@ const supplierApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/suppliers",
         method: "POST",
-        data: { ...body, status: (body.status ?? "active").toLowerCase() },
+        data: body,
       }),
       invalidatesTags: [{ type: "Supplier", id: "LIST" }],
     }),
@@ -92,7 +92,7 @@ const supplierApi = baseApi.injectEndpoints({
       query: ({ id, body }) => ({
         url: `/suppliers/${id}`,
         method: "PUT",
-        data: { ...body, status: (body.status ?? "active").toLowerCase() },
+        data: body,
       }),
       invalidatesTags: (_r, _e, arg) => [
         { type: "Supplier", id: arg.id },
@@ -107,7 +107,7 @@ const supplierApi = baseApi.injectEndpoints({
       query: ({ id, status }) => ({
         url: `/suppliers/${id}/status`,
         method: "PATCH",
-        params: { status: status.toLowerCase() },
+        params: { status },
       }),
       invalidatesTags: (_r, _e, arg) => [
         { type: "Supplier", id: arg.id },
@@ -119,6 +119,32 @@ const supplierApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/suppliers/${id}`, method: "DELETE" }),
       invalidatesTags: [{ type: "Supplier", id: "LIST" }],
     }),
+
+    /** Kiểm tra NCC có PO liên quan không (dùng để disable nút xóa). */
+    checkSupplierHasPo: builder.query<ApiResponse<boolean>, string>({
+      query: (supplierId) => ({
+        url: `/purchase-orders/exists-by-supplier/${supplierId}`,
+        method: "GET",
+      }),
+    }),
+
+    /** Export danh sách NCC ra Excel (trả về Blob). */
+    exportSuppliersXlsx: builder.mutation<
+      Blob,
+      { keyword?: string; status?: string }
+    >({
+      query: ({ keyword, status }) => {
+        const params: Record<string, string> = {};
+        if (keyword?.trim()) params.keyword = keyword.trim();
+        if (status?.trim()) params.status = status.trim();
+        return {
+          url: "/suppliers/export",
+          method: "GET",
+          params,
+          responseType: "blob",
+        };
+      },
+    }),
   }),
 });
 
@@ -129,4 +155,6 @@ export const {
   useUpdateSupplierMutation,
   useChangeSupplierStatusMutation,
   useDeleteSupplierMutation,
+  useCheckSupplierHasPoQuery,
+  useExportSuppliersXlsxMutation,
 } = supplierApi;

@@ -1,4 +1,4 @@
-export type SupplierStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+export type SupplierStatus = "active" | "inactive" | "suspended";
 
 /** Một bản ghi nhà cung cấp (khớp JSON backend). */
 export interface Supplier {
@@ -27,7 +27,7 @@ export interface CreateSupplierRequest {
   address?: string;
   paymentTerms?: number;
   leadTimeDays?: number;
-  status?: SupplierStatus;
+  status?: string;
 }
 
 export type UpdateSupplierRequest = CreateSupplierRequest;
@@ -41,33 +41,29 @@ export function getSupplierDisplayName(s: Supplier): string {
 }
 
 export const SUPPLIER_STATUS_LABEL: Record<string, string> = {
-  ACTIVE: "Hoạt động",
-  INACTIVE: "Ngưng hoạt động",
-  SUSPENDED: "Tạm ngưng",
+  active: "Đang hoạt động",
+  inactive: "Ngừng hoạt động",
+  suspended: "Tạm ngưng",
 };
 
-export function supplierStatusLabel(
-  status: SupplierStatus | string | null | undefined,
-): string {
-  const key = (status ?? "").toUpperCase();
+export function supplierStatusLabel(status: string | null | undefined): string {
+  const key = (status ?? "").toLowerCase();
   return SUPPLIER_STATUS_LABEL[key] ?? status ?? "—";
 }
 
 export function supplierStatusClass(status: string): string {
-  switch (status.toUpperCase()) {
-    case "ACTIVE":
+  switch (status.toLowerCase()) {
+    case "active":
       return "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400";
-    case "INACTIVE":
-      return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
-    case "SUSPENDED":
+    case "inactive":
       return "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400";
+    case "suspended":
+      return "bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400";
     default:
       return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
   }
 }
 
-export function isSupplierActive(
-  status: SupplierStatus | null | undefined,
-): boolean {
-  return String(status ?? "").toUpperCase() === "ACTIVE";
+export function isSupplierActive(status: string | null | undefined): boolean {
+  return (status ?? "").toLowerCase() === "active";
 }

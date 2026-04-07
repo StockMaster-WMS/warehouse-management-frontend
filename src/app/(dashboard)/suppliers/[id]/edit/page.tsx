@@ -34,6 +34,7 @@ import {
   useGetSupplierByIdQuery,
   useUpdateSupplierMutation,
 } from "@/store/services/supplier.service";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
 import type { SupplierStatus, UpdateSupplierRequest } from "@/types/supplier";
 import { supplierStatusLabel } from "@/types/supplier";
@@ -71,7 +72,7 @@ export default function EditSupplierPage({
       address: supplier.address ?? "",
       paymentTerms: String(supplier.paymentTerms ?? 30),
       leadTimeDays: String(supplier.leadTimeDays ?? 7),
-      status: (supplier.status ?? "ACTIVE") as SupplierStatus,
+      status: (supplier.status ?? "active") as SupplierStatus,
     };
   }, [supplier]);
 
@@ -84,7 +85,7 @@ export default function EditSupplierPage({
   const [address, setAddress] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("30");
   const [leadTimeDays, setLeadTimeDays] = useState("7");
-  const [status, setStatus] = useState<SupplierStatus>("ACTIVE");
+  const [status, setStatus] = useState<SupplierStatus>("active");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [updateSupplier, { isLoading: saving }] = useUpdateSupplierMutation();
@@ -104,6 +105,21 @@ export default function EditSupplierPage({
     setStatus(initial.status);
     setSynced(true);
   }
+
+  const isDirty =
+    synced &&
+    initial != null &&
+    (code !== initial.code ||
+      name !== initial.name ||
+      taxCode !== initial.taxCode ||
+      contactName !== initial.contactName ||
+      contactPhone !== initial.contactPhone ||
+      contactEmail !== initial.contactEmail ||
+      address !== initial.address ||
+      paymentTerms !== initial.paymentTerms ||
+      leadTimeDays !== initial.leadTimeDays ||
+      status !== initial.status);
+  const { confirmLeave } = useUnsavedChanges(isDirty);
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -249,40 +265,60 @@ export default function EditSupplierPage({
         description={`${supplier.name} (${supplier.code})`}
         actions={
           <Button
-            render={<Link href="/suppliers" />}
-            nativeButton={false}
             variant="ghost"
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
+            onClick={() => {
+              if (confirmLeave()) router.push("/suppliers");
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         }
       />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Building2 className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Hồ sơ pháp nhân
-              </h3>
-            </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                    Tên công ty / Đơn vị <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    defaultValue="Apple Asia Distribution"
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="space-y-6 md:col-span-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
+                <Building2 className="h-4 w-4 text-indigo-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Thông tin doanh nghiệp
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">
+                      Mã nhà cung cấp <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        maxLength={20}
+                        className="pl-10 font-mono"
+                      />
+                    </div>
+                    <FieldError msg={errors.code} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">
+                      Tên nhà cung cấp <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      maxLength={200}
+                    />
+                    <FieldError msg={errors.name} />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">
-                    Mã số thuế / GPKD
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Mã số thuế
                   </label>
                   <Input
                     value={taxCode}
@@ -290,108 +326,170 @@ export default function EditSupplierPage({
                     maxLength={20}
                     className="font-mono"
                   />
+                  <FieldError msg={errors.taxCode} />
                 </div>
               </div>
             </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Địa chỉ trụ sở chính
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Textarea
-                    defaultValue="Quận 1, TP. Hồ Chí Minh, Việt Nam"
-                    className="pl-10 min-h-20 py-3 text-sm border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
+                <Info className="h-4 w-4 text-indigo-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Thông tin liên hệ
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">
+                      Người liên hệ
+                    </label>
+                    <div className="relative">
+                      <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        className="pl-10"
+                        maxLength={100}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">
+                      SĐT liên hệ
+                    </label>
+                    <div className="relative">
+                      <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        className="pl-10"
+                        maxLength={20}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      className="pl-10"
+                      maxLength={100}
+                    />
+                  </div>
+                  <FieldError msg={errors.contactEmail} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Địa chỉ
+                  </label>
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Textarea
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="min-h-20 pl-10"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Phone className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Đầu mối liên hệ
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Email công việc
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    defaultValue="contact@apple.com.vn"
-                    className="pl-10 border-slate-200 bg-slate-50/50"
-                  />
-                </div>
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Trạng thái
+                </h3>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Số điện thoại
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    defaultValue="028 3822 xxxx"
-                    className="pl-10 border-slate-200 bg-slate-50/50"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <CreditCard className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Cấu hình hợp tác
-              </h3>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Trạng thái hồ sơ
-                </label>
-                <Select defaultValue="active">
-                  <SelectTrigger className="border-slate-200 bg-slate-50/50">
-                    <SelectValue placeholder="Chọn trạng thái..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Đang hợp tác</SelectItem>
-                    <SelectItem value="pending">Chờ phê duyệt</SelectItem>
-                    <SelectItem value="inactive">Ngưng cung ứng</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Hạn mức công nợ
-                </label>
-                <Input
-                  defaultValue="5,000,000,000 ₫"
-                  className="border-slate-200 bg-slate-50/50 font-bold text-indigo-600"
-                />
-              </div>
-            </div>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-            <div className="flex flex-col gap-4">
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-none">
-                <Save className="mr-2 h-4 w-4" />
-                Cập nhật thay đổi
-              </Button>
-              <Button
-                render={<Link href="/suppliers" />}
-                nativeButton={false}
-                variant="outline"
-                className="w-full border-slate-200 bg-white"
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as SupplierStatus)}
               >
-                Hủy bỏ
-              </Button>
+                <SelectTrigger className="font-medium">
+                  <span className="flex flex-1 truncate text-left">
+                    {supplierStatusLabel(status)}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Đang hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                  <SelectItem value="suspended">Tạm ngưng</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Điều khoản
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Thời hạn thanh toán (ngày)
+                  </label>
+                  <div className="relative">
+                    <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={paymentTerms}
+                      onChange={(e) => setPaymentTerms(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    Thời gian giao hàng (ngày)
+                  </label>
+                  <div className="relative">
+                    <Truck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={leadTimeDays}
+                      onChange={(e) => setLeadTimeDays(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+              <div className="flex flex-col gap-4">
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 dark:shadow-none"
+                >
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Cập nhật thay đổi
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-slate-200 bg-white"
+                  onClick={() => {
+                    if (confirmLeave()) router.push("/suppliers");
+                  }}
+                >
+                  Hủy bỏ
+                </Button>
+              </div>
             </div>
           </div>
         </div>
