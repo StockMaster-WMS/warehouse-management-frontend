@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrMessage } from "@/types/api";
@@ -11,6 +11,7 @@ import {
   useAdjustReservedMutation,
   useLazyExportStockReportQuery,
   useLazyExportNearExpiryReportQuery,
+  useLazyExportLowStockReportQuery,
 } from "@/store/services/stock.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
@@ -22,11 +23,12 @@ import {
   type AdjustFormState,
 } from "@/components/features/inventory/constants";
 import { downloadBlob } from "@/components/features/inventory/utils";
+import type { StockExpanded } from "@/types/stock";
 
 export type InventoryTab = "stock" | "low-stock" | "near-expiry";
 
 export function useInventoryPageLogic() {
-  // ── Tab ──
+  // ── Tab mode ──
   const [activeTab, setActiveTab] = useState<InventoryTab>("stock");
 
   // ── Filters ──
@@ -45,17 +47,18 @@ export function useInventoryPageLogic() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const advancedCount = useMemo(() => {
-    let count = 0;
-    if (warehouseId) count++;
+    let count = warehouseId ? 1 : 0;
+    if (activeTab !== "stock") count++;
     return count;
-  }, [warehouseId]);
+  }, [warehouseId, activeTab]);
 
-  const hasAnyFilter = !!(searchInput.trim() || warehouseId);
+  const hasAnyFilter = !!(searchInput.trim() || warehouseId || activeTab !== "stock");
 
   const clearFilters = useCallback(() => {
     setSearchInput("");
     setWarehouseId("");
     setLocationId("");
+    setActiveTab("stock");
     setPage(0);
   }, []);
 
@@ -75,7 +78,7 @@ export function useInventoryPageLogic() {
   });
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
 
-  // ── Locations for adjust dialog (filtered by selected warehouse) ──
+  // ── Locations for adjust dialog ──
   const { data: locationsRes, isLoading: isLocationsLoading } = useGetLocationsListQuery(
     { page: 0, size: 500, warehouseId: adjustForm.warehouseId || undefined },
     { skip: !adjustDialogOpen || !adjustForm.warehouseId },
@@ -130,9 +133,36 @@ export function useInventoryPageLogic() {
       warehouseId: warehouseId || undefined,
       locationId: locationId || undefined,
     },
-    { skip: activeTab !== "near-expiry" },
+    { skip: activeTab !== "near-expiry" }
   );
   const nearExpiryItems = useMemo(() => nearExpiryRes?.data ?? [], [nearExpiryRes]);
+
+  // ── Unified display items ──
+  const displayItems = useMemo(() => {
+    if (activeTab === "low-stock") return lowStockItems;
+    if (activeTab === "near-expiry") {
+      return nearExpiryItems.map(item => ({
+        ...item,
+        warehouse: { id: item.warehouseId, code: item.warehouseCode, name: item.warehouseCode },
+        location: { id: item.locationId, code: item.locationCode, name: item.locationCode },
+        product: { id: item.productId, sku: "", name: "Sản phẩm " + item.productId, minQty: null },
+        updatedAt: new Date().toISOString(),
+      } as StockExpanded));
+    }
+    return stockList;
+  }, [activeTab, stockList, lowStockItems, nearExpiryItems]);
+
+  const displayTotalElements = useMemo(() => {
+    if (activeTab === "low-stock") return lowStockItems.length;
+    if (activeTab === "near-expiry") return nearExpiryItems.length;
+    return stockTotalElements;
+  }, [activeTab, stockTotalElements, lowStockItems.length, nearExpiryItems.length]);
+
+  const displayTotalPages = useMemo(() => {
+    if (activeTab === "low-stock") return 1;
+    if (activeTab === "near-expiry") return 1;
+    return stockTotalPages;
+  }, [activeTab, stockTotalPages]);
 
   // ── Adjust mutations ──
   const [adjustStock, { isLoading: isAdjustingStock }] = useAdjustStockMutation();
@@ -142,17 +172,34 @@ export function useInventoryPageLogic() {
   // ── Export ──
   const [triggerExportStock] = useLazyExportStockReportQuery();
   const [triggerExportNearExpiry] = useLazyExportNearExpiryReportQuery();
+  const [triggerExportLowStock] = useLazyExportLowStockReportQuery();
 
-  // ── Reset page when filters change ──
-  useEffect(() => {
+  // ── Reset page assistants ──
+  const handleTabChange = useCallback((tab: InventoryTab) => {
+    setActiveTab(tab);
     setPage(0);
-  }, [debouncedKeyword, warehouseId, locationId]);
+  }, []);
+
+  const handleWarehouseChange = useCallback((id: string) => {
+    setWarehouseId(id);
+    setPage(0);
+  }, []);
+
+  const handleLocationChange = useCallback((id: string) => {
+    setLocationId(id);
+    setPage(0);
+  }, []);
+
+  const handleSearchChange = useCallback((val: string) => {
+    setSearchInput(val);
+    setPage(0);
+  }, []);
 
   // ── Pagination ──
   const canGoPrev = page > 0;
-  const canGoNext = stockTotalPages > 0 && page + 1 < stockTotalPages;
+  const canGoNext = displayTotalPages > 0 && page + 1 < displayTotalPages;
 
-  // ── Open adjust dialog ──
+  // ── Handlers ──
   const openAdjustDialog = (type: "qty" | "reserved") => {
     setAdjustType(type);
     setAdjustForm({ ...DEFAULT_ADJUST_FORM, warehouseId });
@@ -165,18 +212,9 @@ export function useInventoryPageLogic() {
       toast.error("Số lượng thay đổi phải khác 0");
       return false;
     }
-    if (!adjustForm.warehouseId.trim()) {
-      toast.error("Vui lòng chọn kho");
-      return false;
-    }
-    if (!adjustForm.locationId.trim()) {
-      toast.error("Vui lòng chọn vị trí");
-      return false;
-    }
-    if (!adjustForm.productId.trim()) {
-      toast.error("Vui lòng chọn sản phẩm");
-      return false;
-    }
+    if (!adjustForm.warehouseId.trim()) { toast.error("Vui lòng chọn kho"); return false; }
+    if (!adjustForm.locationId.trim()) { toast.error("Vui lòng chọn vị trí"); return false; }
+    if (!adjustForm.productId.trim()) { toast.error("Vui lòng chọn sản phẩm"); return false; }
 
     try {
       if (adjustType === "qty") {
@@ -207,7 +245,6 @@ export function useInventoryPageLogic() {
     }
   };
 
-  // ── Export handlers ──
   const handleExportStock = async () => {
     try {
       const result = await triggerExportStock({
@@ -235,75 +272,39 @@ export function useInventoryPageLogic() {
     }
   };
 
+  const handleExportLowStock = async () => {
+    try {
+      const result = await triggerExportLowStock({
+        warehouseId: warehouseId || undefined,
+        locationId: locationId || undefined,
+      }).unwrap();
+      downloadBlob(result, `low-stock-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Đã xuất báo cáo tồn kho thấp");
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xuất báo cáo"));
+    }
+  };
+
   return {
-    // Tab
-    activeTab,
-    setActiveTab,
-
-    // Filters
-    warehouseId,
-    setWarehouseId,
-    locationId,
-    setLocationId,
-    searchInput,
-    setSearchInput,
-    warehouses,
-    isWarehousesLoading,
-
-    // Advanced filter
-    advancedOpen,
-    setAdvancedOpen,
-    advancedCount,
-    hasAnyFilter,
-    clearFilters,
-
-    // Summary
-    summary,
-    isSummaryLoading,
-
-    // Stock list (main tab)
-    stockList,
-    stockTotalElements,
-    stockTotalPages,
-    isStockListLoading,
-    isStockListFetching,
-    stockListError,
-    refetchStockList,
-
-    // Pagination
-    page,
-    setPage,
-    canGoPrev,
-    canGoNext,
-
-    // Low stock
-    lowStockItems,
-    isLowStockLoading,
-    lowStockError,
-    refetchLowStock,
-
-    // Near expiry
-    nearExpiryItems,
-    isNearExpiryLoading,
-    nearExpiryError,
-    refetchNearExpiry,
-
-    // Adjust
-    adjustDialogOpen,
-    setAdjustDialogOpen,
-    adjustType,
-    adjustForm,
-    setAdjustForm,
-    isAdjusting,
-    openAdjustDialog,
-    handleAdjustSubmit,
-    adjustLocations,
-    isLocationsLoading,
-    adjustProducts,
-    isProductsLoading,
-
-    // Export
-    handleExportStock,
-    handleExportNearExpiry,
+    activeTab, setActiveTab: handleTabChange,
+    warehouseId, setWarehouseId: handleWarehouseChange,
+    locationId, setLocationId: handleLocationChange,
+    searchInput, setSearchInput: handleSearchChange,
+    warehouses, isWarehousesLoading,
+    advancedOpen, setAdvancedOpen,
+    advancedCount, hasAnyFilter, clearFilters,
+    summary, isSummaryLoading,
+    displayItems, displayTotalElements, displayTotalPages,
+    isDataLoading: isStockListLoading || isLowStockLoading || isNearExpiryLoading,
+    isDataFetching: isStockListFetching,
+    itemsError: stockListError || lowStockError || nearExpiryError,
+    page, setPage, canGoPrev, canGoNext,
+    adjustDialogOpen, setAdjustDialogOpen,
+    adjustType, adjustForm, setAdjustForm, isAdjusting,
+    openAdjustDialog, handleAdjustSubmit,
+    adjustLocations, isLocationsLoading,
+    adjustProducts, isProductsLoading,
+    handleExportStock, handleExportNearExpiry, handleExportLowStock,
+    refetchAll: () => { refetchStockList(); refetchLowStock(); refetchNearExpiry(); }
   };
 }

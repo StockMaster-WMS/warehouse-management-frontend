@@ -13,7 +13,13 @@ export const store = configureStore({
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(baseApi.middleware),
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore RTK Query actions which may contain non-serializable data (Blobs for Excel export)
+        ignoredActions: ["api/executeMutation/fulfilled", "api/executeQuery/fulfilled"],
+        ignoredPaths: ["api"],
+      },
+    }).concat(baseApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

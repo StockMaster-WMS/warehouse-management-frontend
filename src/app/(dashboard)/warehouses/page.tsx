@@ -1,8 +1,7 @@
 "use client";
 
-import { Building2, CheckCircle2, Package, XCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/page-header";
 import {
   SORT_DIR_LABELS,
@@ -12,6 +11,7 @@ import {
   WarehousesGrid,
   WarehousesSearchSection,
   WarehouseFormDialog,
+  WarehouseStatsGrid,
   useWarehousesPageLogic,
 } from "@/components/features/warehouses";
 
@@ -35,33 +35,7 @@ export default function WarehousesPage() {
         }
       />
 
-      {logic.summary ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Tổng số kho"
-            value={String(logic.summary.totalWarehouses)}
-            icon={Building2}
-          />
-          <StatCard
-            label="Đang hoạt động"
-            value={String(logic.summary.activeWarehouses)}
-            icon={CheckCircle2}
-            accentClassName="bg-emerald-500"
-          />
-          <StatCard
-            label="Ngừng hoạt động"
-            value={String(logic.summary.inactiveWarehouses)}
-            icon={XCircle}
-            accentClassName="bg-rose-500"
-          />
-          <StatCard
-            label="Có tồn kho"
-            value={String(logic.summary.warehousesWithStock)}
-            icon={Package}
-            accentClassName="bg-amber-500"
-          />
-        </div>
-      ) : null}
+      <WarehouseStatsGrid summary={logic.summary} isLoading={logic.isLoading} />
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
         <WarehousesSearchSection
