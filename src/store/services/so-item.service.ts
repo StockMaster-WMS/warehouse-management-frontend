@@ -41,6 +41,7 @@ const soItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SoItem" as const, id: `PARENT-SalesOrder:${arg.salesOrderId}` },
         { type: "SalesOrder" as const, id: arg.salesOrderId },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
 
@@ -53,6 +54,7 @@ const soItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SoItem" as const, id: `PARENT-SalesOrder:${arg.body.salesOrderId}` },
         { type: "SalesOrder" as const, id: arg.body.salesOrderId },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
 
@@ -64,6 +66,7 @@ const soItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SoItem" as const, id: `PARENT-SalesOrder:${arg.salesOrderId}` },
         { type: "SalesOrder" as const, id: arg.salesOrderId },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
   }),

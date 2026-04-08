@@ -54,7 +54,7 @@ export function InventorySearchSection({
 
   const warehouseLabel = warehouseId
     ? warehouses.find((w) => w.id === warehouseId)?.name ?? "—"
-    : "";
+    : "Tất cả kho";
 
   const alertTypeLabel = alertType !== "stock" ? ALERT_TYPE_LABELS[alertType] : "";
 
@@ -100,16 +100,18 @@ export function InventorySearchSection({
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Select
-                value={warehouseId || "__all__"}
-                onValueChange={(v) => onWarehouseChange(v === "__all__" ? "" : (v ?? ""))}
+                value={warehouseId || "all"}
+                onValueChange={(v) => onWarehouseChange(v === "all" ? "" : (v ?? ""))}
               >
                 <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 sm:w-56">
                   <SelectValue
                     placeholder={isWarehousesLoading ? "Đang tải kho..." : "Chọn kho"}
-                  />
+                  >
+                    {warehouseLabel}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
-                  <SelectItem value="__all__" className="rounded-lg">
+                  <SelectItem value="all" className="rounded-lg">
                     Tất cả kho
                   </SelectItem>
                   {warehouses.map((w) => (
@@ -125,7 +127,9 @@ export function InventorySearchSection({
                 onValueChange={(v) => onAlertTypeChange(v as InventoryTab)}
               >
                 <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 sm:w-48">
-                  <SelectValue placeholder="Loại tồn kho" />
+                  <SelectValue placeholder="Loại tồn kho">
+                    {ALERT_TYPE_LABELS[alertType]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
                   <SelectItem value="stock" className="rounded-lg">Tất cả tồn kho</SelectItem>

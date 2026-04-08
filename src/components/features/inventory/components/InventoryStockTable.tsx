@@ -86,12 +86,12 @@ export function InventoryStockTable({
               <TableHead className="min-w-45 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Sản phẩm
               </TableHead>
-              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {/* <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Lô
               </TableHead>
               <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Hạn sử dụng
-              </TableHead>
+              </TableHead> */}
               <TableHead className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Tồn tay
               </TableHead>
@@ -181,12 +181,12 @@ export function InventoryStockTable({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-3 py-3">
+                    {/* <TableCell className="px-3 py-3">
                       <span className="text-xs text-slate-600 dark:text-slate-400">
                         {item.lotNumber || "—"}
                       </span>
-                    </TableCell>
-                    <TableCell className="px-3 py-3">
+                    </TableCell> */}
+                    {/* <TableCell className="px-3 py-3">
                       {item.expiryDate ? (
                         <span
                           className={cn(
@@ -212,7 +212,7 @@ export function InventoryStockTable({
                       ) : (
                         <span className="text-xs text-slate-400">—</span>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="px-3 py-3 text-center">
                       <span className="tabular-nums text-sm font-bold text-slate-900 dark:text-white">
                         {item.qtyOnHand.toLocaleString("vi-VN")}

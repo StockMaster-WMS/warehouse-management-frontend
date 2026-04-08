@@ -258,9 +258,9 @@ export default function PutawayPage() {
             Trạng thái
           </label>
           <Select
-            value={statusFilter || "__all__"}
+            value={statusFilter || "all"}
             onValueChange={(v) => {
-              setStatusFilter(!v || v === "__all__" ? "" : v);
+              setStatusFilter(!v || v === "all" ? "" : v);
               setPage(0);
             }}
           >
@@ -272,7 +272,7 @@ export default function PutawayPage() {
               </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Tất cả</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
               <SelectItem value="PENDING">Chờ xử lý</SelectItem>
               <SelectItem value="IN_PROGRESS">Đang thực hiện</SelectItem>
               <SelectItem value="COMPLETED">Hoàn tất</SelectItem>

@@ -20,6 +20,7 @@ const pickingItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "PickingItem" as const, id: arg.id },
         { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
 
@@ -32,6 +33,7 @@ const pickingItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "PickingItem" as const, id: arg.id },
         { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
 
@@ -47,6 +49,7 @@ const pickingItemApi = baseApi.injectEndpoints({
         return [
           ...rows.map((p) => ({ type: "PickingItem" as const, id: p.id })),
           { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+          { type: "PickingItem" as const, id: "LIST" },
         ];
       },
     }),
@@ -57,7 +60,10 @@ const pickingItemApi = baseApi.injectEndpoints({
         method: "POST",
         data: body,
       }),
-      invalidatesTags: (_r, _e, arg) => [{ type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` }],
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "PickingItem" as const, id: "LIST" },
+      ],
     }),
 
     updatePickingItem: builder.mutation<ApiResponse<PickingItem>, UpdatePickingItemPayload>({
@@ -69,6 +75,7 @@ const pickingItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "PickingItem" as const, id: arg.id },
         { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "PickingItem" as const, id: "LIST" },
       ],
     }),
 
@@ -88,6 +95,7 @@ const pickingItemApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "PickingItem" as const, id: arg.id },
         { type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` },
+        { type: "PickingItem" as const, id: "LIST" },
         { type: "SalesOrder" as const, id: "LIST" },
       ],
     }),

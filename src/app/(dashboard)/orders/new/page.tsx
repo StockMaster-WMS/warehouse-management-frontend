@@ -191,12 +191,6 @@ function NewOrderFormContent() {
                   />
                   {errors.priority ? <p className="text-xs font-medium text-rose-600">{errors.priority}</p> : null}
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-slate-500">Trạng thái</label>
-                  <Input value="PENDING" disabled className="border-slate-200 bg-slate-100 font-mono text-sm" />
-                  <p className="text-[11px] text-slate-400">Đơn mới tạo luôn bắt đầu ở trạng thái PENDING.</p>
-                </div>
               </div>
 
               <div className="space-y-2">
