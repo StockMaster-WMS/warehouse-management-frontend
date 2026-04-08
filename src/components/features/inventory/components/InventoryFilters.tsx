@@ -34,6 +34,10 @@ export function InventoryFilters({
   onExportNearExpiry,
   showExportNearExpiry,
 }: InventoryFiltersProps) {
+  const warehouseLabel = warehouseId
+    ? warehouses.find((w) => w.id === warehouseId)?.name ?? "—"
+    : "Tất cả kho";
+
   return (
     <SearchToolbar
       placeholder="Tìm theo SKU, tên sản phẩm, vị trí..."
@@ -42,16 +46,18 @@ export function InventoryFilters({
       right={
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <Select
-            value={warehouseId || "__all__"}
-            onValueChange={(v) => onWarehouseChange(v === "__all__" ? "" : (v ?? ""))}
+            value={warehouseId || "all"}
+            onValueChange={(v) => onWarehouseChange(v === "all" ? "" : (v ?? ""))}
           >
             <SelectTrigger className="h-10 w-full rounded-xl sm:w-56">
               <SelectValue
                 placeholder={isWarehousesLoading ? "Đang tải kho..." : "Chọn kho"}
-              />
+              >
+                {warehouseLabel}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Tất cả kho</SelectItem>
+              <SelectItem value="all">Tất cả kho</SelectItem>
               {warehouses.map((w) => (
                 <SelectItem key={w.id} value={w.id}>
                   {w.name} {w.code ? `(${w.code})` : ""}

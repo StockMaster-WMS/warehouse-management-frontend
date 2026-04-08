@@ -84,7 +84,7 @@ const orderApi = baseApi.injectEndpoints({
         method: "POST",
         data,
       }),
-      invalidatesTags: [{ type: "SalesOrder", id: "LIST" }],
+      invalidatesTags: [{ type: "SalesOrder", id: "LIST" }, { type: "PickingItem", id: "LIST" }],
     }),
 
     updateSalesOrder: builder.mutation<ApiResponse<SalesOrder>, { id: string; body: UpdateSalesOrderPayload }>({
@@ -96,6 +96,7 @@ const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SalesOrder", id: arg.id },
         { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
 
@@ -107,6 +108,7 @@ const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, id) => [
         { type: "SalesOrder", id },
         { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
 
@@ -122,6 +124,7 @@ const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SalesOrder", id: arg.salesOrderId },
         { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
   }),

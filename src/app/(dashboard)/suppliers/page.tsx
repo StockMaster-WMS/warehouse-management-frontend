@@ -575,9 +575,9 @@ export default function SuppliersPage() {
                 }
               >
                 <Select
-                  value={statusFilter || "__all__"}
+                  value={statusFilter || "all"}
                   onValueChange={(v) => {
-                    setStatusFilter(!v || v === "__all__" ? "" : v);
+                    setStatusFilter(!v || v === "all" ? "" : v);
                     setPage(0);
                   }}
                 >
@@ -587,7 +587,7 @@ export default function SuppliersPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="__all__" className="rounded-lg">
+                    <SelectItem value="all" className="rounded-lg">
                       Tất cả trạng thái
                     </SelectItem>
                     <SelectItem value="active" className="rounded-lg">
