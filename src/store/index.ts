@@ -3,6 +3,9 @@ import { appReducer } from "@/store/slices/app.slice";
 import { baseApi } from "@/store/services/api";
 import "@/store/services/purchase-order.service";
 import "@/store/services/supplier.service";
+import "@/store/services/warehouse.service";
+import "@/store/services/location.service";
+import "@/store/services/stock.service";
 
 export const store = configureStore({
   reducer: {

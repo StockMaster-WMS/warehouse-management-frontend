@@ -5,18 +5,14 @@ export type SortDirection = "asc" | "desc";
 
 export interface Warehouse {
   id: string;
-  code?: string;
+  code: string;
   name: string;
-  address?: string;
-  timezone?: string;
-  managerName?: string | null;
+  address: string | null;
+  managerName: string | null;
+  timezone: string;
   isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  zonesCount?: number;
-  binsCount?: number;
-  fillRatePercent?: number;
-  type?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WarehouseSummary {
@@ -24,7 +20,17 @@ export interface WarehouseSummary {
   activeWarehouses: number;
   inactiveWarehouses: number;
   warehousesWithStock: number;
-  highFillRateWarehouses: number;
 }
+
+export interface CreateWarehouseRequest {
+  code: string;
+  name: string;
+  address?: string;
+  managerName?: string;
+  timezone?: string;
+  isActive?: boolean;
+}
+
+export type UpdateWarehouseRequest = CreateWarehouseRequest;
 
 export type WarehouseSummaryResponse = ApiResponse<WarehouseSummary>;

@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
-import type { SortDirection, WarehouseSortField } from "@/types/warehouse";
+import {
+  useGetWarehousesQuery,
+  useGetWarehouseSummaryQuery,
+  useCreateWarehouseMutation,
+  useUpdateWarehouseMutation,
+  useDeleteWarehouseMutation,
+  useLazyGetWarehouseByIdQuery,
+} from "@/store/services/warehouse.service";
+import { apiErrMessage } from "@/types/api";
+import type { Warehouse, SortDirection, WarehouseSortField } from "@/types/warehouse";
+import {
+  DEFAULT_WAREHOUSE_FORM_STATE,
+  type WarehouseFormState,
+} from "@/components/features/warehouses/components/WarehouseFormDialog";
 import {
   SORT_DIR_LABELS,
   SORT_DIR_OPTIONS,
@@ -15,8 +27,11 @@ import {
 } from "@/components/features/warehouses/constants";
 
 export function useWarehousesPageLogic() {
+  // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Warehouse | null>(null);
+
+  // Search + filter state
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
@@ -25,6 +40,11 @@ export function useWarehousesPageLogic() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Form dialog state
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+  const [formState, setFormState] = useState<WarehouseFormState>(DEFAULT_WAREHOUSE_FORM_STATE);
 
   useEffect(() => {
     setPage(0);
@@ -44,6 +64,16 @@ export function useWarehousesPageLogic() {
 
   const { data, error, isLoading, isFetching, refetch } =
     useGetWarehousesQuery(listParams);
+
+  const { data: summaryData } = useGetWarehouseSummaryQuery();
+  const summary = summaryData?.data;
+
+  const [createWarehouse, { isLoading: isCreating }] = useCreateWarehouseMutation();
+  const [updateWarehouse, { isLoading: isUpdating }] = useUpdateWarehouseMutation();
+  const [deleteWarehouse] = useDeleteWarehouseMutation();
+  const [fetchWarehouseById] = useLazyGetWarehouseByIdQuery();
+
+  const isSubmitting = isCreating || isUpdating;
 
   const warehouses = useMemo(() => data?.data?.content ?? [], [data]);
   const totalElements = data?.data?.total_elements ?? 0;
@@ -94,25 +124,119 @@ export function useWarehousesPageLogic() {
     setIsActive(undefined);
   };
 
-  const openDeleteDialog = (warehouseName: string) => {
-    setItemToDelete(warehouseName);
+  // ── Create/Edit dialog ──
+  const openCreateDialog = () => {
+    setEditingWarehouse(null);
+    setFormState(DEFAULT_WAREHOUSE_FORM_STATE);
+    setIsFormOpen(true);
+  };
+
+  const openEditDialog = async (warehouse: Warehouse) => {
+    try {
+      const res = await fetchWarehouseById(warehouse.id).unwrap();
+      const w = res.data;
+      setEditingWarehouse(w);
+      setFormState({
+        code: w.code ?? "",
+        name: w.name ?? "",
+        address: w.address ?? "",
+        managerName: w.managerName ?? "",
+        timezone: w.timezone ?? "Asia/Ho_Chi_Minh",
+        isActive: w.isActive,
+      });
+      setIsFormOpen(true);
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể tải thông tin kho"));
+    }
+  };
+
+  const handleFormOpenChange = (open: boolean) => {
+    setIsFormOpen(open);
+    if (!open) {
+      setEditingWarehouse(null);
+      setFormState(DEFAULT_WAREHOUSE_FORM_STATE);
+    }
+  };
+
+  const handleSubmitForm = async (): Promise<boolean> => {
+    const code = formState.code.trim();
+    const name = formState.name.trim();
+    if (!code) {
+      toast.error("Mã kho không được để trống");
+      return false;
+    }
+    if (code.length > 20) {
+      toast.error("Mã kho không được vượt quá 20 ký tự");
+      return false;
+    }
+    if (!name) {
+      toast.error("Tên kho không được để trống");
+      return false;
+    }
+    if (name.length > 150) {
+      toast.error("Tên kho không được vượt quá 150 ký tự");
+      return false;
+    }
+    if (formState.managerName.length > 120) {
+      toast.error("Tên người quản lý không được vượt quá 120 ký tự");
+      return false;
+    }
+
+    const payload = {
+      code,
+      name,
+      address: formState.address.trim() || undefined,
+      managerName: formState.managerName.trim() || undefined,
+      timezone: formState.timezone.trim() || undefined,
+      isActive: formState.isActive,
+    };
+
+    try {
+      if (editingWarehouse) {
+        await updateWarehouse({ id: editingWarehouse.id, body: payload }).unwrap();
+        toast.success("Đã cập nhật kho thành công");
+      } else {
+        await createWarehouse(payload).unwrap();
+        toast.success("Đã tạo kho mới thành công");
+      }
+      setIsFormOpen(false);
+      setEditingWarehouse(null);
+      setFormState(DEFAULT_WAREHOUSE_FORM_STATE);
+      return true;
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể lưu kho"));
+      return false;
+    }
+  };
+
+  // ── Delete ──
+  const openDeleteDialog = (warehouse: Warehouse) => {
+    setDeleteTarget(warehouse);
     setIsDeleteDialogOpen(true);
   };
 
   const handleDelete = async () => {
-    toast.info(`Chưa cấu hình API xóa kho cho ${itemToDelete}`);
-    setIsDeleteDialogOpen(false);
-    setItemToDelete("");
+    if (!deleteTarget) return;
+    try {
+      await deleteWarehouse(deleteTarget.id).unwrap();
+      toast.success(`Đã xóa kho "${deleteTarget.name}"`);
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xóa kho"));
+    } finally {
+      setDeleteTarget(null);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   return {
+    // Delete
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
-    itemToDelete,
+    deleteTarget,
 
+    // Search / filter
     searchInput,
     setSearchInput,
-
     page,
     setPage,
     size,
@@ -125,16 +249,19 @@ export function useWarehousesPageLogic() {
     advancedOpen,
     setAdvancedOpen,
 
+    // Data
     listParams,
     warehouses,
     totalElements,
     totalPages,
+    summary,
 
     error,
     isLoading,
     isFetching,
     refetch,
 
+    // Computed
     statusValue,
     sortValue,
     sortDirValue,
@@ -145,5 +272,16 @@ export function useWarehousesPageLogic() {
     handleStatusChange,
     openDeleteDialog,
     handleDelete,
+
+    // Form dialog
+    isFormOpen,
+    handleFormOpenChange,
+    editingWarehouse,
+    isSubmitting,
+    formState,
+    setFormState,
+    openCreateDialog,
+    openEditDialog,
+    handleSubmitForm,
   };
 }

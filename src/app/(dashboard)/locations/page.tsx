@@ -15,14 +15,13 @@ import {
 } from "@/components/features/locations";
 import { apiErrMessage } from "@/types/api";
 import { useState } from "react";
-import { LocationOption } from "@/types/purchase-order";
+import type { Location } from "@/types/location";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<LocationOption | null>(null);
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
-    
-    const {
+        const {
         searchInput,
         setSearchInput,
         warehouseFilter,
@@ -39,8 +38,7 @@ export default function LocationsPage() {
         totalLocations,
         activeLocations,
         inactiveLocations,
-        filteredLocations,
-        visibleLocations,
+        locations,
 
         page,
         setPage,
@@ -111,7 +109,7 @@ export default function LocationsPage() {
                     totalLocations={totalLocations}
                     activeLocations={activeLocations}
                     inactiveLocations={inactiveLocations}
-                    filteredCount={filteredLocations.length}
+                    filteredCount={locations.length}
                 />
             ) : null}
 
@@ -125,7 +123,7 @@ export default function LocationsPage() {
                 warehouses={warehouses}
             />
 
-            {!isLocationsLoading && !locationsError && filteredLocations.length === 0 ? (
+            {!isLocationsLoading && !locationsError && locations.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <EmptyState
                         icon={searchInput.trim() ? SearchX : Layers3}
@@ -140,11 +138,11 @@ export default function LocationsPage() {
                 </div>
             ) : (
                 <LocationsTable
-                    visibleLocations={visibleLocations}
+                    visibleLocations={locations}
                     warehouseNameMap={warehouseNameMap}
                     page={page}
                     totalPages={totalPages}
-                    totalElements={isLocationsLoading || locationsError ? 0 : filteredLocations.length}
+                    totalElements={isLocationsLoading || locationsError ? 0 : totalLocations}
                     canGoPrev={canGoPrev}
                     canGoNext={canGoNext}
                     isLoading={isLocationsLoading}

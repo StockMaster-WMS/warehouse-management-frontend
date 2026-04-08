@@ -19,7 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { UNSELECTED_WAREHOUSE, type LocationFormState } from "@/components/features/locations/constants";
-import type { LocationOption } from "@/types/purchase-order";
+import type { Location } from "@/types/location";
 
 type WarehouseOption = {
     id: string;
@@ -29,7 +29,7 @@ type WarehouseOption = {
 type LocationFormDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    editingLocation: LocationOption | null;
+    editingLocation: Location | null;
     isSubmitting: boolean;
     formState: LocationFormState;
     setFormState: (updater: (prev: LocationFormState) => LocationFormState) => void;

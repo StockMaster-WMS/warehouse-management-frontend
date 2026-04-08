@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { LOCATIONS_PAGE_SIZE } from "@/components/features/locations/constants";
 import { formatLocationZoneLine } from "@/components/features/locations/utils";
-import type { LocationOption } from "@/types/purchase-order";
+import type { Location } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
 
 function LocationTypeBadge({ type }: { type?: string | null }) {
@@ -79,7 +79,7 @@ function CapacityCell({ location }: { location: LocationOption }) {
 }
 
 type LocationsTableProps = {
-    visibleLocations: LocationOption[];
+    visibleLocations: Location[];
     warehouseNameMap: Record<string, string>;
     page: number;
     totalPages: number;
@@ -92,9 +92,9 @@ type LocationsTableProps = {
     onPrevPage: () => void;
     onNextPage: () => void;
     onRetry?: () => void;
-    onEdit: (location: LocationOption) => void;
-    onDelete: (location: LocationOption) => void;
-    onPrintBarcode: (location: LocationOption) => void;
+    onEdit: (location: Location) => void;
+    onDelete: (location: Location) => void;
+    onPrintBarcode: (location: Location) => void;
 };
 
 export function LocationsTable({
@@ -255,7 +255,7 @@ export function LocationsTable({
                       ) : (
                           visibleLocations.map((location) => {
                               const warehouseName = warehouseNameMap[location.warehouseId];
-                              const locationCode = location.code || location.name || "--";
+                              const locationCode = location.code || "--";
 
                               return (
                                   <div

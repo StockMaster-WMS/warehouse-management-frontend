@@ -1,9 +1,18 @@
 "use client";
 
 import { ArrowDownRight, ArrowUpRight, History } from "lucide-react";
-import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+
+function formatLedgerDate(iso: string, pattern: "date" | "time") {
+    const d = new Date(iso);
+    if (pattern === "date") {
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        return `${dd}/${mm}/${d.getFullYear()}`;
+    }
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 
 // Dummy data structure format for when the API connects later
 type StockLedgerEntry = {
@@ -94,10 +103,10 @@ export function ProductStockLedger({ productId }: { productId: string }) {
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span className="font-medium text-slate-900 dark:text-slate-200">
-                                            {format(new Date(entry.createdAt), "dd/MM/yyyy")}
+                                            {formatLedgerDate(entry.createdAt, "date")}
                                         </span>
                                         <span className="text-xs text-slate-500">
-                                            {format(new Date(entry.createdAt), "HH:mm")}
+                                            {formatLedgerDate(entry.createdAt, "time")}
                                         </span>
                                     </div>
                                 </td>
