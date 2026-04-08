@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -22,8 +23,9 @@ export default function OrderPage() {
             render={<Link href="/orders/new" />}
             nativeButton={false}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
           >
+            <Plus className="mr-2 h-4 w-4" />
             Tạo đơn xuất
           </Button>
         }

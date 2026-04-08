@@ -21,31 +21,27 @@ export interface Location {
   createdAt: string;
 }
 
-export interface LocationSummary {
+export interface LocationOption {
   id: string;
-  code: string;
-  name: string;
-}
-
-export interface CreateLocationRequest {
   warehouseId: string;
-  code: string;
-  zone: string;
-  aisle: string;
-  rack: string;
-  level: number;
-  bin: string;
+  code?: string;
+  name?: string;
+  zone?: string;
+  aisle?: string;
+  rack?: string;
+  level?: number;
+  bin?: string;
   locationType?: string;
-  maxWeightKg?: number;
-  maxVolumeCm3?: number;
-  pickSequence?: number;
   status?: string;
   isActive?: boolean;
-  isColdZone?: boolean;
-  isHazmatZone?: boolean;
-  isHeavyZone?: boolean;
+  maxWeightKg?: number | null;
+  maxVolumeCm3?: number | null;
+  pickSequence?: number | null;
+  isColdZone?: boolean | null;
+  isHazmatZone?: boolean | null;
+  isHeavyZone?: boolean | null;
 }
 
-export type UpdateLocationRequest = CreateLocationRequest;
-
 export type LocationResponse = ApiResponse<Location>;
+
+export type LocationListResponse = ApiResponse<LocationOption[]>;
