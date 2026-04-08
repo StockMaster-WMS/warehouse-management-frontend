@@ -7,13 +7,11 @@ import { apiErrMessage } from "@/types/api";
 import {
   InventorySummaryCards,
   InventoryStockTable,
-  LowStockTable,
-  NearExpiryTable,
   StockAdjustDialog,
-  InventoryTabs,
   InventorySearchSection,
   useInventoryPageLogic,
 } from "@/components/features/inventory";
+import { cn } from "@/lib/utils";
 
 export default function InventoryPage() {
   const logic = useInventoryPageLogic();
@@ -29,22 +27,30 @@ export default function InventoryPage() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={logic.handleExportStock}
+              onClick={
+                logic.activeTab === "near-expiry"
+                  ? logic.handleExportNearExpiry
+                  : logic.activeTab === "low-stock"
+                    ? logic.handleExportLowStock
+                    : logic.handleExportStock
+              }
             >
-              <FileSpreadsheet className="mr-1.5 h-4 w-4 text-emerald-600" />
-              Xuất Excel
+              <FileSpreadsheet
+                className={cn(
+                  "mr-1.5 h-4 w-4",
+                  logic.activeTab === "near-expiry"
+                    ? "text-rose-600"
+                    : logic.activeTab === "low-stock"
+                      ? "text-amber-600"
+                      : "text-emerald-600",
+                )}
+              />
+              {logic.activeTab === "near-expiry"
+                ? "Xuất hết hạn"
+                : logic.activeTab === "low-stock"
+                  ? "Xuất tồn thấp"
+                  : "Xuất Excel"}
             </Button>
-            {logic.activeTab === "near-expiry" && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={logic.handleExportNearExpiry}
-              >
-                <FileSpreadsheet className="mr-1.5 h-4 w-4 text-rose-600" />
-                Xuất hết hạn
-              </Button>
-            )}
             <Button
               type="button"
               variant="outline"
@@ -73,97 +79,51 @@ export default function InventoryPage() {
         onTabChange={logic.setActiveTab}
       />
 
-      <InventoryTabs activeTab={logic.activeTab} onTabChange={logic.setActiveTab} />
+      <InventorySearchSection
+        searchInput={logic.searchInput}
+        onSearchChange={(v) => {
+          logic.setSearchInput(v);
+          logic.setPage(0);
+        }}
+        advancedOpen={logic.advancedOpen}
+        onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
+        advancedCount={logic.advancedCount}
+        hasAnyFilter={logic.hasAnyFilter}
+        onClearFilters={() => {
+          logic.clearFilters();
+          logic.setAdvancedOpen(false);
+        }}
+        warehouseId={logic.warehouseId}
+        onWarehouseChange={(v) => {
+          logic.setWarehouseId(v);
+          logic.setPage(0);
+        }}
+        alertType={logic.activeTab}
+        onAlertTypeChange={logic.setActiveTab}
+        warehouses={logic.warehouses}
+        isWarehousesLoading={logic.isWarehousesLoading}
+      />
 
-      {logic.activeTab === "stock" ? (
-        <>
-          <InventorySearchSection
-            searchInput={logic.searchInput}
-            onSearchChange={(v) => {
-              logic.setSearchInput(v);
-              logic.setPage(0);
-            }}
-            advancedOpen={logic.advancedOpen}
-            onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
-            advancedCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClearFilters={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-            warehouseId={logic.warehouseId}
-            onWarehouseChange={(v) => {
-              logic.setWarehouseId(v);
-              logic.setPage(0);
-            }}
-            warehouses={logic.warehouses}
-            isWarehousesLoading={logic.isWarehousesLoading}
-          />
-
-          <InventoryStockTable
-            items={logic.stockList}
-            page={logic.page}
-            totalPages={logic.stockTotalPages}
-            totalElements={logic.stockTotalElements}
-            canGoPrev={logic.canGoPrev}
-            canGoNext={logic.canGoNext}
-            isLoading={logic.isStockListLoading}
-            isFetching={logic.isStockListFetching}
-            errorMessage={
-              logic.stockListError
-                ? apiErrMessage(logic.stockListError, "Không thể tải dữ liệu tồn kho")
-                : null
-            }
-            onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
-            onNextPage={() => logic.setPage((p) => p + 1)}
-            onRetry={() => logic.refetchStockList()}
-          />
-        </>
-      ) : null}
-
-      {logic.activeTab === "low-stock" ? (
-        <LowStockTable
-          items={logic.lowStockItems}
-          isLoading={logic.isLowStockLoading}
+      <div className="mt-2">
+        <InventoryStockTable
+          items={logic.displayItems}
+          page={logic.page}
+          totalPages={logic.displayTotalPages}
+          totalElements={logic.displayTotalElements}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          isLoading={logic.isDataLoading}
+          isFetching={logic.isDataFetching}
           errorMessage={
-            logic.lowStockError
-              ? apiErrMessage(logic.lowStockError, "Không thể tải cảnh báo tồn kho thấp")
+            logic.itemsError
+              ? apiErrMessage(logic.itemsError, "Không thể tải dữ liệu tồn kho")
               : null
           }
-          onRetry={() => logic.refetchLowStock()}
+          onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => logic.setPage((p) => p + 1)}
+          onRetry={logic.refetchAll}
         />
-      ) : null}
-
-      {logic.activeTab === "near-expiry" ? (
-        <div className="space-y-4">
-          <InventorySearchSection
-            searchInput=""
-            onSearchChange={() => {}}
-            advancedOpen={logic.advancedOpen}
-            onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
-            advancedCount={logic.advancedCount}
-            hasAnyFilter={logic.hasAnyFilter}
-            onClearFilters={() => {
-              logic.clearFilters();
-              logic.setAdvancedOpen(false);
-            }}
-            warehouseId={logic.warehouseId}
-            onWarehouseChange={logic.setWarehouseId}
-            warehouses={logic.warehouses}
-            isWarehousesLoading={logic.isWarehousesLoading}
-          />
-          <NearExpiryTable
-            items={logic.nearExpiryItems}
-            isLoading={logic.isNearExpiryLoading}
-            errorMessage={
-              logic.nearExpiryError
-                ? apiErrMessage(logic.nearExpiryError, "Không thể tải cảnh báo hàng sắp hết hạn")
-                : null
-            }
-            onRetry={() => logic.refetchNearExpiry()}
-          />
-        </div>
-      ) : null}
+      </div>
 
       <StockAdjustDialog
         open={logic.adjustDialogOpen}

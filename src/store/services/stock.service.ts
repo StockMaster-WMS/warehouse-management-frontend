@@ -302,6 +302,20 @@ const stockApi = baseApi.injectEndpoints({
       } satisfies ApiQueryArgs),
     }),
 
+    /** Export low-stock report as XLSX blob. */
+    exportLowStockReport: builder.query<Blob, ExportStockParams>({
+      query: (params) => ({
+        url: "/stocks/reports/low-stock-export",
+        method: "GET",
+        params: buildFilterParams({
+          warehouseId: params.warehouseId,
+          locationId: params.locationId,
+          productId: params.productId,
+        }),
+        responseType: "blob",
+      } satisfies ApiQueryArgs),
+    }),
+
     /** Stock movements history (paginated). */
     getStockMovements: builder.query<
       ApiResponse<PagedResponse<StockMovementResponse>>,
@@ -338,5 +352,6 @@ export const {
   useAdjustReservedMutation,
   useLazyExportStockReportQuery,
   useLazyExportNearExpiryReportQuery,
+  useLazyExportLowStockReportQuery,
   useGetStockMovementsQuery,
 } = stockApi;

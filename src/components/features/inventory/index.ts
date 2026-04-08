@@ -23,10 +23,7 @@ export { useStockMovementsPageLogic } from "@/components/features/inventory/hook
 
 export { InventorySummaryCards } from "@/components/features/inventory/components/InventorySummaryCards";
 export { InventoryStockTable } from "@/components/features/inventory/components/InventoryStockTable";
-export { LowStockTable } from "@/components/features/inventory/components/LowStockTable";
-export { NearExpiryTable } from "@/components/features/inventory/components/NearExpiryTable";
 export { StockAdjustDialog } from "@/components/features/inventory/components/StockAdjustDialog";
-export { InventoryTabs } from "@/components/features/inventory/components/InventoryTabs";
 export { InventorySearchSection } from "@/components/features/inventory/components/InventorySearchSection";
 export { HistorySearchSection } from "@/components/features/inventory/components/HistorySearchSection";
 export { StockMovementsTable } from "@/components/features/inventory/components/StockMovementsTable";
