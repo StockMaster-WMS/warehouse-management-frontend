@@ -6,13 +6,13 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react";
-import { StatCard } from "@/components/ui/stat-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StatsGrid } from "@/components/ui/stats-grid";
+import type { StatItem } from "@/components/ui/stats-grid";
 import type { StockSummaryResponse } from "@/types/stock";
 import type { InventoryTab } from "@/components/features/inventory/hooks/useInventoryPageLogic";
 
 type InventorySummaryCardsProps = {
-  summary: StockSummaryResponse | null;
+  summary: StockSummaryResponse | null | undefined;
   isLoading: boolean;
   onTabChange?: (tab: InventoryTab) => void;
 };
@@ -22,66 +22,32 @@ export function InventorySummaryCards({
   isLoading,
   onTabChange,
 }: InventorySummaryCardsProps) {
-  if (isLoading || !summary) {
-    return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={`sum-sk-${i}`}
-            className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-          >
-            <Skeleton className="mb-2 h-3 w-20" />
-            <Skeleton className="h-7 w-16" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const stats: StatItem[] = summary ? [
+    { label: "Tổng SKU",     value: summary.totalSkus.toLocaleString("vi-VN"),        icon: Boxes,        color: "text-blue-500" },
+    { label: "Tồn tay",      value: summary.totalQtyOnHand.toLocaleString("vi-VN"),   icon: Package,      color: "text-slate-500" },
+    { label: "Đang giữ chỗ", value: summary.totalQtyReserved.toLocaleString("vi-VN"), icon: Lock,         color: "text-amber-500" },
+    { label: "Khả dụng",     value: summary.totalQtyAvailable.toLocaleString("vi-VN"),icon: CheckCircle2, color: "text-emerald-500" },
+    { 
+      label: "Tồn kho thấp", 
+      value: summary.lowStockCount.toLocaleString("vi-VN"), 
+      icon: AlertTriangle, 
+      color: "text-amber-500",
+      onClick: () => onTabChange?.("low-stock")
+    },
+    { 
+      label: "Sắp hết hạn", 
+      value: summary.nearExpiryCount.toLocaleString("vi-VN"), 
+      icon: Clock, 
+      color: "text-rose-500",
+      onClick: () => onTabChange?.("near-expiry")
+    },
+  ] : [];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-      <StatCard label="Tổng SKU" value={summary.totalSkus.toLocaleString("vi-VN")} icon={Boxes} />
-      <StatCard label="Tồn tay" value={summary.totalQtyOnHand.toLocaleString("vi-VN")} icon={Package} />
-      <StatCard
-        label="Đang giữ chỗ"
-        value={summary.totalQtyReserved.toLocaleString("vi-VN")}
-        icon={Lock}
-        className="ring-1 ring-amber-200/50"
-      />
-      <StatCard
-        label="Khả dụng"
-        value={summary.totalQtyAvailable.toLocaleString("vi-VN")}
-        icon={CheckCircle2}
-        accentClassName="bg-emerald-600"
-      />
-      <button
-        type="button"
-        className="text-left"
-        title="Xem tồn kho thấp"
-        onClick={() => onTabChange?.("low-stock")}
-      >
-        <StatCard
-          label="Tồn kho thấp"
-          value={summary.lowStockCount.toLocaleString("vi-VN")}
-          icon={AlertTriangle}
-          accentClassName="bg-amber-500"
-          className="cursor-pointer ring-1 ring-amber-200/50 transition-shadow hover:ring-2 hover:ring-amber-300"
-        />
-      </button>
-      <button
-        type="button"
-        className="text-left"
-        title="Xem hàng sắp hết hạn"
-        onClick={() => onTabChange?.("near-expiry")}
-      >
-        <StatCard
-          label="Sắp hết hạn"
-          value={summary.nearExpiryCount.toLocaleString("vi-VN")}
-          icon={Clock}
-          accentClassName="bg-rose-600"
-          className="cursor-pointer ring-1 ring-rose-200/50 transition-shadow hover:ring-2 hover:ring-rose-300"
-        />
-      </button>
-    </div>
+    <StatsGrid 
+      stats={stats} 
+      cols={6} 
+      isLoading={isLoading || !summary} 
+    />
   );
 }

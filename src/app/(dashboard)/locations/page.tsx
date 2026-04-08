@@ -19,7 +19,7 @@ import type { Location } from "@/types/location";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 export default function LocationsPage() {
-    const [barcodeLocation, setBarcodeLocation] = useState<LocationOption | null>(null);
+    const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
         const {
         searchInput,
@@ -104,14 +104,13 @@ export default function LocationsPage() {
                 </p>
             ) : null}
 
-            {!isLocationsLoading && !locationsError ? (
-                <LocationsStats
-                    totalLocations={totalLocations}
-                    activeLocations={activeLocations}
-                    inactiveLocations={inactiveLocations}
-                    filteredCount={locations.length}
-                />
-            ) : null}
+            <LocationsStats
+                totalLocations={totalLocations}
+                activeLocations={activeLocations}
+                inactiveLocations={inactiveLocations}
+                filteredCount={locations.length}
+                isLoading={isLocationsLoading}
+            />
 
             <LocationsFilters
                 searchInput={searchInput}

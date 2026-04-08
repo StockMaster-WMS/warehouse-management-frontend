@@ -7,6 +7,7 @@ type LocationsStatsProps = {
     activeLocations: number;
     inactiveLocations: number;
     filteredCount: number;
+    isLoading?: boolean;
 };
 
 export function LocationsStats({
@@ -14,6 +15,7 @@ export function LocationsStats({
     activeLocations,
     inactiveLocations,
     filteredCount,
+    isLoading,
 }: LocationsStatsProps) {
     const stats: StatItem[] = [
         { label: "Tổng vị trí",      value: totalLocations,   icon: MapPin,        color: "text-indigo-500" },
@@ -21,5 +23,5 @@ export function LocationsStats({
         { label: "Ngừng dùng",       value: inactiveLocations, icon: CircleOff,    color: "text-rose-500" },
         { label: "Kết quả lọc",      value: filteredCount,    icon: Filter,        color: "text-blue-500" },
     ];
-    return <StatsGrid stats={stats} />;
+    return <StatsGrid stats={stats} isLoading={isLoading} />;
 }

@@ -16,6 +16,7 @@ export { useWarehousesPageLogic } from "@/components/features/warehouses/hooks/u
 export { WarehousesSearchSection } from "@/components/features/warehouses/components/WarehousesSearchSection";
 export { WarehousesGrid } from "@/components/features/warehouses/components/WarehousesGrid";
 export { WarehousesDeleteDialog } from "@/components/features/warehouses/components/WarehousesDeleteDialog";
+export { WarehouseStatsGrid } from "@/components/features/warehouses/components/WarehouseStatsGrid";
 export {
   WarehouseFormDialog,
   DEFAULT_WAREHOUSE_FORM_STATE,
