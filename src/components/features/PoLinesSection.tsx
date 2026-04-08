@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileSpreadsheet, Loader2, Package, Plus, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Loader2, Package, Plus, PlusIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -238,7 +238,7 @@ export function PoLinesSection({
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            Thêm dòng
+            Thêm dòng <PlusIcon/>
           </Button>
         </div>
       </form>
