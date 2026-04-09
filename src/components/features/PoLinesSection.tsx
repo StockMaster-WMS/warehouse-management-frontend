@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { FileSpreadsheet, Loader2, Package, Plus, PlusIcon, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PoExcelImportDialog } from "@/components/features/PoExcelImportDialog";
+import { cn } from "@/lib/utils";
 import type { PoItem } from "@/types/purchase-order";
 
 export interface PoLinesSectionProps {
@@ -64,87 +66,115 @@ export function PoLinesSection({
   productNameMap,
 }: PoLinesSectionProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const locked = !purchaseOrderId;
 
   return (
-    <div
-      className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${
-        !purchaseOrderId ? "pointer-events-none opacity-50" : ""
-      }`}
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-          Dòng hàng (PO lines)
-        </h3>
+    <div className={cn(
+      "rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden",
+      locked && "opacity-60 pointer-events-none"
+    )}>
+      {/* Section Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full",
+            locked
+              ? "bg-slate-100 dark:bg-slate-800"
+              : "bg-indigo-100 dark:bg-indigo-900/40",
+          )}>
+            <span className={cn(
+              "text-sm font-bold",
+              locked ? "text-slate-400" : "text-indigo-700 dark:text-indigo-400",
+            )}>2</span>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Dòng hàng (PO Lines)
+            </h3>
+            <p className="text-xs text-slate-400">
+              {locked ? "Lưu đơn ở bước 1 để thêm dòng hàng" : `${lines.length} dòng`}
+            </p>
+          </div>
+          {!locked && lines.length > 0 && (
+            <Badge variant="secondary" className="ml-1 text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900">
+              {lines.length} dòng
+            </Badge>
+          )}
+        </div>
         {purchaseOrderId && (
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setImportDialogOpen(true)}
+            className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Thêm SP bằng Excel
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            Nhập từ Excel
           </Button>
         )}
       </div>
 
-      <div className="mb-6 overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+      {/* Lines Table */}
+      <div className="overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-14">STT</TableHead>
-              <TableHead>Sản phẩm</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead className="text-right">SL đặt</TableHead>
-              <TableHead className="text-right">Đơn giá</TableHead>
-              <TableHead className="w-28 text-right">Thao tác</TableHead>
+          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+            <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
+              <TableHead className="w-14 py-3 pl-5 pr-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
+              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm</TableHead>
+              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</TableHead>
+              <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
+              <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn giá</TableHead>
+              <TableHead className="w-14 py-3 pl-3 pr-5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {itemsLoading && lines.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-8 text-center text-slate-500"
-                >
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                <TableCell colSpan={6} className="py-10 text-center">
+                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-indigo-500" />
+                  <p className="mt-2 text-xs text-slate-400">Đang tải dòng hàng…</p>
                 </TableCell>
               </TableRow>
             ) : lines.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-8 text-center text-sm text-slate-500"
-                >
-                  Chưa có dòng. Thêm dòng bên dưới.
+                <TableCell colSpan={6} className="py-10 text-center">
+                  <Package className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Chưa có dòng hàng nào</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Thêm từng dòng bên dưới hoặc nhập từ Excel</p>
                 </TableCell>
               </TableRow>
             ) : (
-              lines.map((row: PoItem) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.lineNumber}</TableCell>
-                  <TableCell className="max-w-60 truncate text-sm">
-                    {row.productName ||
-                      productNameMap.get(row.productId) ||
-                      row.productId}
+              lines.map((row: PoItem, idx) => (
+                <TableRow
+                  key={row.id}
+                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 dark:border-slate-800/60 dark:hover:bg-slate-800/30 transition-colors"
+                >
+                  <TableCell className="py-3 pl-5 pr-2 text-xs font-bold text-slate-400">{idx + 1}</TableCell>
+                  <TableCell className="max-w-60 truncate px-3 py-3 text-sm text-slate-700 dark:text-slate-300">
+                    {row.productName || productNameMap.get(row.productId) || row.productId}
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {row.productSku}
+                  <TableCell className="px-3 py-3">
+                    <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+                      {row.productSku}
+                    </span>
                   </TableCell>
-                  <TableCell className="text-right">{row.orderedQty}</TableCell>
-                  <TableCell className="text-right">
-                    {row.unitPrice ?? "—"}
+                  <TableCell className="px-3 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-200">
+                    {row.orderedQty}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">
+                    {row.unitPrice != null ? `₫${row.unitPrice.toLocaleString()}` : "—"}
+                  </TableCell>
+                  <TableCell className="px-3 py-3 text-right">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="text-rose-600"
+                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg"
                       disabled={isDeletingLine}
                       onClick={() => onDeleteLine(row)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -154,94 +184,101 @@ export function PoLinesSection({
         </Table>
       </div>
 
-      <form
-        onSubmit={onAddLine}
-        className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 md:grid-cols-12 md:items-end dark:border-slate-800"
-      >
-        <div className="md:col-span-4">
-          <label
-            htmlFor="po-line-product"
-            className="mb-1 block text-xs font-semibold text-slate-500"
-          >
-            Sản phẩm *
-          </label>
-          <SearchableSelect
-            id="po-line-product"
-            value={lineProductId}
-            onValueChange={(v) => setLineProductId(v)}
-            options={productOptions}
-            placeholder={
-              productsErr
-                ? "Lỗi tải SP"
-                : productsLoading
-                  ? "Đang tải…"
-                  : "Chạm để chọn & tìm SP"
-            }
-            searchPlaceholder="Tên hoặc mã SKU…"
-            emptyText="Không có sản phẩm — thử từ khóa khác"
-            disabled={!purchaseOrderId || productsErr}
-            loading={productsLoading}
-            error={Boolean(lineErrors.productId)}
-            icon={<Package className="size-4" />}
-            dialogTitle="Chọn sản phẩm"
-            serverSearch
-            searchQuery={productSearch}
-            onSearchChange={setProductSearch}
-          />
-          {productsErr && (
-            <p className="mt-1 text-xs text-amber-600">
-              Không tải được danh sách sản phẩm.
-            </p>
-          )}
-        </div>
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-xs font-semibold text-slate-500">
-            SKU
-          </label>
-          <Input
-            readOnly
-            value={selectedProduct?.sku ?? ""}
-            className="bg-slate-50 font-mono text-sm dark:bg-slate-900"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-xs font-semibold text-slate-500">
-            SL đặt *
-          </label>
-          <Input
-            value={lineQty}
-            onChange={(e) => setLineQty(e.target.value)}
-            disabled={!purchaseOrderId}
-            inputMode="decimal"
-            className={lineErrors.orderedQtyStr ? "border-rose-400" : ""}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-xs font-semibold text-slate-500">
-            Đơn giá
-          </label>
-          <Input
-            value={linePrice}
-            onChange={(e) => setLinePrice(e.target.value)}
-            disabled={!purchaseOrderId}
-            inputMode="decimal"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <Button
-            type="submit"
-            disabled={!purchaseOrderId || savingLine}
-            className="w-full bg-indigo-600 hover:bg-indigo-700"
-          >
-            {savingLine ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
+      {/* Add Line Form */}
+      <div className="border-t border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/20 px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Thêm dòng hàng</p>
+        <form
+          onSubmit={onAddLine}
+          className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end"
+        >
+          {/* Product */}
+          <div className="md:col-span-4">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Sản phẩm <span className="text-rose-500">*</span>
+            </label>
+            <SearchableSelect
+              id="po-line-product"
+              value={lineProductId}
+              onValueChange={(v) => setLineProductId(v)}
+              options={productOptions}
+              placeholder={
+                productsErr ? "Lỗi tải SP"
+                  : productsLoading ? "Đang tải…"
+                  : "Chọn sản phẩm"
+              }
+              searchPlaceholder="Tên hoặc mã SKU…"
+              emptyText="Không có sản phẩm — thử từ khóa khác"
+              disabled={!purchaseOrderId || productsErr}
+              loading={productsLoading}
+              error={Boolean(lineErrors.productId)}
+              icon={<Package className="size-4" />}
+              dialogTitle="Chọn sản phẩm"
+              serverSearch
+              searchQuery={productSearch}
+              onSearchChange={setProductSearch}
+            />
+            {productsErr && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Không tải được danh sách sản phẩm.</p>
             )}
-            Thêm dòng <PlusIcon/>
-          </Button>
-        </div>
-      </form>
+          </div>
+
+          {/* SKU (read-only preview) */}
+          <div className="md:col-span-2">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">SKU</label>
+            <Input
+              readOnly
+              value={selectedProduct?.sku ?? ""}
+              placeholder="—"
+              className="rounded-xl h-10 bg-slate-100/60 font-mono text-xs dark:bg-slate-900/60"
+            />
+          </div>
+
+          {/* Qty */}
+          <div className="md:col-span-2">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">
+              SL đặt <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              value={lineQty}
+              onChange={(e) => setLineQty(e.target.value)}
+              disabled={!purchaseOrderId}
+              inputMode="decimal"
+              placeholder="0"
+              className={cn("rounded-xl h-10 text-right", lineErrors.orderedQtyStr && "border-rose-400")}
+            />
+          </div>
+
+          {/* Price */}
+          <div className="md:col-span-2">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Đơn giá</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">₫</span>
+              <Input
+                value={linePrice}
+                onChange={(e) => setLinePrice(e.target.value)}
+                disabled={!purchaseOrderId}
+                inputMode="decimal"
+                placeholder="0"
+                className="pl-6 rounded-xl h-10 text-right"
+              />
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div className="md:col-span-2">
+            <Button
+              type="submit"
+              disabled={!purchaseOrderId || savingLine}
+              className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 h-10 gap-1.5"
+            >
+              {savingLine
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Plus className="h-4 w-4" />}
+              Thêm dòng
+            </Button>
+          </div>
+        </form>
+      </div>
 
       {purchaseOrderId && (
         <PoExcelImportDialog

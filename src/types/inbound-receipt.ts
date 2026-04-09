@@ -72,3 +72,29 @@ export function inboundStatusColor(
       return "bg-slate-100 text-slate-500";
   }
 }
+
+export interface InboundReceiptPrintItem {
+  lineNumber: number;
+  productId: string;
+  productSku: string;
+  productName: string;
+  unit?: string;
+  orderedQty: number;
+  receivedQty: number;
+  note?: string;
+}
+
+export interface InboundReceiptPrintResponse {
+  id: string;
+  receiptNumber: string;
+  poNumber: string;
+  warehouseId: string;
+  locationId?: string;
+  receivedDate: string;
+  supplierName: string;
+  supplierAddress: string;
+  supplierPhone?: string;
+  receivedBy?: string;
+  note?: string;
+  items: InboundReceiptPrintItem[];
+}

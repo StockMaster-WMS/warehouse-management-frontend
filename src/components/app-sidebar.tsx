@@ -7,7 +7,6 @@ import {
   BarChart3,
   Boxes,
   ClipboardList,
-  Dot,
   LayoutGrid,
   Package,
   Settings,
@@ -21,6 +20,13 @@ import {
   ChevronRight,
   Building2,
   MapPin,
+  PackageSearch,
+  Tags,
+  FileStack,
+  ReceiptText,
+  ScanLine,
+  ListOrdered,
+  Scissors,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,6 +52,8 @@ type MenuItem = {
   children?: Array<{
     label: string;
     href: string;
+    icon: LucideIcon;
+    color?: string;
   }>;
 };
 
@@ -58,8 +66,8 @@ const mainItems: MenuItem[] = [
     href: "/products",
     icon: Package,
     children: [
-      { label: "Tất cả sản phẩm", href: "/products" },
-      { label: "Nhóm / loại hàng", href: "/categories" },
+      { label: "Tất cả sản phẩm", href: "/products", icon: PackageSearch, color: "indigo" },
+      { label: "Nhóm / loại hàng", href: "/categories", icon: Tags, color: "violet" },
     ],
   },
   {
@@ -68,9 +76,9 @@ const mainItems: MenuItem[] = [
     icon: ClipboardList,
     tag: "Mới",
     children: [
-      { label: "Đơn nhập hàng (PO)", href: "/purchase-orders" },
-      { label: "Danh sách phiếu nhập kho", href: "/inbound" },
-      { label: "Putaway", href: "/putaway" },
+      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, color: "blue" },
+      { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, color: "emerald" },
+      { label: "Sắp xếp vào kho", href: "/putaway", icon: ScanLine, color: "amber" },
     ],
   },
   {
@@ -78,8 +86,8 @@ const mainItems: MenuItem[] = [
     href: "/orders",
     icon: Truck,
     children: [
-      { label: "Đơn xuất", href: "/orders" },
-      { label: "Lấy hàng", href: "/picking" },
+      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, color: "rose" },
+      { label: "Lấy hàng", href: "/picking", icon: Scissors, color: "orange" },
     ],
   },
 ];
@@ -152,8 +160,8 @@ export function AppSidebar() {
           <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
             Kho trung tâm
           </p>
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-            <Dot className="-ml-1 h-3.5 w-3.5" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Online
           </span>
         </div>
@@ -363,28 +371,39 @@ const SidebarItem = memo(function SidebarItem({
       </SidebarMenuButton>
 
       {showChildren && (
-        <div className="mt-1 space-y-1 pl-11 pr-3 group-data-[collapsible=icon]:hidden">
+        <div className="mb-1 mt-0.5 space-y-0.5 pl-4 pr-3 group-data-[collapsible=icon]:hidden">
           {item.children?.map((child) => {
             const childActive = isActivePath(pathname, child.href);
-
+            const ChildIcon = child.icon;
+            const colorMap: Record<string, string> = {
+              indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400",
+              violet: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
+              blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+              emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+              amber: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+              rose: "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400",
+              orange: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+            };
+            const iconCls = child.color ? (colorMap[child.color] ?? "bg-slate-100 text-slate-500") : "bg-slate-100 text-slate-500";
             return (
               <Link
                 key={child.href}
                 href={child.href}
                 className={cn(
-                  "flex h-8.5 items-center rounded-md px-2 text-[13px] transition-colors",
-                  "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200",
+                  "flex h-9 items-center gap-2.5 rounded-xl px-2.5 text-[12.5px] font-medium transition-all",
+                  "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200",
                   childActive &&
-                  "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300",
+                  "bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-950/40 dark:text-indigo-300",
                 )}
               >
-                <Dot
-                  className={cn(
-                    "mr-1.5 h-4 w-4",
-                    childActive ? "text-indigo-500" : "text-slate-300",
-                  )}
-                />
+                <span className={cn(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all",
+                  childActive ? iconCls : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                )}>
+                  <ChildIcon className="h-3.5 w-3.5" />
+                </span>
                 <span className="truncate">{child.label}</span>
+                {childActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />}
               </Link>
             );
           })}

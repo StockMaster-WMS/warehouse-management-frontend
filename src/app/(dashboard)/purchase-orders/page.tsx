@@ -9,6 +9,14 @@ import {
   Plus,
   FileText,
   AlertCircle,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  CalendarDays,
+  ShoppingCart,
+  Activity,
+  PackagePlus,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -47,30 +55,50 @@ const STATUS_OPTIONS = [
   "CANCELLED",
 ] as const;
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Nháp",
-  APPROVED: "Đã duyệt",
-  PARTIAL: "Nhận một phần",
-  COMPLETED: "Hoàn tất",
-  CANCELLED: "Đã hủy",
+const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+  DRAFT: {
+    label: "Nháp",
+    cls: "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+    icon: <FileText className="h-3 w-3" />,
+  },
+  APPROVED: {
+    label: "Đã duyệt",
+    cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
+    icon: <CheckCircle2 className="h-3 w-3" />,
+  },
+  PARTIAL: {
+    label: "Nhận một phần",
+    cls: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
+    icon: <Clock className="h-3 w-3" />,
+  },
+  COMPLETED: {
+    label: "Hoàn tất",
+    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
+    icon: <CheckCircle2 className="h-3 w-3" />,
+  },
+  CANCELLED: {
+    label: "Đã hủy",
+    cls: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900",
+    icon: <XCircle className="h-3 w-3" />,
+  },
 };
 
-function statusBadgeClass(status: string | null | undefined): string {
-  switch (status) {
-    case "DRAFT":
-      return "bg-slate-100 text-slate-700";
-    case "APPROVED":
-      return "bg-blue-100 text-blue-700";
-    case "PARTIAL":
-      return "bg-amber-100 text-amber-700";
-    case "COMPLETED":
-      return "bg-emerald-100 text-emerald-700";
-    case "CANCELLED":
-      return "bg-rose-100 text-rose-700";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
+// Derived from STATUS_CONFIG so it stays in sync
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_CONFIG).map(([k, v]) => [k, v.label]),
+);
+
+function StatusPill({ status }: { status: string | null | undefined }) {
+  const cfg = STATUS_CONFIG[status ?? ""];
+  if (!cfg) return <span className="text-xs text-slate-400">{status ?? "—"}</span>;
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", cfg.cls)}>
+      {cfg.icon}
+      {cfg.label}
+    </span>
+  );
 }
+
 
 export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(0);
@@ -161,7 +189,7 @@ export default function PurchaseOrdersPage() {
   const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Đơn nhập hàng"
         description="Purchase Order — quản lý đơn đặt hàng từ nhà cung cấp."
@@ -172,22 +200,100 @@ export default function PurchaseOrdersPage() {
               nativeButton={false}
               variant="outline"
               size="sm"
-              className="border-slate-200"
+              className="rounded-xl border-slate-200 gap-1.5 text-xs"
             >
-              Putaway
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Sắp xếp kho
             </Button>
             <Button
               render={<Link href="/purchase-orders/new" />}
               nativeButton={false}
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Tạo đơn nhập
             </Button>
           </div>
         }
       />
+
+      {/* KPI Cards Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Total POs */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="absolute right-3 top-4 opacity-[0.03] dark:opacity-[0.05]">
+            <FileText className="h-16 w-16" />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+              <FileText className="h-4 w-4" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Tổng Đơn (Trang)</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-black tabular-nums text-slate-800 dark:text-slate-100">{rows.length}</p>
+            <p className="text-xs font-medium text-slate-500">PO</p>
+          </div>
+        </div>
+
+        {/* Processing */}
+        <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/50 p-5 shadow-sm dark:border-blue-900/40 dark:from-blue-950/30 dark:to-indigo-950/20">
+          <div className="absolute right-3 top-4 opacity-10">
+            <Activity className="h-16 w-16 text-blue-600" />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-blue-700 dark:text-blue-300">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
+              <Activity className="h-4 w-4" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Đang Xử Lý</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-black tabular-nums text-blue-900 dark:text-blue-100">
+              {rows.filter((r: any) => ["PROCESSING", "PARTIAL_RECEIVED"].includes(r.status)).length}
+            </p>
+            <p className="text-xs font-medium text-blue-600/80 dark:text-blue-400">PO</p>
+          </div>
+        </div>
+
+        {/* Completed */}
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/50 p-5 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-teal-950/20">
+          <div className="absolute right-3 top-4 opacity-10">
+            <CheckCircle2 className="h-16 w-16 text-emerald-600" />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-emerald-700 dark:text-emerald-300">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
+              <CheckCircle2 className="h-4 w-4" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Hoàn Tất</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-black tabular-nums text-emerald-900 dark:text-emerald-100">
+              {rows.filter((r: any) => r.status === "COMPLETED").length}
+            </p>
+            <p className="text-xs font-medium text-emerald-600/80 dark:text-emerald-400">PO</p>
+          </div>
+        </div>
+
+        {/* Cancelled */}
+        <div className="relative overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-red-50/50 p-5 shadow-sm dark:border-rose-900/40 dark:from-rose-950/30 dark:to-red-950/20">
+          <div className="absolute right-3 top-4 opacity-10">
+            <Ban className="h-16 w-16 text-rose-600" />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-rose-700 dark:text-rose-300">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/50">
+              <Ban className="h-4 w-4" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Đã Hủy</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-black tabular-nums text-rose-900 dark:text-rose-100">
+              {rows.filter((r: any) => r.status === "CANCELLED").length}
+            </p>
+            <p className="text-xs font-medium text-rose-600/80 dark:text-rose-400">PO</p>
+          </div>
+        </div>
+      </div>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
         {/* Unified Search Section */}
         <SearchToolbar
@@ -249,15 +355,13 @@ export default function PurchaseOrdersPage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 bg-white sm:w-42 dark:border-slate-800 dark:bg-slate-900">
-                    <SelectValue placeholder="Tất cả trạng thái">
-                      {(val) => STATUS_LABEL[val as string] ?? "Tất cả trạng thái"}
-                    </SelectValue>
+                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                    <span className="truncate text-sm">
+                      {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
+                    </span>
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="" className="rounded-lg">
-                      Tất cả trạng thái
-                    </SelectItem>
+                    <SelectItem value="" className="rounded-lg">Tất cả trạng thái</SelectItem>
                     {STATUS_OPTIONS.map((st) => (
                       <SelectItem key={st} value={st} className="rounded-lg">
                         {STATUS_LABEL[st] ?? st}
@@ -369,8 +473,8 @@ export default function PurchaseOrdersPage() {
         {/* Updated Table UI */}
         <div className="flex-1">
           {isFetching && !isLoading ? (
-            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+            <div className="flex items-center gap-2 border-b border-slate-100 bg-indigo-50/60 px-6 py-2 text-xs font-medium text-indigo-600 dark:border-slate-800 dark:bg-indigo-950/20 dark:text-indigo-400">
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
               Đang cập nhật dữ liệu…
             </div>
           ) : null}
@@ -378,12 +482,14 @@ export default function PurchaseOrdersPage() {
           <div className="overflow-x-auto">
             <Table className="min-w-px text-left border-collapse">
               <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                  <TableHead className="w-[180px] py-4 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
-                  <TableHead className="w-[200px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
-                  <TableHead className="w-[200px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
-                  <TableHead className="w-[180px] px-3 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                  <TableHead className="w-[150px] py-4 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+              <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
+                  <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
+                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Ngày đặt</span>
+                  </TableHead>
+                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
+                  <TableHead className="w-[180px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                  <TableHead className="w-[120px] py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -427,26 +533,23 @@ export default function PurchaseOrdersPage() {
                   rows.map((po: PurchaseOrder) => (
                     <TableRow
                       key={po.id}
-                      className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/70 dark:border-slate-800 dark:hover:bg-slate-800/50 transition-colors"
+                      className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/80 dark:border-slate-800/60 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      <TableCell className="py-4 pl-6 pr-3 font-semibold text-slate-700 dark:text-slate-200">{po.poNumber}</TableCell>
-                      <TableCell className="px-3 py-4 text-slate-600 dark:text-slate-400">{po.orderDate}</TableCell>
-                      <TableCell className="px-3 py-4 text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
+                      <TableCell className="py-4 pl-6 pr-3">
+                        <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{po.poNumber}</span>
+                      </TableCell>
+                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.orderDate}</TableCell>
+                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
                       <TableCell className="px-3 py-4">
-                        <Badge
-                          variant="secondary"
-                          className={cn("px-2.5 py-0.5 font-bold text-[11px] rounded-md border-0 shadow-none", statusBadgeClass(po.status))}
-                        >
-                          {STATUS_LABEL[po.status ?? ""] ?? po.status ?? "—"}
-                        </Badge>
+                        <StatusPill status={po.status} />
                       </TableCell>
                       <TableCell className="py-4 pl-3 pr-6 text-right">
                         <Button
                           render={<Link href={`/purchase-orders/${po.id}`} />}
                           nativeButton={false}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-8 px-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-950/30 dark:text-indigo-400"
+                          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-indigo-950/30"
                         >
                           Chi tiết
                         </Button>
