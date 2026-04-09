@@ -42,7 +42,7 @@ function toTitle(segment: string): string {
     orders: "Xuất kho & giao hàng",
     inbound: "Nhập hàng",
     "purchase-orders": "Đơn nhập hàng",
-    putaway: "Putaway",
+    putaway: "Sắp xếp vào kho",
     customers: "Khách hàng",
     suppliers: "Nhà cung cấp",
     history: "Nhật ký hoạt động",

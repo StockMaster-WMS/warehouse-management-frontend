@@ -108,6 +108,19 @@ const inboundApi = baseApi.injectEndpoints({
         { type: "PutawayTask", id: "LIST" },
       ],
     }),
+    
+    getInboundReceiptPrintData: builder.query<
+      ApiResponse<import("@/types/inbound-receipt").InboundReceiptPrintResponse>,
+      string
+    >({
+      query: (id) => ({
+        url: `/inbound-receipts/${id}/print`,
+        method: "GET",
+      }),
+      providesTags: (_r, _e, id) => [
+        { type: "InboundReceipt" as const, id: `PRINT-${id}` },
+      ],
+    }),
   }),
 });
 
@@ -116,4 +129,5 @@ export const {
   useGetInboundReceiptByIdQuery,
   useGetInboundReceiptsByPoQuery,
   useCreateInboundReceiptMutation,
+  useLazyGetInboundReceiptPrintDataQuery,
 } = inboundApi;

@@ -1,20 +1,88 @@
 "use client";
 
-import { FileSpreadsheet, Wrench } from "lucide-react";
+import { useState } from "react";
+import { FileSpreadsheet, Wrench, History } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { apiErrMessage } from "@/types/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   InventorySummaryCards,
   InventoryStockTable,
   StockAdjustDialog,
   InventorySearchSection,
   useInventoryPageLogic,
+  StockMovementsTable,
+  HistorySearchSection,
+  useStockMovementsPageLogic,
 } from "@/components/features/inventory";
 import { cn } from "@/lib/utils";
 
+function HistoryModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const logic = useStockMovementsPageLogic();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[95vh] overflow-y-auto w-[95vw] sm:max-w-[1400px] rounded-2xl p-6">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl">Lịch sử biến động tồn kho</DialogTitle>
+          <DialogDescription>Theo dõi mọi thay đổi nhập kho, xuất kho, giữ chỗ và nhả chỗ.</DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <HistorySearchSection
+            advancedOpen={logic.advancedOpen}
+            onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
+            advancedCount={logic.advancedCount}
+            hasAnyFilter={logic.hasAnyFilter}
+            onClearFilters={() => {
+              logic.clearFilters();
+              logic.setAdvancedOpen(false);
+            }}
+            warehouseId={logic.warehouseId}
+            onWarehouseChange={logic.setWarehouseId}
+            warehouses={logic.warehouses}
+            isWarehousesLoading={logic.isWarehousesLoading}
+            movementType={logic.movementType}
+            onMovementTypeChange={logic.setMovementType}
+            fromDate={logic.fromDate}
+            onFromDateChange={logic.setFromDate}
+            toDate={logic.toDate}
+            onToDateChange={logic.setToDate}
+          />
+
+          <StockMovementsTable
+            items={logic.movements}
+            page={logic.page}
+            pageSize={logic.pageSize}
+            totalPages={logic.totalPages}
+            totalElements={logic.totalElements}
+            canGoPrev={logic.canGoPrev}
+            canGoNext={logic.canGoNext}
+            isLoading={logic.isLoading}
+            isFetching={logic.isFetching}
+            errorMessage={
+              logic.error ? apiErrMessage(logic.error, "Không thể tải lịch sử biến động") : null
+            }
+            onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+            onNextPage={() => logic.setPage((p) => p + 1)}
+            onRetry={() => logic.refetch()}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function InventoryPage() {
   const logic = useInventoryPageLogic();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -23,6 +91,16 @@ export default function InventoryPage() {
         description="Giám sát tồn kho theo kho, vị trí, cảnh báo tồn thấp và hàng sắp hết hạn."
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-xl border-slate-200"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="h-4 w-4 text-indigo-600" />
+              Lịch sử biến động
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -139,6 +217,10 @@ export default function InventoryPage() {
         products={logic.adjustProducts}
         isProductsLoading={logic.isProductsLoading}
       />
+
+      {historyOpen && (
+        <HistoryModal open={historyOpen} onOpenChange={setHistoryOpen} />
+      )}
     </div>
   );
 }
