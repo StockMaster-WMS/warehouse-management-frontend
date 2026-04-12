@@ -1,5 +1,5 @@
 import axios from "axios";
-import { normalizeAccessToken } from "@/lib/auth-token";
+import { getToken, clearToken } from "@/lib/auth-token";
 import { API_BASE_URL } from "@/lib/constants";
 
 export const axiosInstance = axios.create({
@@ -8,18 +8,17 @@ export const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Crucial for HttpOnly cookies from backend
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token =
-    typeof window !== "undefined"
-      ? normalizeAccessToken(localStorage.getItem("accessToken"))
-      : "";
+  const token = getToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
+  
+  // Auto-handle FormData
   if (config.data instanceof FormData && config.headers) {
     const h = config.headers;
     if (typeof h.delete === "function") {
@@ -37,7 +36,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
+        clearToken();
         window.dispatchEvent(new Event("auth-token-changed"));
         const { pathname } = window.location;
         if (pathname !== "/login") {

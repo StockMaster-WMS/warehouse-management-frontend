@@ -7,7 +7,7 @@ import {
   canAccessPath,
   getUserRoles,
 } from "@/lib/access-control";
-import { hasUsableAccessToken } from "@/lib/auth-token";
+import { getToken, hasUsableAccessToken } from "@/lib/auth-token";
 import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 
 function subscribeToAuthChanges(onStoreChange: () => void) {
@@ -21,21 +21,25 @@ function subscribeToAuthChanges(onStoreChange: () => void) {
 }
 
 function getAuthSnapshot() {
-  return hasUsableAccessToken(window.localStorage.getItem("accessToken"));
+  return hasUsableAccessToken(getToken());
 }
 
-function getServerAuthSnapshot() {
-  return false;
-}
-
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+export function AuthGuard({ 
+  children, 
+  initialHasToken = false 
+}: { 
+  children: React.ReactNode; 
+  initialHasToken?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
+  
   const hasToken = useSyncExternalStore(
     subscribeToAuthChanges,
     getAuthSnapshot,
-    getServerAuthSnapshot,
+    () => initialHasToken
   );
+
   const {
     data: user,
     isLoading: isUserLoading,
@@ -43,6 +47,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   } = useGetCurrentUserQuery(undefined, {
     skip: !hasToken,
   });
+
   const userRoles = getUserRoles(user?.roles);
   const canAccessCurrentPath = canAccessPath(pathname, userRoles);
   const canAccessDashboard = canAccessPath("/dashboard", userRoles);
@@ -70,7 +75,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     user,
   ]);
 
-  if (!hasToken || isUserLoading || isUserFetching || !user) {
+  // Loading state (only show if we have token but don't have user data yet)
+  if (hasToken && (isUserLoading || isUserFetching || !user)) {
     return (
       <main className="flex min-h-svh w-full items-center justify-center bg-background">
         <div
@@ -81,6 +87,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Redirect to login handled by useEffect and middleware, but safe fallback
+  if (!hasToken) {
+    return null;
+  }
+
+  // Permission denied state
   if (!canAccessCurrentPath) {
     return (
       <main className="flex min-h-svh w-full items-center justify-center bg-background px-4">

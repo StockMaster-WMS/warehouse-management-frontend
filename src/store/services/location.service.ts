@@ -1,6 +1,6 @@
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { Location, CreateLocationRequest } from "@/types/location";
+import type { Location, CreateLocationRequest, BulkGenerateLocationsRequest } from "@/types/location";
 
 export type GetLocationsParams = {
   page?: number;
@@ -106,7 +106,34 @@ const locationApi = baseApi.injectEndpoints({
           : []),
       ],
     }),
-    bulkGenerateLocations: builder.mutation<ApiResponse<string>, any>({
+    getLocationsByIds: builder.query<ApiResponse<Location[]>, string[]>({
+      queryFn: async (ids, _api, _extraOptions, baseQuery) => {
+        const uniqueIds = [...new Set(ids.map(id => id.trim()).filter(Boolean))];
+        if (uniqueIds.length === 0) {
+          return { data: { data: [], message: "OK", success: true, timestamp: new Date().toISOString() } };
+        }
+        
+        const results = await Promise.all(
+          uniqueIds.map((id) => baseQuery({ url: `/locations/${id}`, method: "GET" }))
+        );
+        const failed = results.find(r => r.error);
+        if (failed?.error) return { error: failed.error };
+        
+        return {
+          data: {
+            data: results.map(r => (r.data as ApiResponse<Location>).data),
+            message: "OK",
+            success: true,
+            timestamp: new Date().toISOString(),
+          }
+        };
+      },
+      providesTags: (result) => 
+        result?.data?.length 
+          ? result.data.map(l => ({ type: "Location" as const, id: l.id }))
+          : [{ type: "Location", id: "LIST" }]
+    }),
+    bulkGenerateLocations: builder.mutation<ApiResponse<string>, BulkGenerateLocationsRequest>({
       query: (body) => ({
         url: "/locations/bulk-generate",
         method: "POST",
@@ -127,4 +154,5 @@ export const {
   useUpdateLocationMutation,
   useDeleteLocationMutation,
   useBulkGenerateLocationsMutation,
+  useGetLocationsByIdsQuery,
 } = locationApi;

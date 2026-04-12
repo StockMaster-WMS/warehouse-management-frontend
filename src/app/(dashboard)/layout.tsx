@@ -1,16 +1,20 @@
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const hasToken = cookieStore.has("accessToken");
+
   return (
-    <AuthGuard>
+    <AuthGuard initialHasToken={hasToken}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="min-h-svh bg-muted">

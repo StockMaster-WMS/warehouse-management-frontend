@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { normalizeAccessToken } from "@/lib/auth-token";
+import { saveToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useLoginMutation } from "@/store/services/auth.service";
@@ -30,8 +30,8 @@ export default function LoginPage() {
 
   // Redirect if token already exists
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
-      router.push("/dashboard");
+    if (typeof window !== "undefined" && document.cookie.includes("accessToken=")) {
+      router.replace("/dashboard");
     }
   }, [router]);
 
@@ -44,24 +44,23 @@ export default function LoginPage() {
         : { username, password };
 
       const result = await login(credentials).unwrap();
-      const accessToken = normalizeAccessToken(result.accessToken);
+      const token = result.accessToken;
 
-      if (!accessToken) {
+      if (!token) {
         throw new Error("Login response missing accessToken");
       }
       
-      // Lưu accessToken vào localStorage
-      // RefreshToken sẽ được backend set vào HttpOnly cookie (tự động gửi, JS không thể access)
-      localStorage.setItem("accessToken", accessToken);
+      // Save token to localStorage AND cookies
+      saveToken(token);
       dispatch(baseApi.util.resetApiState());
       
-      // Thông báo cho AuthGuard về sự thay đổi token (quan trọng cho useSyncExternalStore)
+      // Notify components like AuthGuard
       window.dispatchEvent(new Event("auth-token-changed"));
       
       // Redirect to dashboard
-      router.replace("/dashboard");
+      window.location.replace("/dashboard");
     } catch {
-      // Error đã được render từ `error` state ở UI.
+      // Error handled by redux state
     }
   };
 

@@ -38,6 +38,16 @@ function buildProductsQueryParams(params: GetProductsParams) {
   return query;
 }
 
+function buildProductExportParams(params: Omit<GetProductsParams, "page" | "size" | "sort">) {
+  const { keyword, categoryId, warehouseId, status } = params;
+  const query: Record<string, string> = {};
+  if (keyword?.trim()) query.keyword = keyword.trim();
+  if (categoryId?.trim()) query.categoryId = categoryId.trim();
+  if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
+  if (status) query.status = status;
+  return query;
+}
+
 const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<ApiResponse<PagedResponse<Product>>, GetProductsParams>({
@@ -159,7 +169,7 @@ const productApi = baseApi.injectEndpoints({
       query: (params) => ({
         url: "/products/export",
         method: "GET",
-        params: buildProductsQueryParams(params),
+        params: buildProductExportParams(params),
         responseType: "blob",
       }),
     }),
