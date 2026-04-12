@@ -1,4 +1,5 @@
 import axios from "axios";
+import { normalizeAccessToken } from "@/lib/auth-token";
 import { API_BASE_URL } from "@/lib/constants";
 
 export const axiosInstance = axios.create({
@@ -10,7 +11,10 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  const token =
+    typeof window !== "undefined"
+      ? normalizeAccessToken(localStorage.getItem("accessToken"))
+      : "";
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -34,6 +38,7 @@ axiosInstance.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
+        window.dispatchEvent(new Event("auth-token-changed"));
         const { pathname } = window.location;
         if (pathname !== "/login") {
           window.location.href = "/login";

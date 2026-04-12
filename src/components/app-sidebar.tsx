@@ -43,6 +43,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 
 type MenuItem = {
   label: string;
@@ -118,6 +119,18 @@ function stableHrefToId(href: string) {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { data: user } = useGetCurrentUserQuery();
+
+  const getRoleLabel = (roles: string | undefined): string => {
+    switch (roles) {
+      case "ADMIN": return "Quản trị viên";
+      case "WAREHOUSE_MANAGER": return "Quản lý kho";
+      case "WAREHOUSE_STAFF": return "Nhân viên kho";
+      case "REPORT_VIEWER": return "Người xem báo cáo";
+      default: return roles || "Nhân viên";
+    }
+  };
+
   const allItems = [
     ...mainItems,
     ...secondaryItems,
@@ -252,10 +265,10 @@ export function AppSidebar() {
         <div className="flex flex-col gap-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 group-data-[collapsible=icon]:hidden dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-              An Nguyen
+              {user?.username || user?.name || "Người dùng"}
             </p>
             <p className="mt-0.5 text-[11px] text-slate-500">
-              Warehouse Manager
+              {getRoleLabel(user?.roles)}
             </p>
           </div>
 

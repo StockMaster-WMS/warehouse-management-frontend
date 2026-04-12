@@ -7,14 +7,17 @@ export interface LoginRequest {
     password: string;
 }
 
+export type UserRole = "WAREHOUSE_STAFF" | "WAREHOUSE_MANAGER" | "REPORT_VIEWER" | "ADMIN";
+
 // HttpOnly Cookie: refreshToken sẽ được backend set, không trả về trong body
 export interface LoginResponse {
     accessToken: string; // Lưu vào localStorage
     user?: {
         id: string;
+        username: string;
         email: string;
-        name: string;
-        role: string;
+        name?: string;
+        roles: UserRole;
     };
 }
 

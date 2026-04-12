@@ -1,15 +1,15 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { OrderDetailView } from "./_components/OrderDetailView";
 
-export default function SalesOrderDetailPage() {
-  const params = useParams<{ id: string }>();
-  const salesOrderId = String(params.id);
+export default async function SalesOrderDetailPage({
+  params: paramsPromise,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await paramsPromise;
 
   return (
     <div className="space-y-5">
@@ -29,7 +29,7 @@ export default function SalesOrderDetailPage() {
           </Button>
         }
       />
-      <OrderDetailView salesOrderId={salesOrderId} />
+      <OrderDetailView salesOrderId={id} />
     </div>
   );
 }

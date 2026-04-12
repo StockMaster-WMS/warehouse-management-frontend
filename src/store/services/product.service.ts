@@ -59,6 +59,51 @@ const productApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/products/${id}`, method: "GET" }),
       providesTags: (_result, _err, id) => [{ type: "Product" as const, id }],
     }),
+    getProductsByIds: builder.query<ApiResponse<Product[]>, string[]>({
+      queryFn: async (ids, _api, _extraOptions, baseQuery) => {
+        const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+
+        if (uniqueIds.length === 0) {
+          return {
+            data: {
+              data: [],
+              message: "OK",
+              success: true,
+              timestamp: new Date().toISOString(),
+            },
+          };
+        }
+
+        const results = await Promise.all(
+          uniqueIds.map((id) =>
+            baseQuery({
+              url: `/products/${encodeURIComponent(id)}`,
+              method: "GET",
+            }),
+          ),
+        );
+        const failedResult = results.find((result) => result.error);
+
+        if (failedResult?.error) {
+          return { error: failedResult.error };
+        }
+
+        return {
+          data: {
+            data: results
+              .map((result) => (result.data as ApiResponse<Product> | undefined)?.data)
+              .filter((product): product is Product => Boolean(product?.id)),
+            message: "OK",
+            success: true,
+            timestamp: new Date().toISOString(),
+          },
+        };
+      },
+      providesTags: (_result, _err, ids) =>
+        ids.length
+          ? ids.map((id) => ({ type: "Product" as const, id }))
+          : [{ type: "Product" as const, id: "LIST" }],
+    }),
     updateProduct: builder.mutation<ApiResponse<Product>, UpdateProductPayload>({
       query: ({ id, ...body }) => ({
         url: `/products/${id}`,
@@ -124,6 +169,7 @@ const productApi = baseApi.injectEndpoints({
 export const {
   useGetProductsQuery,
   useGetProductByIdQuery,
+  useGetProductsByIdsQuery,
   useUpdateProductMutation,
   useCreateProductMutation,
   useDeleteProductMutation,
