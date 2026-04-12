@@ -51,6 +51,12 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
     group: "Tổng quan & tác nghiệp",
   },
   {
+    id: "returns",
+    label: "Hàng trả / RMA / Hàng lỗi",
+    href: "/returns",
+    group: "Kho xuất",
+  },
+  {
     id: "inbound",
     label: "Danh sách phiếu nhập",
     href: "/inbound",

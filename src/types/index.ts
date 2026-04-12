@@ -20,3 +20,4 @@ export type * from "./stock";
 export type * from "./category";
 export type * from "./customer";
 export type * from "./order";
+export type * from "./returns";
