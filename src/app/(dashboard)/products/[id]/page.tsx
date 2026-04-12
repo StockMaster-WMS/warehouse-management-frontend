@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ListOrdered, Package } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetProductByIdQuery } from "@/store/services/product.service";
 import { useGetStocksQuery } from "@/store/services/stock.service";
-import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
+import { useGetLocationsByIdsQuery } from "@/store/services/location.service";
 import { apiErrMessage } from "@/types/api";
 import type { Location } from "@/types/location";
 import { 
@@ -19,6 +19,7 @@ import {
   ProductBarcodeModal,
   ProductStockLedger
 } from "@/components/features/products";
+
 export default function ProductDetailPage({
   params: paramsPromise,
 }: {
@@ -27,8 +28,11 @@ export default function ProductDetailPage({
   const params = use(paramsPromise);
   const { id } = params;
 
+  // 1. Fetch Product
   const { data, error, isLoading, refetch, isFetching } = useGetProductByIdQuery(id);
   const product = data?.data;
+
+  // 2. Fetch Stocks for this product
   const {
     data: stocksResponse,
     error: stockError,
@@ -38,9 +42,27 @@ export default function ProductDetailPage({
     { skip: !id },
   );
 
-  const [triggerGetLocationById] = useLazyGetLocationByIdQuery();
-  const [locationMap, setLocationMap] = useState<Record<string, Location>>({});
-  const [isLocationsLoading, setIsLocationsLoading] = useState(false);
+  const stocks = useMemo(() => stocksResponse?.data?.content ?? [], [stocksResponse]);
+  
+  // 3. Batch fetch locations for all stocks
+  const uniqueLocationIds = useMemo(() => 
+    Array.from(new Set(stocks.map((item) => item.locationId).filter(Boolean))),
+    [stocks]
+  );
+
+  const { data: locationsRes, isLoading: isLocationsLoading } = useGetLocationsByIdsQuery(
+    uniqueLocationIds,
+    { skip: uniqueLocationIds.length === 0 }
+  );
+
+  const locationMap = useMemo(() => {
+    const map: Record<string, Location> = {};
+    locationsRes?.data?.forEach(loc => {
+      map[loc.id] = loc;
+    });
+    return map;
+  }, [locationsRes]);
+
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
 
   const formatDateTime = (value?: string) => {
@@ -55,50 +77,6 @@ export default function ProductDetailPage({
       // ignore
     }
   };
-
-  const stocks = useMemo(() => stocksResponse?.data?.content ?? [], [stocksResponse]);
-
-  useEffect(() => {
-    const uniqueLocationIds = Array.from(new Set(stocks.map((item) => item.locationId).filter(Boolean)));
-    if (uniqueLocationIds.length === 0) return;
-
-    const missingLocationIds = uniqueLocationIds.filter((locationId) => !locationMap[locationId]);
-    if (missingLocationIds.length === 0) return;
-
-    let cancelled = false;
-
-    const loadLocations = async () => {
-      setIsLocationsLoading(true);
-      try {
-        const results = await Promise.allSettled(
-          missingLocationIds.map((locationId) => triggerGetLocationById(locationId).unwrap()),
-        );
-        if (cancelled) return;
-        setLocationMap((prev) => {
-          const next = { ...prev };
-          for (const result of results) {
-            if (result.status === "fulfilled") {
-              const response = result.value;
-              const location = response?.data;
-              if (!location?.id) continue;
-              next[location.id] = location;
-            }
-          }
-          return next;
-        });
-      } catch {
-        // Ignore location lookup failures and fall back to the location UUID.
-      } finally {
-        if (!cancelled) setIsLocationsLoading(false);
-      }
-    };
-
-    loadLocations();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [locationMap, stocks, triggerGetLocationById]);
 
   return (
     <div className="space-y-4 pb-20 sm:space-y-6">
@@ -286,4 +264,3 @@ export default function ProductDetailPage({
     </div>
   );
 }
-

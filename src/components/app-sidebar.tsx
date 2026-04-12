@@ -1,134 +1,37 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Boxes,
-  ClipboardList,
-  LayoutGrid,
-  Package,
-  Settings,
-  Truck,
-  Users2,
-  Warehouse,
-  History,
-  ShieldCheck,
-  CircleHelp,
-  ChevronLeft,
-  ChevronRight,
-  Building2,
-  MapPin,
-  PackageSearch,
-  Tags,
-  FileStack,
-  ReceiptText,
-  ScanLine,
-  ListOrdered,
-  Scissors,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChevronLeft, CircleHelp, Warehouse } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-type MenuItem = {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  tag?: string;
-  children?: Array<{
-    label: string;
-    href: string;
-    icon: LucideIcon;
-    color?: string;
-  }>;
-};
-
-const mainItems: MenuItem[] = [
-  { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid },
-  { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes },
-  { label: "Danh sách kho", href: "/warehouses", icon: Warehouse },
-  {
-    label: "Sản phẩm",
-    href: "/products",
-    icon: Package,
-    children: [
-      { label: "Tất cả sản phẩm", href: "/products", icon: PackageSearch, color: "indigo" },
-      { label: "Nhóm / loại hàng", href: "/categories", icon: Tags, color: "violet" },
-    ],
-  },
-  {
-    label: "Nhập hàng",
-    href: "/inbound",
-    icon: ClipboardList,
-    tag: "Mới",
-    children: [
-      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, color: "blue" },
-      { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, color: "emerald" },
-      { label: "Sắp xếp vào kho", href: "/putaway", icon: ScanLine, color: "amber" },
-    ],
-  },
-  {
-    label: "Kho xuất",
-    href: "/orders",
-    icon: Truck,
-    children: [
-      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, color: "rose" },
-      { label: "Lấy hàng", href: "/picking", icon: Scissors, color: "orange" },
-    ],
-  },
-];
-
-const secondaryItems: MenuItem[] = [
-  { label: "Khách hàng", href: "/customers", icon: Users2 },
-  { label: "Nhà cung cấp", href: "/suppliers", icon: Building2 },
-  { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin },
-  { label: "Nhật ký hoạt động", href: "/history", icon: History },
-];
-
-const reportItems: MenuItem[] = [
-  { label: "Báo cáo", href: "/reports", icon: BarChart3, tag: "BI" },
-];
-
-const systemItems: MenuItem[] = [
-  { label: "Cài đặt hệ thống", href: "/settings", icon: Settings },
-  { label: "Bảo mật & Phân quyền", href: "/security", icon: ShieldCheck },
-];
-
-function isActivePath(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function stableHrefToId(href: string) {
-  return `sidebar-link-${href.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-}
+import { SidebarSection } from "@/components/sidebar/sidebar-section";
+import {
+  SIDEBAR_SECTIONS,
+  filterSidebarSections,
+  findExpandedHref,
+} from "@/components/sidebar/sidebar-navigation";
+import { getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const allItems = [
-    ...mainItems,
-    ...secondaryItems,
-    ...reportItems,
-    ...systemItems,
-  ];
-  const [expandedHref, setExpandedHref] = useState<string | null>(
-    () =>
-      allItems.find(
-        (item) => item.children && isActivePath(pathname, item.href),
-      )?.href ?? null,
+  const { data: user } = useGetCurrentUserQuery();
+  const userRoles = useMemo(() => getUserRoles(user?.roles), [user?.roles]);
+  const visibleSections = useMemo(
+    () => filterSidebarSections(SIDEBAR_SECTIONS, userRoles),
+    [userRoles],
+  );
+  const [expandedHref, setExpandedHref] = useState<string | null>(() =>
+    findExpandedHref(visibleSections, pathname),
   );
 
   return (
@@ -161,7 +64,7 @@ export function AppSidebar() {
             Kho trung tâm
           </p>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
             Online
           </span>
         </div>
@@ -171,91 +74,25 @@ export function AppSidebar() {
       </div>
 
       <SidebarContent className="no-scrollbar gap-0 py-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Tổng quan & tác nghiệp
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Đối tác & nhật ký
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Báo cáo & phân tích
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {reportItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Hệ thống
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {systemItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleSections.map((section) => (
+          <SidebarSection
+            key={section.label}
+            section={section}
+            pathname={pathname}
+            expandedHref={expandedHref}
+            setExpandedHref={setExpandedHref}
+          />
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-slate-100 p-4 dark:border-slate-800">
         <div className="flex flex-col gap-2">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 group-data-[collapsible=icon]:hidden dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-              An Nguyen
+              {user?.username || user?.name || "Người dùng"}
             </p>
             <p className="mt-0.5 text-[11px] text-slate-500">
-              Warehouse Manager
+              {getRoleLabel(user?.roles)}
             </p>
           </div>
 
@@ -277,138 +114,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-const SidebarItem = memo(function SidebarItem({
-  item,
-  pathname,
-  expandedHref,
-  setExpandedHref,
-}: {
-  item: MenuItem;
-  pathname: string;
-  expandedHref: string | null;
-  setExpandedHref: (href: string | null) => void;
-}) {
-  const active = isActivePath(pathname, item.href);
-  const Icon = item.icon;
-  const hasChildren = !!item.children?.length;
-  const expanded = expandedHref === item.href;
-
-  useEffect(() => {
-    if (active && hasChildren) {
-      setExpandedHref(item.href);
-    }
-  }, [active, hasChildren, setExpandedHref, item.href]);
-
-  const showChildren = hasChildren && expanded;
-
-  const handleToggleChildren = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setExpandedHref(expanded ? null : item.href);
-  };
-
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        render={<Link href={item.href} id={stableHrefToId(item.href)} />}
-        isActive={active}
-        tooltip={item.label}
-        onClick={() => {
-          if (!hasChildren) setExpandedHref(null);
-        }}
-        className={cn(
-          "relative h-10 w-full px-4 pr-9 transition-all duration-200",
-          "hover:bg-slate-100/90 hover:text-slate-900",
-          "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-          active &&
-          "bg-indigo-50 text-indigo-700 font-semibold shadow-[inset_0_0_0_1px_rgba(99,102,241,0.12)] hover:bg-indigo-50 hover:text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400",
-        )}
-      >
-        <Icon
-          className={cn(
-            "h-5 w-5 transition-colors group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-6",
-            active
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-slate-500 group-hover:text-slate-900",
-          )}
-        />
-        <span className="text-sm group-data-[collapsible=icon]:hidden">
-          {item.label}
-        </span>
-
-        {item.tag && (
-          <span className="ml-auto mr-1 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 group-data-[collapsible=icon]:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-            {item.tag}
-          </span>
-        )}
-
-        {hasChildren ? (
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={showChildren ? "Thu gọn mục con" : "Mở rộng mục con"}
-            onClick={handleToggleChildren}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                handleToggleChildren(e);
-              }
-            }}
-            className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 group-data-[collapsible=icon]:hidden dark:hover:bg-slate-900 dark:hover:text-slate-200"
-          >
-            <ChevronRight
-              className={cn(
-                "h-4 w-4 transition-transform",
-                showChildren ? "rotate-90 text-indigo-500" : "rotate-0",
-              )}
-            />
-          </span>
-        ) : null}
-
-        {active && (
-          <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-indigo-600 group-data-[collapsible=icon]:hidden" />
-        )}
-      </SidebarMenuButton>
-
-      {showChildren && (
-        <div className="mb-1 mt-0.5 space-y-0.5 pl-4 pr-3 group-data-[collapsible=icon]:hidden">
-          {item.children?.map((child) => {
-            const childActive = isActivePath(pathname, child.href);
-            const ChildIcon = child.icon;
-            const colorMap: Record<string, string> = {
-              indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400",
-              violet: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
-              blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-              emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
-              amber: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
-              rose: "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400",
-              orange: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
-            };
-            const iconCls = child.color ? (colorMap[child.color] ?? "bg-slate-100 text-slate-500") : "bg-slate-100 text-slate-500";
-            return (
-              <Link
-                key={child.href}
-                href={child.href}
-                className={cn(
-                  "flex h-9 items-center gap-2.5 rounded-xl px-2.5 text-[12.5px] font-medium transition-all",
-                  "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200",
-                  childActive &&
-                  "bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-950/40 dark:text-indigo-300",
-                )}
-              >
-                <span className={cn(
-                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all",
-                  childActive ? iconCls : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-                )}>
-                  <ChildIcon className="h-3.5 w-3.5" />
-                </span>
-                <span className="truncate">{child.label}</span>
-                {childActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </SidebarMenuItem>
-  );
-});

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   ChevronDown,
@@ -31,6 +31,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { useAppDispatch } from "@/store/hooks";
+import { baseApi } from "@/store/services/api";
+import { useGetCurrentUserQuery, useLogoutMutation } from "@/store/services/auth.service";
+import { toast } from "sonner";
 
 function toTitle(segment: string): string {
   const map: Record<string, string> = {
@@ -60,6 +65,11 @@ export function Navbar() {
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
   const searchShortcut = useSearchShortcutLabel();
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const { data: user } = useGetCurrentUserQuery();
+  const [logout] = useLogoutMutation();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -83,6 +93,29 @@ export function Navbar() {
     const current = pathSegments[pathSegments.length - 1] ?? "dashboard";
     return toTitle(current);
   }, [pathSegments]);
+
+  const roleLabel = useMemo(() => {
+    const [primaryRole] = getUserRoles(user?.roles);
+    return primaryRole ? getRoleLabel(primaryRole) : "Chưa phân quyền";
+  }, [user?.roles]);
+
+  const clearClientSession = () => {
+    localStorage.removeItem("accessToken");
+    dispatch(baseApi.util.resetApiState());
+    window.dispatchEvent(new Event("auth-token-changed"));
+    router.replace("/login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      toast.success("Đã đăng xuất thành công");
+    } catch {
+      toast.error("Không thể hoàn tất đăng xuất trên máy chủ, đã xóa phiên trên trình duyệt.");
+    } finally {
+      clearClientSession();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-indigo-500/20 bg-indigo-600 text-white shadow-sm transition-all duration-300 dark:border-indigo-500/20 dark:bg-indigo-950">
@@ -222,19 +255,19 @@ export function Navbar() {
                     className="ring-2 ring-white/30 transition-all group-hover:ring-white"
                   >
                     <AvatarImage
-                      src="https://ui-avatars.com/api/?name=An+Nguyen&background=fff&color=4F46E5"
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || user?.name || "User")}&background=fff&color=4F46E5`}
                       alt="User avatar"
                     />
                     <AvatarFallback className="bg-white text-indigo-600">
-                      AN
+                      {(user?.username || user?.name || "US").substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden flex-col items-start pr-1 text-left lg:flex">
                     <span className="text-sm font-semibold leading-none text-white">
-                      An Nguyen
+                      {user?.username || user?.name || "Người dùng"}
                     </span>
                     <span className="text-[10px] font-medium text-indigo-100">
-                      Người quản trị
+                      {roleLabel}
                     </span>
                   </div>
                   <ChevronDown className="h-4 w-4 text-indigo-200 transition-transform group-data-[state=open]:rotate-180" />
@@ -251,10 +284,10 @@ export function Navbar() {
                 <DropdownMenuLabel className="px-2 py-1.5 font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-semibold leading-none">
-                      An Nguyen
+                      {user?.username || user?.name || "Người dùng"}
                     </p>
                     <p className="text-xs leading-none text-slate-500 font-medium truncate">
-                      an.nguyen@stockmaster.vn
+                      {user?.email || "Email chưa cập nhật"}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -273,7 +306,10 @@ export function Navbar() {
                 <span className="truncate">Ngôn ngữ: Tiếng Việt</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="rounded-lg py-2 text-red-600 focus:bg-red-50 focus:text-red-600">
+              <DropdownMenuItem 
+                className="rounded-lg py-2 text-red-600 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+                onClick={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4 shrink-0" />
                 <span className="truncate">Đăng xuất</span>
               </DropdownMenuItem>

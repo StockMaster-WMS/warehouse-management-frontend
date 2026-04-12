@@ -14,10 +14,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { saveToken } from "@/lib/auth-token";
+import { useAppDispatch } from "@/store/hooks";
+import { baseApi } from "@/store/services/api";
 import { useLoginMutation } from "@/store/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -26,8 +30,8 @@ export default function LoginPage() {
 
   // Redirect if token already exists
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
-      router.push("/dashboard");
+    if (typeof window !== "undefined" && document.cookie.includes("accessToken=")) {
+      router.replace("/dashboard");
     }
   }, [router]);
 
@@ -40,20 +44,28 @@ export default function LoginPage() {
         : { username, password };
 
       const result = await login(credentials).unwrap();
+      const token = result.accessToken;
+
+      if (!token) {
+        throw new Error("Login response missing accessToken");
+      }
       
-      // Lưu accessToken vào localStorage
-      // RefreshToken sẽ được backend set vào HttpOnly cookie (tự động gửi, JS không thể access)
-      localStorage.setItem("accessToken", result.accessToken);
+      // Save token to localStorage AND cookies
+      saveToken(token);
+      dispatch(baseApi.util.resetApiState());
+      
+      // Notify components like AuthGuard
+      window.dispatchEvent(new Event("auth-token-changed"));
       
       // Redirect to dashboard
-      router.push("/dashboard");
+      window.location.replace("/dashboard");
     } catch {
-      // Error đã được render từ `error` state ở UI.
+      // Error handled by redux state
     }
   };
 
   return (
-    <main className="relative min-h-svh overflow-hidden bg-linear-to-b from-muted/50 via-background to-background px-4 py-10 sm:px-6 lg:px-8">
+    <main className="relative flex min-h-svh w-full items-center justify-center bg-background">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -right-16 bottom-8 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
@@ -125,7 +137,7 @@ export default function LoginPage() {
                 {error && (
                   <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                     {typeof error === "object" && "data" in error 
-                      ? (error.data as any)?.message || "Đăng nhập thất bại"
+                      ? ((error.data as { message?: string })?.message || "Đăng nhập thất bại")
                       : "Đăng nhập thất bại"}
                   </div>
                 )}

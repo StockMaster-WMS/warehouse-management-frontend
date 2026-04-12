@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { LOCATIONS_PAGE_SIZE } from "@/components/features/locations/constants";
 import { formatLocationZoneLine } from "@/components/features/locations/utils";
-import type { Location } from "@/types/location";
+import type { Location, LocationOption } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
 
 function LocationTypeBadge({ type }: { type?: string | null }) {
@@ -49,7 +49,7 @@ function LocationTypeBadge({ type }: { type?: string | null }) {
     return <Badge variant="outline">{type}</Badge>;
 }
 
-function CapacityCell({ location }: { location: LocationOption }) {
+function CapacityCell({ location }: { location: Location | LocationOption }) {
     const status = location.status?.toUpperCase();
 
     const config: Record<string, { label: string; value: number; barClass: string; textClass: string }> = {
@@ -150,7 +150,7 @@ export function LocationsTable({
                         ) : (
                             visibleLocations.map((location) => {
                                 const warehouseName = warehouseNameMap[location.warehouseId];
-                                const locationCode = location.code || location.name || "--";
+                                const locationCode = location.code || "--";
                                 const crumbs = [
                                     location.zone,
                                     location.aisle,

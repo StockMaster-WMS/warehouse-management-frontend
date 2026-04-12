@@ -63,7 +63,7 @@ export function useLocationsPageLogic() {
         sortDir: "asc",
     });
 
-    const warehouses = warehousesRes?.data?.content ?? [];
+    const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
     const warehouseNameMap = useMemo(
         () => Object.fromEntries(warehouses.map((warehouse) => [warehouse.id, warehouse.name])),
         [warehouses],
@@ -149,7 +149,7 @@ export function useLocationsPageLogic() {
             rack: result.payload.rack ?? "",
             level: result.payload.level ?? 0,
             bin: result.payload.bin ?? "",
-            locationType: result.payload.locationType,
+            locationType: result.payload.locationType || "",
             isActive: result.payload.isActive,
         };
 

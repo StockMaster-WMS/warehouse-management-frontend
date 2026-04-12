@@ -42,6 +42,37 @@ export interface LocationOption {
   isHeavyZone?: boolean | null;
 }
 
+export interface CreateLocationRequest {
+  warehouseId: string;
+  code: string;
+  zone: string;
+  aisle: string;
+  rack: string;
+  level: number;
+  bin: string;
+  locationType: string;
+  isActive: boolean;
+  isColdZone?: boolean;
+  isHazmatZone?: boolean;
+  isHeavyZone?: boolean;
+}
+
+export interface UpdateLocationRequest extends CreateLocationRequest {
+  id: string;
+}
+
+export interface BulkGenerateLocationsRequest {
+  warehouseId: string;
+  zone: string;
+  aislePrefix: string;
+  aisleCount: number;
+  rackPrefix: string;
+  rackCount: number;
+  levelCount: number;
+  binPrefix: string;
+  binCount: number;
+}
+
 export type LocationResponse = ApiResponse<Location>;
 
 export type LocationListResponse = ApiResponse<LocationOption[]>;

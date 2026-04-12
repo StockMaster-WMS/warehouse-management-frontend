@@ -21,7 +21,7 @@ type OrderDetailViewProps = {
 export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "delete" | "ship" | "deliver";
+    type: "delete" | "ship";
     title: string;
     description: string;
     confirmText: string;

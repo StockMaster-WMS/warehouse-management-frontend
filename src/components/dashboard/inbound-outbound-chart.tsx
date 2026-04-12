@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -22,6 +23,19 @@ const DATA = [
 ];
 
 export function InboundOutboundChart() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const handle = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(handle);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-60 w-full" />;
+  }
+
   return (
     <div className="h-60 w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
