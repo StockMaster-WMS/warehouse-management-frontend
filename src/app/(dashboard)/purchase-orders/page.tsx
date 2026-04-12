@@ -15,12 +15,10 @@ import {
   CalendarDays,
   ShoppingCart,
   Activity,
-  PackagePlus,
   Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -31,6 +29,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import {
   Table,
   TableBody,
@@ -88,6 +87,8 @@ const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   Object.entries(STATUS_CONFIG).map(([k, v]) => [k, v.label]),
 );
 
+const EMPTY_PURCHASE_ORDERS: PurchaseOrder[] = [];
+
 function StatusPill({ status }: { status: string | null | undefined }) {
   const cfg = STATUS_CONFIG[status ?? ""];
   if (!cfg) return <span className="text-xs text-slate-400">{status ?? "—"}</span>;
@@ -141,7 +142,7 @@ export default function PurchaseOrdersPage() {
       ...(warehouseId ? { warehouseId } : {}),
     });
 
-  const rows: PurchaseOrder[] = data?.data?.content ?? [];
+  const rows: PurchaseOrder[] = data?.data?.content ?? EMPTY_PURCHASE_ORDERS;
   const pagedBody = data?.data;
   const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes]);
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
@@ -188,6 +189,48 @@ export default function PurchaseOrdersPage() {
   const findSupplier = (id: string) => suppliers.find((s: Supplier) => s.id === id);
   const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
 
+  const stats = useMemo(() => {
+    const all = rows;
+
+    return {
+      total: paged?.total_elements ?? all.length,
+      processing: all.filter((r) => r.status === "APPROVED" || r.status === "PARTIAL").length,
+      completed: all.filter((r) => r.status === "COMPLETED").length,
+      cancelled: all.filter((r) => r.status === "CANCELLED").length,
+    };
+  }, [rows, paged?.total_elements]);
+
+  const statsItems = useMemo<StatItem[]>(() => {
+    const multiPage = (paged?.total_pages ?? 0) > 1;
+
+    return [
+      {
+        label: "Tổng đơn",
+        value: stats.total,
+        icon: FileText,
+        color: "text-indigo-500",
+      },
+      {
+        label: multiPage ? "Đang xử lý (trang này)" : "Đang xử lý",
+        value: stats.processing,
+        icon: Activity,
+        color: "text-blue-500",
+      },
+      {
+        label: multiPage ? "Hoàn tất (trang này)" : "Hoàn tất",
+        value: stats.completed,
+        icon: CheckCircle2,
+        color: "text-emerald-500",
+      },
+      {
+        label: multiPage ? "Đã hủy (trang này)" : "Đã hủy",
+        value: stats.cancelled,
+        icon: Ban,
+        color: "text-rose-500",
+      },
+    ];
+  }, [paged?.total_pages, stats]);
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -203,7 +246,7 @@ export default function PurchaseOrdersPage() {
               className="rounded-xl border-slate-200 gap-1.5 text-xs"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
-              Sắp xếp kho
+              Sắp xếp vào kho
             </Button>
             <Button
               render={<Link href="/purchase-orders/new" />}
@@ -218,82 +261,7 @@ export default function PurchaseOrdersPage() {
         }
       />
 
-      {/* KPI Cards Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Total POs */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="absolute right-3 top-4 opacity-[0.03] dark:opacity-[0.05]">
-            <FileText className="h-16 w-16" />
-          </div>
-          <div className="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-              <FileText className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider">Tổng Đơn (Trang)</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-black tabular-nums text-slate-800 dark:text-slate-100">{rows.length}</p>
-            <p className="text-xs font-medium text-slate-500">PO</p>
-          </div>
-        </div>
-
-        {/* Processing */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/50 p-5 shadow-sm dark:border-blue-900/40 dark:from-blue-950/30 dark:to-indigo-950/20">
-          <div className="absolute right-3 top-4 opacity-10">
-            <Activity className="h-16 w-16 text-blue-600" />
-          </div>
-          <div className="flex items-center gap-2 mb-3 text-blue-700 dark:text-blue-300">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-              <Activity className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider">Đang Xử Lý</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-black tabular-nums text-blue-900 dark:text-blue-100">
-              {rows.filter((r) => ["PROCESSING", "PARTIAL_RECEIVED"].includes(r.status ?? "")).length}
-            </p>
-            <p className="text-xs font-medium text-blue-600/80 dark:text-blue-400">PO</p>
-          </div>
-        </div>
-
-        {/* Completed */}
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/50 p-5 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-teal-950/20">
-          <div className="absolute right-3 top-4 opacity-10">
-            <CheckCircle2 className="h-16 w-16 text-emerald-600" />
-          </div>
-          <div className="flex items-center gap-2 mb-3 text-emerald-700 dark:text-emerald-300">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
-              <CheckCircle2 className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider">Hoàn Tất</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-black tabular-nums text-emerald-900 dark:text-emerald-100">
-              {rows.filter((r) => r.status === "COMPLETED").length}
-            </p>
-            <p className="text-xs font-medium text-emerald-600/80 dark:text-emerald-400">PO</p>
-          </div>
-        </div>
-
-        {/* Cancelled */}
-        <div className="relative overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-red-50/50 p-5 shadow-sm dark:border-rose-900/40 dark:from-rose-950/30 dark:to-red-950/20">
-          <div className="absolute right-3 top-4 opacity-10">
-            <Ban className="h-16 w-16 text-rose-600" />
-          </div>
-          <div className="flex items-center gap-2 mb-3 text-rose-700 dark:text-rose-300">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/50">
-              <Ban className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider">Đã Hủy</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-black tabular-nums text-rose-900 dark:text-rose-100">
-              {rows.filter((r) => r.status === "CANCELLED").length}
-            </p>
-            <p className="text-xs font-medium text-rose-600/80 dark:text-rose-400">PO</p>
-          </div>
-        </div>
-      </div>
+      <StatsGrid stats={statsItems} isLoading={isLoading} />
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
         {/* Unified Search Section */}
         <SearchToolbar

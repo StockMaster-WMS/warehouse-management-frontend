@@ -75,6 +75,8 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.Re
   },
 };
 
+const EMPTY_RECEIPTS: InboundReceipt[] = [];
+
 function StatusBadge({ status }: { status: string | null | undefined }) {
   const s = status ?? "";
   const cfg = STATUS_CONFIG[s];
@@ -123,7 +125,7 @@ export default function InboundPage() {
       ...(warehouseId ? { warehouseId } : {}),
     });
 
-  const receipts = data?.data?.content ?? [];
+  const receipts = data?.data?.content ?? EMPTY_RECEIPTS;
   const pagedBody = data?.data;
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
 
