@@ -4,12 +4,47 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { apiErrMessage } from "@/types/api";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateSalesOrderMutation } from "@/store/services/order.service";
+import { useGetCustomersQuery } from "@/store/services/customer.service";
 import { type AddressValue } from "@/components/features/AddressForm";
 import { newOrderSchema } from "@/components/features/orders/schemas/newOrderSchema";
+import type { Customer, CustomerAddress } from "@/types/customer";
 
-export type NewOrderFormErrors = Partial<Record<"customerName" | "line1" | "ward" | "district" | "city" | "country" | "warehouseId" | "priority", string>>;
+export type NewOrderFormErrors = Partial<Record<"customerId" | "customerName" | "line1" | "ward" | "district" | "city" | "country" | "warehouseId" | "priority", string>>;
+
+function getAddressText(
+  address: CustomerAddress | string | null | undefined,
+  keys: string[],
+) {
+  if (!address) return "";
+  if (typeof address === "string") return address.trim();
+
+  for (const key of keys) {
+    const value = address[key];
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).trim();
+      if (text) return text;
+    }
+  }
+
+  return "";
+}
+
+function customerToAddressValue(customer: Customer): AddressValue {
+  const address = customer.address;
+
+  return {
+    street: getAddressText(address, ["line1", "street", "address"]),
+    provinceCode: getAddressText(address, ["provinceCode", "cityCode"]),
+    provinceName: getAddressText(address, ["provinceName", "city", "province"]),
+    districtCode: getAddressText(address, ["districtCode"]),
+    districtName: getAddressText(address, ["districtName", "district"]),
+    wardCode: getAddressText(address, ["wardCode"]),
+    wardName: getAddressText(address, ["wardName", "ward"]),
+  };
+}
 
 export function useCreateOrderForm() {
   const router = useRouter();
@@ -17,6 +52,10 @@ export function useCreateOrderForm() {
   const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
 
   const [customerName, setCustomerName] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const debouncedCustomerKeyword = useDebouncedValue(customerSearch.trim());
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState<AddressValue>({
     street: "",
@@ -31,6 +70,16 @@ export function useCreateOrderForm() {
   const [warehouseId, setWarehouseId] = useState(warehouseIdFromUrl);
   const [priority, setPriority] = useState("5");
   const [errors, setErrors] = useState<NewOrderFormErrors>({});
+  const [addressFormKey, setAddressFormKey] = useState(0);
+
+  const { data: customersRes, isFetching: customersLoading } = useGetCustomersQuery({
+    page: 0,
+    size: 20,
+    sort: "name",
+    sortDir: "asc",
+    keyword: debouncedCustomerKeyword || undefined,
+    isActive: true,
+  });
 
   const { data: warehousesRes, isFetching: warehousesLoading } = useGetWarehousesQuery({
     page: 0,
@@ -42,18 +91,51 @@ export function useCreateOrderForm() {
   const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
 
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+  const customers = useMemo(() => customersRes?.data?.content ?? [], [customersRes]);
 
   const warehouseOptions = useMemo(
     () => warehouses.map((w) => ({ value: String(w.id), label: String(w.name ?? w.id) })),
     [warehouses],
   );
 
+  const customerOptions = useMemo(() => {
+    const optionCustomers = selectedCustomer && !customers.some((customer) => customer.id === selectedCustomer.id)
+      ? [selectedCustomer, ...customers]
+      : customers;
+
+    return optionCustomers.map((customer) => ({
+      value: customer.id,
+      label: `${customer.code} · ${customer.name}`,
+      hint: [customer.phone, customer.email].filter(Boolean).join(" · "),
+    }));
+  }, [customers, selectedCustomer]);
+
   const clearFieldError = (field: keyof NewOrderFormErrors) => {
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const handleCustomerChange = (nextCustomerId: string) => {
+    setCustomerId(nextCustomerId);
+    clearFieldError("customerId");
+    clearFieldError("customerName");
+
+    const customer =
+      customers.find((item) => item.id === nextCustomerId) ??
+      (selectedCustomer?.id === nextCustomerId ? selectedCustomer : null);
+    if (!customer) return;
+
+    setSelectedCustomer(customer);
+    setCustomerName(customer.name);
+    setPhone(customer.phone ?? "");
+
+    const nextAddress = customerToAddressValue(customer);
+    setAddress(nextAddress);
+    setAddressFormKey((key) => key + 1);
+  };
+
   const validate = () => {
     const parsed = newOrderSchema.safeParse({
+      customerId,
       customerName,
       street: address.street,
       wardCode: address.wardCode,
@@ -71,6 +153,7 @@ export function useCreateOrderForm() {
     const next: NewOrderFormErrors = {};
     for (const issue of parsed.error.issues) {
       const path = issue.path[0];
+      if (path === "customerId") next.customerId = issue.message;
       if (path === "customerName") next.customerName = issue.message;
       if (path === "street") next.line1 = issue.message;
       if (path === "wardCode") next.ward = issue.message;
@@ -117,6 +200,12 @@ export function useCreateOrderForm() {
   };
 
   return {
+    customerId,
+    customerSearch,
+    setCustomerSearch,
+    customerOptions,
+    customersLoading,
+    handleCustomerChange,
     customerName,
     setCustomerName,
     phone,
@@ -129,6 +218,7 @@ export function useCreateOrderForm() {
     setWarehouseId,
     priority,
     setPriority,
+    addressFormKey,
     errors,
     clearFieldError,
     warehouses,

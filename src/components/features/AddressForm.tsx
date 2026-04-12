@@ -126,7 +126,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         <div className="space-y-3">
             <div>
                 <label className="font-medium">
-                    Tỉnh/thành <span className="text-red-500">*</span>
+                    Tỉnh/thành {required && <span className="text-red-500">*</span>}
                 </label>
                 <Select
                     value={address.provinceCode}
@@ -153,7 +153,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
             </div>
             <div>
                 <label className="font-medium">
-                    Phường/xã <span className="text-red-500">*</span>
+                    Phường/xã {required && <span className="text-red-500">*</span>}
                 </label>
                 <Select
                     value={address.wardCode}
