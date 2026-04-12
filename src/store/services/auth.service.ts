@@ -59,6 +59,8 @@ export const authApi = baseApi.injectEndpoints({
                 method: "GET",
             }),
             transformResponse: (r: ApiResponse<LoginResponse["user"]>) => r.data,
+            providesTags: [{ type: "Auth", id: "CURRENT_USER" }],
+            keepUnusedDataFor: 0,
         }),
     }),
 });

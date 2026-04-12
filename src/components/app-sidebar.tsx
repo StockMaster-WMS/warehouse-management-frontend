@@ -43,70 +43,86 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import {
+  ADMIN_MANAGER_ROLES,
+  ALL_ROLES,
+  READ_OPERATION_ROLES,
+  REPORT_ROLES,
+  WAREHOUSE_OPERATION_ROLES,
+  getRoleLabel,
+  getUserRoles,
+  hasAnyRole,
+} from "@/lib/access-control";
 import { useGetCurrentUserQuery } from "@/store/services/auth.service";
+import type { UserRole } from "@/store/services/auth.service";
 
 type MenuItem = {
   label: string;
   href: string;
   icon: LucideIcon;
+  roles: readonly UserRole[];
   tag?: string;
   children?: Array<{
     label: string;
     href: string;
     icon: LucideIcon;
     color?: string;
+    roles: readonly UserRole[];
   }>;
 };
 
 const mainItems: MenuItem[] = [
-  { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid },
-  { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes },
-  { label: "Danh sách kho", href: "/warehouses", icon: Warehouse },
+  { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: ALL_ROLES },
+  { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: READ_OPERATION_ROLES },
+  { label: "Danh sách kho", href: "/warehouses", icon: Warehouse, roles: WAREHOUSE_OPERATION_ROLES },
   {
     label: "Sản phẩm",
     href: "/products",
     icon: Package,
+    roles: READ_OPERATION_ROLES,
     children: [
-      { label: "Tất cả sản phẩm", href: "/products", icon: PackageSearch, color: "indigo" },
-      { label: "Nhóm / loại hàng", href: "/categories", icon: Tags, color: "violet" },
+      { label: "Tất cả sản phẩm", href: "/products", icon: PackageSearch, color: "indigo", roles: READ_OPERATION_ROLES },
+      { label: "Nhóm / loại hàng", href: "/categories", icon: Tags, color: "violet", roles: READ_OPERATION_ROLES },
     ],
   },
   {
     label: "Nhập hàng",
     href: "/inbound",
     icon: ClipboardList,
+    roles: READ_OPERATION_ROLES,
     tag: "Mới",
     children: [
-      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, color: "blue" },
-      { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, color: "emerald" },
-      { label: "Sắp xếp vào kho", href: "/putaway", icon: ScanLine, color: "amber" },
+      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, color: "blue", roles: READ_OPERATION_ROLES },
+      { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, color: "emerald", roles: READ_OPERATION_ROLES },
+      { label: "Sắp xếp vào kho", href: "/putaway", icon: ScanLine, color: "amber", roles: WAREHOUSE_OPERATION_ROLES },
     ],
   },
   {
     label: "Kho xuất",
     href: "/orders",
     icon: Truck,
+    roles: READ_OPERATION_ROLES,
     children: [
-      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, color: "rose" },
-      { label: "Lấy hàng", href: "/picking", icon: Scissors, color: "orange" },
+      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, color: "rose", roles: READ_OPERATION_ROLES },
+      { label: "Lấy hàng", href: "/picking", icon: Scissors, color: "orange", roles: WAREHOUSE_OPERATION_ROLES },
     ],
   },
 ];
 
 const secondaryItems: MenuItem[] = [
-  { label: "Khách hàng", href: "/customers", icon: Users2 },
-  { label: "Nhà cung cấp", href: "/suppliers", icon: Building2 },
-  { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin },
-  { label: "Nhật ký hoạt động", href: "/history", icon: History },
+  { label: "Khách hàng", href: "/customers", icon: Users2, roles: WAREHOUSE_OPERATION_ROLES },
+  { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: WAREHOUSE_OPERATION_ROLES },
+  { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin, roles: WAREHOUSE_OPERATION_ROLES },
+  { label: "Nhật ký hoạt động", href: "/history", icon: History, roles: READ_OPERATION_ROLES },
 ];
 
 const reportItems: MenuItem[] = [
-  { label: "Báo cáo", href: "/reports", icon: BarChart3, tag: "BI" },
+  { label: "Báo cáo", href: "/reports", icon: BarChart3, tag: "BI", roles: REPORT_ROLES },
 ];
 
 const systemItems: MenuItem[] = [
-  { label: "Cài đặt hệ thống", href: "/settings", icon: Settings },
-  { label: "Bảo mật & Phân quyền", href: "/security", icon: ShieldCheck },
+  { label: "Cài đặt hệ thống", href: "/settings", icon: Settings, roles: ADMIN_MANAGER_ROLES },
+  { label: "Bảo mật & Phân quyền", href: "/security", icon: ShieldCheck, roles: ["ADMIN"] },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -117,25 +133,42 @@ function stableHrefToId(href: string) {
   return `sidebar-link-${href.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
+function filterMenuItems(
+  items: MenuItem[],
+  userRoles: readonly UserRole[],
+): MenuItem[] {
+  const visibleItems: MenuItem[] = [];
+
+  for (const item of items) {
+    const children = item.children?.filter((child) =>
+      hasAnyRole(userRoles, child.roles),
+    );
+    const canSeeItem = hasAnyRole(userRoles, item.roles);
+
+    if (!canSeeItem && (!children || children.length === 0)) {
+      continue;
+    }
+
+    visibleItems.push({ ...item, children });
+  }
+
+  return visibleItems;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { data: user } = useGetCurrentUserQuery();
-
-  const getRoleLabel = (roles: string | undefined): string => {
-    switch (roles) {
-      case "ADMIN": return "Quản trị viên";
-      case "WAREHOUSE_MANAGER": return "Quản lý kho";
-      case "WAREHOUSE_STAFF": return "Nhân viên kho";
-      case "REPORT_VIEWER": return "Người xem báo cáo";
-      default: return roles || "Nhân viên";
-    }
-  };
+  const userRoles = getUserRoles(user?.roles);
+  const visibleMainItems = filterMenuItems(mainItems, userRoles);
+  const visibleSecondaryItems = filterMenuItems(secondaryItems, userRoles);
+  const visibleReportItems = filterMenuItems(reportItems, userRoles);
+  const visibleSystemItems = filterMenuItems(systemItems, userRoles);
 
   const allItems = [
-    ...mainItems,
-    ...secondaryItems,
-    ...reportItems,
-    ...systemItems,
+    ...visibleMainItems,
+    ...visibleSecondaryItems,
+    ...visibleReportItems,
+    ...visibleSystemItems,
   ];
   const [expandedHref, setExpandedHref] = useState<string | null>(
     () =>
@@ -184,81 +217,89 @@ export function AppSidebar() {
       </div>
 
       <SidebarContent className="no-scrollbar gap-0 py-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Tổng quan & tác nghiệp
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleMainItems.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
+              Tổng quan & tác nghiệp
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleMainItems.map((item) => (
+                  <SidebarItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    expandedHref={expandedHref}
+                    setExpandedHref={setExpandedHref}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Đối tác & nhật ký
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleSecondaryItems.length > 0 ? (
+          <SidebarGroup className="mt-2">
+            <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
+              Đối tác & nhật ký
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleSecondaryItems.map((item) => (
+                  <SidebarItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    expandedHref={expandedHref}
+                    setExpandedHref={setExpandedHref}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Báo cáo & phân tích
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {reportItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleReportItems.length > 0 ? (
+          <SidebarGroup className="mt-2">
+            <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
+              Báo cáo & phân tích
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleReportItems.map((item) => (
+                  <SidebarItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    expandedHref={expandedHref}
+                    setExpandedHref={setExpandedHref}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
-            Hệ thống
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {systemItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expandedHref={expandedHref}
-                  setExpandedHref={setExpandedHref}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleSystemItems.length > 0 ? (
+          <SidebarGroup className="mt-2">
+            <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-data-[collapsible=icon]:hidden">
+              Hệ thống
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleSystemItems.map((item) => (
+                  <SidebarItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    expandedHref={expandedHref}
+                    setExpandedHref={setExpandedHref}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-slate-100 p-4 dark:border-slate-800">

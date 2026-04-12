@@ -31,6 +31,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { useAppDispatch } from "@/store/hooks";
+import { baseApi } from "@/store/services/api";
 import { useGetCurrentUserQuery, useLogoutMutation } from "@/store/services/auth.service";
 import { toast } from "sonner";
 
@@ -63,6 +66,7 @@ export function Navbar() {
   const searchShortcut = useSearchShortcutLabel();
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const { data: user } = useGetCurrentUserQuery();
   const [logout] = useLogoutMutation();
@@ -85,30 +89,31 @@ export function Navbar() {
     [pathname]
   );
 
-  const getRoleLabel = (roles: string | undefined): string => {
-    switch (roles) {
-      case "ADMIN": return "Quản trị viên";
-      case "WAREHOUSE_MANAGER": return "Quản lý kho";
-      case "WAREHOUSE_STAFF": return "Nhân viên kho";
-      case "REPORT_VIEWER": return "Người xem báo cáo";
-      default: return roles || "Nhân viên";
-    }
-  };
-
   const pageTitle = useMemo(() => {
     const current = pathSegments[pathSegments.length - 1] ?? "dashboard";
     return toTitle(current);
   }, [pathSegments]);
 
+  const roleLabel = useMemo(() => {
+    const [primaryRole] = getUserRoles(user?.roles);
+    return primaryRole ? getRoleLabel(primaryRole) : "Chưa phân quyền";
+  }, [user?.roles]);
+
+  const clearClientSession = () => {
+    localStorage.removeItem("accessToken");
+    dispatch(baseApi.util.resetApiState());
+    window.dispatchEvent(new Event("auth-token-changed"));
+    router.replace("/login");
+  };
+
   const handleLogout = async () => {
     try {
       await logout().unwrap();
-      localStorage.removeItem("accessToken");
       toast.success("Đã đăng xuất thành công");
-      router.push("/login");
     } catch {
-      localStorage.removeItem("accessToken");
-      router.push("/login");
+      toast.error("Không thể hoàn tất đăng xuất trên máy chủ, đã xóa phiên trên trình duyệt.");
+    } finally {
+      clearClientSession();
     }
   };
 
@@ -262,7 +267,7 @@ export function Navbar() {
                       {user?.username || user?.name || "Người dùng"}
                     </span>
                     <span className="text-[10px] font-medium text-indigo-100">
-                      {getRoleLabel(user?.roles)}
+                      {roleLabel}
                     </span>
                   </div>
                   <ChevronDown className="h-4 w-4 text-indigo-200 transition-transform group-data-[state=open]:rotate-180" />

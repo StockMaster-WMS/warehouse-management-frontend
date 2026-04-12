@@ -15,10 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { normalizeAccessToken } from "@/lib/auth-token";
+import { useAppDispatch } from "@/store/hooks";
+import { baseApi } from "@/store/services/api";
 import { useLoginMutation } from "@/store/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -50,12 +53,13 @@ export default function LoginPage() {
       // Lưu accessToken vào localStorage
       // RefreshToken sẽ được backend set vào HttpOnly cookie (tự động gửi, JS không thể access)
       localStorage.setItem("accessToken", accessToken);
+      dispatch(baseApi.util.resetApiState());
       
       // Thông báo cho AuthGuard về sự thay đổi token (quan trọng cho useSyncExternalStore)
       window.dispatchEvent(new Event("auth-token-changed"));
       
       // Redirect to dashboard
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch {
       // Error đã được render từ `error` state ở UI.
     }
