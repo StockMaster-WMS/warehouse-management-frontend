@@ -1,51 +1,47 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   canAccessPath,
   getUserRoles,
 } from "@/lib/access-control";
-import { getToken, hasUsableAccessToken } from "@/lib/auth-token";
-import { useGetCurrentUserQuery } from "@/store/services/auth.service";
-
-function subscribeToAuthChanges(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener("auth-token-changed", onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener("auth-token-changed", onStoreChange);
-  };
-}
-
-function getAuthSnapshot() {
-  return hasUsableAccessToken(getToken());
-}
+import {
+  clearAccessToken,
+  hasClientAccessTokenSnapshot,
+  setAccessToken,
+  subscribeToAccessTokenChanges,
+} from "@/lib/auth-token";
+import {
+  useGetCurrentUserQuery,
+  useRefreshTokenMutation,
+} from "@/store/services/auth.service";
 
 export function AuthGuard({ 
   children, 
-  initialHasToken = false 
+  initialHasSession = false 
 }: { 
   children: React.ReactNode; 
-  initialHasToken?: boolean;
+  initialHasSession?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const refreshAttempted = useRef(false);
   
-  const hasToken = useSyncExternalStore(
-    subscribeToAuthChanges,
-    getAuthSnapshot,
-    () => initialHasToken
+  const hasAccessToken = useSyncExternalStore(
+    subscribeToAccessTokenChanges,
+    hasClientAccessTokenSnapshot,
+    () => false
   );
+  const [refreshToken, { isLoading: isRefreshing }] = useRefreshTokenMutation();
 
   const {
     data: user,
     isLoading: isUserLoading,
     isFetching: isUserFetching,
   } = useGetCurrentUserQuery(undefined, {
-    skip: !hasToken,
+    skip: !hasAccessToken,
   });
 
   const userRoles = getUserRoles(user?.roles);
@@ -53,9 +49,31 @@ export function AuthGuard({
   const canAccessDashboard = canAccessPath("/dashboard", userRoles);
 
   useEffect(() => {
-    if (!hasToken) {
-      router.replace("/login");
-      return;
+    if (!hasAccessToken) {
+      if (refreshAttempted.current) return;
+
+      refreshAttempted.current = true;
+      let cancelled = false;
+
+      refreshToken()
+        .unwrap()
+        .then((res) => {
+          if (cancelled) return;
+          const token = setAccessToken(res.accessToken);
+          if (!token) {
+            clearAccessToken();
+            router.replace("/login");
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          clearAccessToken();
+          router.replace("/login");
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     if (
@@ -69,27 +87,27 @@ export function AuthGuard({
   }, [
     canAccessCurrentPath,
     canAccessDashboard,
-    hasToken,
+    hasAccessToken,
     pathname,
+    refreshToken,
     router,
     user,
   ]);
 
-  // Loading state (only show if we have token but don't have user data yet)
-  if (hasToken && (isUserLoading || isUserFetching || !user)) {
+  // Loading state while refreshing access token or loading the current user.
+  if (!hasAccessToken || isRefreshing || isUserLoading || isUserFetching || !user) {
     return (
       <main className="flex min-h-svh w-full items-center justify-center bg-background">
         <div
-          aria-label="Đang kiểm tra phiên đăng nhập"
+          aria-label={
+            initialHasSession
+              ? "Đang làm mới phiên đăng nhập"
+              : "Đang kiểm tra phiên đăng nhập"
+          }
           className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
         />
       </main>
     );
-  }
-
-  // Redirect to login handled by useEffect and middleware, but safe fallback
-  if (!hasToken) {
-    return null;
   }
 
   // Permission denied state

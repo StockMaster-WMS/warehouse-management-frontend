@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +20,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrMessage } from "@/types/api";
-import { customerCategoryLabel, type Customer } from "@/types/customer";
+import {
+  customerStatusClass,
+  customerStatusLabel,
+  formatCustomerAddress,
+  type Customer,
+} from "@/types/customer";
 
 type CustomersListProps = {
   rows: Customer[];
@@ -118,27 +124,35 @@ export function CustomersList({
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback className="bg-white/80 text-indigo-600 font-black shadow-sm ring-1 ring-slate-100">
-                    {customer.name[0]}
+                    {customer.name[0] ?? "K"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{customer.name}</span>
                   <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                     <Mail className="h-3 w-3" />
-                    <span>{customer.email ?? "—"}</span>
+                    <span>{customer.code} · {customer.email ?? "—"}</span>
                   </div>
                 </div>
               </div>
               <div className="hidden md:flex items-center gap-8">
                 <div className="flex flex-col items-start min-w-30">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số điện thoại</span>
-                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{customer.phone ?? "—"}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Liên hệ</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    {customer.contactName || customer.phone || "—"}
+                  </span>
                 </div>
                 <div className="flex flex-col items-start min-w-30">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phân loại</span>
-                  <span className="text-xs font-bold text-slate-500 uppercase">
-                    {customerCategoryLabel(customer.category)}
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Địa chỉ</span>
+                  <span className="max-w-48 truncate text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    {formatCustomerAddress(customer.address)}
                   </span>
+                </div>
+                <div className="flex flex-col items-start min-w-30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</span>
+                  <Badge variant="secondary" className={`w-max font-normal ${customerStatusClass(customer.isActive)}`}>
+                    {customerStatusLabel(customer.isActive)}
+                  </Badge>
                 </div>
               </div>
               <DropdownMenu>

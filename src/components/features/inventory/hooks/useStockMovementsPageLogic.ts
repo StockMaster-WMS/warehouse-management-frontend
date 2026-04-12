@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useGetStockMovementsQuery } from "@/store/services/stock.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 
@@ -33,6 +33,26 @@ export function useStockMovementsPageLogic() {
     setPage(0);
   }, []);
 
+  const updateWarehouseId = useCallback((value: string) => {
+    setWarehouseId(value);
+    setPage(0);
+  }, []);
+
+  const updateMovementType = useCallback((value: string) => {
+    setMovementType(value);
+    setPage(0);
+  }, []);
+
+  const updateFromDate = useCallback((value: string) => {
+    setFromDate(value);
+    setPage(0);
+  }, []);
+
+  const updateToDate = useCallback((value: string) => {
+    setToDate(value);
+    setPage(0);
+  }, []);
+
   const { data: warehousesRes, isLoading: isWarehousesLoading } = useGetWarehousesQuery({
     page: 0,
     size: 200,
@@ -64,19 +84,15 @@ export function useStockMovementsPageLogic() {
   const canGoPrev = page > 0;
   const canGoNext = totalPages > 0 && page + 1 < totalPages;
 
-  useEffect(() => {
-    setPage(0);
-  }, [warehouseId, movementType, fromDate, toDate]);
-
   return {
     warehouseId,
-    setWarehouseId,
+    setWarehouseId: updateWarehouseId,
     movementType,
-    setMovementType,
+    setMovementType: updateMovementType,
     fromDate,
-    setFromDate,
+    setFromDate: updateFromDate,
     toDate,
-    setToDate,
+    setToDate: updateToDate,
     warehouses,
     isWarehousesLoading,
 

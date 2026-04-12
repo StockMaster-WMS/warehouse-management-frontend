@@ -157,33 +157,35 @@ export default function InventoryPage() {
         onTabChange={logic.setActiveTab}
       />
 
-      <InventorySearchSection
-        searchInput={logic.searchInput}
-        onSearchChange={(v) => {
-          logic.setSearchInput(v);
-          logic.setPage(0);
-        }}
-        advancedOpen={logic.advancedOpen}
-        onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
-        advancedCount={logic.advancedCount}
-        hasAnyFilter={logic.hasAnyFilter}
-        onClearFilters={() => {
-          logic.clearFilters();
-          logic.setAdvancedOpen(false);
-        }}
-        warehouseId={logic.warehouseId}
-        onWarehouseChange={(v) => {
-          logic.setWarehouseId(v);
-          logic.setPage(0);
-        }}
-        alertType={logic.activeTab}
-        onAlertTypeChange={logic.setActiveTab}
-        warehouses={logic.warehouses}
-        isWarehousesLoading={logic.isWarehousesLoading}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <InventorySearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={(v) => {
+            logic.setSearchInput(v);
+            logic.setPage(0);
+          }}
+          advancedOpen={logic.advancedOpen}
+          onToggleAdvanced={() => logic.setAdvancedOpen((prev) => !prev)}
+          advancedCount={logic.advancedCount}
+          hasAnyFilter={logic.hasAnyFilter}
+          onClearFilters={() => {
+            logic.clearFilters();
+            logic.setAdvancedOpen(false);
+          }}
+          warehouseId={logic.warehouseId}
+          onWarehouseChange={(v) => {
+            logic.setWarehouseId(v);
+            logic.setPage(0);
+          }}
+          alertType={logic.activeTab}
+          onAlertTypeChange={logic.setActiveTab}
+          warehouses={logic.warehouses}
+          isWarehousesLoading={logic.isWarehousesLoading}
+        />
 
-      <div className="mt-2">
         <InventoryStockTable
+          noContainer
           items={logic.displayItems}
           page={logic.page}
           totalPages={logic.displayTotalPages}

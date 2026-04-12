@@ -24,6 +24,8 @@ import {
   stockRowLocationLabel,
 } from "./OrderDetailUtils";
 import { OrderLineEditDialog } from "./OrderLineEditDialog";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useGetProductsQuery } from "@/store/services/product.service";
 
 type OrderLinesSectionProps = {
   salesOrder: SalesOrder;
@@ -42,10 +44,38 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   const [lineProductId, setLineProductId] = useState("");
   const [lineQtyStr, setLineQtyStr] = useState("1");
   const [linePriceStr, setLinePriceStr] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedLineProduct, setSelectedLineProduct] = useState<Product | null>(null);
   const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
   const [editingLine, setEditingLine] = useState<SoItem | null>(null);
+  const debouncedProductKeyword = useDebouncedValue(productSearch.trim());
 
-  const productsById = useMemo(() => new Map(products.map((p) => [String(p.id), p as Product])), [products]);
+  const {
+    data: selectableProductsRes,
+    isFetching: selectableProductsLoading,
+    isError: selectableProductsError,
+  } = useGetProductsQuery({
+    page: 0,
+    size: 50,
+    sort: "name",
+    keyword: debouncedProductKeyword || undefined,
+    status: "ACTIVE",
+  });
+  const selectableProducts = useMemo(
+    () => selectableProductsRes?.data?.content ?? [],
+    [selectableProductsRes],
+  );
+
+  const productsById = useMemo(() => {
+    const entries = [...products, ...selectableProducts]
+      .map((p) => [String(p.id), p as Product] as const);
+
+    if (selectedLineProduct) {
+      entries.push([String(selectedLineProduct.id), selectedLineProduct]);
+    }
+
+    return new Map(entries);
+  }, [products, selectableProducts, selectedLineProduct]);
 
   const status = salesOrder.status;
   const allowLineMutation = status === "DRAFT" || status === "PENDING";
@@ -57,12 +87,17 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
   const productOptions = useMemo(
     () =>
-      products.map((p) => ({
+      [
+        ...(selectedLineProduct && !selectableProducts.some((p) => p.id === selectedLineProduct.id)
+          ? [selectedLineProduct]
+          : []),
+        ...selectableProducts,
+      ].map((p) => ({
         value: String(p.id),
-        label: String(p.name ?? p.id),
+        label: `${p.sku ? `${p.sku} · ` : ""}${p.name ?? p.id}`,
         hint: (p as Product).sku ? String((p as Product).sku) : undefined,
       })),
-    [products]
+    [selectableProducts, selectedLineProduct]
   );
 
   const canQueryLineStock = Boolean(salesOrder.warehouseId && lineProductId.trim());
@@ -244,6 +279,8 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
     toast.success("Đã thêm dòng và tự động tạo lệnh lấy hàng");
     setLineProductId("");
+    setSelectedLineProduct(null);
+    setProductSearch("");
     setLineQtyStr("1");
     setLinePriceStr("");
     setLineErrors({});
@@ -334,16 +371,28 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                 value={lineProductId}
                 onValueChange={(v) => {
                   setLineProductId(v);
+                  setSelectedLineProduct(productsById.get(v) ?? null);
                   setLineErrors((prev) => ({ ...prev, productId: "" }));
                 }}
                 options={productOptions}
                 dialogTitle="Chọn sản phẩm"
-                placeholder="Chọn hoặc gõ để tìm..."
+                placeholder={
+                  selectableProductsError
+                    ? "Lỗi tải sản phẩm"
+                    : selectableProductsLoading
+                      ? "Đang tải sản phẩm..."
+                      : "Chọn hoặc gõ để tìm..."
+                }
                 searchPlaceholder="Tìm theo tên / SKU…"
-                emptyText="Không tìm thấy sản phẩm phù hợp"
-                disabled={!allowLineMutation}
+                emptyText="Không tìm thấy sản phẩm active phù hợp"
+                disabled={!allowLineMutation || selectableProductsError}
+                loading={selectableProductsLoading}
                 error={Boolean(lineErrors.productId)}
+                serverSearch
+                searchQuery={productSearch}
+                onSearchChange={setProductSearch}
               />
+              {selectableProductsError ? <p className="text-xs text-amber-600">Không tải được danh sách sản phẩm.</p> : null}
               {lineErrors.productId ? <p className="text-xs text-rose-600">{lineErrors.productId}</p> : null}
             </div>
 

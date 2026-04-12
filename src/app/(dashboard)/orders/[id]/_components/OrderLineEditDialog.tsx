@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,17 +23,35 @@ type OrderLineEditDialogProps = {
 };
 
 export function OrderLineEditDialog({ open, onOpenChange, line }: OrderLineEditDialogProps) {
-  const [updateLine, { isLoading }] = useUpdateSoItemMutation();
-  const [orderedQtyStr, setOrderedQtyStr] = useState("");
-  const [shippedQtyStr, setShippedQtyStr] = useState("");
-  const [unitPriceStr, setUnitPriceStr] = useState("");
+  if (!line) return null;
 
-  useEffect(() => {
-    if (!open || !line) return;
-    setOrderedQtyStr(String(line.orderedQty ?? ""));
-    setShippedQtyStr(line.shippedQty != null ? String(line.shippedQty) : "");
-    setUnitPriceStr(line.unitPrice != null ? String(line.unitPrice) : "");
-  }, [open, line]);
+  return (
+    <OrderLineEditDialogContent
+      key={line.id}
+      open={open}
+      onOpenChange={onOpenChange}
+      line={line}
+    />
+  );
+}
+
+function OrderLineEditDialogContent({
+  open,
+  onOpenChange,
+  line,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  line: SoItem;
+}) {
+  const [updateLine, { isLoading }] = useUpdateSoItemMutation();
+  const [orderedQtyStr, setOrderedQtyStr] = useState(() => String(line.orderedQty ?? ""));
+  const [shippedQtyStr, setShippedQtyStr] = useState(() =>
+    line.shippedQty != null ? String(line.shippedQty) : "",
+  );
+  const [unitPriceStr, setUnitPriceStr] = useState(() =>
+    line.unitPrice != null ? String(line.unitPrice) : "",
+  );
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,8 +98,6 @@ export function OrderLineEditDialog({ open, onOpenChange, line }: OrderLineEditD
       toast.error(apiErrMessage(err));
     }
   }
-
-  if (!line) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
