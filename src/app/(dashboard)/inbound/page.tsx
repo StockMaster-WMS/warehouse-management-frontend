@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
@@ -105,7 +106,7 @@ function StatCard({
   label: string; 
   value: string | number; 
   sub?: string;
-  icon: any;
+  icon: LucideIcon;
   gradientCls: string;
   iconCls: string;
   textCls: string;

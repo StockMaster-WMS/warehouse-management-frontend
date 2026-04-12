@@ -31,7 +31,7 @@ interface SettingsContentProps {
   weeklyReportDay: string;
   handleToggleNotification: (itemId: string) => void;
   gotoProfile: () => void;
-  updateAppearance: (key: keyof AppearanceSettings, value: AppearanceSettings[keyof AppearanceSettings]) => void;
+  updateAppearance: <K extends keyof AppearanceSettings>(key: K, value: AppearanceSettings[K]) => void;
   setEmergencyPhone: (value: string) => void;
   setDailyReportTime: (value: string) => void;
   setWeeklyReportDay: (value: string) => void;

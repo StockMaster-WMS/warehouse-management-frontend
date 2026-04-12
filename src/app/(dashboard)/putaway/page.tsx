@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
+import type { LucideIcon } from "lucide-react";
 import {
   Loader2,
   MapPin,
@@ -109,7 +110,7 @@ function StatCard({
 }: { 
   label: string; 
   value: number; 
-  icon: any;
+  icon: LucideIcon;
   gradientCls: string;
   iconCls: string;
   textCls: string;

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { saveToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
-import { useLoginMutation } from "@/store/services/auth.service";
+import { useLoginMutation, useRefreshTokenMutation } from "@/store/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,13 +27,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isEmail, setIsEmail] = useState(false);
   const [login, { isLoading, error }] = useLoginMutation();
+  const [refreshToken] = useRefreshTokenMutation();
 
-  // Redirect if token already exists
   useEffect(() => {
-    if (typeof window !== "undefined" && document.cookie.includes("accessToken=")) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
+    let cancelled = false;
+
+    refreshToken()
+      .unwrap()
+      .then((result) => {
+        if (cancelled) return;
+        const token = saveToken(result.accessToken);
+        if (!token) return;
+        dispatch(baseApi.util.resetApiState());
+        router.replace("/dashboard");
+      })
+      .catch(() => {
+        // No refresh cookie/session: stay on login.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, refreshToken, router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,21 +59,14 @@ export default function LoginPage() {
         : { username, password };
 
       const result = await login(credentials).unwrap();
-      const token = result.accessToken;
+      const token = saveToken(result.accessToken);
 
       if (!token) {
         throw new Error("Login response missing accessToken");
       }
-      
-      // Save token to localStorage AND cookies
-      saveToken(token);
+
       dispatch(baseApi.util.resetApiState());
-      
-      // Notify components like AuthGuard
-      window.dispatchEvent(new Event("auth-token-changed"));
-      
-      // Redirect to dashboard
-      window.location.replace("/dashboard");
+      router.replace("/dashboard");
     } catch {
       // Error handled by redux state
     }

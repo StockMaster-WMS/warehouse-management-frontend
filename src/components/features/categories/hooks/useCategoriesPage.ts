@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   useDeleteCategoryMutation,
   useGetCategoriesQuery,
@@ -16,7 +16,7 @@ type CategoryDeleteItem = {
 
 export function useCategoriesPageLogic() {
   const [query, setQuery] = useState("");
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<string> | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<CategoryDeleteItem | null>(null);
 
@@ -49,12 +49,6 @@ export function useCategoriesPageLogic() {
 
   const roots = useMemo(() => categories.filter((category) => !category.parentId), [categories]);
 
-  useEffect(() => {
-    if (expandedIds.size > 0) return;
-    if (roots.length === 0) return;
-    setExpandedIds(new Set(roots.map((root) => root.id)));
-  }, [roots, expandedIds.size]);
-
   const treeModel = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const hasQuery = normalizedQuery.length > 0;
@@ -81,7 +75,9 @@ export function useCategoriesPageLogic() {
       }
     }
 
-    const effectiveExpandedIds = new Set(expandedIds);
+    const baseExpandedIds =
+      expandedIds ?? new Set(roots.map((root) => root.id));
+    const effectiveExpandedIds = new Set(baseExpandedIds);
     if (hasQuery) {
       for (const id of ancestorIds) {
         effectiveExpandedIds.add(id);
@@ -132,12 +128,12 @@ export function useCategoriesPageLogic() {
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((current) => {
-      const next = new Set(current);
+      const next = new Set(current ?? roots.map((root) => root.id));
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
+  }, [roots]);
 
   const prepareDelete = useCallback((category: Category) => {
     setItemToDelete({ id: category.id, name: category.name });

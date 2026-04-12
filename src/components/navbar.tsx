@@ -32,6 +32,7 @@ import {
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { clearToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useGetCurrentUserQuery, useLogoutMutation } from "@/store/services/auth.service";
@@ -100,9 +101,8 @@ export function Navbar() {
   }, [user?.roles]);
 
   const clearClientSession = () => {
-    localStorage.removeItem("accessToken");
+    clearToken();
     dispatch(baseApi.util.resetApiState());
-    window.dispatchEvent(new Event("auth-token-changed"));
     router.replace("/login");
   };
 

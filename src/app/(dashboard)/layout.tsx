@@ -5,16 +5,20 @@ import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
+const AUTH_SESSION_COOKIE_NAMES = ["refreshToken", "accessToken"] as const;
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const hasToken = cookieStore.has("accessToken");
+  const hasSession = AUTH_SESSION_COOKIE_NAMES.some((name) =>
+    cookieStore.has(name)
+  );
 
   return (
-    <AuthGuard initialHasToken={hasToken}>
+    <AuthGuard initialHasSession={hasSession}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="min-h-svh bg-muted">

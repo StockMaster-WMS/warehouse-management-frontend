@@ -141,7 +141,7 @@ export default function PurchaseOrdersPage() {
       ...(warehouseId ? { warehouseId } : {}),
     });
 
-  const rows = data?.data?.content ?? [];
+  const rows: PurchaseOrder[] = data?.data?.content ?? [];
   const pagedBody = data?.data;
   const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes]);
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
@@ -250,7 +250,7 @@ export default function PurchaseOrdersPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-2xl font-black tabular-nums text-blue-900 dark:text-blue-100">
-              {rows.filter((r: any) => ["PROCESSING", "PARTIAL_RECEIVED"].includes(r.status)).length}
+              {rows.filter((r) => ["PROCESSING", "PARTIAL_RECEIVED"].includes(r.status ?? "")).length}
             </p>
             <p className="text-xs font-medium text-blue-600/80 dark:text-blue-400">PO</p>
           </div>
@@ -269,7 +269,7 @@ export default function PurchaseOrdersPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-2xl font-black tabular-nums text-emerald-900 dark:text-emerald-100">
-              {rows.filter((r: any) => r.status === "COMPLETED").length}
+              {rows.filter((r) => r.status === "COMPLETED").length}
             </p>
             <p className="text-xs font-medium text-emerald-600/80 dark:text-emerald-400">PO</p>
           </div>
@@ -288,7 +288,7 @@ export default function PurchaseOrdersPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-2xl font-black tabular-nums text-rose-900 dark:text-rose-100">
-              {rows.filter((r: any) => r.status === "CANCELLED").length}
+              {rows.filter((r) => r.status === "CANCELLED").length}
             </p>
             <p className="text-xs font-medium text-rose-600/80 dark:text-rose-400">PO</p>
           </div>

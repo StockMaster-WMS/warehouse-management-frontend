@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { apiErrMessage } from "@/types/api";
@@ -15,7 +15,6 @@ export function useCreateOrderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
-  const appliedWarehouseFromUrl = useRef(false);
 
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,7 +28,7 @@ export function useCreateOrderForm() {
     wardName: "",
   });
   const [country, setCountry] = useState("VN");
-  const [warehouseId, setWarehouseId] = useState("");
+  const [warehouseId, setWarehouseId] = useState(warehouseIdFromUrl);
   const [priority, setPriority] = useState("5");
   const [errors, setErrors] = useState<NewOrderFormErrors>({});
 
@@ -43,15 +42,6 @@ export function useCreateOrderForm() {
   const [createSalesOrder, { isLoading: creating }] = useCreateSalesOrderMutation();
 
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
-
-  useEffect(() => {
-    if (appliedWarehouseFromUrl.current || !warehouseIdFromUrl || warehousesLoading) return;
-    const exists = warehouses.some((w) => String(w.id) === warehouseIdFromUrl);
-    if (exists) {
-      setWarehouseId(warehouseIdFromUrl);
-      appliedWarehouseFromUrl.current = true;
-    }
-  }, [warehouseIdFromUrl, warehousesLoading, warehouses]);
 
   const warehouseOptions = useMemo(
     () => warehouses.map((w) => ({ value: String(w.id), label: String(w.name ?? w.id) })),

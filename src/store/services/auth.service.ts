@@ -11,7 +11,7 @@ export type UserRole = "WAREHOUSE_STAFF" | "WAREHOUSE_MANAGER" | "REPORT_VIEWER"
 
 // HttpOnly Cookie: refreshToken sẽ được backend set, không trả về trong body
 export interface LoginResponse {
-    accessToken: string; // Lưu vào localStorage
+    accessToken: string;
     user?: {
         id: string;
         username: string;

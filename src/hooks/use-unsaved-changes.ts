@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback } from "react";
 
 /**
  * Cảnh báo khi user rời trang có dữ liệu chưa lưu.
@@ -10,25 +10,22 @@ import { useEffect, useCallback, useRef } from "react";
  *    nên page sẽ dùng `confirmLeave()` trong onClick hoặc Link wrapper.)
  */
 export function useUnsavedChanges(isDirty: boolean) {
-  const dirtyRef = useRef(isDirty);
-  dirtyRef.current = isDirty;
-
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (!dirtyRef.current) return;
+      if (!isDirty) return;
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+  }, [isDirty]);
 
   const confirmLeave = useCallback((): boolean => {
-    if (!dirtyRef.current) return true;
+    if (!isDirty) return true;
     return window.confirm(
       "Bạn có dữ liệu chưa lưu. Bạn có chắc muốn rời trang?",
     );
-  }, []);
+  }, [isDirty]);
 
   return { confirmLeave };
 }

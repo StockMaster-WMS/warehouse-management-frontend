@@ -100,7 +100,6 @@ export function ProductStockByLocationList({
                     >
                         <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{locationName}</p>
-                            <p className="truncate text-xs text-slate-500">{stock.locationId}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{stock.qtyOnHand}</p>

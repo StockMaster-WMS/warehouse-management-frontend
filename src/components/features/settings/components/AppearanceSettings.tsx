@@ -1,14 +1,73 @@
 import { Palette, Sun, Moon, Monitor, Sparkles, AlertCircle, Languages, Layout, Eye, Zap, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ToggleOptionRow } from "@/components/settings/toggle-option-row";
 import type { AppearanceSettings } from "../types";
 
 interface AppearanceSettingsProps {
   appearance: AppearanceSettings;
-  updateAppearance: (key: keyof AppearanceSettings, value: AppearanceSettings[keyof AppearanceSettings]) => void;
+  updateAppearance: <K extends keyof AppearanceSettings>(key: K, value: AppearanceSettings[K]) => void;
 }
+
+type BooleanAppearanceKey = {
+  [K in keyof AppearanceSettings]: AppearanceSettings[K] extends boolean ? K : never;
+}[keyof AppearanceSettings];
+
+const THEME_OPTIONS = [
+  { id: "light", label: "Nhẹ", icon: Sun, desc: "Nền sáng, chữ tối" },
+  { id: "dark", label: "Tối", icon: Moon, desc: "Nền tối, chữ sáng" },
+  { id: "auto", label: "Tự động", icon: Monitor, desc: "Theo hệ thống" },
+] as const satisfies ReadonlyArray<{
+  id: AppearanceSettings["theme"];
+  label: string;
+  icon: typeof Sun;
+  desc: string;
+}>;
+
+const COLOR_OPTIONS = [
+  { id: "indigo", name: "Indigo", color: "bg-indigo-600" },
+  { id: "blue", name: "Blue", color: "bg-blue-600" },
+  { id: "emerald", name: "Emerald", color: "bg-emerald-600" },
+  { id: "purple", name: "Purple", color: "bg-purple-600" },
+  { id: "rose", name: "Rose", color: "bg-rose-600" },
+  { id: "amber", name: "Amber", color: "bg-amber-600" },
+] as const satisfies ReadonlyArray<{
+  id: AppearanceSettings["color"];
+  name: string;
+  color: string;
+}>;
+
+const DENSITY_OPTIONS = [
+  { id: "compact", label: "Gọn", desc: "Hiển thị nhiều nội dung" },
+  { id: "comfortable", label: "Thoải mái", desc: "Cân bằng" },
+  { id: "spacious", label: "Rộng rãi", desc: "Ít nội dung, dễ đọc" },
+] as const satisfies ReadonlyArray<{
+  id: AppearanceSettings["density"];
+  label: string;
+  desc: string;
+}>;
+
+const SIDEBAR_OPTIONS = [
+  { id: "auto", label: "Tự động", desc: "Thu gọn khi đủ không gian" },
+  { id: "expanded", label: "Luôn mở rộng", desc: "Hiển thị toàn bộ menu" },
+  { id: "collapsed", label: "Luôn thu gọn", desc: "Chỉ hiển thị biểu tượng" },
+] as const satisfies ReadonlyArray<{
+  id: AppearanceSettings["sidebar"];
+  label: string;
+  desc: string;
+}>;
+
+const EXTRA_OPTIONS = [
+  { key: "animations", label: "Hiệu ứng chuyển tiếp", desc: "Bật các hiệu ứng động khi chuyển trang", icon: Sparkles },
+  { key: "tooltip", label: "Hiển thị tooltip", desc: "Gợi ý khi hover chuột", icon: AlertCircle },
+  { key: "performance", label: "Thực hiện thao tác nhanh", desc: "Cải thiện hiệu suất", icon: Zap },
+  { key: "shortcuts", label: "Hiện phím tắt", desc: "Hiển thị phím tắt bàn phím", icon: Settings },
+] as const satisfies ReadonlyArray<{
+  key: BooleanAppearanceKey;
+  label: string;
+  desc: string;
+  icon: typeof Sparkles;
+}>;
 
 export function AppearanceSettingsComponent({ appearance, updateAppearance }: AppearanceSettingsProps) {
   return (
@@ -20,16 +79,12 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Chọn chế độ hiển thị phù hợp với bạn</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            { id: "light", label: "Nhẹ", icon: Sun, desc: "Nền sáng, chữ tối" },
-            { id: "dark", label: "Tối", icon: Moon, desc: "Nền tối, chữ sáng" },
-            { id: "auto", label: "Tự động", icon: Monitor, desc: "Theo hệ thống" },
-          ].map((item) => {
+          {THEME_OPTIONS.map((item) => {
             const ThemeIcon = item.icon;
             return (
               <button
                 key={item.id}
-                onClick={() => updateAppearance("theme", item.id as any)}
+                onClick={() => updateAppearance("theme", item.id)}
                 className={`group rounded-xl border-2 p-4 text-left transition-all duration-200 hover:shadow-md active:scale-95 ${
                   appearance.theme === item.id
                     ? "border-indigo-500 bg-indigo-50/80 shadow-md dark:border-indigo-400 dark:bg-indigo-950/40"
@@ -58,17 +113,10 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Chọn màu chủ đạo cho ứng dụng</p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
-          {[
-            { id: "indigo", name: "Indigo", color: "bg-indigo-600" },
-            { id: "blue", name: "Blue", color: "bg-blue-600" },
-            { id: "emerald", name: "Emerald", color: "bg-emerald-600" },
-            { id: "purple", name: "Purple", color: "bg-purple-600" },
-            { id: "rose", name: "Rose", color: "bg-rose-600" },
-            { id: "amber", name: "Amber", color: "bg-amber-600" },
-          ].map((item) => (
+          {COLOR_OPTIONS.map((item) => (
             <button
               key={item.id}
-              onClick={() => updateAppearance("color", item.id as any)}
+              onClick={() => updateAppearance("color", item.id)}
               className={`group rounded-xl border-2 p-3 transition-all duration-200 hover:scale-105 active:scale-95 ${
                 appearance.color === item.id
                   ? "border-slate-900 shadow-lg dark:border-white"
@@ -95,7 +143,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Ngôn ngữ giao diện</label>
             <select
               value={appearance.locale}
-              onChange={(e) => updateAppearance("locale", e.target.value as any)}
+              onChange={(e) => updateAppearance("locale", e.target.value as AppearanceSettings["locale"])}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <option value="vi">Tiếng Việt</option>
@@ -119,7 +167,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Định dạng ngày</label>
             <select
               value={appearance.dateFormat}
-              onChange={(e) => updateAppearance("dateFormat", e.target.value as any)}
+              onChange={(e) => updateAppearance("dateFormat", e.target.value as AppearanceSettings["dateFormat"])}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -139,14 +187,10 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Điều chỉnh khoảng cách và kích cỡ phần tử</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {[
-            { id: "compact", label: "Gọn", desc: "Hiển thị nhiều nội dung" },
-            { id: "comfortable", label: "Thoải mái", desc: "Cân bằng" },
-            { id: "spacious", label: "Rộng rãi", desc: "Ít nội dung, dễ đọc" },
-          ].map((item) => (
+          {DENSITY_OPTIONS.map((item) => (
             <button
               key={item.id}
-              onClick={() => updateAppearance("density", item.id as any)}
+              onClick={() => updateAppearance("density", item.id)}
               className={`rounded-xl border-2 p-4 text-left transition-all duration-200 hover:shadow-md active:scale-95 ${
                 appearance.density === item.id
                   ? "border-indigo-500 bg-indigo-50/80 shadow-md dark:border-indigo-400 dark:bg-indigo-950/40"
@@ -198,11 +242,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Cấu hình cách hiển thị menu thanh bên</p>
         <div className="grid gap-3">
-          {[
-            { id: "auto", label: "Tự động", desc: "Thu gọn khi đủ không gian" },
-            { id: "expanded", label: "Luôn mở rộng", desc: "Hiển thị toàn bộ menu" },
-            { id: "collapsed", label: "Luôn thu gọn", desc: "Chỉ hiển thị biểu tượng" },
-          ].map((item) => (
+          {SIDEBAR_OPTIONS.map((item) => (
             <label
               key={item.id}
               className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
@@ -215,7 +255,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
                 type="radio"
                 name="sidebar"
                 checked={appearance.sidebar === item.id}
-                onChange={() => updateAppearance("sidebar", item.id as any)}
+                onChange={() => updateAppearance("sidebar", item.id)}
                 className="w-4 h-4 accent-indigo-600"
               />
               <div>
@@ -236,19 +276,14 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Bật/tắt các tính năng bổ sung</p>
         <div className="space-y-2">
-          {[
-            { key: "animations", label: "Hiệu ứng chuyển tiếp", desc: "Bật các hiệu ứng động khi chuyển trang", icon: Sparkles },
-            { key: "tooltip", label: "Hiển thị tooltip", desc: "Gợi ý khi hover chuột", icon: AlertCircle },
-            { key: "performance", label: "Thực hiện thao tác nhanh", desc: "Cải thiện hiệu suất", icon: Zap },
-            { key: "shortcuts", label: "Hiện phím tắt", desc: "Hiển thị phím tắt bàn phím", icon: Settings },
-          ].map((item) => (
+          {EXTRA_OPTIONS.map((item) => (
             <ToggleOptionRow
               key={item.key}
               icon={item.icon}
               label={item.label}
               description={item.desc}
-              checked={appearance[item.key as keyof AppearanceSettings] as boolean}
-              onCheckedChange={(checked) => updateAppearance(item.key as keyof AppearanceSettings, !!checked)}
+              checked={appearance[item.key]}
+              onCheckedChange={(checked) => updateAppearance(item.key, checked)}
             />
           ))}
         </div>

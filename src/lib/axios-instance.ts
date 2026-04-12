@@ -37,7 +37,6 @@ axiosInstance.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       if (typeof window !== "undefined") {
         clearToken();
-        window.dispatchEvent(new Event("auth-token-changed"));
         const { pathname } = window.location;
         if (pathname !== "/login") {
           window.location.href = "/login";
