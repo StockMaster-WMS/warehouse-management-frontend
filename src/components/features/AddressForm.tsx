@@ -92,7 +92,6 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
     useEffect(() => {
         if (!address.provinceCode) {
             setWards([]);
-            setAddress((current) => ({ ...current, provinceName: "", districtCode: "", districtName: "", wardCode: "", wardName: "" }));
             return;
         }
 
@@ -108,13 +107,19 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         }
 
         const provinceName = getOptionLabel(provinces, address.provinceCode);
-        setAddress((current) => ({ ...current, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
+        if (provinceName && provinceName !== address.provinceName) {
+            setAddress((current) =>
+                current.provinceCode === address.provinceCode
+                    ? { ...current, provinceName }
+                    : current
+            );
+        }
         void loadWardsForProvince();
 
         return () => {
             active = false;
         };
-    }, [address.provinceCode, provinces]);
+    }, [address.provinceCode, address.provinceName, provinces]);
 
 
     // Propagate changes

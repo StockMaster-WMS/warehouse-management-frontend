@@ -23,12 +23,13 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AddressForm, type AddressValue } from "@/components/features/AddressForm";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { apiErrMessage } from "@/types/api";
 import {
-  formatCustomerAddress,
   type CreateCustomerRequest,
   type Customer,
+  type CustomerAddress,
 } from "@/types/customer";
 
 type CustomerFormValues = {
@@ -38,7 +39,7 @@ type CustomerFormValues = {
   phone: string;
   email: string;
   taxCode: string;
-  addressLine: string;
+  address: AddressValue;
   notes: string;
   isActive: boolean;
 };
@@ -55,9 +56,62 @@ function FieldError({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-rose-600">{msg}</p>;
 }
 
-function buildInitialValues(customer?: Customer): CustomerFormValues {
-  const addressLine = formatCustomerAddress(customer?.address);
+function getAddressText(
+  address: CustomerAddress | string | null | undefined,
+  keys: string[],
+) {
+  if (!address) return "";
+  if (typeof address === "string") return address.trim();
 
+  for (const key of keys) {
+    const value = address[key];
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).trim();
+      if (text) return text;
+    }
+  }
+
+  return "";
+}
+
+function toAddressValue(address: CustomerAddress | string | null | undefined): AddressValue {
+  return {
+    street: getAddressText(address, ["line1", "street", "address"]),
+    provinceCode: getAddressText(address, ["provinceCode", "cityCode"]),
+    provinceName: getAddressText(address, ["provinceName", "city", "province"]),
+    districtCode: getAddressText(address, ["districtCode"]),
+    districtName: getAddressText(address, ["districtName", "district"]),
+    wardCode: getAddressText(address, ["wardCode"]),
+    wardName: getAddressText(address, ["wardName", "ward"]),
+  };
+}
+
+function toCustomerAddress(address: AddressValue): CustomerAddress | undefined {
+  const street = address.street.trim();
+  const provinceCode = address.provinceCode.trim();
+  const provinceName = address.provinceName.trim();
+  const districtCode = address.districtCode.trim();
+  const districtName = address.districtName.trim();
+  const wardCode = address.wardCode.trim();
+  const wardName = address.wardName.trim();
+
+  if (!street && !provinceCode && !provinceName && !districtCode && !districtName && !wardCode && !wardName) {
+    return undefined;
+  }
+
+  return {
+    ...(street ? { line1: street, street } : {}),
+    ...(provinceCode ? { provinceCode } : {}),
+    ...(provinceName ? { provinceName, city: provinceName } : {}),
+    ...(districtCode ? { districtCode } : {}),
+    ...(districtName ? { districtName, district: districtName } : {}),
+    ...(wardCode ? { wardCode } : {}),
+    ...(wardName ? { wardName, ward: wardName } : {}),
+    country: "VN",
+  };
+}
+
+function buildInitialValues(customer?: Customer): CustomerFormValues {
   return {
     code: customer?.code ?? "",
     name: customer?.name ?? "",
@@ -65,14 +119,14 @@ function buildInitialValues(customer?: Customer): CustomerFormValues {
     phone: customer?.phone ?? "",
     email: customer?.email ?? "",
     taxCode: customer?.taxCode ?? "",
-    addressLine: addressLine === "—" ? "" : addressLine,
+    address: toAddressValue(customer?.address),
     notes: customer?.notes ?? "",
     isActive: customer?.isActive ?? true,
   };
 }
 
 function toRequestBody(values: CustomerFormValues): CreateCustomerRequest {
-  const addressLine = values.addressLine.trim();
+  const address = toCustomerAddress(values.address);
 
   return {
     code: values.code.trim(),
@@ -82,7 +136,7 @@ function toRequestBody(values: CustomerFormValues): CreateCustomerRequest {
     ...(values.phone.trim() ? { phone: values.phone.trim() } : {}),
     ...(values.email.trim() ? { email: values.email.trim() } : {}),
     ...(values.taxCode.trim() ? { taxCode: values.taxCode.trim() } : {}),
-    ...(addressLine ? { address: { line1: addressLine } } : {}),
+    ...(address ? { address } : {}),
     ...(values.notes.trim() ? { notes: values.notes.trim() } : {}),
   };
 }
@@ -111,6 +165,9 @@ export function CustomerForm({
 
   const isDirty = Object.keys(initial).some((key) => {
     const field = key as keyof CustomerFormValues;
+    if (field === "address") {
+      return JSON.stringify(values.address) !== JSON.stringify(initial.address);
+    }
     return values[field] !== initial[field];
   });
   const { confirmLeave } = useUnsavedChanges(isDirty);
@@ -312,11 +369,9 @@ export function CustomerForm({
                 <label className="text-xs font-bold uppercase text-slate-500">
                   Địa chỉ
                 </label>
-                <Textarea
-                  value={values.addressLine}
-                  onChange={(event) => updateField("addressLine", event.target.value)}
-                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                  className="min-h-24"
+                <AddressForm
+                  value={values.address}
+                  onChange={(address) => updateField("address", address)}
                 />
               </div>
 

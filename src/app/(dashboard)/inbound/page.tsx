@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
@@ -38,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
+import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { useGetInboundReceiptsQuery, useLazyGetInboundReceiptPrintDataQuery } from "@/store/services/inbound.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
@@ -90,43 +90,6 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
       {cfg.icon}
       {cfg.label}
     </span>
-  );
-}
-
-/** Mini stat card shown above the table */
-function StatCard({ 
-  label, 
-  value, 
-  sub, 
-  icon: Icon,
-  gradientCls,
-  iconCls,
-  textCls
-}: { 
-  label: string; 
-  value: string | number; 
-  sub?: string;
-  icon: LucideIcon;
-  gradientCls: string;
-  iconCls: string;
-  textCls: string;
-}) {
-  return (
-    <div className={cn("relative overflow-hidden rounded-2xl border p-5 shadow-sm", gradientCls)}>
-      <div className="absolute right-3 top-4 opacity-10">
-        <Icon className={cn("h-16 w-16", textCls)} />
-      </div>
-      <div className={cn("flex items-center gap-2 mb-3", textCls)}>
-        <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", iconCls)}>
-          <Icon className="h-4 w-4" />
-        </span>
-        <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <p className="text-2xl font-black tabular-nums">{value}</p>
-        {sub && <p className={cn("text-xs font-medium opacity-80")}>{sub}</p>}
-      </div>
-    </div>
   );
 }
 
@@ -231,6 +194,37 @@ export default function InboundPage() {
     };
   }, [receipts, paged]);
 
+  const statsItems = useMemo<StatItem[]>(() => {
+    const multiPage = (paged?.total_pages ?? 0) > 1;
+
+    return [
+      {
+        label: "Tổng phiếu",
+        value: stats.total,
+        icon: FileText,
+        color: "text-indigo-500",
+      },
+      {
+        label: multiPage ? "Đã nhận (trang này)" : "Đã nhận",
+        value: stats.received,
+        icon: TruckIcon,
+        color: "text-blue-500",
+      },
+      {
+        label: multiPage ? "Đang lên kệ (trang này)" : "Đang lên kệ",
+        value: stats.inProgress,
+        icon: Clock,
+        color: "text-amber-500",
+      },
+      {
+        label: multiPage ? "Hoàn tất (trang này)" : "Hoàn tất",
+        value: stats.completed,
+        icon: CheckCircle2,
+        color: "text-emerald-500",
+      },
+    ];
+  }, [paged?.total_pages, stats]);
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -249,57 +243,7 @@ export default function InboundPage() {
         }
       />
 
-      {/* Quick Stats */}
-      {!isLoading && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard 
-            label="Tổng phiếu" 
-            value={stats.total} 
-            sub="Phiếu nhập kho"
-            icon={FileText}
-            gradientCls="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-800 dark:text-slate-100"
-            iconCls="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
-            textCls="text-slate-500 dark:text-slate-400"
-          />
-          <StatCard 
-            label="Đã nhận" 
-            value={stats.received} 
-            sub="Chờ lên kệ" 
-            icon={TruckIcon}
-            gradientCls="border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:border-blue-900/40 dark:from-blue-950/30 dark:to-indigo-950/20 text-blue-900 dark:text-blue-100"
-            iconCls="bg-blue-100 dark:bg-blue-900/50"
-            textCls="text-blue-700 dark:text-blue-300"
-          />
-          <StatCard 
-            label="Đang lên kệ" 
-            value={stats.inProgress} 
-            sub="Đang xử lý" 
-            icon={Clock}
-            gradientCls="border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:border-amber-900/40 dark:from-amber-950/30 dark:to-orange-950/20 text-amber-900 dark:text-amber-100"
-            iconCls="bg-amber-100 dark:bg-amber-900/50"
-            textCls="text-amber-700 dark:text-amber-300"
-          />
-          <StatCard 
-            label="Hoàn tất" 
-            value={stats.completed} 
-            sub="Đã lên kệ" 
-            icon={CheckCircle2}
-            gradientCls="border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-teal-950/20 text-emerald-900 dark:text-emerald-100"
-            iconCls="bg-emerald-100 dark:bg-emerald-900/50"
-            textCls="text-emerald-700 dark:text-emerald-300"
-          />
-        </div>
-      )}
-      {isLoading && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
-              <Skeleton className="h-3 w-20 mb-2 rounded" />
-              <Skeleton className="h-7 w-12 rounded" />
-            </div>
-          ))}
-        </div>
-      )}
+      <StatsGrid stats={statsItems} isLoading={isLoading} />
 
       {/* Main Table Card */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">

@@ -45,7 +45,18 @@ export function formatCustomerAddress(address: CustomerAddress | string | null |
   if (!address) return "—";
   if (typeof address === "string") return address.trim() || "—";
 
-  const orderedKeys = ["line1", "street", "ward", "district", "city", "province", "country"];
+  const orderedKeys = [
+    "line1",
+    "street",
+    "wardName",
+    "ward",
+    "districtName",
+    "district",
+    "provinceName",
+    "city",
+    "province",
+    "country",
+  ];
   const orderedParts = orderedKeys
     .map((key) => address[key])
     .filter((value): value is string | number => typeof value === "string" || typeof value === "number")

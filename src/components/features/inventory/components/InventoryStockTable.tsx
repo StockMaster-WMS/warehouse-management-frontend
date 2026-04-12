@@ -30,6 +30,7 @@ type InventoryStockTableProps = {
   onPrevPage: () => void;
   onNextPage: () => void;
   onRetry?: () => void;
+  noContainer?: boolean;
 };
 
 function TableSkeleton() {
@@ -61,9 +62,10 @@ export function InventoryStockTable({
   onPrevPage,
   onNextPage,
   onRetry,
+  noContainer = false,
 }: InventoryStockTableProps) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu...
@@ -262,6 +264,16 @@ export function InventoryStockTable({
           onNextPage={onNextPage}
         />
       ) : null}
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {content}
     </div>
   );
 }
