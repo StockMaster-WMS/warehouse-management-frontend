@@ -34,7 +34,16 @@ export default function CustomersPage() {
         }
       />
 
-      <CustomersStatsGrid />
+      <CustomersStatsGrid
+        total={logic.paged?.total_elements ?? 0}
+        activeOnPage={logic.activeRowsCount}
+        inactiveOnPage={logic.inactiveRowsCount}
+        pageLabel={
+          logic.paged
+            ? `${logic.paged.page + 1}/${Math.max(logic.paged.total_pages, 1)} · ${logic.paged.size}`
+            : "—"
+        }
+      />
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
         <CustomersSearchSection
@@ -44,9 +53,9 @@ export default function CustomersPage() {
             logic.setSearchInput(value);
             logic.setPage(0);
           }}
-          categoryFilter={logic.categoryFilter}
-          onCategoryChange={(value) => {
-            logic.setCategoryFilter(value);
+          statusFilter={logic.statusFilter}
+          onStatusChange={(value) => {
+            logic.setStatusFilter(value);
             logic.setPage(0);
           }}
           advancedOpen={logic.advancedOpen}

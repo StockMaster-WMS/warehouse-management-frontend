@@ -5,8 +5,8 @@ import { useDeleteCustomerMutation, useGetCustomersQuery } from "@/store/service
 import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { Customer } from "@/types/customer";
 import {
-  ALL_CUSTOMER_CATEGORY,
-  CUSTOMER_CATEGORY_API_MAP,
+  ALL_CUSTOMER_STATUS,
+  CUSTOMER_STATUS_API_MAP,
   CUSTOMERS_PAGE_SIZE,
 } from "@/components/features/customers/constants";
 
@@ -14,19 +14,19 @@ export function useCustomersPageLogic() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
-  const [categoryFilter, setCategoryFilter] = useState(ALL_CUSTOMER_CATEGORY);
+  const [statusFilter, setStatusFilter] = useState(ALL_CUSTOMER_STATUS);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const categoryApiValue = CUSTOMER_CATEGORY_API_MAP[categoryFilter];
+  const isActive = CUSTOMER_STATUS_API_MAP[statusFilter];
 
   const { data, isLoading, isFetching, isError, error, refetch } = useGetCustomersQuery({
     page,
     size: CUSTOMERS_PAGE_SIZE,
     keyword: debouncedKeyword || undefined,
-    category: categoryApiValue,
+    isActive,
   });
 
   const [deleteCustomer] = useDeleteCustomerMutation();
@@ -53,12 +53,15 @@ export function useCustomersPageLogic() {
   const canGoPrev = page > 0;
   const canGoNext = paged != null && paged.total_pages > 0 && page < paged.total_pages - 1;
 
-  const hasAnyFilter = searchInput.trim().length > 0 || categoryFilter !== ALL_CUSTOMER_CATEGORY;
-  const advancedCount = Number(categoryFilter !== ALL_CUSTOMER_CATEGORY);
+  const activeRowsCount = rows.filter((customer) => customer.isActive !== false).length;
+  const inactiveRowsCount = rows.length - activeRowsCount;
+
+  const hasAnyFilter = searchInput.trim().length > 0 || statusFilter !== ALL_CUSTOMER_STATUS;
+  const advancedCount = Number(statusFilter !== ALL_CUSTOMER_STATUS);
 
   const clearFilters = () => {
     setSearchInput("");
-    setCategoryFilter(ALL_CUSTOMER_CATEGORY);
+    setStatusFilter(ALL_CUSTOMER_STATUS);
     setPage(0);
     setAdvancedOpen(false);
   };
@@ -89,13 +92,15 @@ export function useCustomersPageLogic() {
     setSearchInput,
     page,
     setPage,
-    categoryFilter,
-    setCategoryFilter,
+    statusFilter,
+    setStatusFilter,
     advancedOpen,
     setAdvancedOpen,
 
     rows,
     paged,
+    activeRowsCount,
+    inactiveRowsCount,
     isLoading,
     isFetching,
     isError,
