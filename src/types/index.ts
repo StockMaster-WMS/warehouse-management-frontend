@@ -1,9 +1,3 @@
-// ============================================================
-// types/index.ts — Central re-export barrel
-// Import từ đây thay vì từng file riêng lẻ:
-//   import type { Supplier, LocationOption } from "@/types"
-// ============================================================
-
 export type * from "./api";
 export type * from "./location";
 export type * from "./putaway";
@@ -21,3 +15,5 @@ export type * from "./category";
 export type * from "./customer";
 export type * from "./order";
 export type * from "./returns";
+export type * from "./user-management";
+export type * from "./cycle-count";

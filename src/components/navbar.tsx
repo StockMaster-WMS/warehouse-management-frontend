@@ -52,6 +52,8 @@ function toTitle(segment: string): string {
     putaway: "Sắp xếp vào kho",
     customers: "Khách hàng",
     suppliers: "Nhà cung cấp",
+    locations: "Vị trí lưu trữ",
+    "cycle-counts": "Kiểm kê kho",
     history: "Nhật ký hoạt động",
     reports: "Báo cáo",
     settings: "Cài đặt hệ thống",

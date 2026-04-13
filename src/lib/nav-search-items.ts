@@ -117,6 +117,12 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
     group: "Đối tác & nhật ký",
   },
   {
+    id: "cycle-counts",
+    label: "Kiểm kê kho",
+    href: "/cycle-counts",
+    group: "Đối tác & nhật ký",
+  },
+  {
     id: "history",
     label: "Nhật ký hoạt động",
     href: "/history",
