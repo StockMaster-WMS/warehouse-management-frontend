@@ -63,6 +63,10 @@ export const baseApi = createApi({
     "PickingItem",
     "Location",
     "Order",
+    "ReturnRequest",
+    "User",
+    "CycleCount",
+    "AuditLog",
   ],
   endpoints: () => ({}),
 });

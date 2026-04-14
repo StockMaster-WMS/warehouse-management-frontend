@@ -51,6 +51,12 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
     group: "Tổng quan & tác nghiệp",
   },
   {
+    id: "returns",
+    label: "Hàng trả / RMA / Hàng lỗi",
+    href: "/returns",
+    group: "Kho xuất",
+  },
+  {
     id: "inbound",
     label: "Danh sách phiếu nhập",
     href: "/inbound",
@@ -108,6 +114,12 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
     id: "locations",
     label: "Vị trí lưu trữ",
     href: "/locations",
+    group: "Đối tác & nhật ký",
+  },
+  {
+    id: "cycle-counts",
+    label: "Kiểm kê kho",
+    href: "/cycle-counts",
     group: "Đối tác & nhật ký",
   },
   {

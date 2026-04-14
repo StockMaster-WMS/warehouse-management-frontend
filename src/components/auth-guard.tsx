@@ -9,6 +9,7 @@ import {
 } from "@/lib/access-control";
 import {
   clearAccessToken,
+  hasExplicitLogoutSnapshot,
   hasClientAccessTokenSnapshot,
   setAccessToken,
   subscribeToAccessTokenChanges,
@@ -50,6 +51,11 @@ export function AuthGuard({
 
   useEffect(() => {
     if (!hasAccessToken) {
+      if (hasExplicitLogoutSnapshot()) {
+        router.replace("/login");
+        return;
+      }
+
       if (refreshAttempted.current) return;
 
       refreshAttempted.current = true;

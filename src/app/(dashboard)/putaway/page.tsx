@@ -23,8 +23,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { Input } from "@/components/ui/input";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -119,7 +119,7 @@ export default function PutawayPage() {
   const totalPages = data?.data?.total_pages ?? 0;
 
   /* ── Locations lookup ── */
-  const { data: locationsRes } = useGetLocationsQuery({});
+  const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsQuery({});
   const locationMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const loc of locationsRes?.data ?? []) {
@@ -130,6 +130,26 @@ export default function PutawayPage() {
       map.set(loc.id, label);
     }
     return map;
+  }, [locationsRes]);
+  const locationOptions = useMemo<SearchableSelectOption[]>(() => {
+    return (locationsRes?.data ?? []).map((loc) => {
+      const label =
+        loc.code ||
+        loc.name ||
+        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
+      const hintParts = [
+        loc.zone ? `Zone ${loc.zone}` : null,
+        loc.aisle ? `Aisle ${loc.aisle}` : null,
+        loc.rack ? `Rack ${loc.rack}` : null,
+        loc.bin ? `Bin ${loc.bin}` : null,
+      ].filter(Boolean);
+
+      return {
+        value: loc.id,
+        label,
+        hint: hintParts.length ? hintParts.join(" · ") : loc.id,
+      };
+    });
   }, [locationsRes]);
 
   /* ── PO Items lookup ── */
@@ -516,16 +536,22 @@ export default function PutawayPage() {
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">
                   Vị trí thực tế <span className="text-rose-500">*</span>
                 </label>
-                <Input
+                <SearchableSelect
                   value={actualLocationId}
-                  onChange={(e) => setActualLocationId(e.target.value)}
-                  placeholder="Nhập UUID vị trí thực tế"
-                  className={cn("font-mono text-xs rounded-xl", completeErrors.actualLocationId && "border-rose-400 focus:ring-rose-400/20")}
+                  onValueChange={setActualLocationId}
+                  options={locationOptions}
+                  loading={locationsLoading}
+                  error={Boolean(completeErrors.actualLocationId)}
+                  placeholder="Chọn vị trí thực tế"
+                  searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
+                  emptyText="Không có vị trí phù hợp"
+                  dialogTitle="Chọn vị trí đặt hàng thực tế"
+                  icon={<MapPin className="h-4 w-4" />}
                 />
                 {completeErrors.actualLocationId && (
                   <p className="mt-1 text-xs text-rose-600">{completeErrors.actualLocationId}</p>
                 )}
-                <p className="mt-1.5 text-xs text-slate-400">Nhập ID của vị trí kệ thực tế đã đặt sản phẩm vào</p>
+                <p className="mt-1.5 text-xs text-slate-400">Chọn vị trí đã đặt sản phẩm vào. Mã vị trí sẽ được gửi về backend bằng ID.</p>
               </div>
             </div>
 
@@ -576,12 +602,28 @@ export default function PutawayPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Vị trí gợi ý</label>
-                <Input
+                <SearchableSelect
                   value={editSuggested}
-                  onChange={(e) => setEditSuggested(e.target.value)}
-                  placeholder="UUID vị trí gợi ý (để trống = xóa)"
-                  className="rounded-xl font-mono text-xs"
+                  onValueChange={setEditSuggested}
+                  options={locationOptions}
+                  loading={locationsLoading}
+                  placeholder="Chọn vị trí gợi ý"
+                  searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
+                  emptyText="Không có vị trí phù hợp"
+                  dialogTitle="Chọn vị trí gợi ý"
+                  icon={<MapPin className="h-4 w-4" />}
                 />
+                {editSuggested ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-auto px-0 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => setEditSuggested("")}
+                  >
+                    Xóa vị trí gợi ý
+                  </Button>
+                ) : null}
               </div>
             </div>
 

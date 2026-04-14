@@ -32,7 +32,7 @@ import {
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { getRoleLabel, getUserRoles } from "@/lib/access-control";
-import { clearToken } from "@/lib/auth-token";
+import { clearToken, markExplicitLogout } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useGetCurrentUserQuery, useLogoutMutation } from "@/store/services/auth.service";
@@ -46,11 +46,14 @@ function toTitle(segment: string): string {
     products: "Sản phẩm",
     categories: "Nhóm / loại hàng",
     orders: "Xuất kho & giao hàng",
+    returns: "Hàng trả / RMA",
     inbound: "Nhập hàng",
     "purchase-orders": "Đơn nhập hàng",
     putaway: "Sắp xếp vào kho",
     customers: "Khách hàng",
     suppliers: "Nhà cung cấp",
+    locations: "Vị trí lưu trữ",
+    "cycle-counts": "Kiểm kê kho",
     history: "Nhật ký hoạt động",
     reports: "Báo cáo",
     settings: "Cài đặt hệ thống",
@@ -101,6 +104,7 @@ export function Navbar() {
   }, [user?.roles]);
 
   const clearClientSession = () => {
+    markExplicitLogout();
     clearToken();
     dispatch(baseApi.util.resetApiState());
     router.replace("/login");

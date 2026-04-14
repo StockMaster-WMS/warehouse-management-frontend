@@ -1,4 +1,5 @@
 const AUTH_TOKEN_CHANGED_EVENT = "auth-token-changed";
+const AUTH_EXPLICIT_LOGOUT_KEY = "auth-explicit-logout";
 
 let accessToken = "";
 
@@ -27,6 +28,9 @@ export function getAccessToken(): string {
 
 export function setAccessToken(token: string | null | undefined): string {
   accessToken = normalizeAccessToken(token);
+  if (accessToken && typeof window !== "undefined") {
+    window.sessionStorage.removeItem(AUTH_EXPLICIT_LOGOUT_KEY);
+  }
   emitAccessTokenChange();
   return accessToken;
 }
@@ -46,6 +50,16 @@ export function subscribeToAccessTokenChanges(onStoreChange: () => void) {
 
 export function hasClientAccessTokenSnapshot() {
   return hasUsableAccessToken(accessToken);
+}
+
+export function markExplicitLogout() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(AUTH_EXPLICIT_LOGOUT_KEY, "1");
+}
+
+export function hasExplicitLogoutSnapshot() {
+  if (typeof window === "undefined") return false;
+  return window.sessionStorage.getItem(AUTH_EXPLICIT_LOGOUT_KEY) === "1";
 }
 
 export const saveToken = setAccessToken;

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveToken } from "@/lib/auth-token";
+import { hasExplicitLogoutSnapshot, saveToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useLoginMutation, useRefreshTokenMutation } from "@/store/services/auth.service";
@@ -30,6 +30,10 @@ export default function LoginPage() {
   const [refreshToken] = useRefreshTokenMutation();
 
   useEffect(() => {
+    if (hasExplicitLogoutSnapshot()) {
+      return;
+    }
+
     let cancelled = false;
 
     refreshToken()
