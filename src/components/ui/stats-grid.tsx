@@ -29,10 +29,7 @@ export function StatsGrid({ stats, cols = 4, isLoading }: StatsGridProps) {
         return (
             <div className={cn("grid gap-4", colClass)}>
                 {Array.from({ length: cols }).map((_, i) => (
-                    <div
-                        key={`stat-skeleton-${i}`}
-                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                    >
+                    <div key={`stat-skeleton-${i}`} className="ui-surface p-5">
                         <Skeleton className="mb-2 h-3 w-16" />
                         <Skeleton className="h-8 w-24" />
                     </div>
@@ -48,25 +45,25 @@ export function StatsGrid({ stats, cols = 4, isLoading }: StatsGridProps) {
                     <div
                         key={stat.label}
                         className={cn(
-                            "group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900",
-                            stat.onClick && "cursor-pointer hover:border-indigo-200 hover:shadow-md dark:hover:border-indigo-900",
+                            "ui-surface group relative overflow-hidden p-5 transition-all",
+                            stat.onClick && "cursor-pointer hover:border-primary/30 hover:shadow-md",
                             stat.className
                         )}
                         onClick={stat.onClick}
                     >
                         <div className="mb-2 flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <span className="ui-label">
                                 {stat.label}
                             </span>
                             {stat.icon && (
-                                <stat.icon className={cn("h-4 w-4 opacity-70 transition-colors", stat.color ?? "text-slate-400", stat.onClick && "group-hover:text-indigo-500")} />
+                                <stat.icon className={cn("h-4 w-4 opacity-70 transition-colors", stat.color ?? "text-muted-foreground", stat.onClick && "group-hover:text-primary")} />
                             )}
                         </div>
-                        <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                        <div className="text-2xl font-bold text-foreground">
                             {stat.value}
                         </div>
                         {stat.onClick && (
-                            <div className="absolute bottom-0 left-0 h-1 w-full translate-y-full bg-indigo-500 transition-transform group-hover:translate-y-0" />
+                            <div className="absolute bottom-0 left-0 h-1 w-full translate-y-full bg-primary transition-transform group-hover:translate-y-0" />
                         )}
                     </div>
                 );
