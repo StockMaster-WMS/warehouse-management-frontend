@@ -339,13 +339,15 @@ export function OverviewTab() {
             </div>
 
             <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-                <DialogContent className="overflow-hidden rounded-lg p-0 shadow-2xl sm:max-w-140">
-                    <DialogHeader className="p-6 pb-0">
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-primary">
-                            <div className="ui-icon-tile h-8 w-8 bg-primary text-primary-foreground">
+                <DialogContent className="w-[calc(100vw-2rem)] overflow-hidden rounded-lg p-0 shadow-2xl sm:max-w-2xl">
+                    <DialogHeader className="border-b border-border bg-muted/45 p-5">
+                        <DialogTitle className="flex min-w-0 items-center gap-3 text-lg font-black text-foreground">
+                            <div className="ui-icon-tile h-9 w-9 bg-primary text-primary-foreground">
                                 <Package2 className="h-5 w-5" />
                             </div>
-                            {detailItem?.salesOrderNumber || "Chi tiết Picking"}
+                            <span className="truncate">
+                                {detailItem?.salesOrderNumber || "Chi tiết Picking"}
+                            </span>
                         </DialogTitle>
                     </DialogHeader>
                     {isDetailLoading ? (
@@ -354,82 +356,88 @@ export function OverviewTab() {
                             <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">Đang truy xuất dữ liệu...</p>
                         </div>
                     ) : detailItem ? (
-                        <div className="p-6">
-                            <div className="overflow-hidden bg-card">
-                                <div className="flex items-center justify-between border-b border-border px-0 py-4">
-                                    <div className="flex flex-col">
-                                        <span className="ui-label mb-0.5">Pick sequence</span>
-                                        <span className="text-sm font-black text-primary">SEQ-{detailItem.pickSequence || 1}</span>
-                                    </div>
+                        <div className="space-y-4 p-5">
+                            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                                <div className="ui-muted-surface p-4">
+                                    <p className="ui-label mb-1">Thứ tự lấy hàng</p>
+                                    <p className="text-sm font-black text-primary">SEQ-{detailItem.pickSequence || 1}</p>
+                                </div>
+                                <div className="flex sm:justify-end">
                                     <StatusBadge tone={detailItem.status === "PICKED" ? "success" : (detailItem.qtyPicked || 0) > 0 ? "warning" : "info"}>
                                         {detailItem.status === "PICKED" ? "Hoàn tất" : (detailItem.qtyPicked || 0) > 0 ? "Đang lấy" : "Chờ lấy"}
                                     </StatusBadge>
                                 </div>
+                            </div>
 
-                                <div className="py-8 space-y-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <div className="space-y-1">
-                                                <p className="ui-label">SKU / Mã sản phẩm</p>
-                                                <p className="text-base font-black uppercase text-foreground">{detailItem.productSku}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="ui-label">Tên sản phẩm</p>
-                                                <p className="text-sm font-bold leading-relaxed text-muted-foreground">{detailItem.productName || "—"}</p>
-                                            </div>
+                            <div className="ui-surface p-4">
+                                <div className="grid gap-5 md:grid-cols-2">
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <p className="ui-label">SKU / Mã sản phẩm</p>
+                                            <p className="truncate text-base font-black uppercase text-foreground">{detailItem.productSku}</p>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <p className="ui-label">Danh mục</p>
-                                                <p className="text-xs font-bold text-muted-foreground">{detailItem.categoryName || "—"}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="ui-label">Mã vạch</p>
-                                                <p className="font-mono text-xs font-bold text-muted-foreground">{detailItem.barcodeEan13 || "—"}</p>
-                                            </div>
+                                        <div className="space-y-1">
+                                            <p className="ui-label">Tên sản phẩm</p>
+                                            <p className="text-sm font-bold leading-relaxed text-muted-foreground">{detailItem.productName || "—"}</p>
                                         </div>
                                     </div>
-
-                                    <div className="flex items-center justify-between border-y border-border py-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="ui-icon-tile h-12 w-12 text-primary">
-                                                <MapPin className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <p className="ui-label mb-0.5">Vị trí lưu kho</p>
-                                                <p className="text-2xl font-black uppercase leading-none tabular-nums text-foreground">{detailItem.locationCode || "—"}</p>
-                                            </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <p className="ui-label">Danh mục</p>
+                                            <p className="truncate text-xs font-bold text-muted-foreground">{detailItem.categoryName || "—"}</p>
                                         </div>
-                                        { (detailItem.zone || detailItem.aisle) && (
-                                            <div className="flex gap-2">
-                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Khu vực {detailItem.zone}</span>
-                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Dãy {detailItem.aisle}</span>
-                                            </div>
-                                        )}
+                                        <div className="space-y-1">
+                                            <p className="ui-label">Mã vạch</p>
+                                            <p className="truncate font-mono text-xs font-bold text-muted-foreground">{detailItem.barcodeEan13 || "—"}</p>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
-                                    <div className="flex flex-col items-center justify-center py-6">
-                                        <span className="mb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Số lượng đặt</span>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyToPick}</span>
-                                            <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
+                            <div className="ui-surface p-4">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex min-w-0 items-center gap-4">
+                                        <div className="ui-icon-tile h-12 w-12 text-primary">
+                                            <MapPin className="h-6 w-6" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="ui-label mb-1">Vị trí lưu kho</p>
+                                            <p className="truncate text-2xl font-black uppercase leading-none tabular-nums text-foreground">{detailItem.locationCode || "—"}</p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center py-6">
-                                        <span className="mb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Đã lấy</span>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyPicked || 0}</span>
-                                            <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
+                                    {(detailItem.zone || detailItem.aisle) && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {detailItem.zone ? (
+                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Khu vực {detailItem.zone}</span>
+                                            ) : null}
+                                            {detailItem.aisle ? (
+                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Dãy {detailItem.aisle}</span>
+                                            ) : null}
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="ui-muted-surface p-4 text-center">
+                                    <span className="ui-label">Số lượng đặt</span>
+                                    <div className="mt-2 flex items-baseline justify-center gap-1">
+                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyToPick}</span>
+                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center py-6">
-                                        <span className="mb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Hiện có</span>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyAvailable ?? "0"}</span>
-                                            <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
-                                        </div>
+                                </div>
+                                <div className="ui-muted-surface p-4 text-center">
+                                    <span className="ui-label">Đã lấy</span>
+                                    <div className="mt-2 flex items-baseline justify-center gap-1">
+                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyPicked || 0}</span>
+                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
+                                    </div>
+                                </div>
+                                <div className="ui-muted-surface p-4 text-center">
+                                    <span className="ui-label">Hiện có</span>
+                                    <div className="mt-2 flex items-baseline justify-center gap-1">
+                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyAvailable ?? "0"}</span>
+                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
                                     </div>
                                 </div>
                             </div>
