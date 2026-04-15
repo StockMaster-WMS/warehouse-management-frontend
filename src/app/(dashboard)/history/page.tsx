@@ -91,11 +91,13 @@ function entityLabel(log: AuditLog) {
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [moduleFilter, setModuleFilter] = useState("ALL");
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 300);
 
   const { data, isLoading, isFetching, error, refetch } = useGetAuditLogsQuery({
     page: 0,
     size: 50,
+    module: moduleFilter,
     actionType: typeFilter,
     keyword: debouncedSearch,
   });
@@ -128,7 +130,7 @@ export default function HistoryPage() {
       />
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -138,6 +140,22 @@ export default function HistoryPage() {
               className="h-10 pl-9 rounded-xl border-slate-200 dark:border-slate-800"
             />
           </div>
+          <Select value={moduleFilter} onValueChange={(value) => setModuleFilter(value || "ALL")}>
+            <SelectTrigger className="h-10 w-[160px] rounded-xl border-slate-200 shrink-0 dark:border-slate-800">
+              <Filter className="mr-2 h-4 w-4 text-slate-400" />
+              <SelectValue placeholder="Tất cả module" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="ALL">Tất cả module</SelectItem>
+              <SelectItem value="PRODUCT">Sản phẩm</SelectItem>
+              <SelectItem value="STOCK">Tồn kho</SelectItem>
+              <SelectItem value="INBOUND">Nhập kho</SelectItem>
+              <SelectItem value="OUTBOUND">Xuất kho</SelectItem>
+              <SelectItem value="SUPPLIER">Nhà cung cấp</SelectItem>
+              <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
+              <SelectItem value="WAREHOUSE">Kho bãi</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value || "ALL")}>
             <SelectTrigger className="h-10 w-[190px] rounded-xl border-slate-200 shrink-0 dark:border-slate-800">
               <Filter className="mr-2 h-4 w-4 text-slate-400" />

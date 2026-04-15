@@ -1,3 +1,5 @@
+// Tạo slug từ tên tiếng Việt không dấu, giống backend
+
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -75,11 +77,9 @@ export function useCategoryEditForm(categoryId: string) {
   }, [parentCategory]);
 
   const computedPath = useMemo(() => {
-    if (!codeUpper) return "";
-    if (!parentCategory) return codeUpper;
-    const parentPath = parentCategory.path ?? "";
-    return parentPath ? `${parentPath}/${codeUpper}` : codeUpper;
-  }, [codeUpper, parentCategory]);
+    const parentPath = parentCategory?.path ?? "";
+    return parentPath;
+  }, [parentCategory]);
 
   const descendantIds = useMemo(() => {
     if (!categoryId) return new Set<string>();

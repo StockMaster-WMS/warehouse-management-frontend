@@ -24,7 +24,7 @@ export interface Supplier {
 }
 
 export interface CreateSupplierRequest {
-  code: string;
+  code?: string;
   name: string;
   taxCode?: string;
   contactName?: string;
