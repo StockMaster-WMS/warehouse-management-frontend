@@ -1,6 +1,6 @@
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { SalesOrder, UpdateSalesOrderPayload } from "@/types/sales-order";
+import type { SalesOrder, UpdateSalesOrderPayload, SalesOrderAction } from "@/types/sales-order";
 
 export type GetOrdersParams = {
   page?: number;
@@ -84,7 +84,7 @@ const orderApi = baseApi.injectEndpoints({
         method: "POST",
         data,
       }),
-      invalidatesTags: [{ type: "SalesOrder", id: "LIST" }],
+      invalidatesTags: [{ type: "SalesOrder", id: "LIST" }, { type: "PickingItem", id: "LIST" }],
     }),
 
     updateSalesOrder: builder.mutation<ApiResponse<SalesOrder>, { id: string; body: UpdateSalesOrderPayload }>({
@@ -96,6 +96,7 @@ const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, arg) => [
         { type: "SalesOrder", id: arg.id },
         { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
 
@@ -107,39 +108,23 @@ const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, id) => [
         { type: "SalesOrder", id },
         { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
 
-    startPicking: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
-      query: ({ salesOrderId }) => ({
-        url: `/sales-orders/${salesOrderId}/start-picking`,
+    executeSalesOrderAction: builder.mutation<
+      ApiResponse<SalesOrder>,
+      { salesOrderId: string; action: SalesOrderAction }
+    >({
+      query: ({ salesOrderId, action }) => ({
+        url: `/sales-orders/${salesOrderId}/actions`,
         method: "POST",
+        data: { action },
       }),
       invalidatesTags: (_r, _e, arg) => [
         { type: "SalesOrder", id: arg.salesOrderId },
         { type: "SalesOrder", id: "LIST" },
-      ],
-    }),
-
-    markPacked: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
-      query: ({ salesOrderId }) => ({
-        url: `/sales-orders/${salesOrderId}/mark-packed`,
-        method: "POST",
-      }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "SalesOrder", id: arg.salesOrderId },
-        { type: "SalesOrder", id: "LIST" },
-      ],
-    }),
-
-    markShipped: builder.mutation<ApiResponse<SalesOrder>, { salesOrderId: string }>({
-      query: ({ salesOrderId }) => ({
-        url: `/sales-orders/${salesOrderId}/mark-shipped`,
-        method: "POST",
-      }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "SalesOrder", id: arg.salesOrderId },
-        { type: "SalesOrder", id: "LIST" },
+        { type: "PickingItem", id: "LIST" },
       ],
     }),
   }),
@@ -152,7 +137,5 @@ export const {
   useCreateSalesOrderMutation,
   useUpdateSalesOrderMutation,
   useDeleteSalesOrderMutation,
-  useStartPickingMutation,
-  useMarkPackedMutation,
-  useMarkShippedMutation,
+  useExecuteSalesOrderActionMutation,
 } = orderApi;

@@ -12,6 +12,7 @@ type OrdersSearchSectionProps = {
   statusFilter: string;
   onStatusChange: (value: string) => void;
   onClearFilters: () => void;
+  noContainer?: boolean;
 };
 
 export function OrdersSearchSection({
@@ -24,9 +25,13 @@ export function OrdersSearchSection({
   statusFilter,
   onStatusChange,
   onClearFilters,
+  noContainer = false,
 }: OrdersSearchSectionProps) {
+  const showFilters = advancedOpen || advancedCount > 0;
+
   return (
     <SearchToolbar
+      noContainer={noContainer}
       placeholder="Tìm theo số đơn, khách hàng, địa chỉ..."
       value={searchInput}
       onValueChange={onSearchChange}
@@ -40,14 +45,16 @@ export function OrdersSearchSection({
         />
       }
       filters={
-        <OrdersFiltersPanel
-          open={advancedOpen}
-          advancedCount={advancedCount}
-          hasAnyFilter={hasAnyFilter}
-          statusFilter={statusFilter}
-          onStatusChange={onStatusChange}
-          onClear={onClearFilters}
-        />
+        showFilters ? (
+          <OrdersFiltersPanel
+            open={advancedOpen}
+            advancedCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            statusFilter={statusFilter}
+            onStatusChange={onStatusChange}
+            onClear={onClearFilters}
+          />
+        ) : null
       }
     />
   );

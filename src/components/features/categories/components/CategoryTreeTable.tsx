@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, ChevronRight, MoreHorizontal, Package, Tag, X } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, Package, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,35 +15,33 @@ import { cn } from "@/lib/utils";
 import type { Category } from "@/types/category";
 
 interface CategoryTreeTableProps {
-  categories: Category[];
   treeModel: {
     visibleNodes: Array<{ cat: Category; treeDepth: number; hasChildren: boolean }>;
     effectiveExpandedIds: Set<string>;
     displayCount: number;
     hasQuery: boolean;
   };
-  childrenByParentId: Map<string, Category[]>;
   isLoading: boolean;
   isFetching: boolean;
   error: unknown;
   onRetry: () => void;
   onToggleExpanded: (id: string) => void;
   onDeleteCategory: (category: Category) => void;
+  noContainer?: boolean;
 }
 
 export function CategoryTreeTable({
-  categories,
   treeModel,
-  childrenByParentId,
   isLoading,
   isFetching,
   error,
   onRetry,
   onToggleExpanded,
   onDeleteCategory,
+  noContainer = false,
 }: CategoryTreeTableProps) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu...
@@ -119,7 +117,7 @@ export function CategoryTreeTable({
           ) : (
             <>
               <div
-                className="grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+                className="grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 bg-slate-50/90 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10"
                 aria-hidden
               >
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -144,7 +142,8 @@ export function CategoryTreeTable({
                     role="treeitem"
                     aria-level={treeDepth + 1}
                     aria-expanded={hasChildren ? isExpanded : undefined}
-                    className="group grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 px-6 py-4 transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/80 dark:border-slate-800 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/60"
+                    aria-selected={false}
+                    className="group grid grid-cols-[minmax(0,1fr)_8rem_9rem_3rem] items-center gap-2 border-b border-slate-100 px-6 py-4 transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:border-slate-800 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/60"
                   >
                     <div className="flex min-w-0 items-stretch">
                       <div className="flex shrink-0 self-stretch" aria-hidden>
@@ -234,7 +233,7 @@ export function CategoryTreeTable({
                             <DropdownMenuLabel>Nhóm / loại</DropdownMenuLabel>
                           </DropdownMenuGroup>
                           <DropdownMenuItem className="rounded-lg" render={<Link href={`/categories/${cat.id}/edit`} />}>
-                            <X className="mr-2 h-4 w-4" />
+                            <Tag className="mr-2 h-4 w-4" />
                             Sửa thông tin
                           </DropdownMenuItem>
                           <DropdownMenuItem className="rounded-lg" render={<Link href="/products" />}>
@@ -262,6 +261,16 @@ export function CategoryTreeTable({
           )}
         </div>
       </div>
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+      {content}
     </div>
   );
 }

@@ -1,28 +1,32 @@
 "use client";
 
-import { AlertCircle, Layers3, Plus, SearchX } from "lucide-react";
+import { Layers3, Plus, SearchX, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
     LocationFormDialog,
+    BulkLocationDialog,
+    LocationBarcodeModal,
     LocationsFilters,
     LocationsStats,
     LocationsTable,
     useLocationsPageLogic,
 } from "@/components/features/locations";
 import { apiErrMessage } from "@/types/api";
+import { useState } from "react";
+import type { Location } from "@/types/location";
+import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 
 export default function LocationsPage() {
-    const {
+    const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
+    const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+        const {
         searchInput,
         setSearchInput,
         warehouseFilter,
         setWarehouseFilter,
         warehouses,
-        warehousesError,
         isWarehousesLoading,
         selectedWarehouseLabel,
 
@@ -34,8 +38,7 @@ export default function LocationsPage() {
         totalLocations,
         activeLocations,
         inactiveLocations,
-        filteredLocations,
-        visibleLocations,
+        locations,
 
         page,
         setPage,
@@ -71,15 +74,27 @@ export default function LocationsPage() {
                 title="Vị trí lưu trữ"
                 description="Quản lý vị trí theo kho và tra cứu nhanh zone/aisle/rack/bin để vận hành nhập - xuất chính xác."
                 actions={
-                    <Button
-                        type="button"
-                        size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700"
-                        onClick={openCreateDialog}
-                    >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Thêm vị trí
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                            onClick={() => setIsBulkDialogOpen(true)}
+                        >
+                            <Sparkles className="mr-1 h-3.5 w-3.5" />
+                            Tạo hàng loạt
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            onClick={openCreateDialog}
+                        >
+                            <Plus className="mr-1 h-4 w-4" />
+                            Thêm vị trí
+                        </Button>
+                    </div>
                 }
             />
 
@@ -89,14 +104,13 @@ export default function LocationsPage() {
                 </p>
             ) : null}
 
-            {!isLocationsLoading && !locationsError ? (
-                <LocationsStats
-                    totalLocations={totalLocations}
-                    activeLocations={activeLocations}
-                    inactiveLocations={inactiveLocations}
-                    filteredCount={filteredLocations.length}
-                />
-            ) : null}
+            <LocationsStats
+                totalLocations={totalLocations}
+                activeLocations={activeLocations}
+                inactiveLocations={inactiveLocations}
+                filteredCount={locations.length}
+                isLoading={isLocationsLoading}
+            />
 
             <LocationsFilters
                 searchInput={searchInput}
@@ -108,44 +122,7 @@ export default function LocationsPage() {
                 warehouses={warehouses}
             />
 
-            {isLocationsLoading ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                        <div
-                            key={`location-skeleton-${index}`}
-                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                        >
-                            <div className="space-y-3">
-                                <Skeleton className="h-5 w-36" />
-                                <Skeleton className="h-4 w-52" />
-                                <Skeleton className="h-4 w-44" />
-                                <div className="grid grid-cols-2 gap-2 pt-1">
-                                    <Skeleton className="h-7 w-full rounded-lg" />
-                                    <Skeleton className="h-7 w-full rounded-lg" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : locationsError ? (
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <EmptyState
-                        icon={AlertCircle}
-                        title="Không thể tải danh sách vị trí"
-                        description={apiErrMessage(locationsError, "Đã xảy ra lỗi khi tải vị trí lưu trữ.")}
-                        action={
-                            <button
-                                type="button"
-                                onClick={() => refetchLocations()}
-                                className="inline-flex h-9 items-center rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                                Thử lại
-                            </button>
-                        }
-                        className="py-10"
-                    />
-                </div>
-            ) : filteredLocations.length === 0 ? (
+            {!isLocationsLoading && !locationsError && locations.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <EmptyState
                         icon={searchInput.trim() ? SearchX : Layers3}
@@ -153,34 +130,36 @@ export default function LocationsPage() {
                         description={
                             searchInput.trim()
                                 ? "Thử từ khóa khác hoặc đổi bộ lọc kho để tìm lại dữ liệu."
-                                : "Kho hiện tại chưa có dữ liệu vị trí. Bạn có thể tạo vị trí từ API/backoffice."
+                                : "Kho hiện tại chưa có dữ liệu vị trí. Bạn có thể tạo vị trí mới bằng công cụ tạo hàng loạt."
                         }
                         className="py-10"
                     />
                 </div>
             ) : (
                 <LocationsTable
-                    visibleLocations={visibleLocations}
+                    visibleLocations={locations}
                     warehouseNameMap={warehouseNameMap}
                     page={page}
                     totalPages={totalPages}
-                    totalElements={filteredLocations.length}
+                    totalElements={isLocationsLoading || locationsError ? 0 : totalLocations}
                     canGoPrev={canGoPrev}
                     canGoNext={canGoNext}
+                    isLoading={isLocationsLoading}
+                    errorMessage={
+                        locationsError
+                            ? apiErrMessage(locationsError, "Unable to find instance for warehouse-service")
+                            : null
+                    }
                     isFetching={isLocationsFetching}
                     onPrevPage={() => setPage((current) => Math.max(0, current - 1))}
                     onNextPage={() => setPage((current) => current + 1)}
+                    onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}
+                    onPrintBarcode={setBarcodeLocation}
                 />
             )}
-
-            {warehousesError ? (
-                <p className="text-xs text-amber-600 dark:text-amber-300">
-                    Không thể tải đầy đủ tên kho. Dữ liệu vị trí vẫn hiển thị bình thường.
-                </p>
-            ) : null}
-
+            
             <LocationFormDialog
                 open={isFormOpen}
                 onOpenChange={handleOpenFormChange}
@@ -194,13 +173,25 @@ export default function LocationsPage() {
                 onSubmit={handleSubmitForm}
             />
 
+            <BulkLocationDialog
+                open={isBulkDialogOpen}
+                onOpenChange={setIsBulkDialogOpen}
+                warehouses={warehouses}
+                onSuccess={() => refetchLocations()}
+            />
+
             <DeleteConfirmDialog
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={handleDeleteLocation}
-                itemName={deleteTarget?.code || deleteTarget?.name || ""}
-                title="Xóa vị trí"
-                description="Hành động này không thể hoàn tác."
+                itemName={deleteTarget?.code || ""}
+            />
+
+            <LocationBarcodeModal
+                open={!!barcodeLocation}
+                onOpenChange={(open) => !open && setBarcodeLocation(null)}
+                location={barcodeLocation}
+                warehouseName={barcodeLocation ? warehouseNameMap[barcodeLocation.warehouseId] || "" : ""}
             />
         </div>
     );

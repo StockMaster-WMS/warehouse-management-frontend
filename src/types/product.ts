@@ -1,20 +1,21 @@
 export interface Product {
   id: string;
   sku: string;
-  barcodeEan13: string;
+  barcodeEan13: string | null;
   name: string;
   categoryId: string;
   categoryName?: string | null;
   primarySupplierId: string | null;
   baseUnit: string;
-  weightKg: number;
-  lengthCm: number;
-  widthCm: number;
-  heightCm: number;
-  volumeCm3: number;
+  weightKg: number | null;
+  volumeCm3: number | null;
   minStockQty: number;
   isLotTracked: boolean;
   isExpiryTracked: boolean;
+  isFrozen: boolean;
+  isFragile: boolean;
+  isHazmat: boolean;
+  isHeavy: boolean;
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   updatedAt: string;
@@ -30,26 +31,33 @@ export interface UpdateProductPayload {
   primarySupplierId?: string | null;
   baseUnit: string;
   weightKg?: number | null;
-  lengthCm?: number | null;
-  widthCm?: number | null;
-  heightCm?: number | null;
+  volumeCm3?: number | null;
   minStockQty?: number | null;
   isLotTracked?: boolean;
   isExpiryTracked?: boolean;
+  isFrozen?: boolean;
+  isFragile?: boolean;
+  isHazmat?: boolean;
+  isHeavy?: boolean;
   status?: "ACTIVE" | "INACTIVE";
 }
 
 export interface CreateProductPayload {
   sku?: string;
-  barcodeEan13: string;
+  barcodeEan13?: string;
   name: string;
   categoryId: string;
-  primarySupplierId: string | null;
+  primarySupplierId?: string | null;
   baseUnit: string;
-  weightKg: number;
-  lengthCm: number;
-  widthCm: number;
-  heightCm: number;
+  weightKg?: number | null;
+  volumeCm3?: number | null;
+  minStockQty?: number;
+  isLotTracked?: boolean;
+  isExpiryTracked?: boolean;
+  isFrozen?: boolean;
+  isFragile?: boolean;
+  isHazmat?: boolean;
+  isHeavy?: boolean;
 }
 
 export interface ProductImportRowError {

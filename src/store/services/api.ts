@@ -46,9 +46,11 @@ export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: axiosBaseQuery(),
   tagTypes: [
+    "Auth",
     "Category",
     "Product",
     "Stock",
+    "StockMovement",
     "Warehouse",
     "Supplier",
     "Customer",
@@ -61,6 +63,10 @@ export const baseApi = createApi({
     "PickingItem",
     "Location",
     "Order",
+    "ReturnRequest",
+    "User",
+    "CycleCount",
+    "AuditLog",
   ],
   endpoints: () => ({}),
 });

@@ -44,49 +44,53 @@ export default function ProductsPage() {
 
       <ProductStatsGrid stats={logic.stats} />
 
-      <ProductsSearchSection
-        searchInput={logic.searchInput}
-        onSearchChange={logic.setSearchInput}
-        advancedOpen={logic.advancedOpen}
-        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
-        advancedCount={logic.advancedCount}
-        hasAnyFilter={logic.hasAnyFilter}
-        onClearFilters={logic.clearFilters}
-        statusFilter={logic.statusFilter}
-        categoryFilter={logic.categoryFilter}
-        warehouseFilter={logic.warehouseFilter}
-        onStatusChange={logic.setStatusFilter}
-        onCategoryChange={logic.setCategoryFilter}
-        onWarehouseChange={logic.setWarehouseFilter}
-        categoryOptionsData={logic.categoryOptionsData}
-        categoriesLoading={logic.categoriesLoading}
-        categoriesError={logic.categoriesError}
-        onRefetchCategories={logic.refetchCategories}
-        warehouseOptionsData={logic.warehouseOptionsData}
-        warehousesLoading={logic.warehousesLoading}
-        warehousesError={logic.warehousesError}
-        onRefetchWarehouses={logic.refetchWarehouses}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <ProductsSearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={logic.setSearchInput}
+          advancedOpen={logic.advancedOpen}
+          onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+          advancedCount={logic.advancedCount}
+          hasAnyFilter={logic.hasAnyFilter}
+          onClearFilters={logic.clearFilters}
+          statusFilter={logic.statusFilter}
+          categoryFilter={logic.categoryFilter}
+          warehouseFilter={logic.warehouseFilter}
+          onStatusChange={logic.setStatusFilter}
+          onCategoryChange={logic.setCategoryFilter}
+          onWarehouseChange={logic.setWarehouseFilter}
+          categoryOptionsData={logic.categoryOptionsData}
+          categoriesLoading={logic.categoriesLoading}
+          categoriesError={logic.categoriesError}
+          onRefetchCategories={logic.refetchCategories}
+          warehouseOptionsData={logic.warehouseOptionsData}
+          warehousesLoading={logic.warehousesLoading}
+          warehousesError={logic.warehousesError}
+          onRefetchWarehouses={logic.refetchWarehouses}
+        />
 
-      <ProductTable
-        products={logic.products}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        error={logic.error}
-        hasAnyFilter={logic.hasAnyFilter}
-        onRequestDelete={logic.handleRequestDelete}
-        onRetry={logic.refetch}
-        onClearFilters={logic.clearFilters}
-        pageIndex={logic.page}
-        pageSize={PRODUCTS_PAGE_SIZE}
-        page={logic.page}
-        totalElements={logic.totalElements}
-        totalPages={logic.serverTotalPages}
-        canGoPrev={logic.canGoPrev}
-        canGoNext={logic.canGoNext}
-        onPrevPage={logic.handlePrevPage}
-        onNextPage={logic.handleNextPage}
-      />
+        <ProductTable
+          noContainer
+          products={logic.products}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          error={logic.error}
+          hasAnyFilter={logic.hasAnyFilter}
+          onRequestDelete={logic.handleRequestDelete}
+          onRetry={logic.refetch}
+          onClearFilters={logic.clearFilters}
+          pageIndex={logic.page}
+          pageSize={PRODUCTS_PAGE_SIZE}
+          page={logic.page}
+          totalElements={logic.totalElements}
+          totalPages={logic.serverTotalPages}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          onPrevPage={logic.handlePrevPage}
+          onNextPage={logic.handleNextPage}
+        />
+      </div>
 
       <ProductDeleteDialog
         open={logic.isDeleteDialogOpen}

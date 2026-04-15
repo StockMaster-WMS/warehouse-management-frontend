@@ -18,8 +18,12 @@ import { useCreateOrderForm } from "@/components/features/orders";
 
 function NewOrderFormContent() {
   const {
-    customerName,
-    setCustomerName,
+    customerId,
+    customerSearch,
+    setCustomerSearch,
+    customerOptions,
+    customersLoading,
+    handleCustomerChange,
     phone,
     setPhone,
     address,
@@ -37,6 +41,7 @@ function NewOrderFormContent() {
     warehouseOptions,
     warehouseIdFromUrl,
     creating,
+    addressFormKey,
     onSubmit,
   } = useCreateOrderForm();
 
@@ -83,16 +88,24 @@ function NewOrderFormContent() {
                   <label className="text-xs font-bold text-slate-500 uppercase">
                     Khách hàng / Đối tác <span className="text-rose-500">*</span>
                   </label>
-                  <Input
-                    value={customerName}
-                    onChange={(e) => {
-                      setCustomerName(e.target.value);
-                      clearFieldError("customerName");
-                    }}
-                    aria-invalid={Boolean(errors.customerName)}
-                    placeholder="Nhập tên khách hàng/đối tác..."
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                  <SearchableSelect
+                    value={customerId}
+                    onValueChange={handleCustomerChange}
+                    options={customerOptions}
+                    dialogTitle="Chọn khách hàng"
+                    placeholder={customersLoading ? "Đang tải khách hàng..." : "Chọn hoặc gõ để tìm khách hàng..."}
+                    searchPlaceholder="Tìm theo mã, tên, email, số điện thoại..."
+                    emptyText="Không tìm thấy khách hàng đang hoạt động"
+                    serverSearch
+                    searchQuery={customerSearch}
+                    onSearchChange={setCustomerSearch}
+                    loading={customersLoading}
+                    error={Boolean(errors.customerId || errors.customerName)}
+                    className="focus:ring-indigo-500/30"
                   />
+                  {errors.customerId ? (
+                    <p className="text-xs font-medium text-rose-600">{errors.customerId}</p>
+                  ) : null}
                   {errors.customerName ? (
                     <p className="text-xs font-medium text-rose-600">{errors.customerName}</p>
                   ) : null}
@@ -117,9 +130,10 @@ function NewOrderFormContent() {
                   Địa chỉ giao hàng <span className="text-rose-500">*</span>
                 </label>
                 <AddressForm
+                  key={addressFormKey}
                   value={address}
                   onChange={setAddress}
-                  required
+                  required={false}
                 />
                 {errors.line1 ? <p className="text-xs font-medium text-rose-600">{errors.line1}</p> : null}
                 {errors.ward ? <p className="text-xs font-medium text-rose-600">{errors.ward}</p> : null}
@@ -190,12 +204,6 @@ function NewOrderFormContent() {
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
                   {errors.priority ? <p className="text-xs font-medium text-rose-600">{errors.priority}</p> : null}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-slate-500">Trạng thái</label>
-                  <Input value="PENDING" disabled className="border-slate-200 bg-slate-100 font-mono text-sm" />
-                  <p className="text-[11px] text-slate-400">Đơn mới tạo luôn bắt đầu ở trạng thái PENDING.</p>
                 </div>
               </div>
 

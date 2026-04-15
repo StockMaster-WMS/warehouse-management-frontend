@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -308,19 +308,20 @@ export default function NewPurchaseOrderPage() {
   }
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 pb-20">
+    <div className="w-full space-y-5 pb-20">
       <PageHeader
         title="Tạo đơn nhập hàng"
-        description="Bước 1: Lưu header đơn. Bước 2: Thêm từng dòng hàng (POST /api/po-items)."
+        description="Điền thông tin đơn (Bước 1) rồi thêm từng dòng hàng (Bước 2)."
         actions={
           <Button
             render={<Link href="/purchase-orders" />}
             nativeButton={false}
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full hover:bg-slate-100"
+            variant="outline"
+            size="sm"
+            className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Danh sách
           </Button>
         }
       />
@@ -376,13 +377,19 @@ export default function NewPurchaseOrderPage() {
       />
 
       {purchaseOrderId && (
-        <div className="text-center">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-6 py-4 shadow-sm dark:border-indigo-900/40 dark:bg-indigo-950/20">
+          <div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Hoàn tất thêm dòng hàng?</p>
+            <p className="text-xs text-slate-500 mt-0.5">Xem chi tiết đơn, phê duyệt và tạo phiếu nhập hàng từ đây.</p>
+          </div>
           <Button
             render={<Link href={`/purchase-orders/${purchaseOrderId}`} />}
             nativeButton={false}
-            variant="outline"
+            size="sm"
+            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5 shrink-0"
           >
             Xem chi tiết & nhận hàng
+            <ExternalLink className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}

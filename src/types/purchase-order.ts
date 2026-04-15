@@ -1,4 +1,8 @@
+// ============================================================
+// Purchase Order – types & payloads
+// ============================================================
 import type { ApiResponse, PagedResponse } from "@/types/api";
+import type { PutawayTask } from "@/types/putaway";
 
 export type PurchaseOrderStatus =
   | "DRAFT"
@@ -56,6 +60,8 @@ export interface UpdatePurchaseOrderPayload {
   }>;
 }
 
+// ---- PO Line Items ----
+
 export interface PoItem {
   id: string;
   purchaseOrderId: string;
@@ -87,57 +93,11 @@ export interface UpdatePoItemPayload {
   };
 }
 
-export type PutawayTaskStatus =
-  | "PENDING"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "CANCELLED";
-
-export interface PutawayTask {
-  id: string;
-  poItemId?: string | null;
-  purchaseOrderId?: string | null;
-  inboundReceiptId?: string | null;
-  status: PutawayTaskStatus;
-  suggestedLocationId?: string | null;
-  actualLocationId?: string | null;
-  assigneeId?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface LocationOption {
-  id: string;
-  warehouseId: string;
-  code?: string;
-  name?: string;
-  zone?: string;
-  aisle?: string;
-  rack?: string;
-  level?: number;
-  bin?: string;
-  locationType?: string;
-  status?: string;
-  isActive?: boolean;
-}
-
-export interface PatchPutawayTaskPayload {
-  id: string;
-  body: {
-    suggestedLocationId?: string | null;
-    assigneeId?: string | null;
-    status?: PutawayTaskStatus;
-  };
-}
-
-export interface CompletePutawayPayload {
-  id: string;
-  body: { actualLocationId: string };
-}
-
 export type PurchaseOrderListResponse = ApiResponse<
   PurchaseOrder[] | PagedResponse<PurchaseOrder>
 >;
+
+// ---- Excel Import ----
 
 export interface ImportProductsExcelResult {
   totalRows: number;
@@ -156,3 +116,16 @@ export interface ImportProductsExcelResult {
     message: string;
   }>;
 }
+
+// ============================================================
+// Re-exports for backward compatibility
+// Các file cũ vẫn import từ "@/types/purchase-order" sẽ không bị lỗi
+// ============================================================
+export type {
+  PutawayTask,
+  PutawayTaskStatus,
+  PatchPutawayTaskPayload,
+  CompletePutawayPayload,
+} from "@/types/putaway";
+
+export type { LocationOption } from "@/types/location";

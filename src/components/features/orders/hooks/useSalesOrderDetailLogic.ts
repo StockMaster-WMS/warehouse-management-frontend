@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
+import type { SalesOrderAction } from "@/types/sales-order";
 import {
   useGetSalesOrderByIdQuery,
   useDeleteSalesOrderMutation,
-  useStartPickingMutation,
-  useMarkPackedMutation,
-  useMarkShippedMutation,
+  useExecuteSalesOrderActionMutation,
 } from "@/store/services/order.service";
 import { useGetSoItemsQuery } from "@/store/services/so-item.service";
-import { useGetProductsQuery } from "@/store/services/product.service";
-import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import { useGetProductsByIdsQuery } from "@/store/services/product.service";
+import {
+  useGetWarehouseByIdQuery,
+  useGetWarehousesQuery,
+} from "@/store/services/warehouse.service";
 
 export function useSalesOrderDetailLogic(salesOrderId: string) {
   const router = useRouter();
@@ -28,46 +30,59 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   );
   const soItems = useMemo(() => itemsRes?.data?.content ?? [], [itemsRes]);
 
-  const { data: productsRes } = useGetProductsQuery({ page: 0, size: 200, sort: "updatedAt" });
-  const products = useMemo(() => productsRes?.data?.content ?? [], [productsRes]);
+  const productIds = useMemo(
+    () => [...new Set(soItems.map((item) => String(item.productId)).filter(Boolean))],
+    [soItems],
+  );
+  const { data: productsRes } = useGetProductsByIdsQuery(productIds, {
+    skip: productIds.length === 0,
+  });
+  const products = useMemo(() => productsRes?.data ?? [], [productsRes]);
   const productsById = useMemo(() => new Map(products.map((p) => [String(p.id), p as Product])), [products]);
+
+  const { data: currentWarehouseRes } = useGetWarehouseByIdQuery(so?.warehouseId ?? "", {
+    skip: !so?.warehouseId,
+  });
 
   const { data: warehousesRes } = useGetWarehousesQuery(
     { page: 0, size: 200, sort: "name", sortDir: "asc" },
     { skip: !so },
   );
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
-  const warehouseOptions = useMemo(
-    () => warehouses.map((w) => ({ value: String(w.id), label: String(w.name ?? w.id) })),
-    [warehouses],
-  );
+  const warehouseOptions = useMemo(() => {
+    const options = warehouses.map((w) => ({
+      value: String(w.id),
+      label: String(w.name ?? w.id),
+    }));
+    const currentWarehouse = currentWarehouseRes?.data;
 
-  const warehouseById = useMemo(() => {
-    const map = new Map<string, { name: string; code?: string }>();
-    for (const w of warehouses) {
-      map.set(w.id, { name: w.name, code: w.code });
+    if (
+      currentWarehouse &&
+      !options.some((option) => option.value === String(currentWarehouse.id))
+    ) {
+      return [
+        {
+          value: String(currentWarehouse.id),
+          label: String(currentWarehouse.name ?? currentWarehouse.id),
+        },
+        ...options,
+      ];
     }
-    return map;
-  }, [warehouses]);
+
+    return options;
+  }, [warehouses, currentWarehouseRes]);
 
   const warehouseLabel = useMemo(() => {
-    if (!so) return "-";
-    const warehouse = warehouseById.get(so.warehouseId);
+    const warehouse = currentWarehouseRes?.data;
     if (!warehouse) return "-";
     return warehouse.code ? `${warehouse.name} (${warehouse.code})` : warehouse.name;
-  }, [so, warehouseById]);
+  }, [currentWarehouseRes]);
 
   const [deleteSalesOrder, { isLoading: deletingOrder }] = useDeleteSalesOrderMutation();
-  const [startPicking, { isLoading: starting }] = useStartPickingMutation();
-  const [markPacked, { isLoading: packing }] = useMarkPackedMutation();
-  const [markShipped, { isLoading: shipping }] = useMarkShippedMutation();
+  const [executeAction, { isLoading: isExecuting }] = useExecuteSalesOrderActionMutation();
 
   const onDeleteSalesOrder = async () => {
     if (!so) return;
-    const ok = window.confirm(
-      "Xóa đơn xuất? Chỉ thực hiện được khi đơn PENDING và chưa có dòng picking (theo backend).",
-    );
-    if (!ok) return;
 
     try {
       const res = await deleteSalesOrder(so.id).unwrap();
@@ -82,20 +97,40 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     }
   };
 
-  const onStartPicking = async () => {
+  const runOrderAction = async (
+    action: SalesOrderAction,
+    successMessage: string,
+    fallbackError: string,
+  ) => {
     if (!so) return;
+
+    try {
+      const res = await executeAction({ salesOrderId: so.id, action }).unwrap();
+      if (!res.success) {
+        toast.error(res.message || fallbackError);
+        return;
+      }
+      toast.success(successMessage);
+    } catch (err) {
+      toast.error(apiErrMessage(err, fallbackError));
+    }
+  };
+
+  const onConfirmOrder = async () => {
+    if (soItems.length === 0) {
+      toast.error("Thêm ít nhất 1 dòng hàng trước khi xác nhận đơn.");
+      return;
+    }
+    await runOrderAction("confirm", "Đã xác nhận đơn", "Xác nhận thất bại");
+  };
+
+  const onStartPicking = async () => {
     if (soItems.length === 0) {
       toast.error("Thêm ít nhất 1 dòng hàng trước khi bắt đầu lấy hàng.");
       return;
     }
 
-    try {
-      const res = await startPicking({ salesOrderId: so.id }).unwrap();
-      if (!res.success) toast.error(res.message || "Không thể bắt đầu lấy hàng");
-      else toast.success("Đã chuyển sang PICKING");
-    } catch (err) {
-      toast.error(apiErrMessage(err));
-    }
+    await runOrderAction("start-picking", "Đã chuyển sang PICKING", "Không thể bắt đầu lấy hàng");
   };
 
   const onMarkPacked = async () => {
@@ -104,36 +139,21 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       toast.error("Không thể đóng gói khi đơn chưa có dòng hàng.");
       return;
     }
-    if (so.status === "PICKING") {
-      const ok = window.confirm("Đơn đang PICKING. Chỉ đóng gói khi đã lấy đủ (PICKED). Tiếp tục?");
-      if (!ok) return;
+    if (so.status !== "PICKING") {
+      toast.error("Chỉ đóng gói khi đơn đang PICKING");
+      return;
     }
 
-    try {
-      const res = await markPacked({ salesOrderId: so.id }).unwrap();
-      if (!res.success) toast.error(res.message || "Đóng gói thất bại");
-      else toast.success("Đã đóng gói");
-    } catch (err) {
-      toast.error(apiErrMessage(err));
-    }
+    await runOrderAction("mark-packed", "Đã đóng gói", "Đóng gói thất bại");
   };
 
   const onMarkShipped = async () => {
-    if (!so) return;
     if (soItems.length === 0) {
       toast.error("Không thể xuất kho khi đơn chưa có dòng hàng.");
       return;
     }
-    const ok = window.confirm("Xác nhận xuất kho đơn này?");
-    if (!ok) return;
 
-    try {
-      const res = await markShipped({ salesOrderId: so.id }).unwrap();
-      if (!res.success) toast.error(res.message || "Xuất kho thất bại");
-      else toast.success("Đã xuất kho");
-    } catch (err) {
-      toast.error(apiErrMessage(err));
-    }
+    await runOrderAction("mark-shipped", "Đã xuất kho", "Xuất kho thất bại");
   };
 
   return {
@@ -150,12 +170,11 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     warehouseOptions,
     warehouseLabel,
     deletingOrder,
-    starting,
-    packing,
-    shipping,
+    isExecuting,
     onDeleteSalesOrder,
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
+    onConfirmOrder,
   };
 }

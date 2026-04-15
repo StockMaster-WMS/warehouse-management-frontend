@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 import { Product } from "@/types/product";
 import { StockExpanded } from "@/types/stock";
 import type { Location } from "@/types/location";
@@ -6,9 +7,10 @@ import type { Location } from "@/types/location";
 type ProductHeroSectionProps = {
     product: Product;
     onCopySku: () => void;
+    onPrintBarcode?: () => void;
 };
 
-export function ProductHeroSection({ product, onCopySku }: ProductHeroSectionProps) {
+export function ProductHeroSection({ product, onCopySku, onPrintBarcode }: ProductHeroSectionProps) {
     return (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -19,9 +21,17 @@ export function ProductHeroSection({ product, onCopySku }: ProductHeroSectionPro
                         Mã SKU: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{product.sku}</span>
                     </p>
                 </div>
-                <Button variant="outline" size="sm" className="w-fit border-slate-300" onClick={onCopySku}>
-                    Sao chép SKU
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row mt-2 sm:mt-0">
+                    <Button variant="outline" size="sm" className="w-fit border-slate-300" onClick={onCopySku}>
+                        Sao chép SKU
+                    </Button>
+                    {onPrintBarcode && (
+                        <Button variant="outline" size="sm" className="w-fit border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-300" onClick={onPrintBarcode}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            In mã vạch
+                        </Button>
+                    )}
+                </div>
             </div>
         </section>
     );
@@ -90,7 +100,6 @@ export function ProductStockByLocationList({
                     >
                         <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{locationName}</p>
-                            <p className="truncate text-xs text-slate-500">{stock.locationId}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{stock.qtyOnHand}</p>

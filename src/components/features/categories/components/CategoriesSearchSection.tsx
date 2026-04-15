@@ -6,15 +6,18 @@ interface CategoriesSearchSectionProps {
   query: string;
   onQueryChange: (value: string) => void;
   onClearQuery: () => void;
+  noContainer?: boolean;
 }
 
 export function CategoriesSearchSection({
   query,
   onQueryChange,
   onClearQuery,
+  noContainer = false,
 }: CategoriesSearchSectionProps) {
   return (
     <SearchToolbar
+      noContainer={noContainer}
       placeholder="Tìm theo tên hoặc mã nhóm..."
       value={query}
       onValueChange={onQueryChange}

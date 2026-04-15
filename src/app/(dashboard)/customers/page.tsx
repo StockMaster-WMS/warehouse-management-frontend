@@ -34,45 +34,57 @@ export default function CustomersPage() {
         }
       />
 
-      <CustomersStatsGrid />
-
-      <CustomersSearchSection
-        searchInput={logic.searchInput}
-        onSearchChange={(value) => {
-          logic.setSearchInput(value);
-          logic.setPage(0);
-        }}
-        categoryFilter={logic.categoryFilter}
-        onCategoryChange={(value) => {
-          logic.setCategoryFilter(value);
-          logic.setPage(0);
-        }}
-        advancedOpen={logic.advancedOpen}
-        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
-        advancedCount={logic.advancedCount}
-        hasAnyFilter={logic.hasAnyFilter}
-        onClearFilters={logic.clearFilters}
+      <CustomersStatsGrid
+        total={logic.paged?.total_elements ?? 0}
+        activeOnPage={logic.activeRowsCount}
+        inactiveOnPage={logic.inactiveRowsCount}
+        pageLabel={
+          logic.paged
+            ? `${logic.paged.page + 1}/${Math.max(logic.paged.total_pages, 1)} · ${logic.paged.size}`
+            : "—"
+        }
       />
 
-      <CustomersList
-        rows={logic.rows}
-        page={logic.page}
-        totalElements={logic.paged?.total_elements ?? logic.rows.length}
-        totalPages={logic.paged?.total_pages ?? 1}
-        pageSize={logic.paged?.size ?? CUSTOMERS_PAGE_SIZE}
-        canGoPrev={logic.canGoPrev}
-        canGoNext={logic.canGoNext}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        isError={logic.isError}
-        error={logic.error}
-        hasAnyFilter={logic.hasAnyFilter}
-        onRetry={logic.refetch}
-        onClearFilters={logic.clearFilters}
-        onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
-        onNextPage={() => logic.setPage((p) => p + 1)}
-        onRequestDelete={logic.openDeleteDialog}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <CustomersSearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={(value) => {
+            logic.setSearchInput(value);
+            logic.setPage(0);
+          }}
+          statusFilter={logic.statusFilter}
+          onStatusChange={(value) => {
+            logic.setStatusFilter(value);
+            logic.setPage(0);
+          }}
+          advancedOpen={logic.advancedOpen}
+          onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+          advancedCount={logic.advancedCount}
+          hasAnyFilter={logic.hasAnyFilter}
+          onClearFilters={logic.clearFilters}
+        />
+
+        <CustomersList
+          noContainer
+          rows={logic.rows}
+          page={logic.page}
+          totalElements={logic.paged?.total_elements ?? logic.rows.length}
+          totalPages={logic.paged?.total_pages ?? 1}
+          pageSize={logic.paged?.size ?? CUSTOMERS_PAGE_SIZE}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          isError={logic.isError}
+          error={logic.error}
+          hasAnyFilter={logic.hasAnyFilter}
+          onRetry={logic.refetch}
+          onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => logic.setPage((p) => p + 1)}
+          onRequestDelete={logic.openDeleteDialog}
+        />
+      </div>
 
       <DeleteConfirmDialog
         open={logic.isDeleteDialogOpen}

@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import {
   useOrdersPageLogic,
   OrdersSearchSection,
-  OrdersLookupBar,
   OrdersTable,
 } from "@/components/features/orders";
 
@@ -23,58 +23,55 @@ export default function OrderPage() {
             render={<Link href="/orders/new" />}
             nativeButton={false}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
           >
+            <Plus className="mr-2 h-4 w-4" />
             Tạo đơn xuất
           </Button>
         }
       />
 
-      <OrdersSearchSection
-        searchInput={logic.searchInput}
-        onSearchChange={(value) => {
-          logic.setSearchInput(value);
-          logic.setPage(0);
-        }}
-        advancedOpen={logic.advancedOpen}
-        onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
-        advancedCount={logic.advancedCount}
-        hasAnyFilter={logic.hasAnyFilter}
-        statusFilter={logic.statusFilter}
-        onStatusChange={(value) => {
-          logic.setStatusFilter(value);
-          logic.setPage(0);
-        }}
-        onClearFilters={() => {
-          logic.clearFilters();
-          logic.setAdvancedOpen(false);
-        }}
-      />
-
-      <OrdersLookupBar
-        soNumberLookup={logic.soNumberLookup}
-        onSoNumberLookupChange={logic.setSoNumberLookup}
-        lookingUpByNumber={logic.lookingUpByNumber}
-        onOpenOrderBySoNumber={logic.openOrderBySoNumber}
-      />
-
-      <OrdersTable
-        rows={logic.rows}
-        page={logic.page}
-        createdId={logic.createdId}
-        hasAnyFilter={logic.hasAnyFilter}
-        isLoading={logic.isLoading}
-        isFetching={logic.isFetching}
-        error={logic.error}
-        onRetry={logic.refetch}
-        onClearFilters={logic.clearFilters}
-        totalElements={logic.totalElements}
-        totalPages={logic.totalPages}
-        canGoPrev={logic.canGoPrev}
-        canGoNext={logic.canGoNext}
-        onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
-        onNextPage={() => logic.setPage((p) => p + 1)}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+        <OrdersSearchSection
+          noContainer
+          searchInput={logic.searchInput}
+          onSearchChange={(value) => {
+            logic.setSearchInput(value);
+            logic.setPage(0);
+          }}
+          advancedOpen={logic.advancedOpen}
+          onToggleAdvanced={() => logic.setAdvancedOpen((v) => !v)}
+          advancedCount={logic.advancedCount}
+          hasAnyFilter={logic.hasAnyFilter}
+          statusFilter={logic.statusFilter}
+          onStatusChange={(value) => {
+            logic.setStatusFilter(value);
+            logic.setPage(0);
+          }}
+          onClearFilters={() => {
+            logic.clearFilters();
+            logic.setAdvancedOpen(false);
+          }}
+        />
+        <OrdersTable
+          noContainer
+          rows={logic.rows}
+          page={logic.page}
+          createdId={logic.createdId}
+          hasAnyFilter={logic.hasAnyFilter}
+          isLoading={logic.isLoading}
+          isFetching={logic.isFetching}
+          error={logic.error}
+          onRetry={logic.refetch}
+          onClearFilters={logic.clearFilters}
+          totalElements={logic.totalElements}
+          totalPages={logic.totalPages}
+          canGoPrev={logic.canGoPrev}
+          canGoNext={logic.canGoNext}
+          onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
+          onNextPage={() => logic.setPage((p) => p + 1)}
+        />
+      </div>
     </div>
   );
 }

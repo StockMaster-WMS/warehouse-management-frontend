@@ -1,4 +1,10 @@
-export type SupplierStatus = "ACTIVE" | "INACTIVE";
+// ============================================================
+// Supplier – chỉ chứa types & interfaces
+// Utility functions đã được chuyển sang:
+//   src/components/features/suppliers/utils.ts
+// ============================================================
+
+export type SupplierStatus = "active" | "inactive" | "suspended";
 
 /** Một bản ghi nhà cung cấp (khớp JSON backend). */
 export interface Supplier {
@@ -17,21 +23,27 @@ export interface Supplier {
   updatedAt?: string | null;
 }
 
-export function getSupplierDisplayName(s: Supplier): string {
-  const n = s.name?.trim();
-  if (n) return n;
-  const c = s.code?.trim();
-  if (c) return c;
-  return "Nhà cung cấp";
+export interface CreateSupplierRequest {
+  code: string;
+  name: string;
+  taxCode?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  address?: string;
+  paymentTerms?: number;
+  leadTimeDays?: number;
+  status?: string;
 }
 
-export function supplierStatusLabel(status: SupplierStatus | null | undefined): string {
-  const u = String(status ?? "").toUpperCase();
-  if (u === "ACTIVE") return "Hoạt động";
-  if (u === "INACTIVE") return "Ngưng";
-  return status ? String(status) : "—";
-}
+export type UpdateSupplierRequest = CreateSupplierRequest;
 
-export function isSupplierActive(status: SupplierStatus | null | undefined): boolean {
-  return String(status ?? "").toUpperCase() === "ACTIVE";
-}
+// ---- Re-exports của utility functions (backward compatibility) ----
+// Các file đang import helpers từ "@/types/supplier" vẫn hoạt động
+export {
+  getSupplierDisplayName,
+  supplierStatusLabel,
+  supplierStatusClass,
+  isSupplierActive,
+  SUPPLIER_STATUS_LABEL,
+} from "@/components/features/suppliers/utils";

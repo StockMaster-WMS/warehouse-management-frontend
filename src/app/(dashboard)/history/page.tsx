@@ -1,29 +1,256 @@
-import { History, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  Activity,
+  Calendar as CalendarIcon,
+  Download,
+  FileEdit,
+  Filter,
+  LogIn,
+  PackagePlus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { format } from "date-fns";
+
 import { PageHeader } from "@/components/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { cn } from "@/lib/utils";
+import { useGetAuditLogsQuery } from "@/store/services/audit-log.service";
+import { apiErrMessage } from "@/types/api";
+import type { AuditLog } from "@/types/audit-log";
+
+type LogType = "LOGIN" | "CREATE" | "UPDATE" | "DELETE" | "SYSTEM";
+
+const TYPE_ICONS: Record<LogType, React.ReactNode> = {
+  LOGIN: <LogIn className="h-4 w-4 text-emerald-600" />,
+  CREATE: <PackagePlus className="h-4 w-4 text-indigo-600" />,
+  UPDATE: <FileEdit className="h-4 w-4 text-amber-600" />,
+  DELETE: <Trash2 className="h-4 w-4 text-rose-600" />,
+  SYSTEM: <Activity className="h-4 w-4 text-slate-600" />,
+};
+
+const TYPE_STYLES: Record<LogType, string> = {
+  LOGIN: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400",
+  CREATE: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400",
+  UPDATE: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400",
+  DELETE: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400",
+  SYSTEM: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400",
+};
+
+function toLogType(actionType: string | null | undefined): LogType {
+  const type = (actionType ?? "").toUpperCase();
+  if (type === "CREATE") return "CREATE";
+  if (type === "DELETE") return "DELETE";
+  if (type === "LOGIN") return "LOGIN";
+  if (type === "SYSTEM") return "SYSTEM";
+  return "UPDATE";
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "SYS";
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+}
+
+function formatLogTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { date: "---- -- --", time: "--:--:--" };
+  }
+  return {
+    date: format(date, "yyyy-MM-dd"),
+    time: format(date, "HH:mm:ss"),
+  };
+}
+
+function entityLabel(log: AuditLog) {
+  return log.entityName?.trim() || log.entityType || "N/A";
+}
 
 export default function HistoryPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const debouncedSearch = useDebouncedValue(searchTerm.trim(), 300);
+
+  const { data, isLoading, isFetching, error, refetch } = useGetAuditLogsQuery({
+    page: 0,
+    size: 50,
+    actionType: typeFilter,
+    keyword: debouncedSearch,
+  });
+
+  const logs = useMemo(() => data?.data?.content ?? [], [data]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Nhật ký hoạt động"
-        description="Ghi lại mọi thay đổi và hoạt động trong hệ thống theo thời gian thực."
+        description="Theo dõi thao tác nghiệp vụ: sản phẩm, nhập hàng, xuất hàng, tồn kho, picking và putaway."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-slate-200 gap-2"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+              Tải lại
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl border-slate-200 gap-2">
+              <Download className="h-4 w-4" />
+              Xuất dữ liệu
+            </Button>
+          </div>
+        }
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <EmptyState
-          icon={History}
-          title="Chưa có hoạt động nào"
-          description="Mọi thao tác của người dùng sẽ được lưu trữ tại đây để đảm bảo tính minh bạch."
-          action={
-            <Button variant="outline" size="sm" className="border-slate-200">
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Làm mới lịch sử
-            </Button>
-          }
-          className="h-100 sm:h-125"
-        />
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Tìm theo người dùng, thao tác, đối tượng..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="h-10 pl-9 rounded-xl border-slate-200 dark:border-slate-800"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value || "ALL")}>
+            <SelectTrigger className="h-10 w-[190px] rounded-xl border-slate-200 shrink-0 dark:border-slate-800">
+              <Filter className="mr-2 h-4 w-4 text-slate-400" />
+              <SelectValue placeholder="Tất cả loại" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="ALL">Tất cả loại</SelectItem>
+              <SelectItem value="CREATE">Tạo mới</SelectItem>
+              <SelectItem value="UPDATE">Cập nhật</SelectItem>
+              <SelectItem value="DELETE">Xóa</SelectItem>
+              <SelectItem value="APPROVE">Duyệt</SelectItem>
+              <SelectItem value="CANCEL">Hủy</SelectItem>
+              <SelectItem value="STOCK_ADJUST">Điều chỉnh tồn</SelectItem>
+              <SelectItem value="STOCK_RESERVE">Giữ chỗ tồn</SelectItem>
+              <SelectItem value="PICK">Picking</SelectItem>
+              <SelectItem value="PUTAWAY">Putaway</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Table>
+          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-transparent">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="py-4 pl-6 font-bold uppercase text-[11px] text-slate-400 w-[240px]">Người dùng</TableHead>
+              <TableHead className="py-4 font-bold uppercase text-[11px] text-slate-400">Thao tác</TableHead>
+              <TableHead className="py-4 font-bold uppercase text-[11px] text-slate-400 hidden lg:table-cell">Đối tượng</TableHead>
+              <TableHead className="py-4 font-bold uppercase text-[11px] text-slate-400 hidden xl:table-cell">IP</TableHead>
+              <TableHead className="py-4 pr-6 text-right font-bold uppercase text-[11px] text-slate-400">Thời gian</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-28 text-center text-sm text-slate-500">
+                  Đang tải nhật ký hoạt động...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-28 text-center text-sm text-rose-600">
+                  {apiErrMessage(error, "Không tải được nhật ký hoạt động.")}
+                </TableCell>
+              </TableRow>
+            ) : logs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-28 text-center text-sm text-slate-500">
+                  Chưa có thao tác nào phù hợp với bộ lọc.
+                </TableCell>
+              </TableRow>
+            ) : (
+              logs.map((log) => {
+                const type = toLogType(log.actionType);
+                const actorName = log.actorName?.trim() || "system";
+                const actorEmail = log.actorEmail?.trim() || log.serviceName;
+                const created = formatLogTime(log.createdAt);
+
+                return (
+                  <TableRow key={log.id} className="group border-b border-slate-50 dark:border-slate-800/60 last:border-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                    <TableCell className="py-4 pl-6">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 border border-slate-200 bg-white">
+                          <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs font-semibold dark:bg-indigo-950/50 dark:text-indigo-400">
+                            {initials(actorName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{actorName}</span>
+                          <span className="text-[11px] text-slate-500">{actorEmail}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("inline-flex items-center justify-center p-1 rounded-md border", TYPE_STYLES[type])}>
+                            {TYPE_ICONS[type]}
+                          </span>
+                          <span className="font-semibold text-slate-800 text-sm dark:text-slate-200">
+                            {log.action}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 line-clamp-1 dark:text-slate-400" title={log.reason ?? log.metadata ?? ""}>
+                          {log.reason || log.metadata || `${log.module} / ${log.actionType}`}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4 hidden lg:table-cell">
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {entityLabel(log)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4 hidden xl:table-cell text-sm text-slate-500 font-mono text-[12px]">
+                      {log.ipAddress || "N/A"}
+                    </TableCell>
+                    <TableCell className="py-4 pr-6 text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="font-medium text-slate-700 text-sm dark:text-slate-300">
+                          {created.time}
+                        </span>
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          {created.date}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

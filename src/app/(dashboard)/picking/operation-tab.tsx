@@ -1,48 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MapPin, ScanBarcode, Maximize, AlertCircle, ArrowRight, CheckCircle2, ChevronRight } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MapPin, CheckCircle2, ChevronRight, Archive, AlertTriangle, ScanLine, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { useGetPickingItemsQuery, useUpdatePickingItemMutation, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
+import { useGetPickingItemsQuery, useUpdatePickingItemMutation, useGetPickingItemByIdQuery, useReportPickingExceptionMutation } from "@/store/services/picking-item.service";
 
 export function OperationTab() {
-    const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({ status: "PENDING" });
-    const pendingId = pagedData?.data?.content?.[0]?.id;
-    
-    const { data: detailData, isFetching: isDetailLoading } = useGetPickingItemByIdQuery(pendingId as string, { 
-        skip: !pendingId 
+    const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({});
+
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+    const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
+    const tasks = useMemo(() => allItems.filter(t => t.status === "PENDING"), [allItems]);
+    const completedTasks = useMemo(() => allItems.filter(t => t.status === "PICKED"), [allItems]);
+
+    const activeSummary = useMemo(() => {
+        if (selectedTaskId) {
+            return tasks.find(t => t.id === selectedTaskId) || null;
+        }
+        return null;
+    }, [tasks, selectedTaskId]);
+
+    const { data: detailData } = useGetPickingItemByIdQuery(activeSummary?.id as string, {
+        skip: !activeSummary?.id
     });
-    
-    const activeLine = detailData?.data;
+
+    const activeItem = useMemo(() => {
+        if (!activeSummary) return null;
+        if (!detailData?.data) return activeSummary;
+        return { ...activeSummary, ...detailData.data };
+    }, [activeSummary, detailData]);
 
     const [updatePickingItem] = useUpdatePickingItemMutation();
+    const [reportException] = useReportPickingExceptionMutation();
 
     const [currentStep, setCurrentStep] = useState<"location" | "sku" | "qty">("location");
-
     const [scannedLoc, setScannedLoc] = useState("");
     const [scannedSku, setScannedSku] = useState("");
     const [pickedQty, setPickedQty] = useState<string>("");
-
     const [isExceptionOpen, setIsExceptionOpen] = useState(false);
 
     const handleScanLocation = () => {
-        if (!activeLine) return;
-        const expectedLoc = activeLine.locationCode || activeLine.locationId;
+        if (!activeItem) return;
+        const expectedLoc = activeItem.locationCode || activeItem.locationId;
         if (scannedLoc.toUpperCase() !== expectedLoc.toUpperCase()) {
-            toast.error("Vị trí không khớp! Yêu cầu: " + expectedLoc);
+            toast.error("Vị trí không khớp! Vui lòng kiểm tra lại kệ/bin.");
             setScannedLoc("");
             return;
         }
@@ -51,198 +63,376 @@ export function OperationTab() {
     };
 
     const handleScanSku = () => {
-        if (!activeLine) return;
-        const expectedSku = activeLine.productSku || activeLine.productCode || activeLine.productId;
-        if (scannedSku.toUpperCase() !== expectedSku.toUpperCase() && scannedSku.toUpperCase() !== activeLine.barcodeEan13?.toUpperCase()) {
-            toast.error("Mã không khớp! Yêu cầu: " + expectedSku);
+        if (!activeItem) return;
+        const expectedSku = activeItem.productSku || activeItem.productCode || activeItem.productId;
+        if (scannedSku.toUpperCase() !== expectedSku.toUpperCase() && scannedSku.toUpperCase() !== activeItem.barcodeEan13?.toUpperCase()) {
+            toast.error("Mã sản phẩm không khớp!");
             setScannedSku("");
             return;
         }
-        toast.success("Đúng sản phẩm!");
+        toast.success("Xác nhận đúng sản phẩm!");
         setCurrentStep("qty");
+        setPickedQty(activeItem.qtyToPick.toString());
     };
 
     const handleConfirmPick = async () => {
-        if (!activeLine) return;
-        if (Number(pickedQty) > activeLine.qtyToPick) {
-            toast.error("Không thể vượt quá số lượng yêu cầu!");
+        if (!activeItem) return;
+        const qty = Number(pickedQty);
+        if (qty < 0 || qty > activeItem.qtyToPick) {
+            toast.error("Số lượng nhặt không hợp lệ!");
             return;
         }
-        if (Number(pickedQty) < activeLine.qtyToPick) {
-            toast.error("Khác số lượng. Vui lòng Báo Lỗi để tạo Short Pick.");
-            return;
-        }
-        
+
         try {
             await updatePickingItem({
-                id: activeLine.id,
-                soItemId: activeLine.soItemId,
-                productId: activeLine.productId,
-                locationId: activeLine.locationId,
-                qtyToPick: activeLine.qtyToPick,
-                qtyPicked: Number(pickedQty),
+                id: activeItem.id,
+                soItemId: activeItem.soItemId,
+                productId: activeItem.productId,
+                locationId: activeItem.locationId,
+                qtyToPick: activeItem.qtyToPick,
+                qtyPicked: qty,
                 status: "PICKED"
             }).unwrap();
-            
-            toast.success("Pick thành công dòng này! Tự động chuyển dòng tiếp theo...");
+
+            toast.success("Đã lấy hàng xong!");
+            setSelectedTaskId(null);
             setCurrentStep("location");
             setScannedLoc("");
             setScannedSku("");
             setPickedQty("");
-            refetch(); // fetch next pending item
-        } catch (error) {
-            toast.error("Cập nhật thất bại. Vui lòng thử lại!");
+            refetch();
+        } catch {
+            toast.error("Có lỗi xảy ra khi cập nhật!");
         }
     };
 
-    if (isLoading || isDetailLoading) {
-        return <div className="text-center p-8 text-slate-500">Đang tải công việc chi tiết...</div>;
-    }
-
-    if (!activeLine) {
+    if (isLoading) {
         return (
-            <Card className="mx-auto max-w-sm border-emerald-100 shadow-md p-8 text-center text-emerald-600">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4" />
-                <h3 className="font-bold text-lg">Bạn đã hoàn tất</h3>
-                <p className="text-sm">Không còn đơn picking nào đang chờ</p>
-                <Button onClick={() => refetch()} variant="outline" className="mt-4 w-full">Làm mới</Button>
-            </Card>
+            <div className="flex flex-col items-center justify-center p-20 space-y-4">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+                <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">Đang đồng bộ dữ liệu...</p>
+            </div>
         );
     }
 
+    // --- LIST VIEW ---
+    if (!activeItem && (tasks.length > 0 || completedTasks.length > 0)) {
+        return (
+            <div className="mx-auto max-w-sm space-y-5 px-4 py-6 bg-white min-h-screen">
+                <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                            <ScanLine className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-black text-slate-900 leading-none">LẤY HÀNG</h1>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">Sẵn sàng vận hành</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tiến độ tổng quát</span>
+                        <span className="text-xs font-black text-slate-900">{completedTasks.length}/{allItems.length}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-slate-900 transition-all duration-500 ease-out"
+                            style={{ width: `${(completedTasks.length / (allItems.length || 1)) * 100}%` }}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Danh sách chờ ({tasks.length})</p>
+                    </div>
+                    <div className="space-y-2">
+                        {tasks.map((task) => (
+                            <button
+                                key={task.id}
+                                onClick={() => setSelectedTaskId(task.id)}
+                                className="w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-slate-900 active:scale-[0.99] transition-all text-left group"
+                            >
+                                <div className="space-y-1 min-w-0">
+                                    <p className="text-sm font-bold text-slate-900 truncate">
+                                        {task.productName || task.productSku}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200 uppercase">
+                                            {task.locationCode || "BIN-00"}
+                                        </span>
+                                        <span className="text-[10px] font-medium text-slate-400 truncate">SO: {task.salesOrderNumber || "—"}</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 pl-4">
+                                    <span className="text-sm font-black text-slate-900 whitespace-nowrap">×{task.qtyToPick}</span>
+                                    <ChevronRight className="h-4 w-4 text-slate-300" />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {completedTasks.length > 0 && (
+                    <div className="space-y-3 pt-4">
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-1">Đã hoàn thành gần đây</p>
+                        <div className="space-y-2 opacity-60">
+                            {completedTasks.slice(0, 3).map((task) => (
+                                <div key={task.id} className="w-full flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs font-bold text-slate-500 line-through truncate max-w-[180px]">{task.productName || task.productSku}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{task.locationCode}</p>
+                                    </div>
+                                    <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // --- SUCCESS SCREEN (ALL DONE) ---
+    if (allItems.length > 0 && tasks.length === 0) {
+        return (
+            <div className="mx-auto max-w-sm px-6 py-20 text-center">
+                <div className="bg-white border border-slate-100 shadow-xl rounded-xl p-8 space-y-5">
+                    <div className="h-20 w-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto ring-4 ring-white shadow-inner">
+                        <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                    </div>
+                    <div className="space-y-2 text-center">
+                        <h3 className="font-black text-xl text-slate-900 uppercase tracking-tight">HOÀN TẤT!</h3>
+                        <p className="text-sm text-slate-500 leading-relaxed">
+                            Tuyệt vời! Bạn đã xử lý xong toàn bộ danh sách lấy hàng trong đợt này.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => refetch()}
+                        className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 font-bold text-sm shadow-lg active:scale-95 transition-all"
+                    >
+                        Làm mới danh sách
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!activeItem) return null;
+
+    // --- ACTIVE PICKING SCREEN (EXECUTION) ---
     return (
-        <div className="mx-auto max-w-sm space-y-4">
-            <div className="flex items-center justify-between text-sm font-medium">
-                <span className="text-slate-500">Đơn: {activeLine.salesOrderNumber || `#${activeLine.soItemId.slice(0, 8)}`}</span>
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">Line: {activeLine.id.slice(-6)}</span>
+        <div className="mx-auto max-w-sm space-y-4 px-4 py-6 bg-white min-h-screen">
+            {/* Header */}
+            <div className="flex items-center justify-between px-1 mb-2">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => {
+                            setSelectedTaskId(null);
+                            setCurrentStep("location");
+                        }}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-sm active:scale-95 transition-all group"
+                    >
+                        <ArrowLeft className="h-5 w-5 text-slate-600" />
+                    </button>
+                    <div>
+                        <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none">LẤY HÀNG</h1>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Đang thực hiện</p>
+                    </div>
+                </div>
+                <div className="rounded-full bg-slate-900 px-3 py-1 shadow-md">
+                    <span className="text-[10px] font-black text-white uppercase tracking-wider">ĐANG CHỌN</span>
+                </div>
             </div>
 
-            <Card className="border-indigo-100 shadow-md transition-all">
-                <CardHeader className="bg-indigo-50/50 pb-4">
-                    <CardTitle className="text-base leading-tight">
-                        <span>{activeLine.productName || "Sản phẩm không tên"}</span>
-                    </CardTitle>
-                    <div className="flex gap-2 items-center flex-wrap mt-2">
-                        <span className="bg-slate-200 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded">SKU: {activeLine.productSku || activeLine.productCode || activeLine.productId}</span>
-                        {activeLine.categoryName && <span className="bg-blue-100 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded">{activeLine.categoryName}</span>}
+            {/* Product Card */}
+            <div className="rounded-lg bg-white p-5 shadow-sm border border-slate-200 space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3">
+                    <span className="text-[9px] font-black uppercase text-slate-400">
+                        #{activeItem.salesOrderNumber || "ORDER"}
+                    </span>
+                </div>
+
+                <div className="space-y-1.5">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sản phẩm thứ {activeItem.pickSequence || 1}</span>
+                    <h2 className="text-base font-black text-slate-900 leading-tight">
+                        {activeItem.productName && activeItem.productName !== "Sản phẩm không tên"
+                            ? activeItem.productName
+                            : activeItem.productSku}
+                    </h2>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{activeItem.productSku}</p>
+                </div>
+
+                {/* Location Info - Simple White Highlight with rigid border */}
+                <div className="rounded-lg  flex items-center gap-4 bg-white">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-900 text-white">
+                        <MapPin className="h-6 w-6" />
                     </div>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                    <div className="flex items-center gap-4 rounded-lg bg-orange-50 p-3 outline outline-orange-200">
-                        <MapPin className="h-8 w-8 text-orange-500" />
-                        <div className="flex-1">
-                            <p className="text-xs font-semibold text-orange-900 leading-none mb-1">Vị trí (Zone: {activeLine.zone || "-"} | Aisle: {activeLine.aisle || "-"})</p>
-                            <p className="text-lg font-bold text-orange-700">{activeLine.locationCode || activeLine.locationName || activeLine.locationId}</p>
-                        </div>
-                        <div className="flex flex-col items-center justify-center rounded bg-orange-100 px-3 py-1">
-                            <span className="text-[10px] text-orange-600 font-bold uppercase">Lấy ({activeLine.baseUnit || "Qty"})</span>
-                            <span className="text-xl font-black text-orange-900">{activeLine.qtyToPick}</span>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1 leading-none tracking-widest">Vị trí lưu trữ</p>
+                        <p className="text-xl font-black text-slate-900 leading-none truncate tracking-tight">{activeItem.locationCode || "N/A"}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between px-1 border-t border-slate-100 pt-4">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Yêu cầu lấy</p>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-black text-slate-900 tabular-nums">{activeItem.qtyToPick}</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase">{activeItem.baseUnit || "Đơn vị"}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Interaction Steps */}
+            <div className="rounded-lg bg-white p-5 shadow-sm border border-slate-200 space-y-4">
+                {/* Step 1: Location Scan */}
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                        <span className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === "location" ? "text-slate-900" : "text-slate-300")}>
+                            BƯỚC 1: XÁC THỰC VỊ TRÍ
+                        </span>
+                    </div>
+                    <div className="relative group">
+                        <Input
+                            placeholder="QUÉT MÃ KỆ/BIN..."
+                            autoFocus={currentStep === "location"}
+                            className={cn(
+                                "h-14 rounded-lg border-slate-200 bg-slate-50/30 pl-5 pr-12 font-mono text-base font-bold uppercase transition-all focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100",
+                                currentStep !== "location" && "opacity-30 bg-slate-50"
+                            )}
+                            value={scannedLoc}
+                            disabled={currentStep !== "location"}
+                            onChange={(e) => setScannedLoc(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleScanLocation()}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+                            <MapPin className={cn("h-5 w-5", currentStep === "location" ? "text-slate-900" : "text-slate-400")} />
                         </div>
                     </div>
-                    
-                    {/* Tồn khả dụng */}
-                    {(activeLine.qtyAvailable !== undefined && activeLine.qtyAvailable !== null) && (
-                        <div className="text-[11px] font-medium text-emerald-700 bg-emerald-50 py-1 px-3 rounded text-center">
-                            Tồn kho tại vị trí này: {activeLine.qtyAvailable} {activeLine.baseUnit} 
-                            {activeLine.lotNumber && ` (Lô: ${activeLine.lotNumber})`}
-                        </div>
-                    )}
+                </div>
 
-                    <div className="space-y-4">
-                        {/* Bước 1: Location */}
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold flex justify-between">
-                                <span>1. Quét Vị Trí (Location)</span>
-                                {currentStep !== "location" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Quét mã vạch vị trí..."
-                                    className={currentStep === "location" ? "border-indigo-500 ring-2 ring-indigo-100 uppercase" : "uppercase"}
-                                    value={scannedLoc}
-                                    disabled={currentStep !== "location"}
-                                    onChange={(e) => setScannedLoc(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleScanLocation()}
-                                />
-                                {currentStep === "location" && (
-                                    <Button onClick={handleScanLocation} variant="default" size="icon" className="shrink-0 bg-indigo-600"><ArrowRight className="h-4 w-4" /></Button>
-                                )}
-                            </div>
+                {/* Step 2: Product Scan */}
+                <div className={cn("space-y-2 transition-all duration-300", currentStep !== "sku" && "opacity-30 pointer-events-none")}>
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest px-1", currentStep === "sku" ? "text-slate-900" : "text-slate-300")}>
+                        BƯỚC 2: QUÉT MÃ SẢN PHẨM
+                    </span>
+                    <div className="relative group">
+                        <Input
+                            placeholder="QUÉT BARCODE SẢN PHẨM..."
+                            autoFocus={currentStep === "sku"}
+                            className="h-14 rounded-lg border-slate-200 bg-slate-50/30 pl-5 pr-12 font-mono text-base font-bold uppercase focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100"
+                            value={scannedSku}
+                            onChange={(e) => setScannedSku(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleScanSku()}
+                            disabled={currentStep !== "sku"}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+                            <Archive className={cn("h-5 w-5", currentStep === "sku" ? "text-slate-900" : "text-slate-400")} />
                         </div>
-
-                        {/* Bước 2: SKU */}
-                        <div className={`space-y-1 transition-opacity ${currentStep === "location" ? "opacity-40" : "opacity-100"}`}>
-                            <Label className="text-xs font-semibold flex justify-between">
-                                <span>2. Quét Sản Phẩm (SKU)</span>
-                                {currentStep === "qty" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Quét barcode sản phẩm..."
-                                    value={scannedSku}
-                                    onChange={(e) => setScannedSku(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleScanSku()}
-                                    disabled={currentStep === "location" || currentStep === "qty"}
-                                    className={currentStep === "sku" ? "border-indigo-500 ring-2 ring-indigo-100 uppercase" : "uppercase"}
-                                />
-                                {currentStep === "sku" && (
-                                    <Button onClick={handleScanSku} variant="default" size="icon" className="shrink-0 bg-indigo-600"><ArrowRight className="h-4 w-4" /></Button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Bước 3: Số lượng */}
-                        {currentStep === "qty" && (
-                            <div className={`space-y-1 transition-opacity`}>
-                                <Label className="text-xs font-semibold text-emerald-600">
-                                    3. Xác nhận số lượng
-                                </Label>
-                                <Input
-                                    type="number"
-                                    value={pickedQty}
-                                    onChange={(e) => setPickedQty(e.target.value)}
-                                    className="border-emerald-500 ring-2 ring-emerald-100 text-lg font-bold"
-                                />
-                            </div>
-                        )}
                     </div>
+                </div>
 
-                </CardContent>
-                <CardFooter className="flex gap-2 pt-2 border-t bg-slate-50 rounded-b-xl border-dashed">
-                    <Button variant="outline" className="flex-1 text-rose-600 border-rose-200 bg-white" size="lg" onClick={() => setIsExceptionOpen(true)}>Báo lỗi</Button>
+                {/* Step 3: Quantity Input */}
+                <div className={cn("space-y-2 transition-all duration-300", currentStep !== "qty" && "opacity-30 pointer-events-none")}>
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest px-1", currentStep === "qty" ? "text-slate-900" : "text-slate-300")}>
+                        BƯỚC 3: XÁC NHẬN SỐ LƯỢNG
+                    </span>
+                    <div className="relative group">
+                        <Input
+                            type="number"
+                            placeholder="SỐ LƯỢNG THỰC TẾ..."
+                            autoFocus={currentStep === "qty"}
+                            className="h-14 rounded-lg border-slate-200 bg-slate-50/30 pl-5 pr-12 font-mono text-lg font-black uppercase focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100"
+                            value={pickedQty}
+                            onChange={(e) => setPickedQty(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleConfirmPick()}
+                            disabled={currentStep !== "qty"}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[10px]">
+                            SL
+                        </div>
+                    </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-2">
                     <Button
-                        className="flex-2 bg-indigo-600 hover:bg-indigo-700"
-                        size="lg"
+                        variant="ghost"
+                        className="flex-1 h-14 rounded-lg font-bold text-xs text-slate-400 border border-slate-200 hover:bg-slate-50 transition-all"
+                        onClick={() => setIsExceptionOpen(true)}
+                    >
+                        Báo lỗi
+                    </Button>
+                    <Button
+                        className="flex-[2] h-14 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-black text-sm shadow-md active:scale-95 transition-all disabled:opacity-20"
                         disabled={currentStep !== "qty"}
                         onClick={handleConfirmPick}
                     >
-                        Xác nhận Pick
+                        XÁC NHẬN <CheckCircle2 className="ml-2 h-4 w-4" />
                     </Button>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
+
             {/* Exception Dialog */}
             <Dialog open={isExceptionOpen} onOpenChange={setIsExceptionOpen}>
-                <DialogContent className="max-w-sm rounded-xl">
-                    <DialogHeader>
-                        <DialogTitle>Báo cáo ngoại lệ</DialogTitle>
-                        <DialogDescription>
-                            Hãy chọn lý do bạn không thể hoàn tất line này. Supervisor sẽ được thông báo.
-                        </DialogDescription>
+                <DialogContent className="max-w-[calc(100%-2.5rem)] rounded-lg border-none p-8 shadow-2xl">
+                    <DialogHeader className="space-y-4 text-center">
+                        <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
+                            <AlertTriangle className="h-8 w-8 text-slate-900" />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-xl font-black text-slate-900 uppercase tracking-tight">Báo lỗi ngoại lệ</DialogTitle>
+                            <DialogDescription className="text-xs font-bold text-slate-400 mt-1">
+                                Chọn nguyên nhân không thể hoàn thành lệnh lấy hàng này.
+                            </DialogDescription>
+                        </div>
                     </DialogHeader>
-                    <div className="flex flex-col gap-2 py-4">
-                        <Button variant="outline" className="justify-between" onClick={() => { setIsExceptionOpen(false); toast.success("Đã ghi nhận Hàng Hỏng!"); }}>
-                            Hàng bị hỏng (Damaged) <ChevronRight className="h-4 w-4 opacity-50" />
+                    <div className="flex flex-col gap-3 py-6">
+                        <Button
+                            variant="outline"
+                            className="h-14 justify-between rounded-lg border-slate-200 px-5 font-black text-xs hover:border-slate-900 transition-all"
+                            onClick={async () => {
+                                if (!activeItem) return;
+                                try {
+                                    await reportException({ id: activeItem.id, soItemId: activeItem.soItemId, reason: "Hàng bị hỏng/Lỗi" }).unwrap();
+                                    setIsExceptionOpen(false);
+                                    toast.error("Ghi nhận: Hàng bị hỏng");
+                                    setSelectedTaskId(null);
+                                    setCurrentStep("location");
+                                } catch { toast.error("Lỗi khi kết nối hệ thống!"); }
+                            }}
+                        >
+                            HÀNG BỊ HỎNG / LỖI <ChevronRight className="h-4 w-4 opacity-30" />
                         </Button>
-                        <Button variant="outline" className="justify-between" onClick={() => { setIsExceptionOpen(false); toast.success("Đã ghi nhận Lấy Thiếu!"); }}>
-                            Lấy thiếu (Short Pick) <ChevronRight className="h-4 w-4 opacity-50" />
-                        </Button>
-                        <Button variant="outline" className="justify-between" onClick={() => { setIsExceptionOpen(false); toast.success("Đã ghi nhận Lỗi Vị Trí!"); }}>
-                            Sai vị trí lưu kho <ChevronRight className="h-4 w-4 opacity-50" />
+                        <Button
+                            variant="outline"
+                            className="h-14 justify-between rounded-lg border-slate-200 px-5 font-black text-xs hover:border-slate-900 transition-all"
+                            onClick={async () => {
+                                if (!activeItem) return;
+                                try {
+                                    await reportException({ id: activeItem.id, soItemId: activeItem.soItemId, reason: "Sai vị trí/Thiếu hàng" }).unwrap();
+                                    setIsExceptionOpen(false);
+                                    toast.error("Ghi nhận: Thiếu hàng tại vị trí");
+                                    setSelectedTaskId(null);
+                                    setCurrentStep("location");
+                                } catch { toast.error("Lỗi khi kết nối hệ thống!"); }
+                            }}
+                        >
+                            THIẾU HÀNG / SAI VỊ TRÍ <ChevronRight className="h-4 w-4 opacity-30" />
                         </Button>
                     </div>
-                    <DialogFooter className="sm:justify-start">
-                        <Button type="button" variant="secondary" className="w-full" onClick={() => setIsExceptionOpen(false)}>Hủy</Button>
-                    </DialogFooter>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full h-12 rounded-lg font-bold text-slate-400 hover:bg-slate-50 transition-all"
+                        onClick={() => setIsExceptionOpen(false)}
+                    >
+                        Quay về màn hình lấy hàng
+                    </Button>
                 </DialogContent>
             </Dialog>
         </div>

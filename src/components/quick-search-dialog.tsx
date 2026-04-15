@@ -41,6 +41,16 @@ export function QuickSearchDialog({
   open,
   onOpenChange,
 }: QuickSearchDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open ? <QuickSearchDialogContent onOpenChange={onOpenChange} /> : null}
+    </Dialog>
+  );
+}
+
+function QuickSearchDialogContent({
+  onOpenChange,
+}: Pick<QuickSearchDialogProps, "onOpenChange">) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -50,24 +60,16 @@ export function QuickSearchDialog({
   const filtered = useMemo(() => filterItems(query), [query]);
 
   useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
+    const id = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setActiveIndex(0);
-      const id = requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
-      return () => cancelAnimationFrame(id);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !activeItemRef.current) return;
+    if (!activeItemRef.current) return;
     activeItemRef.current.scrollIntoView({ block: "nearest" });
-  }, [activeIndex, open, filtered.length]);
+  }, [activeIndex, filtered.length]);
 
   const navigateTo = useCallback(
     (href: string) => {
@@ -76,6 +78,11 @@ export function QuickSearchDialog({
     },
     [onOpenChange, router],
   );
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    setActiveIndex(0);
+  };
 
   const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (filtered.length === 0) return;
@@ -93,11 +100,10 @@ export function QuickSearchDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-h-[min(70vh,32rem)] gap-0 overflow-hidden p-0 sm:max-w-lg"
-        showCloseButton
-      >
+    <DialogContent
+      className="max-h-[min(70vh,32rem)] gap-0 overflow-hidden p-0 sm:max-w-lg"
+      showCloseButton
+    >
         <DialogTitle className="sr-only">Tìm kiếm và điều hướng nhanh</DialogTitle>
         <DialogDescription className="sr-only">
           Gõ để lọc danh sách trang. Dùng phím mũi tên và Enter để mở trang.
@@ -116,7 +122,7 @@ export function QuickSearchDialog({
               <Input
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder="Gõ tên trang hoặc đường dẫn…"
                 className="h-11 border-0 bg-transparent pl-10 pr-3 text-base shadow-none focus-visible:ring-0"
                 autoComplete="off"
@@ -199,7 +205,6 @@ export function QuickSearchDialog({
             <span className="sm:hidden">Chạm mục để mở trang</span>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </DialogContent>
   );
 }

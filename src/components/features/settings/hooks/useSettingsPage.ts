@@ -91,7 +91,7 @@ export function useSettingsPage() {
   }, [appearance]);
 
   const updateAppearance = useCallback(
-    (key: keyof AppearanceSettings, value: AppearanceSettings[keyof AppearanceSettings]) => {
+    <K extends keyof AppearanceSettings>(key: K, value: AppearanceSettings[K]) => {
       setAppearance((prev) => ({ ...prev, [key]: value }));
     },
     []

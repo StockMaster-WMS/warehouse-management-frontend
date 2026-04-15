@@ -1,7 +1,7 @@
 
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { Warehouse, WarehouseSummary } from "@/types/warehouse";
+import type { Warehouse, WarehouseSummary, CreateWarehouseRequest } from "@/types/warehouse";
 
 export type GetWarehousesParams = {
   page?: number;
@@ -61,12 +61,57 @@ const warehouseApi = baseApi.injectEndpoints({
             ]
           : [{ type: "Warehouse" as const, id: "LIST" }],
     }),
+    getWarehouseById: builder.query<ApiResponse<Warehouse>, string>({
+      query: (id) => ({ url: `/warehouses/${id}`, method: "GET" }),
+      providesTags: (_result, _error, id) => [{ type: "Warehouse" as const, id }],
+    }),
     getWarehouseSummary: builder.query<ApiResponse<WarehouseSummary>, void>({
       query: () => ({ url: "/warehouses/summary", method: "GET" }),
       providesTags: () => [{ type: "Warehouse" as const, id: "SUMMARY" }],
     }),
+    createWarehouse: builder.mutation<ApiResponse<Warehouse>, CreateWarehouseRequest>({
+      query: (body) => ({
+        url: "/warehouses",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: [
+        { type: "Warehouse", id: "LIST" },
+        { type: "Warehouse", id: "SUMMARY" },
+      ],
+    }),
+    updateWarehouse: builder.mutation<ApiResponse<Warehouse>, { id: string; body: CreateWarehouseRequest }>({
+      query: ({ id, body }) => ({
+        url: `/warehouses/${id}`,
+        method: "PUT",
+        data: body,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "Warehouse", id: arg.id },
+        { type: "Warehouse", id: "LIST" },
+        { type: "Warehouse", id: "SUMMARY" },
+      ],
+    }),
+    deleteWarehouse: builder.mutation<ApiResponse<string>, string>({
+      query: (id) => ({
+        url: `/warehouses/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Warehouse", id },
+        { type: "Warehouse", id: "LIST" },
+        { type: "Warehouse", id: "SUMMARY" },
+      ],
+    }),
   }),
 });
 
-export const { useGetWarehousesQuery, useGetWarehouseSummaryQuery } =
-  warehouseApi;
+export const {
+  useGetWarehousesQuery,
+  useGetWarehouseByIdQuery,
+  useLazyGetWarehouseByIdQuery,
+  useGetWarehouseSummaryQuery,
+  useCreateWarehouseMutation,
+  useUpdateWarehouseMutation,
+  useDeleteWarehouseMutation,
+} = warehouseApi;

@@ -3,37 +3,100 @@ import type { ApiResponse } from "@/types/api";
 export interface Stock {
   id: string;
   productId: string;
-  warehouseId?: string | null;
+  warehouseId: string;
   locationId: string;
+  lotNumber: string;
+  expiryDate: string | null;
   qtyOnHand: number;
+  qtyReserved: number;
   qtyAvailable: number;
-  qtyReserved?: number | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  updatedAt: string;
 }
 
-export type StockRef = {
+export type WarehouseSummaryRef = {
   id: string;
-  code?: string | null;
-  name?: string | null;
+  code: string;
+  name: string;
 };
 
-export type StockProductRef = {
+export type LocationSummaryRef = {
   id: string;
-  sku?: string | null;
-  name?: string | null;
-  minQty?: number | null;
-  maxQty?: number | null;
-  unitPrice?: number | null;
+  code: string;
+  name: string;
+};
+
+export type ProductSummaryRef = {
+  id: string;
+  sku: string;
+  name: string;
+  minQty: number | null;
 };
 
 /** Stock expanded from backend: includes product/location/warehouse objects. */
 export interface StockExpanded extends Stock {
-  lotNumber?: string | null;
-  expiryDate?: string | null;
-  warehouse?: StockRef | null;
-  location?: StockRef | null;
-  product?: StockProductRef | null;
+  warehouse: WarehouseSummaryRef | null;
+  location: LocationSummaryRef | null;
+  product: ProductSummaryRef | null;
+}
+
+export interface StockSummaryResponse {
+  totalSkus: number;
+  totalQtyOnHand: number;
+  totalQtyReserved: number;
+  totalQtyAvailable: number;
+  lowStockCount: number;
+  nearExpiryCount: number;
+}
+
+export interface NearExpiryStockResponse {
+  id: string;
+  warehouseId: string;
+  warehouseCode: string;
+  locationId: string;
+  locationCode: string;
+  productId: string;
+  lotNumber: string;
+  expiryDate: string;
+  daysLeft: number;
+  qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
+}
+
+export interface StockAdjustCommand {
+  warehouseId: string;
+  locationId: string;
+  productId: string;
+  lotNumber?: string;
+  qtyDelta: number;
+}
+
+export interface StockReserveCommand {
+  warehouseId: string;
+  locationId: string;
+  productId: string;
+  lotNumber?: string;
+  reservedDelta: number;
+}
+
+export interface StockMovementResponse {
+  id: string;
+  warehouseId: string;
+  warehouseCode: string;
+  locationId: string;
+  locationCode: string;
+  productId: string;
+  lotNumber: string;
+  movementType: "INBOUND" | "OUTBOUND" | "RESERVE" | "RELEASE";
+  qtyChange: number;
+  qtyAfter: number;
+  reservedChange: number;
+  reservedAfter: number;
+  reason: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdBy: string | null;
+  createdAt: string;
 }
 
 export type StockResponse = ApiResponse<Stock>;

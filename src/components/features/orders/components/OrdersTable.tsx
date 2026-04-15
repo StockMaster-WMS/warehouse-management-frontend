@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { AlertCircle, MapPin, PackageX } from "lucide-react";
+import {
+  AlertCircle,
+  MapPin,
+  PackageX,
+  MoreHorizontal,
+  Eye,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +21,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { apiErrMessage } from "@/types/api";
 import { formatShippingShort, salesOrderStatusColor, salesOrderStatusLabel, type SalesOrder } from "@/types/sales-order";
 import { formatOrderCreatedAt } from "@/components/features/orders/utils";
@@ -55,6 +72,7 @@ type OrdersTableProps = {
   canGoNext: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
+  noContainer?: boolean;
 };
 
 export function OrdersTable({
@@ -73,9 +91,10 @@ export function OrdersTable({
   canGoNext,
   onPrevPage,
   onNextPage,
+  noContainer = false,
 }: OrdersTableProps) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  const content = (
+    <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
           Đang cập nhật dữ liệu...
@@ -184,15 +203,49 @@ export function OrdersTable({
                       {formatOrderCreatedAt(item.createdAt)}
                     </TableCell>
                     <TableCell className="px-3 py-3 text-right">
-                      <Button
-                        render={<Link href={`/orders/${item.id}`} />}
-                        nativeButton={false}
-                        variant="ghost"
-                        size="sm"
-                        className="text-indigo-600"
-                      >
-                        Chi tiết
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="h-8 w-8 rounded-lg"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-48 rounded-xl"
+                        >
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                          </DropdownMenuGroup>
+                          <DropdownMenuItem
+                            className="rounded-lg"
+                            render={<Link href={`/orders/${item.id}`} />}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Xem chi tiết
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="rounded-lg text-slate-500"
+                            disabled
+                          >
+                            <Edit2 className="mr-2 h-4 w-4" />
+                            Sửa thông tin
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="rounded-lg text-rose-600 focus:text-rose-600"
+                            disabled={item.status !== "DRAFT" && item.status !== "PENDING"}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hủy đơn hàng
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -213,6 +266,16 @@ export function OrdersTable({
         onPrevPage={onPrevPage}
         onNextPage={onNextPage}
       />
+    </>
+  );
+
+  if (noContainer) {
+    return content;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {content}
     </div>
   );
 }

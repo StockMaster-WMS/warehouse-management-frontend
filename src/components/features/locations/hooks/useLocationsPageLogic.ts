@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrMessage } from "@/types/api";
-import type { LocationOption } from "@/types/purchase-order";
+import type { Location, CreateLocationRequest } from "@/types/location";
 import {
+    useGetLocationsListQuery,
     useCreateLocationMutation,
     useDeleteLocationMutation,
     useUpdateLocationMutation,
 } from "@/store/services/location.service";
-import { useGetLocationsQuery } from "@/store/services/purchase-order.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import {
     ALL_WAREHOUSES,
@@ -18,7 +18,6 @@ import {
     type LocationFormState,
 } from "@/components/features/locations/constants";
 import { buildLocationUpsertPayload } from "@/components/features/locations/schemas/location-form.schema";
-import { matchesLocationKeyword } from "@/components/features/locations/utils";
 
 export function useLocationsPageLogic() {
     const [searchInput, setSearchInput] = useState("");
@@ -26,9 +25,9 @@ export function useLocationsPageLogic() {
     const [page, setPage] = useState(0);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingLocation, setEditingLocation] = useState<LocationOption | null>(null);
+    const [editingLocation, setEditingLocation] = useState<Location | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState<LocationOption | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Location | null>(null);
     const [formState, setFormState] = useState<LocationFormState>(DEFAULT_LOCATION_FORM_STATE);
 
     const debouncedKeyword = useDebouncedValue(searchInput.trim());
@@ -40,7 +39,14 @@ export function useLocationsPageLogic() {
         isFetching: isLocationsFetching,
         error: locationsError,
         refetch: refetchLocations,
-    } = useGetLocationsQuery({ warehouseId: selectedWarehouseId });
+    } = useGetLocationsListQuery({
+        page,
+        size: LOCATIONS_PAGE_SIZE,
+        sort: "createdAt",
+        sortDir: "desc",
+        warehouseId: selectedWarehouseId,
+        keyword: debouncedKeyword || undefined,
+    });
 
     const [createLocation, { isLoading: isCreatingLocation }] = useCreateLocationMutation();
     const [updateLocation, { isLoading: isUpdatingLocation }] = useUpdateLocationMutation();
@@ -57,7 +63,7 @@ export function useLocationsPageLogic() {
         sortDir: "asc",
     });
 
-    const warehouses = warehousesRes?.data?.content ?? [];
+    const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
     const warehouseNameMap = useMemo(
         () => Object.fromEntries(warehouses.map((warehouse) => [warehouse.id, warehouse.name])),
         [warehouses],
@@ -68,32 +74,15 @@ export function useLocationsPageLogic() {
             ? "Tất cả kho"
             : warehouseNameMap[warehouseFilter] || "Kho đã chọn";
 
-    const locations = locationsRes?.data ?? [];
-    const totalLocations = locations.length;
-    const activeLocations = locations.filter((location) => location.isActive !== false).length;
-    const inactiveLocations = totalLocations - activeLocations;
+    const locations = useMemo(() => locationsRes?.data?.content ?? [], [locationsRes]);
+    const totalElements = locationsRes?.data?.total_elements ?? 0;
+    const totalPages = locationsRes?.data?.total_pages ?? 0;
+    const totalLocations = totalElements;
+    const activeLocations = locations.filter((loc) => loc.isActive !== false).length;
+    const inactiveLocations = locations.length - activeLocations;
 
-    const filteredLocations = useMemo(() => {
-        if (!debouncedKeyword) {
-            return locations;
-        }
-        return locations.filter((location) => matchesLocationKeyword(location, debouncedKeyword));
-    }, [debouncedKeyword, locations]);
-
-    const totalPages = Math.max(1, Math.ceil(filteredLocations.length / LOCATIONS_PAGE_SIZE));
     const canGoPrev = page > 0;
-    const canGoNext = page + 1 < totalPages;
-
-    const visibleLocations = useMemo(() => {
-        const start = page * LOCATIONS_PAGE_SIZE;
-        return filteredLocations.slice(start, start + LOCATIONS_PAGE_SIZE);
-    }, [filteredLocations, page]);
-
-    useEffect(() => {
-        if (page >= totalPages) {
-            setPage(Math.max(0, totalPages - 1));
-        }
-    }, [page, totalPages]);
+    const canGoNext = totalPages > 0 && page + 1 < totalPages;
 
     useEffect(() => {
         setPage(0);
@@ -120,12 +109,12 @@ export function useLocationsPageLogic() {
         setIsFormOpen(true);
     };
 
-    const openEditDialog = (location: LocationOption) => {
+    const openEditDialog = (location: Location) => {
         setEditingLocation(location);
         setFormState({
             warehouseId: location.warehouseId || "",
             code: location.code || "",
-            name: location.name || "",
+            name: location.code || "",
             zone: location.zone || "",
             aisle: location.aisle || "",
             rack: location.rack || "",
@@ -152,12 +141,24 @@ export function useLocationsPageLogic() {
             return false;
         }
 
+        const body: CreateLocationRequest = {
+            warehouseId: result.payload.warehouseId,
+            code: result.payload.code,
+            zone: result.payload.zone ?? "",
+            aisle: result.payload.aisle ?? "",
+            rack: result.payload.rack ?? "",
+            level: result.payload.level ?? 0,
+            bin: result.payload.bin ?? "",
+            locationType: result.payload.locationType || "",
+            isActive: result.payload.isActive,
+        };
+
         try {
             if (editingLocation) {
-                await updateLocation({ id: editingLocation.id, body: result.payload }).unwrap();
+                await updateLocation({ id: editingLocation.id, body }).unwrap();
                 toast.success("Đã cập nhật vị trí");
             } else {
-                await createLocation(result.payload).unwrap();
+                await createLocation(body).unwrap();
                 toast.success("Đã thêm vị trí mới");
             }
             setIsFormOpen(false);
@@ -170,7 +171,7 @@ export function useLocationsPageLogic() {
         }
     };
 
-    const openDeleteDialog = (location: LocationOption) => {
+    const openDeleteDialog = (location: Location) => {
         setDeleteTarget(location);
         setIsDeleteDialogOpen(true);
     };
@@ -184,7 +185,7 @@ export function useLocationsPageLogic() {
                 id: deleteTarget.id,
                 warehouseId: deleteTarget.warehouseId,
             }).unwrap();
-            toast.success(`Đã xóa vị trí ${deleteTarget.code || deleteTarget.name || ""}`);
+            toast.success(`Đã xóa vị trí ${deleteTarget.code || ""}`);
         } catch (err) {
             toast.error(apiErrMessage(err, "Không thể xóa vị trí"));
         } finally {
@@ -211,8 +212,7 @@ export function useLocationsPageLogic() {
         totalLocations,
         activeLocations,
         inactiveLocations,
-        filteredLocations,
-        visibleLocations,
+        locations,
 
         page,
         setPage,
