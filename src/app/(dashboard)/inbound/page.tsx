@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import {
@@ -17,9 +16,9 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Select,
   SelectContent,
@@ -38,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
+import { statusTone } from "@/lib/design-system";
 import { useGetInboundReceiptsQuery, useLazyGetInboundReceiptPrintDataQuery } from "@/store/services/inbound.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
@@ -57,43 +57,7 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: "Hoàn tất",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-  RECEIVED: {
-    label: "Đã nhận hàng",
-    cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
-    icon: <TruckIcon className="h-3 w-3" />,
-  },
-  PUTAWAY_IN_PROGRESS: {
-    label: "Đang lên kệ",
-    cls: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
-    icon: <Clock className="h-3 w-3" />,
-  },
-  COMPLETED: {
-    label: "Hoàn tất",
-    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
-    icon: <CheckCircle2 className="h-3 w-3" />,
-  },
-};
-
 const EMPTY_RECEIPTS: InboundReceipt[] = [];
-
-function StatusBadge({ status }: { status: string | null | undefined }) {
-  const s = status ?? "";
-  const cfg = STATUS_CONFIG[s];
-  if (!cfg) {
-    return (
-      <Badge variant="secondary" className="rounded-md border-0 px-2.5 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-        {s || "—"}
-      </Badge>
-    );
-  }
-  return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", cfg.cls)}>
-      {cfg.icon}
-      {cfg.label}
-    </span>
-  );
-}
 
 export default function InboundPage() {
   const [page, setPage] = useState(0);
@@ -204,25 +168,25 @@ export default function InboundPage() {
         label: "Tổng phiếu",
         value: stats.total,
         icon: FileText,
-        color: "text-indigo-500",
+        color: "text-primary",
       },
       {
         label: multiPage ? "Đã nhận (trang này)" : "Đã nhận",
         value: stats.received,
         icon: TruckIcon,
-        color: "text-blue-500",
+        color: "text-info",
       },
       {
         label: multiPage ? "Đang lên kệ (trang này)" : "Đang lên kệ",
         value: stats.inProgress,
         icon: Clock,
-        color: "text-amber-500",
+        color: "text-warning",
       },
       {
         label: multiPage ? "Hoàn tất (trang này)" : "Hoàn tất",
         value: stats.completed,
         icon: CheckCircle2,
-        color: "text-emerald-500",
+        color: "text-success",
       },
     ];
   }, [paged?.total_pages, stats]);
@@ -237,7 +201,7 @@ export default function InboundPage() {
             render={<Link href="/inbound/new" />}
             nativeButton={false}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
+            className="gap-1.5"
           >
             <PackagePlus className="h-4 w-4" />
             Tạo phiếu nhập
@@ -247,8 +211,7 @@ export default function InboundPage() {
 
       <StatsGrid stats={statsItems} isLoading={isLoading} />
 
-      {/* Main Table Card */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col">
+      <div className="ui-surface flex flex-col overflow-hidden">
         <SearchToolbar
           noContainer
           placeholder="Tìm theo mã phiếu GRN, mã PO..."
@@ -272,19 +235,19 @@ export default function InboundPage() {
                 open={advancedOpen}
                 summary={
                   activeFiltersCount > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
                       {status ? (
-                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                        <span className="rounded-full bg-muted px-3 py-1">
                           Trạng thái:{" "}
-                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                          <span className="font-semibold text-foreground">
                             {STATUS_LABEL[status] ?? status}
                           </span>
                         </span>
                       ) : null}
                       {warehouseId ? (
-                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                        <span className="rounded-full bg-muted px-3 py-1">
                           Kho:{" "}
-                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                          <span className="font-semibold text-foreground">
                             {findWarehouse(warehouseId)?.name ?? "—"}
                           </span>
                         </span>
@@ -300,12 +263,12 @@ export default function InboundPage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-lg">
                     <span className="truncate text-sm">
                       {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
                     </span>
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-lg">
                     <SelectItem value="" className="rounded-lg">Tất cả trạng thái</SelectItem>
                     {STATUS_OPTIONS.map((st) => (
                       <SelectItem key={st} value={st} className="rounded-lg">
@@ -322,7 +285,7 @@ export default function InboundPage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-60 sm:w-55 dark:border-slate-800 dark:bg-slate-900">
+                  <SelectTrigger className="h-10 w-full min-w-0 rounded-lg sm:max-w-60 sm:w-55">
                     <SelectValue
                       placeholder={
                         warehousesLoading ? "Đang tải kho..." : warehousesIsError ? "Lỗi tải kho" : "Tất cả kho"
@@ -335,9 +298,9 @@ export default function InboundPage() {
                       }}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="max-h-72 rounded-xl">
+                  <SelectContent className="max-h-72 rounded-lg">
                     {warehousesIsError ? (
-                      <div className="px-2 py-1.5 text-xs text-rose-500">
+                      <div className="px-2 py-1.5 text-xs text-destructive">
                         Không tải được kho.
                         <button type="button" onClick={() => refetchWarehouses()} className="ml-1 underline">Thử lại</button>
                       </div>
@@ -355,34 +318,33 @@ export default function InboundPage() {
           }
         />
 
-        {/* Fetching indicator */}
         {isFetching && !isLoading ? (
-          <div className="flex items-center gap-2 border-b border-slate-100 bg-indigo-50/60 px-6 py-2 text-xs font-medium text-indigo-600 dark:border-slate-800 dark:bg-indigo-950/20 dark:text-indigo-400">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+          <div className="ui-updating-banner flex items-center gap-2">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             Đang cập nhật dữ liệu…
           </div>
         ) : null}
 
         <div className="flex-1 overflow-x-auto">
           <Table className="min-w-px text-left border-collapse">
-            <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-              <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                <TableHead className="py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <TableHeader className="ui-table-header">
+              <TableRow>
+                <TableHead className="ui-label py-3.5 pl-6 pr-3">
                   Mã phiếu GRN
                 </TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="ui-label px-3 py-3.5">
                   PO liên quan
                 </TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="ui-label px-3 py-3.5">
                   <span className="inline-flex items-center gap-1.5">
                     <CalendarDays className="h-3.5 w-3.5" />
                     Ngày nhập
                   </span>
                 </TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="ui-label px-3 py-3.5">
                   Trạng thái
                 </TableHead>
-                <TableHead className="py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <TableHead className="ui-label py-3.5 pl-3 pr-6 text-right">
                   Thao tác
                 </TableHead>
               </TableRow>
@@ -390,7 +352,7 @@ export default function InboundPage() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={`ske-inb-${i}`} className="border-b border-slate-100 dark:border-slate-800">
+                  <TableRow key={`ske-inb-${i}`} className="ui-table-row">
                     <TableCell className="py-4 pl-6 pr-3"><Skeleton className="h-4 w-36 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-24 rounded" /></TableCell>
@@ -423,7 +385,7 @@ export default function InboundPage() {
                           render={<Link href="/inbound/new" />}
                           nativeButton={false}
                           size="sm"
-                          className="bg-indigo-600 hover:bg-indigo-700 gap-1.5"
+                          className="gap-1.5"
                         >
                           <PackagePlus className="h-4 w-4" />
                           Tạo phiếu đầu tiên
@@ -436,47 +398,44 @@ export default function InboundPage() {
                 receipts.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/80 dark:border-slate-800/60 dark:hover:bg-slate-800/40 transition-colors"
+                    className="ui-table-row group last:border-0"
                   >
-                    {/* Receipt Number */}
                     <TableCell className="py-4 pl-6 pr-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                        <span className="text-sm font-semibold text-foreground">
                           {r.receiptNumber}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">{r.id.slice(0, 8)}…</span>
+                        <span className="font-mono text-[11px] text-muted-foreground">{r.id.slice(0, 8)}...</span>
                       </div>
                     </TableCell>
 
-                    {/* PO Number */}
                     <TableCell className="px-3 py-4">
                       {r.poNumber ? (
-                        <span className="inline-flex items-center rounded-lg bg-indigo-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
+                        <span className="inline-flex items-center rounded-lg bg-info-soft px-2.5 py-1 font-mono text-[11px] font-semibold text-info-foreground">
                           {r.poNumber}
                         </span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
 
-                    {/* Date */}
-                    <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">
+                    <TableCell className="px-3 py-4 text-sm text-muted-foreground">
                       {r.receivedDate ?? "—"}
                     </TableCell>
 
-                    {/* Status */}
                     <TableCell className="px-3 py-4">
-                      <StatusBadge status={r.status} />
+                      <StatusBadge tone={statusTone(r.status)}>
+                        {STATUS_LABEL[r.status ?? ""] ?? r.status ?? "—"}
+                      </StatusBadge>
                     </TableCell>
 
-                    {/* Actions */}
                     <TableCell className="py-4 pl-3 pr-6 text-right">
                       <Button
                         onClick={() => handlePrintClick(r.id)}
                         disabled={printingId === r.id}
                         variant="outline"
                         size="sm"
-                        className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-400 flex items-center gap-1.5 transition-colors"
+                        className="flex h-8 items-center gap-1.5 px-3 text-xs font-semibold"
                       >
                         {printingId === r.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />

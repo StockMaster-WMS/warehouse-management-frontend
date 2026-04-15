@@ -22,10 +22,11 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { statusTone } from "@/lib/design-system";
 import { apiErrMessage } from "@/types/api";
 import {
   getSupplierDisplayName,
-  isSupplierActive,
   supplierStatusLabel,
   type Supplier,
 } from "@/types/supplier";
@@ -72,23 +73,21 @@ export function SuppliersTable({
   const content = (
     <>
       {isFetching && !isLoading ? (
-        <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
-          Đang cập nhật dữ liệu…
-        </p>
+        <p className="ui-updating-banner">Đang cập nhật dữ liệu...</p>
       ) : null}
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="border-b border-slate-100 bg-slate-50/90 dark:border-slate-800 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 text-xs font-semibold text-slate-500">
+          <thead className="ui-table-header">
             <tr>
-              <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhà cung cấp</th>
-              <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Liên hệ</th>
-              <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Thanh toán / Giao hàng</th>
-              <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Địa chỉ</th>
-              <th className="px-6 py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</th>
-              <th className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400" />
+              <th className="ui-label px-6 py-4">Nhà cung cấp</th>
+              <th className="ui-label px-6 py-4">Liên hệ</th>
+              <th className="ui-label px-6 py-4">Thanh toán / Giao hàng</th>
+              <th className="ui-label px-6 py-4">Địa chỉ</th>
+              <th className="ui-label px-6 py-4 text-center">Trạng thái</th>
+              <th className="ui-label px-6 py-4 text-right" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody>
             {isLoading ? (
               Array.from({ length: 6 }).map((_, rowIndex) => (
                 <tr key={`supplier-skeleton-${rowIndex}`} className="hover:bg-transparent">
@@ -96,12 +95,12 @@ export function SuppliersTable({
                     <Skeleton className="h-4 w-40" />
                     <Skeleton className="mt-2 h-3 w-28" />
                   </td>
-                  <td className="px-6 py-4 space-y-2">
+                  <td className="space-y-2 px-6 py-4">
                     <Skeleton className="h-3 w-32" />
                     <Skeleton className="h-3 w-36" />
                     <Skeleton className="h-3 w-24" />
                   </td>
-                  <td className="px-6 py-4 space-y-2">
+                  <td className="space-y-2 px-6 py-4">
                     <Skeleton className="h-3 w-28" />
                     <Skeleton className="h-3 w-20" />
                   </td>
@@ -151,53 +150,55 @@ export function SuppliersTable({
               rows.map((supplier) => {
                 const name = getSupplierDisplayName(supplier);
                 const tax = supplier.taxCode?.trim();
-                const sub = [supplier.code, tax ? `MST ${tax}` : null].filter(Boolean).join(" • ");
-                const activeLike = isSupplierActive(supplier.status);
+                const sub = [supplier.code, tax ? `MST ${tax}` : null]
+                  .filter(Boolean)
+                  .join(" - ");
 
                 return (
-                  <tr
-                    key={supplier.id}
-                    className="group transition-colors hover:bg-indigo-50/40 dark:hover:bg-slate-800/50"
-                  >
+                  <tr key={supplier.id} className="ui-table-row group">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold leading-tight text-slate-900 dark:text-white">{name}</span>
-                        <span className="mt-1 font-mono text-[10px] font-medium text-slate-500">{sub || supplier.id}</span>
+                        <span className="text-sm font-bold leading-tight text-foreground">
+                          {name}
+                        </span>
+                        <span className="mt-1 font-mono text-[10px] font-medium text-muted-foreground">
+                          {sub || supplier.id}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          <User className="h-3 w-3 shrink-0 text-slate-400" />
-                          <span className="truncate">{supplier.contactName ?? "—"}</span>
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
+                          <User className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{supplier.contactName ?? "-"}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-                          <Mail className="h-3 w-3 shrink-0 text-slate-400" />
-                          <span className="truncate">{supplier.contactEmail ?? "—"}</span>
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Mail className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{supplier.contactEmail ?? "-"}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Phone className="h-3 w-3 shrink-0 text-slate-400" />
-                          {supplier.contactPhone ?? "—"}
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Phone className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          {supplier.contactPhone ?? "-"}
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-xs text-slate-600 dark:text-slate-300">
-                      <div>TT: {supplier.paymentTerms != null ? `${supplier.paymentTerms} ngày` : "—"}</div>
-                      <div className="mt-0.5 text-slate-500">Lead: {supplier.leadTimeDays != null ? `${supplier.leadTimeDays} ngày` : "—"}</div>
+                    <td className="whitespace-nowrap px-6 py-4 text-xs text-muted-foreground">
+                      <div>
+                        TT: {supplier.paymentTerms != null ? `${supplier.paymentTerms} ngày` : "-"}
+                      </div>
+                      <div className="mt-0.5">
+                        Lead: {supplier.leadTimeDays != null ? `${supplier.leadTimeDays} ngày` : "-"}
+                      </div>
                     </td>
                     <td className="max-w-55 px-6 py-4">
-                      <span className="line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{supplier.address ?? "—"}</span>
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
+                        {supplier.address ?? "-"}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          activeLike
-                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                        }`}
-                      >
+                      <StatusBadge tone={statusTone(supplier.status)}>
                         {supplierStatusLabel(supplier.status)}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>
@@ -208,11 +209,14 @@ export function SuppliersTable({
                             </Button>
                           }
                         />
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                        <DropdownMenuContent align="end" className="w-48 rounded-lg">
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                           </DropdownMenuGroup>
-                          <DropdownMenuItem className="rounded-lg" render={<Link href={`/suppliers/${supplier.id}/edit`} />}>
+                          <DropdownMenuItem
+                            className="rounded-lg"
+                            render={<Link href={`/suppliers/${supplier.id}/edit`} />}
+                          >
                             <Edit2 className="mr-2 h-4 w-4" />
                             Sửa thông tin
                           </DropdownMenuItem>
@@ -221,7 +225,7 @@ export function SuppliersTable({
                             Lịch sử nhập hàng
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="rounded-lg text-rose-600 focus:text-rose-600"
+                            className="rounded-lg text-destructive focus:text-destructive"
                             onClick={() => onRequestDelete(supplier)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -260,9 +264,5 @@ export function SuppliersTable({
     return content;
   }
 
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-      {content}
-    </div>
-  );
+  return <div className="ui-surface overflow-hidden">{content}</div>;
 }

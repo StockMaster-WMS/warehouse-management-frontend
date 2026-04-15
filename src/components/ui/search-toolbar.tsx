@@ -26,17 +26,17 @@ export function SearchToolbar({
   return (
     <div
       className={cn(
-        !noContainer && "bg-white p-3 sm:p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all",
-        noContainer && "p-3 sm:p-4 bg-white dark:bg-slate-900",
+        !noContainer && "ui-surface p-3 transition-all sm:p-4",
+        noContainer && "p-3 sm:p-4",
         className
       )}
     >
       <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 group w-full">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-hover:text-indigo-500" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-hover:text-primary" />
           <Input
             placeholder={placeholder}
-            className="h-10 sm:h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 text-xs sm:text-sm font-medium transition-all hover:bg-slate-50 focus-visible:border-indigo-500 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-indigo-500/10 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-900"
+            className="h-10 w-full rounded-lg border-border bg-muted/45 pl-11 pr-4 text-xs font-medium transition-all hover:bg-muted/70 focus-visible:bg-card sm:h-11 sm:text-sm"
             {...(onValueChange
               ? {
                   value: value ?? "",
@@ -56,7 +56,7 @@ export function SearchToolbar({
 
       {filters && (
         <div className="empty:hidden">
-          <div className="my-3 sm:my-4 h-px w-full bg-slate-100 dark:bg-slate-800" />
+          <div className="my-3 h-px w-full bg-border sm:my-4" />
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {filters}
           </div>

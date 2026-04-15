@@ -11,20 +11,19 @@ export default function PickingPage() {
     const [isMobileMode, setIsMobileMode] = useState(false);
 
     return (
-        <div className="flex h-full flex-col bg-slate-50/50">
-            {/* Mobile View Layer */}
+        <div className="flex h-full flex-col">
             {isMobileMode && (
-                <div className="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-950 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between border-b px-4 py-3 bg-white dark:bg-slate-950 sticky top-0 z-10">
+                <div className="fixed inset-0 z-[100] flex flex-col bg-background animate-in fade-in zoom-in-95 duration-200">
+                    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-4 py-3">
                         <div className="flex items-center gap-2">
-                           <ScanBarcode className="h-5 w-5 text-indigo-600" />
+                           <ScanBarcode className="h-5 w-5 text-primary" />
                            <span className="font-black text-sm uppercase tracking-wider">Picking Task</span>
                         </div>
                         <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => setIsMobileMode(false)}
-                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="rounded-lg"
                         >
                             <X className="h-5 w-5" />
                         </Button>
@@ -41,7 +40,6 @@ export default function PickingPage() {
                 actions={
                     <Button 
                         onClick={() => setIsMobileMode(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none"
                         size="sm"
                     >
                         <ScanBarcode className="mr-2 h-4 w-4" />

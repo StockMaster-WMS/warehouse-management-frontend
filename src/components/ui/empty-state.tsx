@@ -19,17 +19,17 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center p-6 sm:p-8 text-center",
+        "flex flex-col items-center justify-center p-6 text-center sm:p-8",
         className,
       )}
     >
-      <div className="mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800">
-        <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-slate-300" aria-hidden="true" />
+      <div className="ui-icon-tile mb-3 h-14 w-14 sm:mb-4 sm:h-16 sm:w-16">
+        <Icon className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden="true" />
       </div>
-      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white px-2">
+      <h3 className="px-2 text-base font-bold text-foreground sm:text-lg">
         {title}
       </h3>
-      <p className="mt-1 max-w-md text-xs sm:text-sm font-medium text-slate-500 px-2">
+      <p className="mt-1 max-w-md px-2 text-xs font-medium text-muted-foreground sm:text-sm">
         {description}
       </p>
       {action ? <div className="mt-3 sm:mt-4">{action}</div> : null}
