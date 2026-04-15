@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   AlertCircle,
   ArrowLeft,
-  Clock,
   FileText,
   Loader2,
   PackagePlus,
@@ -21,10 +20,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Select,
   SelectContent,
@@ -51,6 +50,7 @@ import {
 import { useCreateInboundReceiptMutation } from "@/store/services/inbound.service";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
+import { statusTone } from "@/lib/design-system";
 
 /* ── Step Indicator ─────────────────────────────────────────────────── */
 function StepIndicator({ step }: { step: 1 | 2 }) {
@@ -68,16 +68,16 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
         return (
           <div key={num} className="flex items-center">
             <div className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
-              done && "text-emerald-600 dark:text-emerald-400",
-              active && "bg-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-none",
-              !done && !active && "text-slate-400 dark:text-slate-600",
+              "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
+              done && "text-success",
+              active && "bg-primary text-primary-foreground shadow-sm",
+              !done && !active && "text-muted-foreground/65",
             )}>
               <span className={cn(
                 "flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold",
-                done && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-                active && "bg-white/20 text-white",
-                !done && !active && "bg-slate-100 text-slate-400 dark:bg-slate-800",
+                done && "bg-success-soft text-success-foreground",
+                active && "bg-primary-foreground/20 text-primary-foreground",
+                !done && !active && "bg-muted text-muted-foreground",
               )}>
                 {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : num}
               </span>
@@ -86,7 +86,7 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
             {i < steps.length - 1 && (
               <div className={cn(
                 "mx-1 h-px w-8 transition-colors",
-                done ? "bg-emerald-300 dark:bg-emerald-700" : "bg-slate-200 dark:bg-slate-700"
+                done ? "bg-success/40" : "bg-border"
               )} />
             )}
           </div>
@@ -128,14 +128,14 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
   return (
     <div className="space-y-4">
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="ui-surface flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1 min-w-44">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={keyword}
             onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
             placeholder="Tìm theo mã PO..."
-            className="pl-9 h-9 rounded-xl border-slate-200 dark:border-slate-700"
+            className="h-9 rounded-lg pl-9"
           />
         </div>
 
@@ -143,15 +143,15 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           value={statusFilter}
           onValueChange={(v) => { setStatusFilter(v ?? "ALL"); setPage(0); }}
         >
-          <SelectTrigger className="h-9 w-44 shrink-0 whitespace-nowrap rounded-xl border-slate-200 dark:border-slate-700">
+          <SelectTrigger className="h-9 w-44 shrink-0 whitespace-nowrap rounded-lg">
             <div className="flex items-center gap-1.5 truncate text-sm">
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <span className="truncate">
                 {statusFilter === "ALL" ? "Tất cả trạng thái" : PO_STATUS[statusFilter] ?? statusFilter}
               </span>
             </div>
           </SelectTrigger>
-          <SelectContent className="rounded-xl">
+          <SelectContent className="rounded-lg">
             <SelectItem value="ALL" className="rounded-lg">Tất cả</SelectItem>
             <SelectItem value="APPROVED" className="rounded-lg">Đã duyệt</SelectItem>
             <SelectItem value="PARTIAL" className="rounded-lg">Nhận một phần</SelectItem>
@@ -162,7 +162,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 text-xs text-slate-500 hover:text-rose-600"
+            className="h-9 text-xs text-muted-foreground hover:text-destructive"
             onClick={() => { setKeyword(""); setStatusFilter("ALL"); setPage(0); }}
           >
             Xóa bộ lọc
@@ -171,28 +171,28 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
       </div>
 
       {/* PO Table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="ui-surface overflow-hidden">
         {isFetching && !isLoading && (
-          <div className="flex items-center gap-2 border-b border-slate-100 bg-indigo-50/60 px-6 py-2 text-xs font-medium text-indigo-600 dark:border-slate-800 dark:bg-indigo-950/20 dark:text-indigo-400">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+          <div className="ui-updating-banner flex items-center gap-2">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             Đang cập nhật…
           </div>
         )}
         <div className="overflow-x-auto">
           <Table className="min-w-[600px] text-left">
-            <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-              <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                <TableHead className="py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đặt</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến nhận</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                <TableHead className="py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+            <TableHeader className="ui-table-header">
+              <TableRow>
+                <TableHead className="ui-label py-3.5 pl-6 pr-3">Mã PO</TableHead>
+                <TableHead className="ui-label px-3 py-3.5">Ngày đặt</TableHead>
+                <TableHead className="ui-label px-3 py-3.5">Dự kiến nhận</TableHead>
+                <TableHead className="ui-label px-3 py-3.5">Trạng thái</TableHead>
+                <TableHead className="ui-label py-3.5 pl-3 pr-6 text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-b border-slate-100 dark:border-slate-800">
+                  <TableRow key={i} className="ui-table-row">
                     <TableCell className="py-4 pl-6 pr-3"><Skeleton className="h-4 w-32 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-24 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-24 rounded" /></TableCell>
@@ -225,30 +225,24 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
                 rows.map((po: PurchaseOrder) => (
                   <TableRow
                     key={po.id}
-                    className="group border-b border-slate-50 last:border-0 hover:bg-indigo-50/40 dark:border-slate-800/60 dark:hover:bg-indigo-950/20 transition-colors cursor-pointer"
+                    className="ui-table-row group cursor-pointer last:border-0"
                     onClick={() => onSelect(po.id)}
                   >
                     <TableCell className="py-4 pl-6 pr-3">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">{po.poNumber}</span>
+                      <span className="font-semibold text-foreground">{po.poNumber}</span>
                     </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.orderDate}</TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-4 text-sm text-muted-foreground">{po.orderDate}</TableCell>
+                    <TableCell className="px-3 py-4 text-sm text-muted-foreground">{po.expectedDate ?? "—"}</TableCell>
                     <TableCell className="px-3 py-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border",
-                        po.status === "APPROVED"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
-                          : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
-                      )}>
-                        {po.status === "APPROVED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      <StatusBadge tone={statusTone(po.status)}>
                         {PO_STATUS[po.status ?? ""] ?? po.status ?? "—"}
-                      </span>
+                      </StatusBadge>
                     </TableCell>
                     <TableCell className="py-4 pl-3 pr-6 text-right">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-950/30 opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+                        className="h-8 gap-1.5 px-3 text-xs font-semibold opacity-0 transition-all group-hover:opacity-100 focus:opacity-100"
                         onClick={(e) => { e.stopPropagation(); onSelect(po.id); }}
                       >
                         <PackagePlus className="h-3.5 w-3.5" />
@@ -291,7 +285,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   const { data: detailRes, isLoading: detailLoading } = useGetPurchaseOrderDetailQuery(poId);
   const detail = detailRes?.data;
   const po = detail?.purchaseOrder;
-  const items = detail?.items ?? [];
+  const items = useMemo(() => detail?.items ?? [], [detail?.items]);
 
   const { data: whLocRes } = useGetLocationsQuery(
     { warehouseId: po?.warehouseId ?? "" },
@@ -385,15 +379,15 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
 
   if (detailLoading)
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-16 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Loader2 className="h-7 w-7 animate-spin text-indigo-500" />
+      <div className="ui-surface flex flex-col items-center justify-center gap-3 p-16 text-muted-foreground">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
         <p className="text-sm font-medium">Đang tải chi tiết PO…</p>
       </div>
     );
 
   if (!po)
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="ui-surface">
         <EmptyState
           icon={AlertCircle}
           title="Không tải được chi tiết PO"
@@ -416,38 +410,31 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* PO Info Banner */}
-      <div className="flex items-center gap-4 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-white p-4 shadow-sm dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-slate-900/20">
-        <Button type="button" variant="outline" size="icon-sm" onClick={onBack} className="shrink-0 rounded-xl hover:bg-white hover:text-indigo-600 dark:hover:bg-slate-800 dark:hover:text-indigo-400 border-slate-200">
+      <div className="ui-surface flex items-center gap-4 p-4">
+        <Button type="button" variant="outline" size="icon-sm" onClick={onBack} className="shrink-0 rounded-lg">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-slate-900 dark:text-white text-sm">{po.poNumber}</span>
-            <span className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold border",
-              po.status === "APPROVED"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800/50"
-                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800/50"
-            )}>
-              {po.status === "APPROVED" ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            <span className="text-sm font-bold text-foreground">{po.poNumber}</span>
+            <StatusBadge tone={statusTone(po.status)}>
               {po.status === "APPROVED" ? "Đã duyệt" : "Nhận một phần"}
-            </span>
+            </StatusBadge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Ngày đặt: <span className="font-medium text-slate-700 dark:text-slate-300">{po.orderDate}</span> · Dự kiến: <span className="font-medium text-slate-700 dark:text-slate-300">{po.expectedDate ?? "—"}</span>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Ngày đặt: <span className="font-medium text-foreground">{po.orderDate}</span> · Dự kiến: <span className="font-medium text-foreground">{po.expectedDate ?? "—"}</span>
           </p>
         </div>
-        {/* Progress */}
-        <div className="text-right shrink-0 bg-white/60 dark:bg-slate-900/40 px-4 py-2 rounded-xl border border-white/40 dark:border-white/5">
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Đã điền</p>
-          <p className="text-lg font-black text-indigo-700 dark:text-indigo-400 tabular-nums leading-none">
-            {filledCount}<span className="text-xs font-semibold text-slate-400">/{receivableItems.length}</span>
+        <div className="ui-muted-surface shrink-0 px-4 py-2 text-right">
+          <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Đã điền</p>
+          <p className="text-lg font-black leading-none tabular-nums text-primary">
+            {filledCount}<span className="text-xs font-semibold text-muted-foreground">/{receivableItems.length}</span>
           </p>
         </div>
       </div>
 
       {receivableItems.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="ui-surface">
           <EmptyState
             icon={CheckCircle2}
             title="Đã nhập đủ hàng"
@@ -458,30 +445,29 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
         </div>
       ) : (
         <>
-          {/* Lines Table */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                <Building2 className="h-4 w-4 text-indigo-500" />
+          <div className="ui-surface overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Building2 className="h-4 w-4 text-primary" />
                 Danh sách hàng hoá
-                <Badge variant="secondary" className="ml-1 text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                <StatusBadge dot={false} tone="neutral" className="ml-1">
                   {receivableItems.length} dòng
-                </Badge>
+                </StatusBadge>
               </div>
-              <p className="text-xs text-slate-400">Điền số lượng thực nhận cho từng dòng hàng</p>
+              <p className="text-xs text-muted-foreground">Điền số lượng thực nhận cho từng dòng hàng</p>
             </div>
 
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                  <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                    <TableHead className="py-3 pl-5 pr-3 w-10 text-[11px] font-bold uppercase tracking-wider text-slate-400">#</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU / Tên SP</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
-                    <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 w-36">Nhập lần này ★</TableHead>
-                    <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ghi chú</TableHead>
+                <TableHeader className="ui-table-header">
+                  <TableRow>
+                    <TableHead className="ui-label w-10 py-3 pl-5 pr-3">#</TableHead>
+                    <TableHead className="ui-label px-3 py-3">SKU / Tên SP</TableHead>
+                    <TableHead className="ui-label px-3 py-3 text-right">SL đặt</TableHead>
+                    <TableHead className="ui-label px-3 py-3 text-right">Đã nhận</TableHead>
+                    <TableHead className="ui-label px-3 py-3 text-right">Còn lại</TableHead>
+                    <TableHead className="ui-label w-36 px-3 py-3 text-right">Nhập lần này ★</TableHead>
+                    <TableHead className="ui-label px-3 py-3">Ghi chú</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -498,24 +484,24 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                       <TableRow
                         key={item.id}
                         className={cn(
-                          "border-b border-slate-50 last:border-0 dark:border-slate-800/60 transition-colors",
-                          hasValue && !isOverMax && "bg-emerald-50/30 dark:bg-emerald-950/10",
-                          isOverMax && "bg-rose-50/40 dark:bg-rose-950/10",
+                          "ui-table-row last:border-0",
+                          hasValue && !isOverMax && "bg-success-soft/50",
+                          isOverMax && "bg-danger-soft/50",
                         )}
                       >
-                        <TableCell className="py-3 pl-5 pr-3 text-xs font-bold text-slate-400">{idx + 1}</TableCell>
+                        <TableCell className="py-3 pl-5 pr-3 text-xs font-bold text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="px-3 py-3">
                           <div className="flex flex-col gap-0.5">
-                            <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">{item.productSku}</span>
+                            <span className="font-mono text-xs font-semibold text-primary">{item.productSku}</span>
                             {item.productName && (
-                              <span className="text-xs text-slate-500 dark:text-slate-400">{item.productName}</span>
+                              <span className="text-xs text-muted-foreground">{item.productName}</span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{ordered}</TableCell>
-                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{received}</TableCell>
+                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-muted-foreground">{ordered}</TableCell>
+                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-muted-foreground">{received}</TableCell>
                         <TableCell className="px-3 py-3 text-right">
-                          <span className="text-sm font-semibold tabular-nums text-slate-800 dark:text-slate-200">{remain}</span>
+                          <span className="text-sm font-semibold tabular-nums text-foreground">{remain}</span>
                         </TableCell>
                         <TableCell className="px-3 py-3 text-right">
                           <Input
@@ -525,14 +511,13 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                             inputMode="decimal"
                             placeholder={`≤ ${remain}`}
                             className={cn(
-                              "w-28 text-right h-8 rounded-lg text-sm font-semibold tabular-nums",
-                              "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20",
-                              isOverMax && "border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400",
-                              hasValue && !isOverMax && "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300",
+                              "h-8 w-28 rounded-lg text-right text-sm font-semibold tabular-nums",
+                              isOverMax && "border-destructive bg-danger-soft text-destructive",
+                              hasValue && !isOverMax && "border-success bg-success-soft text-success-foreground",
                             )}
                           />
                           {isOverMax && (
-                            <p className="mt-1 text-[10px] text-rose-600 dark:text-rose-400">Vượt quá {remain}</p>
+                            <p className="mt-1 text-[10px] text-destructive">Vượt quá {remain}</p>
                           )}
                         </TableCell>
                         <TableCell className="px-3 py-3">
@@ -540,7 +525,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                             value={lineVal.note}
                             onChange={(e) => setLine(item.id, "note", e.target.value)}
                             placeholder="Nguyên vẹn, xước..."
-                            className="w-40 h-8 rounded-lg text-xs border-slate-200 dark:border-slate-700"
+                            className="h-8 w-40 rounded-lg text-xs"
                           />
                         </TableCell>
                       </TableRow>
@@ -551,17 +536,16 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
             </div>
           </div>
 
-          {/* Location + Note Panel */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Thông tin bổ sung</p>
+          <div className="ui-surface p-5">
+            <p className="ui-label mb-4">Thông tin bổ sung</p>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Vị trí nhận hàng <span className="text-rose-500">*</span>
+                <label className="text-sm font-semibold text-foreground">
+                  Vị trí nhận hàng <span className="text-destructive">*</span>
                 </label>
-                <p className="text-xs text-slate-400">Chọn khu vực hoặc dock tiếp nhận hàng</p>
+                <p className="text-xs text-muted-foreground">Chọn khu vực hoặc dock tiếp nhận hàng</p>
                 {locationOptions.length === 0 ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+                  <div className="rounded-lg border border-warning/25 bg-warning-soft px-3 py-2.5 text-xs text-warning-foreground">
                     Kho này chưa có vị trí nào. Vui lòng tạo vị trí cho kho trước khi nhập hàng.
                   </div>
                 ) : (
@@ -569,16 +553,16 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                     value={locationId || "__empty__"}
                     onValueChange={(v) => setLocationId(!v || v === "__empty__" ? "" : v)}
                   >
-                    <SelectTrigger className="rounded-xl h-10 border-slate-200 dark:border-slate-700">
+                    <SelectTrigger className="h-10 rounded-lg">
                       <SelectValue>
                         {locationId
                           ? (locationOptions.find((l) => l.id === locationId)?.code ??
                             locationOptions.find((l) => l.id === locationId)?.name ??
                             locationId)
-                          : <span className="text-slate-400">Chọn vị trí nhận hàng…</span>}
+                          : <span className="text-muted-foreground">Chọn vị trí nhận hàng…</span>}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl">
+                    <SelectContent className="rounded-lg">
                       {locationOptions.map((loc) => (
                         <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
                           {loc.code ?? loc.name ?? loc.id}
@@ -590,35 +574,34 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Ghi chú chung <span className="text-slate-400 font-normal text-xs">(tuỳ chọn)</span>
+                <label className="text-sm font-semibold text-foreground">
+                  Ghi chú chung <span className="text-xs font-normal text-muted-foreground">(tuỳ chọn)</span>
                 </label>
-                <p className="text-xs text-slate-400">Ghi chú về lô hàng, sự cố, khiếu nại…</p>
+                <p className="text-xs text-muted-foreground">Ghi chú về lô hàng, sự cố, khiếu nại…</p>
                 <Textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="VD: Lô hàng xước 1 thùng, đã ghi nhận..."
                   rows={2}
-                  className="rounded-xl border-slate-200 dark:border-slate-700 text-sm resize-none"
+                  className="resize-none rounded-lg text-sm"
                 />
               </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <p className="text-xs text-slate-500">
-              Đã điền <strong className="text-slate-800 dark:text-slate-200">{filledCount}</strong> / {receivableItems.length} dòng hàng
+          <div className="ui-muted-surface flex items-center justify-between px-5 py-3.5">
+            <p className="text-xs text-muted-foreground">
+              Đã điền <strong className="text-foreground">{filledCount}</strong> / {receivableItems.length} dòng hàng
             </p>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" size="sm" onClick={onBack} className="rounded-xl">
+              <Button type="button" variant="outline" size="sm" onClick={onBack} className="rounded-lg">
                 Huỷ
               </Button>
               <Button
                 type="submit"
                 disabled={creating}
                 size="sm"
-                className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
+                className="gap-1.5 rounded-lg"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
                 Tạo phiếu nhập kho
@@ -656,7 +639,7 @@ export default function NewInboundReceiptPage() {
               nativeButton={false}
               variant="outline"
               size="sm"
-              className="rounded-xl gap-1.5 text-xs"
+              className="gap-1.5 rounded-lg text-xs"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Danh sách

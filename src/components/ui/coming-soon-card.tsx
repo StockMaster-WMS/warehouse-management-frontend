@@ -12,14 +12,14 @@ export function ComingSoonCard({
   description,
 }: ComingSoonCardProps) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-6 dark:border-slate-700 dark:bg-slate-900/60">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-slate-800">
-        <Icon className="h-6 w-6 text-slate-400" aria-hidden="true" />
+    <div className="rounded-lg border border-dashed border-border bg-muted/55 p-6">
+      <div className="ui-icon-tile mb-4 h-12 w-12 bg-card shadow-sm">
+        <Icon className="h-6 w-6" aria-hidden="true" />
       </div>
-      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+      <h3 className="ui-label text-sm text-foreground">
         {title}
       </h3>
-      <p className="mt-2 text-sm font-medium text-slate-500">{description}</p>
+      <p className="mt-2 text-sm font-medium text-muted-foreground">{description}</p>
     </div>
   );
 }

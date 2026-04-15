@@ -30,41 +30,41 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900",
+        "ui-surface group relative overflow-hidden p-4 transition-all hover:shadow-md sm:p-5",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-2 sm:gap-3">
         <div className="space-y-1">
-          <p className="text-xs sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <p className="ui-label text-xs sm:text-[11px]">
             {label}
           </p>
           <div className="flex flex-col gap-1">
-            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">
+            <p className="text-xl font-black tabular-nums text-foreground sm:text-2xl">
               {value}
             </p>
             {trend ? (
               <span
                 className={cn(
                   "text-[10px] font-bold",
-                  isTrend 
-                    ? (positiveTrend ? "text-emerald-500" : "text-rose-500")
-                    : "text-slate-500 dark:text-slate-400"
+                  isTrend
+                    ? (positiveTrend ? "text-success" : "text-destructive")
+                    : "text-muted-foreground"
                 )}
               >
                 {trend}
               </span>
             ) : null}
             {description ? (
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
+              <p className="line-clamp-1 text-[10px] font-medium text-muted-foreground">
                 {description}
               </p>
             ) : null}
           </div>
         </div>
         {Icon ? (
-          <div className={cn("rounded-xl p-2 bg-slate-50 dark:bg-slate-800/50 transition-colors group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20")}>
-            <Icon className={cn("h-5 w-5 text-slate-400 transition-colors group-hover:text-indigo-600", iconClassName)} aria-hidden="true" />
+          <div className="ui-icon-tile p-2 group-hover:bg-primary/10 group-hover:text-primary">
+            <Icon className={cn("h-5 w-5", iconClassName)} aria-hidden="true" />
           </div>
         ) : null}
       </div>
@@ -72,7 +72,7 @@ export function StatCard({
         <div
           className={cn(
             "absolute bottom-0 left-0 h-1 w-full translate-y-full transition-transform group-hover:translate-y-0",
-            accentClassName ?? "bg-indigo-600",
+            accentClassName ?? "bg-primary",
           )}
         />
       )}

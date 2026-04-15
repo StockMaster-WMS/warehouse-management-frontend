@@ -96,15 +96,15 @@ export function InboundPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible print:p-0 print:border-none print:shadow-none min-w-[700px] bg-slate-100">
-        <DialogHeader className="print:hidden flex flex-row items-center justify-between sticky top-0 bg-slate-100 z-10 pb-4 border-b border-slate-200">
+      <DialogContent className="max-h-[85vh] min-w-[700px] max-w-4xl overflow-y-auto bg-muted print:max-h-none print:max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none">
+        <DialogHeader className="sticky top-0 z-10 flex flex-row items-center justify-between border-b border-border bg-muted pb-4 print:hidden">
           <div>
             <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
             <DialogDescription>
               Nhấn nút in để tạo bản cứng cho kho lưu trữ hoặc nhà cung cấp.
             </DialogDescription>
           </div>
-          <Button onClick={handlePrint} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={handlePrint} className="gap-2">
             <Printer className="h-4 w-4" /> In Phiếu
           </Button>
         </DialogHeader>

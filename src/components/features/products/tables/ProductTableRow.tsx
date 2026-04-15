@@ -7,8 +7,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
+import { statusTone } from "@/lib/design-system";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,70 +45,63 @@ export const ProductTableRow = memo(function ProductTableRow({
 
   return (
     <>
-      <TableRow className="hidden md:table-row group transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70 border-0">
+      <TableRow className="ui-table-row hidden border-0 md:table-row">
         <TableCell className="px-3 py-3 text-center align-middle">
-          <span className="tabular-nums text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span className="tabular-nums text-xs font-medium text-muted-foreground">
             {rowNumber}
           </span>
         </TableCell>
         <TableCell className="px-3 py-3 align-middle">
           <Link
             href={`/products/${product.id}`}
-            className="font-mono text-xs font-semibold text-slate-800 hover:text-indigo-600 hover:underline dark:text-slate-100 dark:hover:text-indigo-400"
+            className="font-mono text-xs font-semibold text-foreground hover:text-primary hover:underline"
           >
             {product.sku}
           </Link>
         </TableCell>
         <TableCell className="max-w-70 px-3 py-3 align-middle">
-          <span className="line-clamp-2 text-sm font-medium text-slate-900 dark:text-white">
+          <span className="line-clamp-2 text-sm font-medium text-foreground">
             {product.name}
           </span>
         </TableCell>
         <TableCell className="px-3 py-3 align-middle">
-          <span className="font-mono text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-mono text-xs text-muted-foreground">
             {product.barcodeEan13?.trim() || "—"}
           </span>
         </TableCell>
         <TableCell className="max-w-50 px-3 py-3 align-middle">
           <div className="flex flex-col gap-0.5">
-            <span className="truncate text-sm text-slate-700 dark:text-slate-200">
+            <span className="truncate text-sm text-foreground/85">
               {categoryLabel}
             </span>
             {categorySubline ? (
-              <span className="truncate font-mono text-[10px] text-slate-400">
+              <span className="truncate font-mono text-[10px] text-muted-foreground">
                 {categorySubline}
               </span>
             ) : null}
           </div>
         </TableCell>
         <TableCell className="px-3 py-3 text-center align-middle">
-          <span className="text-xs font-medium uppercase text-slate-600 dark:text-slate-300">
+          <span className="text-xs font-medium uppercase text-muted-foreground">
             {product.baseUnit?.trim() || "—"}
           </span>
         </TableCell>
         <TableCell className="px-3 py-3 text-center align-middle">
           {product.primarySupplierId ? (
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-medium text-success">
               Đã gán
             </span>
           ) : (
-            <span className="text-xs text-slate-400">Chưa gán</span>
+            <span className="text-xs text-muted-foreground">Chưa gán</span>
           )}
         </TableCell>
         <TableCell className="px-3 py-3 text-center align-middle">
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-              product.status === "ACTIVE"
-                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
-                : "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400"
-            }`}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          <StatusBadge tone={statusTone(product.status)}>
             {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
-          </span>
+          </StatusBadge>
         </TableCell>
         <TableCell className="whitespace-nowrap px-3 py-3 align-middle">
-          <span className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="text-xs text-muted-foreground">
             {formatDate(product.updatedAt)}
           </span>
         </TableCell>
@@ -118,7 +113,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`Hành động cho sản phẩm ${product.name}`}
-                  className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                  className="h-8 w-8 rounded-lg"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -143,7 +138,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                 Chỉnh sửa
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="rounded-lg text-rose-600 focus:text-rose-600"
+                className="rounded-lg text-destructive focus:text-destructive"
                 onClick={() => onRequestDelete({ id: product.id, name: product.name })}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -156,29 +151,29 @@ export const ProductTableRow = memo(function ProductTableRow({
 
       <TableRow className="md:hidden border-0 hover:bg-transparent">
         <TableCell colSpan={12} className="px-0 py-2 p-0 border-0">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 m-2">
+          <div className="ui-surface m-2 p-4">
             <div className="space-y-3">
           <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</p>
+            <p className="ui-label">SKU</p>
             <Link
               href={`/products/${product.id}`}
-              className="font-mono text-sm font-semibold text-slate-800 hover:text-indigo-600 hover:underline dark:text-slate-100 dark:hover:text-indigo-400"
+              className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"
             >
               {product.sku}
             </Link>
           </div>
 
           <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tên sản phẩm</p>
-            <p className="font-medium text-slate-900 dark:text-white line-clamp-2">
+              <p className="ui-label">Tên sản phẩm</p>
+            <p className="line-clamp-2 font-medium text-foreground">
               {product.name}
             </p>
           </div>
 
           {product.barcodeEan13?.trim() && (
             <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã vạch</p>
-              <p className="font-mono text-xs text-slate-600 dark:text-slate-300">
+              <p className="ui-label">Mã vạch</p>
+              <p className="font-mono text-xs text-muted-foreground">
                 {product.barcodeEan13}
               </p>
             </div>
@@ -186,12 +181,12 @@ export const ProductTableRow = memo(function ProductTableRow({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Danh mục</p>
-              <p className="text-sm text-slate-700 dark:text-slate-200 truncate">{categoryLabel}</p>
+              <p className="ui-label">Danh mục</p>
+              <p className="truncate text-sm text-foreground/85">{categoryLabel}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn vị</p>
-              <p className="text-xs font-medium uppercase text-slate-600 dark:text-slate-300">
+              <p className="ui-label">Đơn vị</p>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
                 {product.baseUnit?.trim() || "—"}
               </p>
             </div>
@@ -199,33 +194,26 @@ export const ProductTableRow = memo(function ProductTableRow({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</p>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${
-                  product.status === "ACTIVE"
-                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400"
-                    : "bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400"
-                }`}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <p className="ui-label">Trạng thái</p>
+              <StatusBadge tone={statusTone(product.status)}>
                 {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
-              </span>
+              </StatusBadge>
             </div>
             <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">NCC</p>
+              <p className="ui-label">NCC</p>
               <p className="text-xs font-medium">
                 {product.primarySupplierId ? (
-                  <span className="text-emerald-600 dark:text-emerald-400">Đã gán</span>
+                  <span className="text-success">Đã gán</span>
                 ) : (
-                  <span className="text-slate-400">Chưa gán</span>
+                  <span className="text-muted-foreground">Chưa gán</span>
                 )}
               </p>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Cập nhật</p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+          <div className="border-t border-border pt-3">
+            <p className="ui-label">Cập nhật</p>
+            <p className="text-xs text-muted-foreground">
               {formatDate(product.updatedAt)}
             </p>
           </div>
@@ -265,7 +253,7 @@ export const ProductTableRow = memo(function ProductTableRow({
               />
               <DropdownMenuContent align="end" className="w-40 rounded-xl">
                 <DropdownMenuItem
-                  className="text-rose-600 focus:text-rose-600"
+                  className="text-destructive focus:text-destructive"
                   onClick={() => onRequestDelete({ id: product.id, name: product.name })}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
