@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -10,6 +9,7 @@ import {
   CategoryTreeTable,
   CategoryDeleteDialog,
   useCategoriesPageLogic,
+  CategoryDialog,
 } from "@/components/features/categories";
 
 export default function CategoriesPage() {
@@ -22,8 +22,7 @@ export default function CategoriesPage() {
         description="Cây phân loại: nhóm gốc và loại con — dùng khi gán sản phẩm và báo cáo."
         actions={
           <Button
-            render={<Link href="/categories/new" />}
-            nativeButton={false}
+            onClick={logic.openCreateDialog}
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
           >
@@ -51,6 +50,7 @@ export default function CategoriesPage() {
           error={logic.error}
           onRetry={logic.refetch}
           onToggleExpanded={logic.toggleExpanded}
+          onEditCategory={logic.openEditDialog}
           onDeleteCategory={logic.prepareDelete}
         />
       </div>
@@ -60,6 +60,12 @@ export default function CategoriesPage() {
         onOpenChange={logic.setIsDeleteDialogOpen}
         itemName={logic.itemToDelete?.name}
         onConfirm={logic.confirmDelete}
+      />
+
+      <CategoryDialog
+        open={logic.isFormDialogOpen}
+        onOpenChange={logic.setIsFormDialogOpen}
+        categoryId={logic.editCategoryId}
       />
     </div>
   );

@@ -10,7 +10,6 @@ import type { AoA } from "@/lib/xlsx-utils";
 export const PRODUCT_IMPORT_TEMPLATE_HEADERS = [
   "name",
   "barcodeEan13",
-  "categoryId",
   "categoryCode",
   "supplierCode",
   "baseUnit",
@@ -31,15 +30,14 @@ export const PRODUCT_XLSX_SHEET_NAME = "SanPham";
 /** Dùng với `ImportExportXlsxMenu` / `buildImportPreviewFromXlsx(buf, PRODUCT_XLSX_IMPORT_CONFIG)`. */
 export const PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
   expectedHeaders: PRODUCT_IMPORT_TEMPLATE_HEADERS.filter(
-    (h) => h !== "categoryId" && h !== "categoryCode",
+    (h) => h !== "categoryCode",
   ),
   requiredRowFields: ["name", "baseUnit"],
-  requireAnyHeaderInEachGroup: [["categoryId", "categoryCode"]],
-  requireAnyValueInEachRowGroup: [["categoryId", "categoryCode"]],
+  requireAnyHeaderInEachGroup: [["categoryCode"]],
+  requireAnyValueInEachRowGroup: [["categoryCode"]],
   fieldLabels: {
     name: "tên sản phẩm",
     barcodeEan13: "mã vạch (EAN/UPC)",
-    categoryId: "UUID danh mục",
     categoryCode: "mã danh mục (DM-…)",
     supplierCode: "mã nhà cung cấp",
     baseUnit: "đơn vị tính",
@@ -61,7 +59,6 @@ export function getProductImportTemplateAoA(): AoA {
   const exampleRow = [
     "Sản phẩm mẫu (xóa dòng này hoặc sửa)",
     "0123456789012",
-    "thay-bang-uuid-nhom-hang",
     "",
     "",
     "cai",

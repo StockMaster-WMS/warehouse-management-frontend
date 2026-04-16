@@ -57,6 +57,11 @@ export function markExplicitLogout() {
   window.sessionStorage.setItem(AUTH_EXPLICIT_LOGOUT_KEY, "1");
 }
 
+export function clearExplicitLogout() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(AUTH_EXPLICIT_LOGOUT_KEY);
+}
+
 export function hasExplicitLogoutSnapshot() {
   if (typeof window === "undefined") return false;
   return window.sessionStorage.getItem(AUTH_EXPLICIT_LOGOUT_KEY) === "1";

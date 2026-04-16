@@ -19,6 +19,9 @@ export function useCategoriesPageLogic() {
   const [expandedIds, setExpandedIds] = useState<Set<string> | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<CategoryDeleteItem | null>(null);
+  
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
 
   const { data, error, isLoading, isFetching, refetch } = useGetCategoriesQuery();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
@@ -140,6 +143,16 @@ export function useCategoriesPageLogic() {
     setIsDeleteDialogOpen(true);
   }, []);
 
+  const openCreateDialog = useCallback(() => {
+    setEditCategoryId(null);
+    setIsFormDialogOpen(true);
+  }, []);
+
+  const openEditDialog = useCallback((category: Category) => {
+    setEditCategoryId(category.id);
+    setIsFormDialogOpen(true);
+  }, []);
+
   const confirmDelete = useCallback(async () => {
     if (!itemToDelete?.id) return;
 
@@ -175,5 +188,10 @@ export function useCategoriesPageLogic() {
     prepareDelete,
     confirmDelete,
     isDeleting,
+    isFormDialogOpen,
+    setIsFormDialogOpen,
+    editCategoryId,
+    openCreateDialog,
+    openEditDialog,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { ImportExportXlsxMenu } from "@/components/features/ImportExportXlsxMenu";
 import {
@@ -54,19 +54,6 @@ export function ProductImportExportMenu({ products, listParams }: ProductImportE
 
   const getTemplateMatrix = useCallback(() => getProductImportTemplateAoA(), []);
 
-  const dialogDescription = useMemo(
-    () => (
-      <>
-        Dùng <strong>sheet đầu</strong> (.xlsx). Phần xem trước chỉ giúp đối chiếu nhanh; bấm{" "}
-        <strong>Import lên máy chủ</strong> để gửi file và tạo sản phẩm theo API{" "}
-        <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">POST /products/import</code>.
-        BE bắt buộc <strong>name</strong>, <strong>baseUnit</strong> và <strong>categoryId</strong> hoặc{" "}
-        <strong>categoryCode</strong> (có thể dùng alias tiếng Việt trên dòng tiêu đề).
-      </>
-    ),
-    [],
-  );
-
   const handleUpload = useCallback(
     async (file: File) => {
       try {
@@ -114,7 +101,6 @@ export function ProductImportExportMenu({ products, listParams }: ProductImportE
       exportItemLabel="Xuất tất cả kết quả (.xlsx)"
       dialogTitle="Kiểm tra file nhập sản phẩm"
       importPreviewCountLabel="dòng sản phẩm"
-      dialogDescription={dialogDescription}
       successHint="Tên sản phẩm, nhóm hàng (UUID hoặc mã DM) và đơn vị tính đã có trên các dòng."
       onUploadToServer={handleUpload}
       serverUploadPending={importUploading}

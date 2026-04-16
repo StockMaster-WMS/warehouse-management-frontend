@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken, clearToken } from "@/lib/auth-token";
+import { getToken, clearToken, markExplicitLogout } from "@/lib/auth-token";
 import { API_BASE_URL } from "@/lib/constants";
 
 export const axiosInstance = axios.create({
@@ -36,6 +36,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       if (typeof window !== "undefined") {
+        markExplicitLogout();
         clearToken();
         const { pathname } = window.location;
         if (pathname !== "/login") {
