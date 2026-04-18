@@ -17,6 +17,7 @@ export function useProductsPageLogic() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PRODUCTS_PAGE_SIZE);
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("");
@@ -29,14 +30,14 @@ export function useProductsPageLogic() {
   const listParams = useMemo(
     () => ({
       page,
-      size: PRODUCTS_PAGE_SIZE,
+      size: pageSize,
       sort: "updatedAt",
       keyword: debouncedKeyword || undefined,
       status: statusFilter || undefined,
       categoryId: categoryFilter || undefined,
       warehouseId: warehouseFilter || undefined,
     }),
-    [page, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
+    [page, pageSize, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
   );
 
   // Query danh sách sản phẩm chính, dùng cho bảng và menu xuất dữ liệu.
@@ -133,6 +134,11 @@ export function useProductsPageLogic() {
     setPage((p) => p + 1);
   }, []);
 
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setPage(0);
+  }, []);
+
   const handleSearchChange = useCallback((value: string) => {
     setSearchInput(value);
     setPage(0);
@@ -142,6 +148,7 @@ export function useProductsPageLogic() {
     // State được expose cho component trang.
     searchInput,
     page,
+    pageSize,
     statusFilter,
     categoryFilter,
     warehouseFilter,
@@ -202,7 +209,7 @@ export function useProductsPageLogic() {
     handleConfirmDelete,
     handlePrevPage,
     handleNextPage,
+    handlePageSizeChange,
     refetch,
   };
 }
-

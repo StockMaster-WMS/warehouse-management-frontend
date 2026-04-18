@@ -47,6 +47,7 @@ type SuppliersTableProps = {
   onRetry: () => void;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageSizeChange?: (size: number) => void;
   onRequestDelete: (supplier: Supplier) => void;
   noContainer?: boolean;
 };
@@ -67,6 +68,7 @@ export function SuppliersTable({
   onRetry,
   onPrevPage,
   onNextPage,
+  onPageSizeChange,
   onRequestDelete,
   noContainer = false,
 }: SuppliersTableProps) {
@@ -255,6 +257,7 @@ export function SuppliersTable({
           onPrevPage={onPrevPage}
           onNextPage={onNextPage}
           pageSize={pageSize}
+          onPageSizeChange={onPageSizeChange}
         />
       </div>
     </>

@@ -1,5 +1,4 @@
 import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { ORDERS_PAGE_SIZE } from "@/components/features/orders/constants";
 
 type OrdersPaginationFooterProps = {
   rowsCount: number;
@@ -11,6 +10,8 @@ type OrdersPaginationFooterProps = {
   isFetching: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
+  pageSize: number;
+  onPageSizeChange?: (size: number) => void;
 };
 
 export function OrdersPaginationFooter({
@@ -23,6 +24,8 @@ export function OrdersPaginationFooter({
   isFetching,
   onPrevPage,
   onNextPage,
+  pageSize,
+  onPageSizeChange,
 }: OrdersPaginationFooterProps) {
   return (
     <PaginationFooter
@@ -36,7 +39,8 @@ export function OrdersPaginationFooter({
       isFetching={isFetching}
       onPrevPage={onPrevPage}
       onNextPage={onNextPage}
-      pageSize={ORDERS_PAGE_SIZE}
+      pageSize={pageSize}
+      onPageSizeChange={onPageSizeChange}
     />
   );
 }

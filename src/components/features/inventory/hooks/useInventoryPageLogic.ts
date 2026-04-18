@@ -36,6 +36,7 @@ export function useInventoryPageLogic() {
   const [locationId, setLocationId] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(INVENTORY_PAGE_SIZE);
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
 
   // ── Adjust dialogs ──
@@ -101,7 +102,7 @@ export function useInventoryPageLogic() {
     refetch: refetchStockList,
   } = useGetStockListQuery({
     page,
-    size: INVENTORY_PAGE_SIZE,
+    size: pageSize,
     sort: "updatedAt",
     sortDir: "desc",
     warehouseId: warehouseId || undefined,
@@ -298,7 +299,7 @@ export function useInventoryPageLogic() {
     isDataLoading: isStockListLoading || isLowStockLoading || isNearExpiryLoading,
     isDataFetching: isStockListFetching,
     itemsError: stockListError || lowStockError || nearExpiryError,
-    page, setPage, canGoPrev, canGoNext,
+    page, setPage, pageSize, setPageSize, canGoPrev, canGoNext,
     adjustDialogOpen, setAdjustDialogOpen,
     adjustType, adjustForm, setAdjustForm, isAdjusting,
     openAdjustDialog, handleAdjustSubmit,

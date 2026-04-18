@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ORDERS_PAGE_SIZE } from "@/components/features/orders/constants";
 import { OrdersPaginationFooter } from "./OrdersPaginationFooter";
 import {
   Table,
@@ -74,6 +73,8 @@ type OrdersTableProps = {
   canGoNext: boolean;
   onPrevPage: () => void;
   onNextPage: () => void;
+  pageSize: number;
+  onPageSizeChange?: (size: number) => void;
   noContainer?: boolean;
 };
 
@@ -93,6 +94,8 @@ export function OrdersTable({
   canGoNext,
   onPrevPage,
   onNextPage,
+  pageSize,
+  onPageSizeChange,
   noContainer = false,
 }: OrdersTableProps) {
   const content = (
@@ -178,7 +181,7 @@ export function OrdersTable({
                   >
                     <TableCell className="px-3 py-3 text-center">
                       <span className="tabular-nums text-xs font-medium text-muted-foreground">
-                        {page * ORDERS_PAGE_SIZE + index + 1}
+                        {page * pageSize + index + 1}
                       </span>
                     </TableCell>
                     <TableCell className="px-3 py-3 text-sm font-semibold text-foreground">
@@ -266,6 +269,8 @@ export function OrdersTable({
         isFetching={isFetching}
         onPrevPage={onPrevPage}
         onNextPage={onNextPage}
+        pageSize={pageSize}
+        onPageSizeChange={onPageSizeChange}
       />
     </>
   );

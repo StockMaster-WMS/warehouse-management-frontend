@@ -70,6 +70,11 @@ export default function OrderPage() {
           canGoNext={logic.canGoNext}
           onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => logic.setPage((p) => p + 1)}
+          pageSize={logic.pageSize}
+          onPageSizeChange={(nextSize) => {
+            logic.setPageSize(nextSize);
+            logic.setPage(0);
+          }}
         />
       </div>
     </div>

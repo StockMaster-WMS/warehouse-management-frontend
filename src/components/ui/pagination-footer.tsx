@@ -44,7 +44,7 @@ export function PaginationFooter({
     onPrevPage,
     onNextPage,
     pageSize,
-    pageSizeOptions = [10, 20, 50, 100],
+    pageSizeOptions = [5, 20, 50, 100],
     onPageSizeChange,
 }: PaginationFooterProps) {
     const hasSizeControl = typeof pageSize === "number" && !!onPageSizeChange;
@@ -83,9 +83,6 @@ export function PaginationFooter({
                 <div className="flex items-center gap-2">
                     {hasSizeControl ? (
                         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-900">
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Size
-                            </span>
                             <Select
                                 value={String(pageSize)}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}

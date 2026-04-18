@@ -103,6 +103,7 @@ function StatusPill({ status }: { status: string | null | undefined }) {
 
 export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [supplierId, setSupplierId] = useState("");
@@ -135,7 +136,7 @@ export default function PurchaseOrdersPage() {
   const { data, isLoading, isFetching, isError, error, refetch } =
     useGetPurchaseOrdersQuery({
       page,
-      size: 20,
+      size: pageSize,
       ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
       ...(status ? { status } : {}),
       ...(supplierId ? { supplierId } : {}),
@@ -544,7 +545,11 @@ export default function PurchaseOrdersPage() {
           errorText="Không tải được dữ liệu."
           onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => setPage((p) => p + 1)}
-          pageSize={paged?.size ?? 20}
+          pageSize={pageSize}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
     </div>

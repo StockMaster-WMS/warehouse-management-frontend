@@ -42,6 +42,8 @@ export default function LocationsPage() {
 
         page,
         setPage,
+        pageSize,
+        setPageSize,
         totalPages,
         canGoPrev,
         canGoNext,
@@ -151,8 +153,13 @@ export default function LocationsPage() {
                             : null
                     }
                     isFetching={isLocationsFetching}
+                    pageSize={pageSize}
                     onPrevPage={() => setPage((current) => Math.max(0, current - 1))}
                     onNextPage={() => setPage((current) => current + 1)}
+                    onPageSizeChange={(nextSize) => {
+                        setPageSize(nextSize);
+                        setPage(0);
+                    }}
                     onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}

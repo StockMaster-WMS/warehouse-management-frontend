@@ -23,6 +23,7 @@ export function useLocationsPageLogic() {
     const [searchInput, setSearchInput] = useState("");
     const [warehouseFilter, setWarehouseFilter] = useState(ALL_WAREHOUSES);
     const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(LOCATIONS_PAGE_SIZE);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
@@ -41,7 +42,7 @@ export function useLocationsPageLogic() {
         refetch: refetchLocations,
     } = useGetLocationsListQuery({
         page,
-        size: LOCATIONS_PAGE_SIZE,
+        size: pageSize,
         sort: "createdAt",
         sortDir: "desc",
         warehouseId: selectedWarehouseId,
@@ -216,6 +217,8 @@ export function useLocationsPageLogic() {
 
         page,
         setPage,
+        pageSize,
+        setPageSize,
         totalPages,
         canGoPrev,
         canGoNext,
