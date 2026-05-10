@@ -64,6 +64,7 @@ type StockMovementsTableProps = {
   errorMessage?: string | null;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageSizeChange?: (size: number) => void;
   onRetry?: () => void;
 };
 
@@ -96,6 +97,7 @@ export function StockMovementsTable({
   errorMessage,
   onPrevPage,
   onNextPage,
+  onPageSizeChange,
   onRetry,
 }: StockMovementsTableProps) {
   return (
@@ -261,6 +263,7 @@ export function StockMovementsTable({
           totalPages={totalPages}
           totalElements={totalElements}
           pageSize={pageSize}
+          onPageSizeChange={onPageSizeChange}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}
           onPrevPage={onPrevPage}

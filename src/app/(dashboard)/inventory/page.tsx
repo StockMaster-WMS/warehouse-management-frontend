@@ -72,6 +72,10 @@ function HistoryModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
             }
             onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
             onNextPage={() => logic.setPage((p) => p + 1)}
+            onPageSizeChange={(nextSize) => {
+              logic.setPageSize(nextSize);
+              logic.setPage(0);
+            }}
             onRetry={() => logic.refetch()}
           />
         </div>
@@ -188,6 +192,7 @@ export default function InventoryPage() {
           noContainer
           items={logic.displayItems}
           page={logic.page}
+          pageSize={logic.pageSize}
           totalPages={logic.displayTotalPages}
           totalElements={logic.displayTotalElements}
           canGoPrev={logic.canGoPrev}
@@ -201,6 +206,10 @@ export default function InventoryPage() {
           }
           onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => logic.setPage((p) => p + 1)}
+          onPageSizeChange={(nextSize) => {
+            logic.setPageSize(nextSize);
+            logic.setPage(0);
+          }}
           onRetry={logic.refetchAll}
         />
       </div>

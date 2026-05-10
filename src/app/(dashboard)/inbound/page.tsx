@@ -61,6 +61,7 @@ const EMPTY_RECEIPTS: InboundReceipt[] = [];
 
 export default function InboundPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
@@ -83,7 +84,7 @@ export default function InboundPage() {
   const { data, isLoading, isFetching, isError, error, refetch } =
     useGetInboundReceiptsQuery({
       page,
-      size: 20,
+      size: pageSize,
       ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
       ...(status ? { status } : {}),
       ...(warehouseId ? { warehouseId } : {}),
@@ -466,7 +467,11 @@ export default function InboundPage() {
           errorText="Không tải được dữ liệu."
           onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => setPage((p) => p + 1)}
-          pageSize={paged?.size ?? 20}
+          pageSize={pageSize}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
 

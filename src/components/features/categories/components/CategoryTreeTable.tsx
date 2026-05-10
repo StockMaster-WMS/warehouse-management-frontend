@@ -62,7 +62,7 @@ export function CategoryTreeTable({
         <Table className="min-w-200">
           <TableHeader className="bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
             <TableRow className="border-none hover:bg-transparent">
-              <TableHead className="w-[35%] py-4 pl-[3.5rem] text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-[35%] py-4 pl-14 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Nhóm / loại
               </TableHead>
               <TableHead className="w-[25%] py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">

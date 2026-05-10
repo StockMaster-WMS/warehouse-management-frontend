@@ -25,7 +25,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { LOCATIONS_PAGE_SIZE } from "@/components/features/locations/constants";
 import { formatLocationZoneLine } from "@/components/features/locations/utils";
 import type { Location, LocationOption } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
@@ -89,8 +88,10 @@ type LocationsTableProps = {
     isLoading: boolean;
     errorMessage?: string | null;
     isFetching: boolean;
+    pageSize: number;
     onPrevPage: () => void;
     onNextPage: () => void;
+    onPageSizeChange?: (size: number) => void;
     onRetry?: () => void;
     onEdit: (location: Location) => void;
     onDelete: (location: Location) => void;
@@ -108,8 +109,10 @@ export function LocationsTable({
     isLoading,
     errorMessage,
     isFetching,
+    pageSize,
     onPrevPage,
     onNextPage,
+    onPageSizeChange,
     onRetry,
     onEdit,
     onDelete,
@@ -321,7 +324,7 @@ export function LocationsTable({
 
             <PaginationFooter
                 itemLabel="vị trí"
-                rowsCount={isLoading ? LOCATIONS_PAGE_SIZE : visibleLocations.length}
+                rowsCount={isLoading ? pageSize : visibleLocations.length}
                 page={page}
                 totalElements={totalElements}
                 totalPages={totalPages}
@@ -330,7 +333,8 @@ export function LocationsTable({
                 isFetching={isFetching}
                 onPrevPage={onPrevPage}
                 onNextPage={onNextPage}
-                pageSize={LOCATIONS_PAGE_SIZE}
+                pageSize={pageSize}
+                onPageSizeChange={onPageSizeChange}
             />
         </div>
     );

@@ -15,7 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { StockExpanded } from "@/types/stock";
 import { formatDate, formatDateTime, daysUntilExpiry } from "@/components/features/inventory/utils";
-import { INVENTORY_PAGE_SIZE } from "@/components/features/inventory/constants";
 
 type InventoryStockTableProps = {
   items: StockExpanded[];
@@ -27,8 +26,10 @@ type InventoryStockTableProps = {
   isLoading: boolean;
   isFetching: boolean;
   errorMessage?: string | null;
+  pageSize: number;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageSizeChange?: (size: number) => void;
   onRetry?: () => void;
   noContainer?: boolean;
 };
@@ -59,8 +60,10 @@ export function InventoryStockTable({
   isLoading,
   isFetching,
   errorMessage,
+  pageSize,
   onPrevPage,
   onNextPage,
+  onPageSizeChange,
   onRetry,
   noContainer = false,
 }: InventoryStockTableProps) {
@@ -160,7 +163,7 @@ export function InventoryStockTable({
                   >
                     <TableCell className="px-3 py-3 text-center">
                       <span className="tabular-nums text-xs font-medium text-slate-500">
-                        {page * INVENTORY_PAGE_SIZE + index + 1}
+                        {page * pageSize + index + 1}
                       </span>
                     </TableCell>
                     <TableCell className="px-3 py-3">
@@ -257,11 +260,12 @@ export function InventoryStockTable({
           page={page}
           totalPages={totalPages}
           totalElements={totalElements}
-          pageSize={INVENTORY_PAGE_SIZE}
+          pageSize={pageSize}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}
           onPrevPage={onPrevPage}
           onNextPage={onNextPage}
+          onPageSizeChange={onPageSizeChange}
         />
       ) : null}
     </>

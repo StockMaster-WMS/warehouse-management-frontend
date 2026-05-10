@@ -38,6 +38,7 @@ interface ProductTableProps {
     canGoNext: boolean;
     onPrevPage: () => void;
     onNextPage: () => void;
+    onPageSizeChange?: (size: number) => void;
     noContainer?: boolean;
 }
 
@@ -100,6 +101,7 @@ export function ProductTable({
     canGoNext,
     onPrevPage,
     onNextPage,
+    onPageSizeChange,
     noContainer = false,
 }: ProductTableProps) {
     const content = (
@@ -231,6 +233,7 @@ export function ProductTable({
                 isFetching={isFetching}
                 onPrevPage={onPrevPage}
                 onNextPage={onNextPage}
+                onPageSizeChange={onPageSizeChange}
             />
         </>
     );

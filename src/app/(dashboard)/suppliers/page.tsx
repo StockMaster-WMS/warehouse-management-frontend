@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
@@ -371,6 +372,7 @@ export default function SuppliersPage() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [statusFilter, setStatusFilter] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -382,7 +384,7 @@ export default function SuppliersPage() {
   const { data, isLoading, isFetching, isError, error, refetch } =
     useGetSuppliersQuery({
       page,
-      size: PAGE_SIZE,
+      size: pageSize,
       sort: "createdAt",
       sortDir: "desc",
       ...(debouncedKeyword ? { keyword: debouncedKeyword } : {}),
@@ -803,46 +805,26 @@ export default function SuppliersPage() {
             </TableBody>
           </Table>
 
-          {/* Pagination */}
-          <div className="border-t border-slate-100 dark:border-slate-800">
-            <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-xs text-slate-500">
-                {isLoading ? (
-                  "Đang tải…"
-                ) : isError ? (
-                  <span className="text-rose-600">Không tải được dữ liệu.</span>
-                ) : (
-                  <span>
-                    Hiển thị {rows.length}/{totalPartners} nhà cung cấp
-                    {totalPages > 1 &&
-                      ` · Trang ${(pagedBody?.page ?? 0) + 1}/${totalPages}`}
-                  </span>
-                )}
-              </div>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canGoPrev || isFetching}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Trước
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canGoNext || isFetching}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Sau
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
+          <PaginationFooter
+            itemLabel="nhà cung cấp"
+            rowsCount={rows.length}
+            page={page}
+            totalElements={totalPartners}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            canGoPrev={canGoPrev}
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            isError={isError}
+            isFetching={isFetching}
+            errorText="Không tải được dữ liệu."
+            onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
+            onNextPage={() => setPage((p) => p + 1)}
+            onPageSizeChange={(nextSize) => {
+              setPageSize(nextSize);
+              setPage(0);
+            }}
+          />
         </div>
       </div>
 

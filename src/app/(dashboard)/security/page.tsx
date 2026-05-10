@@ -63,13 +63,14 @@ function formatDate(value?: string | null) {
 
 export default function SecurityPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [keyword, setKeyword] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState<ManagedUserStatus | "">("");
 
   const { data, isLoading, isFetching, error, refetch } = useGetUsersQuery({
     page,
-    size: PAGE_SIZE,
+    size: pageSize,
     keyword,
     role,
     status,
@@ -276,7 +277,7 @@ export default function SecurityPage() {
           page={page}
           totalElements={totalElements}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           canGoPrev={page > 0}
           canGoNext={totalPages > 0 && page < totalPages - 1}
           isLoading={isLoading}
@@ -284,6 +285,10 @@ export default function SecurityPage() {
           isFetching={isFetching}
           onPrevPage={() => setPage((value) => Math.max(0, value - 1))}
           onNextPage={() => setPage((value) => value + 1)}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
 

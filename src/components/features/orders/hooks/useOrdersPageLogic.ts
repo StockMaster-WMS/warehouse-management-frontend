@@ -22,6 +22,7 @@ export function useOrdersPageLogic() {
   const [soNumberLookup, setSoNumberLookup] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Tất cả trạng thái");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(ORDERS_PAGE_SIZE);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [lookupByNumber, { isFetching: lookingUpByNumber }] = useLazyGetSalesOrderBySoNumberQuery();
@@ -31,11 +32,11 @@ export function useOrdersPageLogic() {
   const listParams = useMemo(
     () => ({
       page,
-      size: ORDERS_PAGE_SIZE,
+      size: pageSize,
       keyword: debouncedKeyword || undefined,
       status: apiStatus || undefined,
     }),
-    [page, debouncedKeyword, apiStatus],
+    [page, pageSize, debouncedKeyword, apiStatus],
   );
 
   const { data, error, isLoading, isFetching, refetch } = useGetSalesOrdersQuery(listParams);
@@ -88,6 +89,8 @@ export function useOrdersPageLogic() {
     setStatusFilter,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     advancedOpen,
     setAdvancedOpen,
     lookingUpByNumber,

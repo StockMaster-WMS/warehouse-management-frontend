@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import {
-  PRODUCTS_PAGE_SIZE,
   ProductDeleteDialog,
   useProductsPageLogic,
   ProductStatsGrid,
@@ -81,7 +80,7 @@ export default function ProductsPage() {
           onRetry={logic.refetch}
           onClearFilters={logic.clearFilters}
           pageIndex={logic.page}
-          pageSize={PRODUCTS_PAGE_SIZE}
+          pageSize={logic.pageSize}
           page={logic.page}
           totalElements={logic.totalElements}
           totalPages={logic.serverTotalPages}
@@ -89,6 +88,7 @@ export default function ProductsPage() {
           canGoNext={logic.canGoNext}
           onPrevPage={logic.handlePrevPage}
           onNextPage={logic.handleNextPage}
+          onPageSizeChange={logic.handlePageSizeChange}
         />
       </div>
 
