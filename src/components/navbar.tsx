@@ -31,7 +31,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { ADMIN_MANAGER_ROLES, getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { PermissionControl } from "@/components/permission-control";
 import { clearToken, markExplicitLogout } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
@@ -259,16 +260,16 @@ export function Navbar() {
                     className="ring-2 ring-white/30 transition-all group-hover:ring-white"
                   >
                     <AvatarImage
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || user?.name || "User")}&background=fff&color=4F46E5`}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || user?.name || user?.username || "User")}&background=fff&color=4F46E5`}
                       alt="User avatar"
                     />
                     <AvatarFallback className="bg-white text-indigo-600">
-                      {(user?.username || user?.name || "US").substring(0, 2).toUpperCase()}
+                      {(user?.fullName || user?.name || user?.username || "US").substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden flex-col items-start pr-1 text-left lg:flex">
                     <span className="text-sm font-semibold leading-none text-white">
-                      {user?.username || user?.name || "Người dùng"}
+                      {user?.fullName || user?.name || user?.username || "Người dùng"}
                     </span>
                     <span className="text-[10px] font-medium text-indigo-100">
                       {roleLabel}
@@ -288,7 +289,7 @@ export function Navbar() {
                 <DropdownMenuLabel className="px-2 py-1.5 font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-semibold leading-none">
-                      {user?.username || user?.name || "Người dùng"}
+                      {user?.fullName || user?.name || user?.username || "Người dùng"}
                     </p>
                     <p className="text-xs leading-none text-slate-500 font-medium truncate">
                       {user?.email || "Email chưa cập nhật"}
@@ -301,10 +302,12 @@ export function Navbar() {
                 <UserCog className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
                 <span className="truncate">Trang cá nhân</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
-                <Settings className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
-                <span className="truncate">Cài đặt hệ thống</span>
-              </DropdownMenuItem>
+              <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+                <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
+                  <Settings className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                  <span className="truncate">Cài đặt hệ thống</span>
+                </DropdownMenuItem>
+              </PermissionControl>
               <DropdownMenuItem className="rounded-lg py-2">
                 <Languages className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
                 <span className="truncate">Ngôn ngữ: Tiếng Việt</span>

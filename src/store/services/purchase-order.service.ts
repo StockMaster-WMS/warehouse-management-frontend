@@ -425,11 +425,19 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         method: "POST",
         data: body,
       }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "PutawayTask", id: arg.id },
-        { type: "PutawayTask", id: "LIST" },
-        { type: "PurchaseOrder", id: "LIST" },
-      ],
+      invalidatesTags: (_r, _e, arg) => {
+        const tags: any[] = [
+          { type: "PutawayTask", id: arg.id },
+          { type: "PutawayTask", id: "LIST" },
+          { type: "PurchaseOrder", id: "LIST" },
+        ];
+        if (arg.purchaseOrderId) {
+          tags.push({ type: "PurchaseOrder", id: arg.purchaseOrderId });
+          tags.push({ type: "PoItem", id: `PO-${arg.purchaseOrderId}` });
+          tags.push({ type: "PutawayTask", id: `PO-${arg.purchaseOrderId}` });
+        }
+        return tags;
+      },
     }),
 
     importProductsExcel: builder.mutation<

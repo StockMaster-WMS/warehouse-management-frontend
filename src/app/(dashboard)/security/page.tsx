@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Lock, RefreshCw, ShieldCheck, Unlock, Users } from "lucide-react";
+import { AlertCircle, Lock, Loader2, RefreshCw, ShieldCheck, Unlock, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -27,8 +27,7 @@ import { apiErrMessage } from "@/types/api";
 import type { ManagedUser, ManagedUserStatus } from "@/types/user-management";
 import {
   useGetUsersQuery,
-  useLockUserMutation,
-  useUnlockUserMutation,
+  useUpdateUserStatusMutation,
 } from "@/store/services/user-management.service";
 
 const PAGE_SIZE = 20;
@@ -74,26 +73,24 @@ export default function SecurityPage() {
     role,
     status,
   });
-  const [lockUser, { isLoading: locking }] = useLockUserMutation();
-  const [unlockUser, { isLoading: unlocking }] = useUnlockUserMutation();
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateUserStatusMutation();
 
   const users = data?.data?.content ?? [];
   const totalElements = data?.data?.total_elements ?? 0;
   const totalPages = data?.data?.total_pages ?? 0;
   const activeCount = users.filter((user) => userStatus(user) === "ACTIVE").length;
-  const lockedCount = users.filter((user) => userStatus(user) === "LOCKED").length;
+  const lockedCount = users.filter((user) => {
+    const s = userStatus(user);
+    return s === "LOCKED" || s === "DISABLED";
+  }).length;
   const adminCount = users.filter((user) => getUserRoles(user.roles).includes("ADMIN")).length;
 
-  async function handleToggleLock(user: ManagedUser) {
-    const statusValue = userStatus(user);
+  async function handleToggleStatus(user: ManagedUser) {
+    const current = userStatus(user);
+    const nextStatus = current === "ACTIVE" ? "LOCKED" : "ACTIVE";
     try {
-      if (statusValue === "LOCKED") {
-        await unlockUser(user.id).unwrap();
-        toast.success("Đã mở khóa tài khoản");
-      } else {
-        await lockUser(user.id).unwrap();
-        toast.success("Đã khóa tài khoản");
-      }
+      await updateStatus({ id: user.id, status: nextStatus }).unwrap();
+      toast.success(`Đã chuyển trạng thái sang ${statusLabel(nextStatus)}`);
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể cập nhật trạng thái tài khoản."));
     }
@@ -113,10 +110,10 @@ export default function SecurityPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
-        <StatCard label="Tổng user" value={totalElements.toLocaleString("vi-VN")} icon={Users} showAccentBar={false} />
-        <StatCard label="Đang hoạt động" value={activeCount.toLocaleString("vi-VN")} icon={ShieldCheck} iconClassName="text-emerald-500" description="Trên trang hiện tại" showAccentBar={false} />
-        <StatCard label="Quản trị viên" value={adminCount.toLocaleString("vi-VN")} icon={ShieldCheck} iconClassName="text-indigo-500" description="Trên trang hiện tại" showAccentBar={false} />
-        <StatCard label="Đã khóa" value={lockedCount.toLocaleString("vi-VN")} icon={Lock} iconClassName="text-amber-500" description="Trên trang hiện tại" showAccentBar={false} />
+        <StatCard label="Tổng user hệ thống" value={totalElements.toLocaleString("vi-VN")} icon={Users} showAccentBar={false} />
+        <StatCard label="Đang hoạt động" value={activeCount.toLocaleString("vi-VN")} icon={ShieldCheck} iconClassName="text-emerald-500" description="Dựa trên danh sách trang này" showAccentBar={false} />
+        <StatCard label="Quản trị viên" value={adminCount.toLocaleString("vi-VN")} icon={ShieldCheck} iconClassName="text-indigo-500" description="Dựa trên danh sách trang này" showAccentBar={false} />
+        <StatCard label="Đã khóa / Vô hiệu" value={lockedCount.toLocaleString("vi-VN")} icon={Lock} iconClassName="text-rose-500" description="Dựa trên danh sách trang này" showAccentBar={false} />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -246,20 +243,28 @@ export default function SecurityPage() {
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(user.lastLoginAt)}
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-right">
+                          <TableCell className="px-4 py-3 text-right">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          disabled={locking || unlocking || statusValue === "DISABLED"}
-                          onClick={() => handleToggleLock(user)}
+                          className={cn(
+                            "w-32 justify-center transition-all font-semibold",
+                            statusValue === "ACTIVE" 
+                              ? "border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50"
+                              : "border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 bg-emerald-50/50"
+                          )}
+                          disabled={isUpdating}
+                          onClick={() => handleToggleStatus(user)}
                         >
-                          {statusValue === "LOCKED" ? (
+                          {isUpdating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : statusValue !== "ACTIVE" ? (
                             <Unlock className="mr-2 h-4 w-4" />
                           ) : (
                             <Lock className="mr-2 h-4 w-4" />
                           )}
-                          {statusValue === "LOCKED" ? "Mở khóa" : "Khóa"}
+                          {statusValue !== "ACTIVE" ? "Kích hoạt lại" : "Khóa tài khoản"}
                         </Button>
                       </TableCell>
                     </TableRow>

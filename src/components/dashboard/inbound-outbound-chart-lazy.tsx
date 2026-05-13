@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-export const InboundOutboundChartLazy = dynamic(
+export const InboundOutboundChartLazy = dynamic<any>(
   () =>
     import("@/components/dashboard/inbound-outbound-chart").then(
       (m) => m.InboundOutboundChart,

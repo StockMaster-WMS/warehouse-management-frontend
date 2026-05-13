@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   CheckCircle2,
   ClipboardCheck,
   ListChecks,
+  Plus,
   RefreshCw,
   Scale,
 } from "lucide-react";
@@ -26,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CreateCycleCountModal } from "@/components/features/cycle-counts/components/CreateCycleCountModal";
 import { cn } from "@/lib/utils";
 import { apiErrMessage } from "@/types/api";
 import type { CycleCount, CycleCountStatus } from "@/types/cycle-count";
@@ -69,6 +72,7 @@ export default function CycleCountsPage() {
   const [page, setPage] = useState(0);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<CycleCountStatus | "">("");
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const { data, isLoading, isFetching, error, refetch } = useGetCycleCountsQuery({
     page,
@@ -90,12 +94,20 @@ export default function CycleCountsPage() {
         title="Kiểm kê kho"
         description="Cycle Count: tạo đợt kiểm kê, ghi nhận số lượng thực tế và duyệt chênh lệch tồn."
         actions={
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
-            Làm mới
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              Làm mới
+            </Button>
+            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-md" onClick={() => setCreateModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo đợt kiểm
+            </Button>
+          </div>
         }
       />
+
+      <CreateCycleCountModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
         <StatCard label="Tổng đợt kiểm" value={totalElements.toLocaleString("vi-VN")} icon={ClipboardCheck} showAccentBar={false} />
@@ -185,7 +197,9 @@ export default function CycleCountsPage() {
                   return (
                     <TableRow key={row.id} className="hover:bg-muted/50">
                       <TableCell className="px-4 py-3">
-                        <div className="font-mono text-xs font-bold text-foreground">{row.countNumber || row.id}</div>
+                        <Link href={`/cycle-counts/${row.id}`} className="hover:underline">
+                          <div className="font-mono text-xs font-bold text-indigo-600">{row.countNumber || row.id}</div>
+                        </Link>
                         <div className="mt-1 text-xs text-muted-foreground">{row.title || "Không có tiêu đề"}</div>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-foreground">

@@ -1,15 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Box,
   ClipboardCheck,
   PackageCheck,
+  Plus,
   RefreshCw,
   RotateCcw,
   ShieldAlert,
 } from "lucide-react";
+
+import { CreateRMAModal } from "@/components/features/returns/components/CreateRMAModal";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -110,6 +114,7 @@ export default function ReturnsPage() {
   const [keyword, setKeyword] = useState("");
   const [tab, setTab] = useState("all");
   const [status, setStatus] = useState<ReturnStatus | "">("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const tabFilters = useMemo<{
     reason?: ReturnReason;
@@ -144,16 +149,26 @@ export default function ReturnsPage() {
         title="Hàng trả / RMA / Hàng lỗi"
         description="Tiếp nhận, kiểm định và quyết định xử lý hàng trả về kho."
         actions={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
-            Làm mới
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              Làm mới
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo phiếu RMA
+            </Button>
+          </div>
         }
       />
 
@@ -337,9 +352,11 @@ export default function ReturnsPage() {
                 rows.map((row) => (
                   <TableRow key={row.id} className="hover:bg-muted/50">
                     <TableCell className="px-4 py-3">
-                      <div className="font-mono text-xs font-bold text-foreground">
-                        {row.rmaNumber || row.id}
-                      </div>
+                      <Link href={`/returns/${row.id}`} className="hover:underline">
+                        <div className="font-mono text-xs font-bold text-indigo-600">
+                          {row.rmaNumber || row.id}
+                        </div>
+                      </Link>
                       <div className="mt-1 text-[11px] text-muted-foreground">
                         {row.orderNumber || row.orderId || "Không gắn đơn"}
                       </div>
@@ -398,6 +415,10 @@ export default function ReturnsPage() {
       <div className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
         Luồng nghiệp vụ đề xuất: tạo RMA, nhận hàng trả, kiểm định, rồi nhập lại kho, cách ly, hủy hàng hoặc trả nhà cung cấp.
       </div>
+      <CreateRMAModal 
+        open={isCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen} 
+      />
     </div>
   );
 }

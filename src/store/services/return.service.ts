@@ -55,7 +55,7 @@ const returnApi = baseApi.injectEndpoints({
       GetReturnRequestsParams
     >({
       query: (params) => ({
-        url: "/returns",
+        url: "/rma",
         method: "GET",
         params: buildReturnRequestsQueryParams(params),
       }),
@@ -77,7 +77,7 @@ const returnApi = baseApi.injectEndpoints({
     }),
 
     getReturnRequestById: builder.query<ApiResponse<ReturnRequest>, string>({
-      query: (id) => ({ url: `/returns/${id}`, method: "GET" }),
+      query: (id) => ({ url: `/rma/${id}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "ReturnRequest" as const, id }],
     }),
 
@@ -85,16 +85,16 @@ const returnApi = baseApi.injectEndpoints({
       ApiResponse<ReturnRequest>,
       CreateReturnRequestPayload
     >({
-      query: (body) => ({ url: "/returns", method: "POST", data: body }),
+      query: (body) => ({ url: "/rma", method: "POST", data: body }),
       invalidatesTags: [{ type: "ReturnRequest", id: "LIST" }],
     }),
 
     receiveReturn: builder.mutation<
       ApiResponse<ReturnRequest>,
-      { id: string; body: ReceiveReturnPayload }
+      { id: string; body: { actualQty: number; locationId: string } }
     >({
       query: ({ id, body }) => ({
-        url: `/returns/${id}/receive`,
+        url: `/rma/${id}/receive`,
         method: "POST",
         data: body,
       }),
@@ -106,28 +106,25 @@ const returnApi = baseApi.injectEndpoints({
       ],
     }),
 
+    closeReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, string>({
+      query: (id) => ({ url: `/rma/${id}/close`, method: "POST" }),
+      invalidatesTags: (_r, _e, id) => [
+        { type: "ReturnRequest", id },
+        { type: "ReturnRequest", id: "LIST" },
+      ],
+    }),
+
     inspectReturnLine: builder.mutation<
       ApiResponse<ReturnRequest>,
       InspectReturnLinePayload
     >({
-      query: ({ returnId, lineId, ...body }) => ({
-        url: `/returns/${returnId}/lines/${lineId}/inspect`,
+      query: (body) => ({
+        url: `/rma/${body.returnId}/lines/${body.lineId}/inspect`,
         method: "POST",
         data: body,
       }),
       invalidatesTags: (_r, _e, arg) => [
         { type: "ReturnRequest", id: arg.returnId },
-        { type: "ReturnRequest", id: "LIST" },
-        { type: "Stock", id: "LIST" },
-        { type: "StockMovement", id: "LIST" },
-      ],
-    }),
-
-    closeReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, string>({
-      query: (id) => ({ url: `/returns/${id}/close`, method: "POST" }),
-      invalidatesTags: (_r, _e, id) => [
-        { type: "ReturnRequest", id },
-        { type: "ReturnRequest", id: "LIST" },
       ],
     }),
   }),

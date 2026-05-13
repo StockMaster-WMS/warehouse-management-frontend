@@ -77,28 +77,24 @@ const cycleCountApi = baseApi.injectEndpoints({
       ],
     }),
 
-    submitCycleCountLine: builder.mutation<
+    recordCycleCount: builder.mutation<
       ApiResponse<CycleCount>,
-      SubmitCycleCountLinePayload
+      { id: string; results: { productId: string; locationId: string; actualQty: number }[] }
     >({
-      query: ({ cycleCountId, lineId, ...body }) => ({
-        url: `/cycle-counts/${cycleCountId}/lines/${lineId}`,
-        method: "PATCH",
-        data: body,
+      query: ({ id, results }) => ({
+        url: `/cycle-counts/${id}/record`,
+        method: "POST",
+        data: { results },
       }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "CycleCount", id: arg.cycleCountId },
-        { type: "CycleCount", id: "LIST" },
-      ],
+      invalidatesTags: (_r, _e, arg) => [{ type: "CycleCount", id: arg.id }],
     }),
 
-    approveCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
-      query: (id) => ({ url: `/cycle-counts/${id}/approve`, method: "POST" }),
+    completeCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
+      query: (id) => ({ url: `/cycle-counts/${id}/complete`, method: "POST" }),
       invalidatesTags: (_r, _e, id) => [
         { type: "CycleCount", id },
         { type: "CycleCount", id: "LIST" },
         { type: "Stock", id: "LIST" },
-        { type: "StockMovement", id: "LIST" },
       ],
     }),
 
@@ -117,7 +113,7 @@ export const {
   useGetCycleCountByIdQuery,
   useCreateCycleCountMutation,
   useStartCycleCountMutation,
-  useSubmitCycleCountLineMutation,
-  useApproveCycleCountMutation,
+  useRecordCycleCountMutation,
+  useCompleteCycleCountMutation,
   useCancelCycleCountMutation,
 } = cycleCountApi;
