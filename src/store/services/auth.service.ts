@@ -17,8 +17,19 @@ export interface LoginResponse {
         username: string;
         email: string;
         name?: string;
+        fullName?: string;
         roles: UserRole;
     };
+}
+
+export interface UpdateProfileRequest {
+    name: string;
+    email: string;
+}
+
+export interface ChangePasswordRequest {
+    oldPassword: string;
+    newPassword: string;
 }
 
 // Refresh token được gửi tự động qua cookie, backend không cần nhận refreshToken từ body
@@ -62,7 +73,29 @@ export const authApi = baseApi.injectEndpoints({
             providesTags: [{ type: "Auth", id: "CURRENT_USER" }],
             keepUnusedDataFor: 0,
         }),
+        updateProfile: builder.mutation<ApiResponse<LoginResponse["user"]>, UpdateProfileRequest>({
+            query: (body) => ({
+                url: "/auth/profile",
+                method: "PUT",
+                data: body,
+            }),
+            invalidatesTags: [{ type: "Auth", id: "CURRENT_USER" }],
+        }),
+        changePassword: builder.mutation<ApiResponse<void>, ChangePasswordRequest>({
+            query: (body) => ({
+                url: "/auth/change-password",
+                method: "POST",
+                data: body,
+            }),
+        }),
     }),
 });
 
-export const { useLoginMutation, useRefreshTokenMutation, useLogoutMutation, useGetCurrentUserQuery } = authApi;
+export const { 
+    useLoginMutation, 
+    useRefreshTokenMutation, 
+    useLogoutMutation, 
+    useGetCurrentUserQuery,
+    useUpdateProfileMutation,
+    useChangePasswordMutation
+} = authApi;

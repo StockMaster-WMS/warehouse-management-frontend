@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Activity,
   AlertCircle,
@@ -9,7 +9,10 @@ import {
   Shield,
   User,
   UserCog,
+  Save,
+  Loader2
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +26,10 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { apiErrMessage } from "@/types/api";
-import { useGetCurrentUserQuery } from "@/store/services/auth.service";
+import { useGetCurrentUserQuery, useUpdateProfileMutation } from "@/store/services/auth.service";
 
 function initials(value: string) {
   return value
@@ -38,9 +42,34 @@ function initials(value: string) {
 
 export default function ProfilePage() {
   const { data: user, isLoading, isFetching, error, refetch } = useGetCurrentUserQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
-  const displayName = user?.name?.trim() || user?.username?.trim() || "Người dùng";
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.fullName || user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
+
   const roles = useMemo(() => getUserRoles(user?.roles), [user?.roles]);
+  const displayName = user?.fullName || user?.name?.trim() || user?.username?.trim() || "Người dùng";
+
+  const handleUpdate = async () => {
+    if (!name.trim() || !email.trim()) {
+      toast.error("Vui lòng điền đầy đủ họ tên và email");
+      return;
+    }
+    try {
+      await updateProfile({ name, email }).unwrap();
+      toast.success("Cập nhật hồ sơ thành công!");
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Cập nhật thất bại"));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -81,7 +110,7 @@ export default function ProfilePage() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Trang cá nhân"
-        description="Thông tin tài khoản được lấy trực tiếp từ phiên đăng nhập."
+        description="Quản lý thông tin tài khoản và quyền hạn của bạn."
         actions={
           <Button
             type="button"
@@ -100,53 +129,57 @@ export default function ProfilePage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5 text-primary" />
-              Hồ sơ tài khoản
+              <UserCog className="h-5 w-5 text-indigo-600" />
+              Thông tin tài khoản
             </CardTitle>
             <CardDescription>
-              Dữ liệu này phản ánh response hiện tại của endpoint xác thực.
+              Cập nhật thông tin hiển thị và email liên lạc của bạn.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground shadow-sm">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-3xl font-bold text-white shadow-lg">
                 {initials(displayName)}
               </div>
 
-              <div className="min-w-0 flex-1 space-y-4">
-                <div>
-                  <h2 className="wrap-break-word text-2xl font-bold tracking-tight text-foreground">
-                    {displayName}
-                  </h2>
-                  <p className="mt-1 font-mono text-sm text-muted-foreground">
-                    {user.username || "Chưa có username"}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border bg-muted/40 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      Email
-                    </div>
-                    <p className="wrap-break-word text-sm font-semibold text-foreground">
-                      {user.email || "Chưa cập nhật"}
-                    </p>
+              <div className="min-w-0 flex-1 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Username (Không thể đổi)</label>
+                    <Input value={user.username} disabled className="bg-slate-50 font-mono text-sm" />
                   </div>
-
-                  <div className="rounded-xl border border-border bg-muted/40 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      Mã người dùng
-                    </div>
-                    <p className="wrap-break-word font-mono text-sm font-semibold text-foreground">
-                      {user.id}
-                    </p>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mã người dùng</label>
+                    <Input value={user.id} disabled className="bg-slate-50 font-mono text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Họ và tên</label>
+                    <Input 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      placeholder="Nhập họ tên đầy đủ"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</label>
+                    <Input 
+                      type="email"
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="user@example.com"
+                    />
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                  Chưa thấy endpoint cập nhật hồ sơ trong frontend service hiện tại, nên trang này không hiển thị form lưu giả.
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={handleUpdate} 
+                    disabled={isUpdating}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Lưu thay đổi
+                  </Button>
                 </div>
               </div>
             </div>
@@ -156,22 +189,22 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
+              <Shield className="h-5 w-5 text-indigo-600" />
               Quyền truy cập
             </CardTitle>
             <CardDescription>
-              Vai trò quyết định menu và route được phép mở.
+              Các vai trò được gán cho tài khoản của bạn.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Vai trò
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Vai trò hiện tại
               </p>
               <div className="flex flex-wrap gap-2">
                 {roles.length ? (
                   roles.map((role) => (
-                    <Badge key={role} className="rounded-lg">
+                    <Badge key={role} className="rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900">
                       {getRoleLabel(role)}
                     </Badge>
                   ))
@@ -183,16 +216,16 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border p-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
               <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                <Activity className="h-4 w-4" />
+                <Activity className="h-4 w-4 text-emerald-500" />
                 Trạng thái phiên
               </div>
               <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                Đang đăng nhập
+                Đang hoạt động
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Access token được giữ trong bộ nhớ client, refresh token do backend quản lý bằng cookie HttpOnly.
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                Bạn đang sử dụng quyền hạn của {getRoleLabel(user.roles)}. Mọi hành động sẽ được ghi lại trong nhật ký hệ thống.
               </p>
             </div>
           </CardContent>

@@ -62,15 +62,17 @@ import {
   useCancelPurchaseOrderMutation,
   useCompletePutawayTaskMutation,
   useDeletePurchaseOrderMutation,
-  useGetLocationsQuery,
   useGetPurchaseOrderDetailQuery,
   useGetWarehousesForPoQuery,
 } from "@/store/services/purchase-order.service";
+import { useGetLocationsListQuery } from "@/store/services/location.service";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import {
   useCreateInboundReceiptMutation,
   useGetInboundReceiptsByPoQuery,
 } from "@/store/services/inbound.service";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
+import { PermissionControl } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundReceipt } from "@/types/inbound-receipt";
 
@@ -219,9 +221,10 @@ export default function PurchaseOrderDetailPage({
     po?.supplierName || suppliers.find((s) => s.id === po?.supplierId)?.name || po?.supplierId || "—";
 
   /* ── Locations ── */
-  const { data: whLocRes } = useGetLocationsQuery(
-    { warehouseId: po?.warehouseId ?? "" },
-    { skip: !po?.warehouseId },
+  const selectedWhId = po?.warehouseId ?? "";
+  const { data: whLocRes } = useGetLocationsListQuery(
+    { warehouseId: selectedWhId, size: 100 },
+    { skip: !selectedWhId }
   );
   const locationOptions = Array.isArray(whLocRes?.data) ? whLocRes.data : [];
 
@@ -331,6 +334,7 @@ export default function PurchaseOrderDetailPage({
     try {
       const res = await completePutawayTask({
         id: activeTask.id,
+        purchaseOrderId: id,
         body: { actualLocationId: parsed.data.actualLocationId },
       }).unwrap();
       if (!res.success) { toast.error((res as { message?: string }).message || "Hoàn tất putaway thất bại"); return; }
@@ -401,18 +405,20 @@ export default function PurchaseOrderDetailPage({
               </Button>
             )}
 
-            {isDraft && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deletingPo}
-                className="rounded-xl gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
-              >
-                {deletingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Xóa PO
-              </Button>
-            )}
+            <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              {isDraft && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deletingPo}
+                  className="rounded-xl gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
+                >
+                  {deletingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Xóa PO
+                </Button>
+              )}
+            </PermissionControl>
           </div>
         }
       />

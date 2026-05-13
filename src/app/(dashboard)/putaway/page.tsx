@@ -210,6 +210,7 @@ export default function PutawayPage() {
     try {
       const res = await completeTask({
         id: activeTask.id,
+        purchaseOrderId: activeTask.purchaseOrderId ?? undefined,
         body: { actualLocationId: parsed.data.actualLocationId },
       }).unwrap();
       if (!res.success) {

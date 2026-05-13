@@ -40,6 +40,7 @@ type OrderSidebarProps = {
   onMarkPacked: () => void;
   onMarkShipped: () => void;
   onConfirmOrder: () => void;
+  onCancelOrder: () => void;
   onOpenPrint: () => void;
 };
 
@@ -53,6 +54,7 @@ export function OrderSidebar({
   onMarkPacked,
   onMarkShipped,
   onConfirmOrder,
+  onCancelOrder,
   onOpenPrint,
 }: OrderSidebarProps) {
   return (
@@ -149,10 +151,11 @@ export function OrderSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="justify-center text-xs h-9"
-                  disabled
+                  className="justify-center text-xs h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
+                  disabled={isExecuting || status === "CANCELLED" || status === "SHIPPED"}
+                  onClick={onCancelOrder}
                 >
-                  <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                  {isExecuting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <XCircle className="mr-1.5 h-3.5 w-3.5" />}
                   Hủy đơn
                 </Button>
               )}

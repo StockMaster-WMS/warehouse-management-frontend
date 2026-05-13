@@ -1,13 +1,16 @@
-import { UserCog, ArrowRight } from "lucide-react";
+import { UserCog, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 
 interface PersonalSettingsProps {
   gotoProfile: () => void;
 }
 
 export function PersonalSettings({ gotoProfile }: PersonalSettingsProps) {
+  const { data: user, isLoading } = useGetCurrentUserQuery();
+
   return (
     <div className="space-y-6">
       <button
@@ -31,7 +34,7 @@ export function PersonalSettings({ gotoProfile }: PersonalSettingsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Thông tin cá nhân nhanh</CardTitle>
-          <CardDescription>Cập nhật thông tin cơ bản trên trang cài đặt</CardDescription>
+          <CardDescription>Dữ liệu tài khoản hiện tại của bạn</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -40,21 +43,36 @@ export function PersonalSettings({ gotoProfile }: PersonalSettingsProps) {
                 <UserCog className="h-4 w-4 text-indigo-600" />
                 Họ tên
               </label>
-              <Input id="full-name" defaultValue="An Nguyen" className="rounded-lg border border-slate-200 dark:border-slate-700" />
+              <div className="relative">
+                <Input 
+                  id="full-name" 
+                  value={user?.fullName || user?.name || ""} 
+                  readOnly 
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50" 
+                />
+                {isLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />}
+              </div>
             </div>
             <div className="space-y-2">
               <label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <UserCog className="h-4 w-4 text-indigo-600" />
                 Email
               </label>
-              <Input id="email" defaultValue="an.nguyen@stockmaster.vn" type="email" className="rounded-lg border border-slate-200 dark:border-slate-700" />
+              <div className="relative">
+                <Input 
+                  id="email" 
+                  value={user?.email || ""} 
+                  readOnly 
+                  type="email" 
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50" 
+                />
+                {isLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />}
+              </div>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label htmlFor="warehouse-name" className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                <UserCog className="h-4 w-4 text-indigo-600" />
-                Tên kho mặc định
+              <label className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg block">
+                Mẹo: Bạn có thể thay đổi các thông tin này bằng cách nhấp vào "Xem trang cá nhân" ở trên.
               </label>
-              <Input id="warehouse-name" defaultValue="Kho tong mien Nam" className="rounded-lg border border-slate-200 dark:border-slate-700" />
             </div>
           </div>
         </CardContent>

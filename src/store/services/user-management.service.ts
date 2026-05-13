@@ -90,18 +90,14 @@ const userManagementApi = baseApi.injectEndpoints({
       ],
     }),
 
-    lockUser: builder.mutation<ApiResponse<ManagedUser>, string>({
-      query: (id) => ({ url: `/users/${id}/lock`, method: "POST" }),
-      invalidatesTags: (_r, _e, id) => [
-        { type: "User", id },
-        { type: "User", id: "LIST" },
-      ],
-    }),
-
-    unlockUser: builder.mutation<ApiResponse<ManagedUser>, string>({
-      query: (id) => ({ url: `/users/${id}/unlock`, method: "POST" }),
-      invalidatesTags: (_r, _e, id) => [
-        { type: "User", id },
+    updateUserStatus: builder.mutation<ApiResponse<ManagedUser>, { id: string; status: ManagedUserStatus }>({
+      query: ({ id, status }) => ({
+        url: `/users/${id}/status`,
+        method: "PATCH",
+        data: { status },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "User", id: arg.id },
         { type: "User", id: "LIST" },
       ],
     }),
@@ -114,6 +110,5 @@ export const {
   useCreateUserMutation,
   useUpdateUserMutation,
   useUpdateUserRolesMutation,
-  useLockUserMutation,
-  useUnlockUserMutation,
+  useUpdateUserStatusMutation,
 } = userManagementApi;

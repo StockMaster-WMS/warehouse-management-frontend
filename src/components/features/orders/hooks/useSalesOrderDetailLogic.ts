@@ -11,7 +11,6 @@ import {
   useDeleteSalesOrderMutation,
   useExecuteSalesOrderActionMutation,
 } from "@/store/services/order.service";
-import { useGetSoItemsQuery } from "@/store/services/so-item.service";
 import { useGetProductsByIdsQuery } from "@/store/services/product.service";
 import {
   useGetWarehouseByIdQuery,
@@ -24,11 +23,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   const { data: soRes, isLoading, isError, error, refetch, isFetching } = useGetSalesOrderByIdQuery(salesOrderId);
   const so = soRes?.data;
 
-  const { data: itemsRes, isFetching: itemsFetching } = useGetSoItemsQuery(
-    { salesOrderId },
-    { skip: !so },
-  );
-  const soItems = useMemo(() => itemsRes?.data?.content ?? [], [itemsRes]);
+  const soItems = useMemo(() => so?.items ?? [], [so?.items]);
 
   const productIds = useMemo(
     () => [...new Set(soItems.map((item) => String(item.productId)).filter(Boolean))],
@@ -156,6 +151,10 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     await runOrderAction("mark-shipped", "Đã xuất kho", "Xuất kho thất bại");
   };
 
+  const onCancelOrder = async () => {
+    await runOrderAction("cancel", "Đã hủy đơn hàng", "Hủy đơn thất bại");
+  };
+
   return {
     so,
     isLoading,
@@ -164,7 +163,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     refetch,
     isFetching,
     soItems,
-    itemsFetching,
+    itemsFetching: isFetching,
     products,
     productsById,
     warehouseOptions,
@@ -176,5 +175,6 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     onMarkPacked,
     onMarkShipped,
     onConfirmOrder,
+    onCancelOrder,
   };
 }

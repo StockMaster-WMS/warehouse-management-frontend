@@ -29,5 +29,6 @@ export interface PatchPutawayTaskPayload {
 
 export interface CompletePutawayPayload {
   id: string;
+  purchaseOrderId?: string;
   body: { actualLocationId: string };
 }

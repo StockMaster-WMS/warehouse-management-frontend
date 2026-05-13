@@ -42,8 +42,8 @@ import {
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { apiErrMessage } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
+import { useGetLocationsListQuery } from "@/store/services/location.service";
 import {
-  useGetLocationsQuery,
   useGetPurchaseOrderDetailQuery,
   useGetPurchaseOrdersQuery,
 } from "@/store/services/purchase-order.service";
@@ -287,8 +287,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   const po = detail?.purchaseOrder;
   const items = useMemo(() => detail?.items ?? [], [detail?.items]);
 
-  const { data: whLocRes } = useGetLocationsQuery(
-    { warehouseId: po?.warehouseId ?? "" },
+  const { data: whLocRes } = useGetLocationsListQuery(
+    { warehouseId: po?.warehouseId ?? "", size: 100 },
     { skip: !po?.warehouseId },
   );
   const locationOptions = Array.isArray(whLocRes?.data) ? whLocRes.data : [];
