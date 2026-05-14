@@ -52,9 +52,14 @@ export const aiApi = baseApi.injectEndpoints({
             }
           }
           return { data: fullText };
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error("AI Stream Error:", err);
-          return { error: { status: "FETCH_ERROR", error: err.message } };
+          return {
+            error: {
+              status: undefined,
+              data: err instanceof Error ? err.message : "AI stream failed",
+            },
+          };
         }
       },
     }),
