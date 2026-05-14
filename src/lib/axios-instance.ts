@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import axios, { InternalAxiosRequestConfig } from "axios";
 import { getToken, clearToken, setAccessToken } from "@/lib/auth-token";
+=======
+import axios from "axios";
+import { getToken, clearToken, markExplicitLogout } from "@/lib/auth-token";
+>>>>>>> feature/loctrantran
 import { API_BASE_URL } from "@/lib/constants";
 import { toast } from "sonner";
 
@@ -55,6 +60,7 @@ axiosInstance.interceptors.request.use((config) => {
 // Response Interceptor: Xử lý lỗi 401 (Refresh Token) và 403 (Phân quyền)
 axiosInstance.interceptors.response.use(
   (response) => response,
+<<<<<<< HEAD
   async (error) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -82,6 +88,16 @@ axiosInstance.interceptors.response.use(
               window.location.href = "/login";
             }
           }
+=======
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        markExplicitLogout();
+        clearToken();
+        const { pathname } = window.location;
+        if (pathname !== "/login") {
+          window.location.href = "/login";
+>>>>>>> feature/loctrantran
         }
         return Promise.reject(error);
       }

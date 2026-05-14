@@ -43,6 +43,7 @@ type CustomersListProps = {
   onRetry: () => void;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageSizeChange?: (size: number) => void;
   onRequestDelete: (target: { id: string; name: string }) => void;
   noContainer?: boolean;
 };
@@ -63,6 +64,7 @@ export function CustomersList({
   onRetry,
   onPrevPage,
   onNextPage,
+  onPageSizeChange,
   onRequestDelete,
   noContainer = false,
 }: CustomersListProps) {
@@ -201,6 +203,7 @@ export function CustomersList({
         onPrevPage={onPrevPage}
         onNextPage={onNextPage}
         pageSize={pageSize}
+        onPageSizeChange={onPageSizeChange}
       />
     </>
   );

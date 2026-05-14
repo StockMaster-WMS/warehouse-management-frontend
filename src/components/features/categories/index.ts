@@ -6,6 +6,7 @@ export { CategoryStatsGrid } from "./components/CategoryStatsGrid";
 export { CategoriesSearchSection } from "./components/CategoriesSearchSection";
 export { CategoryTreeTable } from "./components/CategoryTreeTable";
 export { CategoryDeleteDialog } from "./components/CategoryDeleteDialog";
+export { CategoryDialog } from "./components/CategoryDialog";
 export { CategoryTreeSelectItems } from "../CategoryTreeSelectItems";
 export {
   createCategorySchema,

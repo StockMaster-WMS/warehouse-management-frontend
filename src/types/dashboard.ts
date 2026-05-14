@@ -1,36 +1,31 @@
+export type DashboardMetricTone = "indigo" | "emerald" | "amber" | "rose";
+
 export interface DashboardMetric {
-  id: string;
+  key: string;
   label: string;
-  value: string | number;
-  trend?: string;
-  color?: string;
+  value: number;
+  trend: string | null;
+  tone: DashboardMetricTone;
 }
 
-export interface RecentActivity {
-  module: string;
-  actionType: string;
-  action: string;
-  entityName?: string;
-  actorName: string;
-  createdAt: string;
-}
-
-export interface FlowData {
+export interface DashboardFlowPoint {
   date: string;
+  name: string;
   inbound: number;
   outbound: number;
 }
 
+export type DashboardNoticeType = "error" | "success" | "warning";
+
 export interface DashboardNotice {
   title: string;
-  desc: string;
-  type: "error" | "success" | "warning";
+  description: string;
+  type: DashboardNoticeType;
   time: string;
 }
 
 export interface DashboardSummary {
   metrics: DashboardMetric[];
-  recentActivities: RecentActivity[];
-  flow: FlowData[];
+  flow: DashboardFlowPoint[];
   notices: DashboardNotice[];
 }

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
-  CUSTOMERS_PAGE_SIZE,
   CustomersList,
   CustomersSearchSection,
   CustomersStatsGrid,
@@ -71,7 +70,7 @@ export default function CustomersPage() {
           page={logic.page}
           totalElements={logic.paged?.total_elements ?? logic.rows.length}
           totalPages={logic.paged?.total_pages ?? 1}
-          pageSize={logic.paged?.size ?? CUSTOMERS_PAGE_SIZE}
+          pageSize={logic.pageSize}
           canGoPrev={logic.canGoPrev}
           canGoNext={logic.canGoNext}
           isLoading={logic.isLoading}
@@ -82,6 +81,10 @@ export default function CustomersPage() {
           onRetry={logic.refetch}
           onPrevPage={() => logic.setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => logic.setPage((p) => p + 1)}
+          onPageSizeChange={(nextSize) => {
+            logic.setPageSize(nextSize);
+            logic.setPage(0);
+          }}
           onRequestDelete={logic.openDeleteDialog}
         />
       </div>

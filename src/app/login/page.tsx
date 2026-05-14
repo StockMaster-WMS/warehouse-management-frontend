@@ -12,22 +12,74 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { hasExplicitLogoutSnapshot, saveToken } from "@/lib/auth-token";
+import {
+  clearAccessToken,
+  hasExplicitLogoutSnapshot,
+  markExplicitLogout,
+  saveToken,
+} from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useLoginMutation, useRefreshTokenMutation } from "@/store/services/auth.service";
 import { Warehouse, Eye, EyeOff } from "lucide-react";
 
+const REMEMBER_ACCOUNT_KEY = "warehouse-login-account";
+const REMEMBER_LOGIN_MODE_KEY = "warehouse-login-mode";
+
+function readRememberedAccount() {
+  if (typeof window === "undefined") {
+    return { account: "", isEmail: false, remembered: false };
+  }
+
+  try {
+    const account = window.localStorage.getItem(REMEMBER_ACCOUNT_KEY) ?? "";
+    const mode = window.localStorage.getItem(REMEMBER_LOGIN_MODE_KEY);
+
+    return {
+      account,
+      isEmail: mode === "email",
+      remembered: account.length > 0,
+    };
+  } catch {
+    return { account: "", isEmail: false, remembered: false };
+  }
+}
+
+function saveRememberedAccount(account: string, isEmail: boolean) {
+  if (typeof window === "undefined") return;
+
+  const value = account.trim();
+  if (!value) return;
+
+  window.localStorage.setItem(REMEMBER_ACCOUNT_KEY, value);
+  window.localStorage.setItem(
+    REMEMBER_LOGIN_MODE_KEY,
+    isEmail ? "email" : "username"
+  );
+}
+
+function clearRememberedAccount() {
+  if (typeof window === "undefined") return;
+
+  window.localStorage.removeItem(REMEMBER_ACCOUNT_KEY);
+  window.localStorage.removeItem(REMEMBER_LOGIN_MODE_KEY);
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const rememberedAccount = readRememberedAccount();
   
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(rememberedAccount.account);
   const [password, setPassword] = useState("");
-  const [isEmail, setIsEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isEmail, setIsEmail] = useState(rememberedAccount.isEmail);
+  const [rememberAccount, setRememberAccount] = useState(
+    rememberedAccount.remembered
+  );
   const [login, { isLoading, error }] = useLoginMutation();
   const [refreshToken] = useRefreshTokenMutation();
 
@@ -48,7 +100,9 @@ export default function LoginPage() {
         router.replace("/dashboard");
       })
       .catch(() => {
-        // No refresh cookie/session: stay on login.
+        markExplicitLogout();
+        clearAccessToken();
+        dispatch(baseApi.util.resetApiState());
       });
 
     return () => {
@@ -69,6 +123,12 @@ export default function LoginPage() {
 
       if (!token) {
         throw new Error("Login response missing accessToken");
+      }
+
+      if (rememberAccount) {
+        saveRememberedAccount(username, isEmail);
+      } else {
+        clearRememberedAccount();
       }
 
       dispatch(baseApi.util.resetApiState());
@@ -172,6 +232,25 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
+
+                <label
+                  htmlFor="remember-account"
+                  className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
+                >
+                  <Checkbox
+                    id="remember-account"
+                    checked={rememberAccount}
+                    onCheckedChange={(checked) => {
+                      const enabled = checked === true;
+                      setRememberAccount(enabled);
+                      if (!enabled) {
+                        clearRememberedAccount();
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                  <span>Ghi nhớ tài khoản trên thiết bị này</span>
+                </label>
 
                 {error && (
                   <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-600 dark:text-red-400">

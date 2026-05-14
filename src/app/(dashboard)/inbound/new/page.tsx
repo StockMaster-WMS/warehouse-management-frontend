@@ -99,6 +99,7 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
 /* ── Step 1: Select PO ────────────────────────────────────────────── */
 function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const debouncedKeyword = useDebouncedValue(keyword, 350);
@@ -106,7 +107,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
   const { data, isLoading, isFetching, isError, error, refetch } =
     useGetPurchaseOrdersQuery({
       page,
-      size: 20,
+      size: pageSize,
       status: statusFilter === "ALL" ? "APPROVED" : statusFilter,
       ...(debouncedKeyword.trim() ? { keyword: debouncedKeyword.trim() } : {}),
       sort: "createdAt",
@@ -270,7 +271,11 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           errorText="Không tải được dữ liệu."
           onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => setPage((p) => p + 1)}
-          pageSize={20}
+          pageSize={pageSize}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
     </div>

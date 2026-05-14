@@ -44,7 +44,6 @@ function buildSuppliersQueryParams(params: GetSuppliersParams) {
 
 const supplierApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    /** Sau `transformResponse`, `data` luôn là `PagedResponse<Supplier>` (`content` + meta). */
     getSuppliers: builder.query<
       ApiResponse<PagedResponse<Supplier>>,
       GetSuppliersParams
@@ -61,9 +60,9 @@ const supplierApi = baseApi.injectEndpoints({
         const rows = result?.data?.content ?? [];
         return rows.length
           ? [
-              ...rows.map((s) => ({ type: "Supplier" as const, id: s.id })),
-              { type: "Supplier" as const, id: "LIST" },
-            ]
+            ...rows.map((s) => ({ type: "Supplier" as const, id: s.id })),
+            { type: "Supplier" as const, id: "LIST" },
+          ]
           : [{ type: "Supplier" as const, id: "LIST" }];
       },
     }),

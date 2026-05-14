@@ -4,10 +4,19 @@ import type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/t
 
 export type { Category, CategoryCreatePayload, CategoryUpdatePayload } from "@/types/category";
 
+export interface CategoryQueryParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  sortDir?: string;
+  keyword?: string;
+  isActive?: boolean;
+}
+
 const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getCategories: builder.query<ApiResponse<PagedResponse<Category>>, void>({
-      query: () => ({ url: "/categories", method: "GET" }),
+    getCategories: builder.query<ApiResponse<PagedResponse<Category>>, CategoryQueryParams | void>({
+      query: (params) => ({ url: "/categories", method: "GET", params: params || { size: 500 } }),
       transformResponse: (r: ApiResponse<Category[] | PagedResponse<Category>>) => normalizeApiResponsePaged(r),
       providesTags: (result) => {
         const rows = result?.data?.content ?? [];

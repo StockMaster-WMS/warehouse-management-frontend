@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { InboundOutboundChartProps } from "@/components/dashboard/inbound-outbound-chart";
 
-export const InboundOutboundChartLazy = dynamic<any>(
+export const InboundOutboundChartLazy = dynamic<InboundOutboundChartProps>(
   () =>
     import("@/components/dashboard/inbound-outbound-chart").then(
       (m) => m.InboundOutboundChart,

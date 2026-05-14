@@ -11,21 +11,25 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { DashboardFlowPoint } from "@/types/dashboard";
 
-interface FlowData {
-  date: string;
-  inbound: number;
-  outbound: number;
-}
+export type InboundOutboundChartProps = {
+  data?: DashboardFlowPoint[];
+};
 
-export function InboundOutboundChart({ data }: { data?: FlowData[] }) {
+const EMPTY_DATA = [
+  { name: "T2", inbound: 0, outbound: 0 },
+  { name: "T3", inbound: 0, outbound: 0 },
+  { name: "T4", inbound: 0, outbound: 0 },
+  { name: "T5", inbound: 0, outbound: 0 },
+  { name: "T6", inbound: 0, outbound: 0 },
+  { name: "T7", inbound: 0, outbound: 0 },
+  { name: "CN", inbound: 0, outbound: 0 },
+];
+
+export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
   const [mounted, setMounted] = useState(false);
-
-  const chartData = data?.map(d => ({
-    name: d.date,
-    nhap: d.inbound,
-    xuat: d.outbound
-  })) || [];
+  const chartData = data?.length ? data : EMPTY_DATA;
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => {
@@ -69,7 +73,7 @@ export function InboundOutboundChart({ data }: { data?: FlowData[] }) {
           <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
           <Line
             type="monotone"
-            dataKey="nhap"
+            dataKey="inbound"
             name="Nhập kho"
             stroke="var(--chart-1)"
             strokeWidth={2}
@@ -78,7 +82,7 @@ export function InboundOutboundChart({ data }: { data?: FlowData[] }) {
           />
           <Line
             type="monotone"
-            dataKey="xuat"
+            dataKey="outbound"
             name="Xuất kho"
             stroke="var(--chart-2)"
             strokeWidth={2}

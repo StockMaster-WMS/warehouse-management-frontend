@@ -70,13 +70,14 @@ function lineStats(count: CycleCount) {
 
 export default function CycleCountsPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<CycleCountStatus | "">("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const { data, isLoading, isFetching, error, refetch } = useGetCycleCountsQuery({
     page,
-    size: PAGE_SIZE,
+    size: pageSize,
     keyword,
     status,
   });
@@ -234,7 +235,7 @@ export default function CycleCountsPage() {
           page={page}
           totalElements={totalElements}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           canGoPrev={page > 0}
           canGoNext={totalPages > 0 && page < totalPages - 1}
           isLoading={isLoading}
@@ -242,6 +243,10 @@ export default function CycleCountsPage() {
           isFetching={isFetching}
           onPrevPage={() => setPage((value) => Math.max(0, value - 1))}
           onNextPage={() => setPage((value) => value + 1)}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
 

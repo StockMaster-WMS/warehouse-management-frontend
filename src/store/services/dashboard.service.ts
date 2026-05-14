@@ -5,6 +5,7 @@ import type { DashboardSummary } from "@/types/dashboard";
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardSummary: builder.query<DashboardSummary, void>({
+  endpoints: (builder) => ({
       query: () => ({
         url: "/dashboard/summary",
         method: "GET",

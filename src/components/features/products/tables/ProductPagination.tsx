@@ -10,6 +10,7 @@ interface ProductPaginationProps {
     isFetching: boolean;
     onPrevPage: () => void;
     onNextPage: () => void;
+    onPageSizeChange?: (size: number) => void;
 }
 
 export function ProductPagination({
@@ -22,6 +23,7 @@ export function ProductPagination({
     isFetching,
     onPrevPage,
     onNextPage,
+    onPageSizeChange,
 }: ProductPaginationProps) {
     return (
         <PaginationFooter
@@ -36,6 +38,7 @@ export function ProductPagination({
             onPrevPage={onPrevPage}
             onNextPage={onNextPage}
             pageSize={pageSize}
+            onPageSizeChange={onPageSizeChange}
         />
     );
 }

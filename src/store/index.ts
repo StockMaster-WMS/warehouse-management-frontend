@@ -6,6 +6,7 @@ import "@/store/services/supplier.service";
 import "@/store/services/warehouse.service";
 import "@/store/services/location.service";
 import "@/store/services/stock.service";
+import "@/store/services/dashboard.service";
 
 export const store = configureStore({
   reducer: {

@@ -10,6 +10,7 @@ export function useStockMovementsPageLogic() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(MOVEMENTS_PAGE_SIZE);
 
   // ── Advanced filter toggle ──
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -69,7 +70,7 @@ export function useStockMovementsPageLogic() {
     refetch,
   } = useGetStockMovementsQuery({
     page,
-    size: MOVEMENTS_PAGE_SIZE,
+    size: pageSize,
     sort: "createdAt",
     sortDir: "desc",
     warehouseId: warehouseId || undefined,
@@ -113,7 +114,8 @@ export function useStockMovementsPageLogic() {
 
     page,
     setPage,
-    pageSize: MOVEMENTS_PAGE_SIZE,
+    pageSize,
+    setPageSize,
     canGoPrev,
     canGoNext,
   };

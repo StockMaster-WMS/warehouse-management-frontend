@@ -102,7 +102,7 @@ const EMPTY_PUTAWAY_TASKS: PutawayTask[] = [];
 
 export default function PutawayPage() {
   const [page, setPage] = useState(0);
-  const [size] = useState(20);
+  const [size, setSize] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -513,6 +513,10 @@ export default function PutawayPage() {
           onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
           onNextPage={() => setPage((p) => p + 1)}
           pageSize={size}
+          onPageSizeChange={(nextSize) => {
+            setSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
 

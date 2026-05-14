@@ -111,6 +111,7 @@ function partnerName(row: ReturnRequest) {
 
 export default function ReturnsPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [keyword, setKeyword] = useState("");
   const [tab, setTab] = useState("all");
   const [status, setStatus] = useState<ReturnStatus | "">("");
@@ -128,7 +129,7 @@ export default function ReturnsPage() {
 
   const { data, isLoading, isFetching, error, refetch } = useGetReturnRequestsQuery({
     page,
-    size: PAGE_SIZE,
+    size: pageSize,
     keyword,
     status,
     ...tabFilters,
@@ -401,7 +402,7 @@ export default function ReturnsPage() {
           page={page}
           totalElements={totalElements}
           totalPages={totalPages}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           canGoPrev={page > 0}
           canGoNext={totalPages > 0 && page < totalPages - 1}
           isLoading={isLoading}
@@ -409,6 +410,10 @@ export default function ReturnsPage() {
           isFetching={isFetching}
           onPrevPage={() => setPage((value) => Math.max(0, value - 1))}
           onNextPage={() => setPage((value) => value + 1)}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize);
+            setPage(0);
+          }}
         />
       </div>
 

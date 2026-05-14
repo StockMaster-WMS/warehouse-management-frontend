@@ -14,6 +14,7 @@ export function useCustomersPageLogic() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(CUSTOMERS_PAGE_SIZE);
   const [statusFilter, setStatusFilter] = useState(ALL_CUSTOMER_STATUS);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -24,7 +25,7 @@ export function useCustomersPageLogic() {
 
   const { data, isLoading, isFetching, isError, error, refetch } = useGetCustomersQuery({
     page,
-    size: CUSTOMERS_PAGE_SIZE,
+    size: pageSize,
     keyword: debouncedKeyword || undefined,
     isActive,
   });
@@ -92,6 +93,8 @@ export function useCustomersPageLogic() {
     setSearchInput,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     statusFilter,
     setStatusFilter,
     advancedOpen,
