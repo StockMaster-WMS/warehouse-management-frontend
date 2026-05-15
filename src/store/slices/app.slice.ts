@@ -6,7 +6,7 @@ interface AppState {
 }
 
 const initialState: AppState = {
-  appName: "Warehouse Management System",
+  appName: "StockMaster WMS",
   initialized: true,
 };
 

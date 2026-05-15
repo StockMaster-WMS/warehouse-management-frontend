@@ -4,15 +4,12 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
-  Box, 
   CheckCircle2, 
   ChevronRight, 
   ClipboardList, 
   Loader2, 
-  MapPin, 
   Package, 
   RefreshCw, 
-  RotateCcw,
   Warehouse
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +18,6 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { 
   Table, 
   TableBody, 
@@ -53,8 +49,11 @@ export default function RMADetailPage() {
   const [closeReturn, { isLoading: isClosing }] = useCloseReturnRequestMutation();
   
   // Form state for receiving
-  const [actualQty, setActualQty] = useState<number>(0);
+  const [selectedLineId, setSelectedLineId] = useState("");
+  const [actualQty, setActualQty] = useState("");
   const [locationId, setLocationId] = useState("");
+  const [condition, setCondition] = useState("RETURNED");
+  const [notes, setNotes] = useState("");
 
   const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsListQuery({
     page: 0,
@@ -69,12 +68,29 @@ export default function RMADetailPage() {
     }));
   }, [locationsRes]);
 
+  const lines = useMemo(() => rma?.lines ?? [], [rma?.lines]);
+  const selectedLine = lines.find((line) => line.id === selectedLineId) ?? lines[0];
+  const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
+  const lineOptions = useMemo(
+    () =>
+      lines.map((line) => ({
+        value: line.id,
+        label: `${line.productSku || line.productName || line.productId} · ${line.receivedQty || 0}/${line.expectedQty}`,
+      })),
+    [lines],
+  );
+
   const handleReceive = async () => {
+    const receivedQty = Number(actualQty);
+    if (!selectedLine) {
+      toast.error("RMA chưa có dòng hàng để nhận");
+      return;
+    }
     if (!locationId) {
       toast.error("Vui lòng chọn vị trí nhập hàng");
       return;
     }
-    if (actualQty <= 0) {
+    if (!Number.isFinite(receivedQty) || receivedQty <= 0) {
       toast.error("Số lượng thực nhận phải lớn hơn 0");
       return;
     }
@@ -82,9 +98,17 @@ export default function RMADetailPage() {
     try {
       await receiveReturn({
         id,
-        body: { actualQty, locationId }
+        body: {
+          itemId: selectedLine.id,
+          receivedQty,
+          locationId,
+          condition: condition.trim() || undefined,
+          notes: notes.trim() || undefined,
+        }
       }).unwrap();
       toast.success("Đã ghi nhận nhập hàng trả");
+      setActualQty("");
+      setNotes("");
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể nhận hàng"));
@@ -131,9 +155,9 @@ export default function RMADetailPage() {
               <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
-            {rma.status !== "CLOSED" && (
+            {!isCompleted && (
               <Button size="sm" onClick={handleClose} disabled={isClosing}>
-                Đóng hồ sơ
+                Hoàn tất hồ sơ
               </Button>
             )}
           </div>
@@ -171,7 +195,7 @@ export default function RMADetailPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Đơn hàng liên quan</p>
-                  <p className="font-mono text-sm">{rma.orderNumber || "N/A"}</p>
+                  <p className="font-mono text-sm">{rma.orderNumber || rma.orderId || "N/A"}</p>
                 </div>
               </div>
             </CardContent>
@@ -195,20 +219,24 @@ export default function RMADetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rma.lines?.map((line) => (
+                  {lines.map((line) => (
                     <TableRow key={line.id}>
                       <TableCell>
-                        <div className="font-medium">{line.productName}</div>
-                        <div className="text-xs font-mono text-muted-foreground">{line.productSku}</div>
+                        <div className="font-medium">{line.productName || line.productId}</div>
+                        <div className="text-xs font-mono text-muted-foreground">
+                          {line.productSku || line.lotNumber || "Chưa có SKU"}
+                        </div>
                       </TableCell>
                       <TableCell className="text-center font-semibold">{line.expectedQty}</TableCell>
                       <TableCell className="text-center font-bold text-indigo-600">{line.receivedQty || 0}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase">{line.reason}</Badge>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {line.condition || line.reason || rma.reason}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {!rma.lines?.length && (
+                  {!lines.length && (
                     <TableRow>
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                         Chưa có sản phẩm nào được khai báo.
@@ -232,6 +260,17 @@ export default function RMADetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label>Dòng hàng RMA</Label>
+                <SearchableSelect
+                  options={lineOptions}
+                  value={selectedLine?.id ?? ""}
+                  onValueChange={setSelectedLineId}
+                  placeholder="Chọn dòng hàng..."
+                  dialogTitle="Chọn dòng hàng RMA"
+                  disabled={!lineOptions.length || isCompleted}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Vị trí nhập kho</Label>
                 <SearchableSelect
                   options={locationOptions}
@@ -240,6 +279,7 @@ export default function RMADetailPage() {
                   placeholder="Chọn vị trí..."
                   dialogTitle="Chọn vị trí nhập kho"
                   loading={locationsLoading}
+                  disabled={isCompleted}
                 />
               </div>
               <div className="space-y-2">
@@ -247,14 +287,34 @@ export default function RMADetailPage() {
                 <Input 
                   type="number" 
                   value={actualQty} 
-                  onChange={(e) => setActualQty(Number(e.target.value))}
+                  onChange={(e) => setActualQty(e.target.value)}
                   min={1}
+                  max={selectedLine?.expectedQty}
+                  disabled={isCompleted}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tình trạng</Label>
+                <Input
+                  value={condition}
+                  onChange={(event) => setCondition(event.target.value)}
+                  placeholder="Nguyên vẹn, xước nhẹ, lỗi..."
+                  disabled={isCompleted}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Ghi chú</Label>
+                <Input
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Ghi chú xử lý nếu có"
+                  disabled={isCompleted}
                 />
               </div>
               <Button 
                 className="w-full bg-indigo-600 hover:bg-indigo-700" 
                 onClick={handleReceive}
-                disabled={isReceiving || rma.status === "CLOSED"}
+                disabled={isReceiving || isCompleted || !selectedLine}
               >
                 {isReceiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                 Xác nhận Nhận hàng

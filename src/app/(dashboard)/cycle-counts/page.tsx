@@ -43,11 +43,14 @@ const STATUS_LABEL: Record<CycleCountStatus, string> = {
   REVIEW: "Chờ duyệt",
   APPROVED: "Đã duyệt",
   CANCELLED: "Đã hủy",
+  PENDING: "Chờ bắt đầu",
+  IN_PROGRESS: "Đang kiểm",
+  COMPLETED: "Hoàn tất",
 };
 
 function statusClass(status: CycleCountStatus) {
-  if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300";
-  if (status === "COUNTING" || status === "OPEN") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
+  if (status === "APPROVED" || status === "COMPLETED") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300";
+  if (status === "COUNTING" || status === "OPEN" || status === "IN_PROGRESS") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
   if (status === "REVIEW") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300";
   if (status === "CANCELLED") return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300";
   return "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300";
@@ -62,8 +65,8 @@ function formatDate(value?: string | null) {
 
 function lineStats(count: CycleCount) {
   const lines = count.lines ?? [];
-  const counted = lines.filter((line) => line.status === "COUNTED" || line.status === "VARIANCE" || line.status === "APPROVED").length;
-  const variances = lines.filter((line) => Number(line.varianceQty ?? 0) !== 0 || line.status === "VARIANCE").length;
+  const counted = lines.filter((line) => line.status === "COUNTED" || line.status === "VARIANCE" || line.status === "APPROVED" || line.status === "ADJUSTED").length;
+  const variances = lines.filter((line) => Number(line.varianceQty ?? 0) !== 0 || line.status === "VARIANCE" || line.status === "ADJUSTED").length;
   if (!lines.length) return { label: "Chưa sinh dòng kiểm", variances: 0 };
   return { label: `${counted}/${lines.length} đã kiểm`, variances };
 }
@@ -85,8 +88,8 @@ export default function CycleCountsPage() {
   const rows = data?.data?.content ?? [];
   const totalElements = data?.data?.total_elements ?? 0;
   const totalPages = data?.data?.total_pages ?? 0;
-  const countingCount = rows.filter((row) => row.status === "COUNTING" || row.status === "OPEN").length;
-  const reviewCount = rows.filter((row) => row.status === "REVIEW").length;
+  const countingCount = rows.filter((row) => row.status === "COUNTING" || row.status === "OPEN" || row.status === "IN_PROGRESS").length;
+  const reviewCount = rows.filter((row) => row.status === "REVIEW" || row.status === "PENDING").length;
   const varianceCount = rows.reduce((sum, row) => sum + lineStats(row).variances, 0);
 
   return (

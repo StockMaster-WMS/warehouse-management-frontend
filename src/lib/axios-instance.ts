@@ -95,7 +95,6 @@ axiosInstance.interceptors.response.use(
     }
 
     if (requestUrl.includes("/auth/refresh")) {
-      redirectToLogin();
       return Promise.reject(error);
     }
 

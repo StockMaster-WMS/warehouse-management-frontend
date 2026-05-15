@@ -4,20 +4,24 @@ export type CycleCountStatus =
   | "COUNTING"
   | "REVIEW"
   | "APPROVED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED";
 
 export type CycleCountScope = "WAREHOUSE" | "ZONE" | "LOCATION" | "PRODUCT";
 
-export type CycleCountLineStatus = "PENDING" | "COUNTED" | "VARIANCE" | "APPROVED";
+export type CycleCountLineStatus = "PENDING" | "COUNTED" | "VARIANCE" | "APPROVED" | "ADJUSTED";
 
 export type CycleCountLine = {
   id: string;
-  cycleCountId: string;
+  cycleCountId?: string;
   productId?: string | null;
   productSku?: string | null;
   productName?: string | null;
   locationId?: string | null;
   locationCode?: string | null;
+  lotNumber?: string | null;
   systemQty: number;
   countedQty?: number | null;
   varianceQty?: number | null;
@@ -49,12 +53,19 @@ export type CycleCount = {
 
 export type CreateCycleCountPayload = {
   title?: string;
+  description?: string;
   scope: CycleCountScope;
   warehouseId: string;
   zone?: string;
   locationId?: string;
   productId?: string;
   assignedTo?: string;
+  scheduledAt?: string;
+  items?: Array<{
+    productId: string;
+    locationId: string;
+    lotNumber?: string | null;
+  }>;
 };
 
 export type SubmitCycleCountLinePayload = {

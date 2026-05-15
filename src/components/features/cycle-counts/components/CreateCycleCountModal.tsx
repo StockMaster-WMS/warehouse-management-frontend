@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Calendar, ClipboardList } from "lucide-react";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateCycleCountMutation } from "@/store/services/cycle-count.service";
+import { useGetStockListQuery } from "@/store/services/stock.service";
 import { apiErrMessage } from "@/types/api";
 
 const formSchema = z.object({
@@ -69,6 +70,17 @@ export function CreateCycleCountModal({
       description: "",
     },
   });
+  const selectedWarehouseId = useWatch({ control, name: "warehouseId" });
+  const { data: stockRes, isLoading: stockLoading } = useGetStockListQuery(
+    {
+      warehouseId: selectedWarehouseId || undefined,
+      page: 0,
+      size: 200,
+      sort: "updatedAt",
+      sortDir: "desc",
+    },
+    { skip: !selectedWarehouseId },
+  );
 
   // Reset form when modal opens
   useEffect(() => {
@@ -84,9 +96,26 @@ export function CreateCycleCountModal({
 
   const onSubmit = async (values: FormValues) => {
     try {
+      const stockRows = stockRes?.data?.content ?? [];
+      const items = stockRows
+        .filter((row) => row.productId && row.locationId)
+        .map((row) => ({
+          productId: row.productId,
+          locationId: row.locationId,
+          lotNumber: row.lotNumber || undefined,
+        }));
+
+      if (!items.length) {
+        toast.error("Kho đã chọn chưa có tồn kho để sinh dòng kiểm kê.");
+        return;
+      }
+
       await createCycleCount({
-        ...values,
-        title: values.countName, // Backend might expect title
+        warehouseId: values.warehouseId,
+        scope: values.scope,
+        title: values.countName,
+        description: [values.countName, values.description].filter(Boolean).join(" - "),
+        items,
       }).unwrap();
       
       toast.success("Đã tạo đợt kiểm kê mới thành công");
@@ -199,7 +228,10 @@ export function CreateCycleCountModal({
               className="min-h-[100px] rounded-xl border-slate-200 dark:border-slate-800 resize-none focus:ring-indigo-500/20"
             />
             <p className="text-[11px] italic text-slate-400">
-              Ghi chú sẽ giúp nhân viên kho hiểu rõ yêu cầu đợt kiểm này.
+              Hệ thống sẽ sinh dòng kiểm từ các tồn kho hiện có trong kho đã chọn.
+              {selectedWarehouseId
+                ? ` ${stockLoading ? "Đang tải tồn kho..." : `Sẵn sàng ${stockRes?.data?.content?.length ?? 0} dòng.`}`
+                : ""}
             </p>
             {errors.description && (
               <p className="text-xs text-rose-500">{errors.description.message}</p>
@@ -217,7 +249,7 @@ export function CreateCycleCountModal({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || stockLoading}
               className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none min-w-[140px]"
             >
               {isSubmitting ? (

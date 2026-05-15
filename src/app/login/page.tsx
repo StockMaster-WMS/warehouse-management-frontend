@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   clearAccessToken,
+  clearExplicitLogout,
   hasExplicitLogoutSnapshot,
-  markExplicitLogout,
   saveToken,
 } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
@@ -68,9 +68,24 @@ function clearRememberedAccount() {
   window.localStorage.removeItem(REMEMBER_LOGIN_MODE_KEY);
 }
 
+function safeCallbackUrl(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/login")) {
+    return "/dashboard";
+  }
+
+  return value;
+}
+
+function getCallbackUrl() {
+  if (typeof window === "undefined") return "/dashboard";
+
+  return safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl"));
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const loginStartedRef = useRef(false);
   const rememberedAccount = readRememberedAccount();
   
   const [username, setUsername] = useState(rememberedAccount.account);
@@ -93,14 +108,14 @@ export default function LoginPage() {
     refreshToken()
       .unwrap()
       .then((result) => {
-        if (cancelled) return;
+        if (cancelled || loginStartedRef.current) return;
         const token = saveToken(result.accessToken);
         if (!token) return;
         dispatch(baseApi.util.resetApiState());
-        router.replace("/dashboard");
+        router.replace(getCallbackUrl());
       })
       .catch(() => {
-        markExplicitLogout();
+        if (cancelled || loginStartedRef.current) return;
         clearAccessToken();
         dispatch(baseApi.util.resetApiState());
       });
@@ -112,6 +127,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    loginStartedRef.current = true;
     
     try {
       const credentials = isEmail
@@ -119,6 +135,7 @@ export default function LoginPage() {
         : { username, password };
 
       const result = await login(credentials).unwrap();
+      clearExplicitLogout();
       const token = saveToken(result.accessToken);
 
       if (!token) {
@@ -132,8 +149,9 @@ export default function LoginPage() {
       }
 
       dispatch(baseApi.util.resetApiState());
-      router.replace("/dashboard");
+      router.replace(getCallbackUrl());
     } catch {
+      loginStartedRef.current = false;
       // Error handled by redux state
     }
   };
@@ -178,14 +196,14 @@ export default function LoginPage() {
                       onClick={() => setIsEmail(!isEmail)}
                       className="text-xs font-medium text-blue-600 dark:text-blue-400 underline-offset-4 hover:underline"
                     >
-                      {isEmail ? "Dùng username" : "Dùng email"}
+                      {isEmail ? "Dùng tên đăng nhập" : "Dùng email"}
                     </button>
                   </div>
                   <Input
                     id="username"
                     name={isEmail ? "email" : "username"}
                     type={isEmail ? "email" : "text"}
-                    placeholder={isEmail ? "admin@example.com" : "admin"}
+                    placeholder={isEmail ? "nguoidung@congty.vn" : "ma.nhanvien"}
                     autoComplete={isEmail ? "email" : "username"}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -291,7 +309,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
-            <p>Copyright © 2026 StockMaster WMS. All rights reserved.</p>
+            <p>© 2026 StockMaster WMS. Bảo lưu mọi quyền.</p>
           </div>
         </section>
       </div>

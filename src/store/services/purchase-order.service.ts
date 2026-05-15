@@ -426,7 +426,10 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         data: body,
       }),
       invalidatesTags: (_r, _e, arg) => {
-        const tags: any[] = [
+        const tags: Array<{
+          type: "PutawayTask" | "PurchaseOrder" | "PoItem";
+          id: string;
+        }> = [
           { type: "PutawayTask", id: arg.id },
           { type: "PutawayTask", id: "LIST" },
           { type: "PurchaseOrder", id: "LIST" },

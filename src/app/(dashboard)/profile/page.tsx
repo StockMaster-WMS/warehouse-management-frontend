@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef } from "react";
 import {
   Activity,
   AlertCircle,
-  Mail,
   RefreshCw,
   Shield,
-  User,
   UserCog,
   Save,
   Loader2
@@ -43,21 +41,16 @@ function initials(value: string) {
 export default function ProfilePage() {
   const { data: user, isLoading, isFetching, error, refetch } = useGetCurrentUserQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    if (user) {
-      setName(user.fullName || user.name || "");
-      setEmail(user.email || "");
-    }
-  }, [user]);
+  const profileFormRef = useRef<HTMLFormElement>(null);
 
   const roles = useMemo(() => getUserRoles(user?.roles), [user?.roles]);
   const displayName = user?.fullName || user?.name?.trim() || user?.username?.trim() || "Người dùng";
 
   const handleUpdate = async () => {
+    const formData = new FormData(profileFormRef.current ?? undefined);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+
     if (!name.trim() || !email.trim()) {
       toast.error("Vui lòng điền đầy đủ họ tên và email");
       return;
@@ -137,7 +130,7 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            <form ref={profileFormRef} className="flex flex-col gap-6 sm:flex-row sm:items-start">
               <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-3xl font-bold text-white shadow-lg">
                 {initials(displayName)}
               </div>
@@ -155,17 +148,17 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Họ và tên</label>
                     <Input 
-                      value={name} 
-                      onChange={(e) => setName(e.target.value)} 
+                      name="name"
+                      defaultValue={user.fullName || user.name || ""}
                       placeholder="Nhập họ tên đầy đủ"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</label>
                     <Input 
+                      name="email"
                       type="email"
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
+                      defaultValue={user.email || ""}
                       placeholder="user@example.com"
                     />
                   </div>
@@ -182,7 +175,7 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </form>
           </CardContent>
         </Card>
 

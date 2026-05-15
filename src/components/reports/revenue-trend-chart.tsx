@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -20,13 +19,7 @@ interface RevenueTrend {
 }
 
 export function RevenueTrendChart({ data }: { data?: RevenueTrend[] }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || !data) return <div className="h-64 w-full" />;
+  if (!data) return <div className="h-64 w-full" />;
 
   const chartData = data.map(d => ({
     name: format(new Date(d.date), "dd/MM", { locale: vi }),
@@ -59,7 +52,7 @@ export function RevenueTrendChart({ data }: { data?: RevenueTrend[] }) {
               background: "var(--card)",
               boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
             }}
-            formatter={(value: any) => [`${(Number(value) || 0).toLocaleString('vi-VN')} ₫`, "Doanh thu"]}
+            formatter={(value: number | string | undefined) => [`${(Number(value) || 0).toLocaleString('vi-VN')} ₫`, "Doanh thu"]}
           />
           <Bar 
             dataKey="revenue" 

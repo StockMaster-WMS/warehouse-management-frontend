@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 /**
  * Web App Manifest — cho phép “Cài đặt app” / Add to Home Screen.
@@ -6,10 +7,9 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "StockMaster — Quản lý kho",
+    name: SITE_NAME,
     short_name: "StockMaster",
-    description:
-      "Giao diện web quản lý kho đa điểm: tồn kho, nhập xuất, đơn hàng và báo cáo.",
+    description: SITE_DESCRIPTION,
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -26,8 +26,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-import { toast } from "sonner";
-import { useGetPickingItemsQuery, useGetPickingItemByIdQuery, useAssignPickingTaskMutation } from "@/store/services/picking-item.service";
+import { useGetPickingItemsQuery, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
 
 interface GroupedPicking {
     soNumber: string;
@@ -53,17 +52,6 @@ export function OverviewTab() {
         selectedId as string,
         { skip: !selectedId }
     );
-    const [assignTask] = useAssignPickingTaskMutation();
-
-    const handleAssignGroup = async (e: React.MouseEvent, group: GroupedPicking) => {
-        e.stopPropagation();
-        try {
-            await Promise.all(group.items.map(i => assignTask({ id: i.id, soItemId: i.soItemId, assigneeId: "user-demotask" }).unwrap()));
-            toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
-        } catch {
-            toast.error("Lỗi khi phân công tác vụ!");
-        }
-    };
 
     const { groupedData } = useMemo(() => {
         const rawItems = data?.data?.content || [];
@@ -269,16 +257,9 @@ export function OverviewTab() {
                                             </StatusBadge>
                                         </TableCell>
                                         <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                                            {group.status === "PENDING" && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 text-[11px] font-bold"
-                                                    onClick={(e) => handleAssignGroup(e, group)}
-                                                >
-                                                    Giao nhân viên
-                                                </Button>
-                                            )}
+                                            <span className="text-[11px] font-bold text-muted-foreground">
+                                                Điều phối qua tuyến pick
+                                            </span>
                                         </TableCell>
                                     </TableRow>
 
