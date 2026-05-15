@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 import {
   useGetPickingItemByIdQuery,
   useGetPickingItemsQuery,
-  useReportPickingExceptionMutation,
   useUpdatePickingItemMutation,
 } from "@/store/services/picking-item.service";
 import type { PickingItem } from "@/types/picking-item";
@@ -138,8 +137,6 @@ export function OperationTab({ onClose }: OperationTabProps) {
   });
   const [updatePickingItem, { isLoading: isCompleting }] =
     useUpdatePickingItemMutation();
-  const [reportException, { isLoading: isReporting }] =
-    useReportPickingExceptionMutation();
 
   const [sessionStarted, setSessionStarted] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -180,21 +177,13 @@ export function OperationTab({ onClose }: OperationTabProps) {
     return detailData?.data ? { ...activeSummary, ...detailData.data } : activeSummary;
   }, [activeSummary, detailData]);
 
-  useEffect(() => {
-    if (!sessionStarted || selectedTaskId || pendingTasks.length === 0) return;
-    setSelectedTaskId(pendingTasks[0].id);
-  }, [pendingTasks, selectedTaskId, sessionStarted]);
-
-  useEffect(() => {
+  function chooseNextTask(finishedTaskId: string) {
+    const nextTask = pendingTasks.find((task) => task.id !== finishedTaskId);
+    setSelectedTaskId(nextTask?.id ?? null);
     setCurrentStep("location");
     setScannedLoc("");
     setScannedSku("");
     setPickedQty("");
-  }, [selectedTaskId]);
-
-  function chooseNextTask(finishedTaskId: string) {
-    const nextTask = pendingTasks.find((task) => task.id !== finishedTaskId);
-    setSelectedTaskId(nextTask?.id ?? null);
   }
 
   function finishTaskLocally(taskId: string) {
@@ -206,6 +195,10 @@ export function OperationTab({ onClose }: OperationTabProps) {
     if (pendingTasks.length === 0) return;
     setSessionStarted(true);
     setSelectedTaskId(pendingTasks[0].id);
+    setCurrentStep("location");
+    setScannedLoc("");
+    setScannedSku("");
+    setPickedQty("");
   }
 
   function handleScanLocation() {
@@ -279,20 +272,9 @@ export function OperationTab({ onClose }: OperationTabProps) {
   async function handleReportException(reason: string) {
     if (!activeItem) return;
 
-    try {
-      await reportException({
-        id: activeItem.id,
-        soItemId: activeItem.soItemId,
-        reason,
-      }).unwrap();
-
-      toast.error("Đã ghi nhận ngoại lệ và chuyển sang tác vụ tiếp theo");
-      setIsExceptionOpen(false);
-      finishTaskLocally(activeItem.id);
-      void refetch();
-    } catch {
-      toast.error("Không thể ghi nhận ngoại lệ.");
-    }
+    toast.warning(`Đã bỏ qua tác vụ trong phiên hiện tại: ${reason}`);
+    setIsExceptionOpen(false);
+    finishTaskLocally(activeItem.id);
   }
 
   if (isLoading) {
@@ -405,6 +387,10 @@ export function OperationTab({ onClose }: OperationTabProps) {
               onSelect={(id) => {
                 setSessionStarted(true);
                 setSelectedTaskId(id);
+                setCurrentStep("location");
+                setScannedLoc("");
+                setScannedSku("");
+                setPickedQty("");
               }}
             />
           </div>
@@ -591,7 +577,7 @@ export function OperationTab({ onClose }: OperationTabProps) {
             variant="outline"
             className="h-12 flex-1 rounded-lg font-bold"
             onClick={() => setIsExceptionOpen(true)}
-            disabled={isCompleting || isReporting}
+            disabled={isCompleting}
           >
             Báo lỗi
           </Button>
@@ -599,7 +585,7 @@ export function OperationTab({ onClose }: OperationTabProps) {
             type="button"
             className="h-12 flex-[1.4] rounded-lg font-black"
             onClick={() => void handleConfirmPick()}
-            disabled={currentStep !== "qty" || isCompleting || isReporting}
+            disabled={currentStep !== "qty" || isCompleting}
           >
             {isCompleting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -633,7 +619,6 @@ export function OperationTab({ onClose }: OperationTabProps) {
               <button
                 key={reason.value}
                 type="button"
-                disabled={isReporting}
                 onClick={() => void handleReportException(reason.value)}
                 className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-warning/40 hover:bg-warning-soft/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -645,11 +630,7 @@ export function OperationTab({ onClose }: OperationTabProps) {
                     {reason.description}
                   </span>
                 </span>
-                {isReporting ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             ))}
           </div>

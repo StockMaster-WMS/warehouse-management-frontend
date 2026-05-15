@@ -28,27 +28,45 @@ export const aiApi = baseApi.injectEndpoints({
           const decoder = new TextDecoder();
 
           if (reader) {
+            let buffer = "";
+
+            const appendEvent = (event: string) => {
+              const content = event
+                .split(/\r?\n/)
+                .filter((line) => line.startsWith("data:"))
+                .map((line) => {
+                  const data = line.slice("data:".length);
+                  return data.startsWith(" ") ? data.slice(1) : data;
+                })
+                .join("\n");
+
+              if (!content) return;
+
+              fullText += content;
+              // Cập nhật dữ liệu vào cache của Redux ngay lập tức để UI hiển thị
+              dispatch(
+                aiApi.util.updateQueryData("streamAiAnswer", arg, () => {
+                  return fullText;
+                })
+              );
+            };
+
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
 
-              const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split("\n");
+              buffer += decoder.decode(value, { stream: true });
+              const events = buffer.split(/\r?\n\r?\n/);
+              buffer = events.pop() ?? "";
 
-              for (const line of lines) {
-                if (line.startsWith("data:")) {
-                  const content = line.replace("data:", "").trim();
-                  if (content) {
-                    fullText += content;
-                    // Cập nhật dữ liệu vào cache của Redux ngay lập tức để UI hiển thị
-                    dispatch(
-                      aiApi.util.updateQueryData("streamAiAnswer", arg, (draft) => {
-                        return fullText;
-                      })
-                    );
-                  }
-                }
+              for (const event of events) {
+                appendEvent(event);
               }
+            }
+
+            buffer += decoder.decode();
+            if (buffer) {
+              appendEvent(buffer);
             }
           }
           return { data: fullText };

@@ -1,5 +1,4 @@
 import { UserCog, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGetCurrentUserQuery } from "@/store/services/auth.service";
@@ -71,7 +70,7 @@ export function PersonalSettings({ gotoProfile }: PersonalSettingsProps) {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <label className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg block">
-                Mẹo: Bạn có thể thay đổi các thông tin này bằng cách nhấp vào "Xem trang cá nhân" ở trên.
+                Mẹo: Bạn có thể thay đổi các thông tin này bằng cách nhấp vào &quot;Xem trang cá nhân&quot; ở trên.
               </label>
             </div>
           </div>
