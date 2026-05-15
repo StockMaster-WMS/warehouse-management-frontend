@@ -41,12 +41,20 @@ function createMessageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function createSessionId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `warehouse-ai-${crypto.randomUUID()}`;
+  }
+  return `warehouse-ai-${createMessageId()}`;
+}
+
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const currentAssistantMsgId = useRef<string | null>(null);
+  const sessionIdRef = useRef(createSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,7 +94,7 @@ export default function AiAssistantPage() {
     try {
       await triggerStream({
         question: trimmed,
-        sessionId: "warehouse-ai-session",
+        sessionId: sessionIdRef.current,
       }).unwrap();
     } catch {
       setMessages((prev) =>
@@ -110,6 +118,7 @@ export default function AiAssistantPage() {
 
   function resetConversation() {
     currentAssistantMsgId.current = null;
+    sessionIdRef.current = createSessionId();
     setInput("");
     setMessages([INITIAL_MESSAGE]);
   }
