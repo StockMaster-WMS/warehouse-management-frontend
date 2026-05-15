@@ -196,14 +196,14 @@ export default function LoginPage() {
                       onClick={() => setIsEmail(!isEmail)}
                       className="text-xs font-medium text-blue-600 dark:text-blue-400 underline-offset-4 hover:underline"
                     >
-                      {isEmail ? "Dùng username" : "Dùng email"}
+                      {isEmail ? "Dùng tên đăng nhập" : "Dùng email"}
                     </button>
                   </div>
                   <Input
                     id="username"
                     name={isEmail ? "email" : "username"}
                     type={isEmail ? "email" : "text"}
-                    placeholder={isEmail ? "admin@example.com" : "admin"}
+                    placeholder={isEmail ? "nguoidung@congty.vn" : "ma.nhanvien"}
                     autoComplete={isEmail ? "email" : "username"}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -309,7 +309,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500">
-            <p>Copyright © 2026 StockMaster WMS. All rights reserved.</p>
+            <p>© 2026 StockMaster WMS. Bảo lưu mọi quyền.</p>
           </div>
         </section>
       </div>

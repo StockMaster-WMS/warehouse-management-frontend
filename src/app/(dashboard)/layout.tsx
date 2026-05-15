@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthGuard } from "@/components/auth-guard";
@@ -6,6 +7,18 @@ import { Navbar } from "@/components/navbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 const AUTH_SESSION_COOKIE_NAMES = ["refreshToken", "accessToken"] as const;
+
+export const metadata: Metadata = {
+  title: {
+    default: "Bảng điều khiển",
+    template: "%s | StockMaster WMS",
+  },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export default async function DashboardLayout({
   children,
