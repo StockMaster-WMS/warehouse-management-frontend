@@ -1,28 +1,61 @@
 import { baseApi } from "./api";
-import { getToken } from "@/lib/auth-token";
+import { getToken, setAccessToken } from "@/lib/auth-token";
+import { axiosInstance } from "@/lib/axios-instance";
 import { API_BASE_URL } from "@/lib/constants";
+
+type RefreshResponse = {
+  accessToken?: string;
+  data?: {
+    accessToken?: string;
+  };
+};
+
+async function refreshAccessToken() {
+  const response = await axiosInstance.post<RefreshResponse>("/auth/refresh", {});
+  const token = response.data.data?.accessToken ?? response.data.accessToken ?? "";
+
+  if (token) {
+    setAccessToken(token);
+  }
+
+  return token;
+}
 
 export const aiApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     streamAiAnswer: builder.query<string, { question: string; sessionId: string }>({
       async queryFn(arg, { signal, dispatch }) {
-        const token = getToken();
         const url = `${API_BASE_URL}/v1/ai/ask/stream?question=${encodeURIComponent(
           arg.question
-        )}&sessionId=${arg.sessionId}`;
+        )}&sessionId=${encodeURIComponent(arg.sessionId)}`;
 
         let fullText = "";
 
         try {
-          const response = await fetch(url, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "text/event-stream",
-            },
-            signal, // Hỗ trợ abort request khi component unmount
-          });
+          let token = getToken();
+          if (!token) {
+            token = await refreshAccessToken();
+          }
 
-          if (!response.ok) throw new Error("Stream failed");
+          const openStream = (accessToken: string) =>
+            fetch(url, {
+              headers: {
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                Accept: "text/event-stream",
+              },
+              credentials: "include",
+              signal, // Hỗ trợ abort request khi component unmount
+            });
+
+          let response = await openStream(token);
+          if (response.status === 401) {
+            token = await refreshAccessToken();
+            response = await openStream(token);
+          }
+
+          if (!response.ok) {
+            throw new Error(`AI stream failed (${response.status})`);
+          }
 
           const reader = response.body?.getReader();
           const decoder = new TextDecoder();
