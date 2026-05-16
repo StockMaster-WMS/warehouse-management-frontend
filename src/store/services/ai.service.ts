@@ -10,6 +10,18 @@ type RefreshResponse = {
   };
 };
 
+export type AiStreamRequest = {
+  question: string;
+  sessionId: string;
+  requestId: string;
+};
+
+export type AiStreamResult = {
+  requestId: string;
+  text: string;
+  aborted?: boolean;
+};
+
 async function refreshAccessToken() {
   const response = await axiosInstance.post<RefreshResponse>("/auth/refresh", {});
   const token = response.data.data?.accessToken ?? response.data.accessToken ?? "";
@@ -23,11 +35,13 @@ async function refreshAccessToken() {
 
 export const aiApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    streamAiAnswer: builder.query<string, { question: string; sessionId: string }>({
+    streamAiAnswer: builder.query<AiStreamResult, AiStreamRequest>({
       async queryFn(arg, { signal, dispatch }) {
         const url = `${API_BASE_URL}/v1/ai/ask/stream?question=${encodeURIComponent(
           arg.question
-        )}&sessionId=${encodeURIComponent(arg.sessionId)}`;
+        )}&sessionId=${encodeURIComponent(arg.sessionId)}&requestId=${encodeURIComponent(
+          arg.requestId
+        )}`;
 
         let fullText = "";
 
@@ -37,18 +51,15 @@ export const aiApi = baseApi.injectEndpoints({
             token = await refreshAccessToken();
           }
 
-          const openStream = (accessToken: string) => {
-            const globalAny = window as any;
-            const usedSignal = globalAny.__aiAbortControllers?.[arg.sessionId]?.signal ?? signal;
-            return fetch(url, {
+          const openStream = (accessToken: string) =>
+            fetch(url, {
               headers: {
                 ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                 Accept: "text/event-stream",
               },
               credentials: "include",
-              signal: usedSignal, // Hỗ trợ abort request khi component unmount hoặc user dừng
+              signal,
             });
-          };
 
           let response = await openStream(token);
           if (response.status === 401) {
@@ -82,7 +93,7 @@ export const aiApi = baseApi.injectEndpoints({
               // Cập nhật dữ liệu vào cache của Redux ngay lập tức để UI hiển thị
               dispatch(
                 aiApi.util.updateQueryData("streamAiAnswer", arg, () => {
-                  return fullText;
+                  return { requestId: arg.requestId, text: fullText };
                 })
               );
             };
@@ -105,8 +116,11 @@ export const aiApi = baseApi.injectEndpoints({
               appendEvent(buffer);
             }
           }
-          return { data: fullText };
+          return { data: { requestId: arg.requestId, text: fullText } };
         } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            return { data: { requestId: arg.requestId, text: fullText, aborted: true } };
+          }
           console.error("AI Stream Error:", err);
           return {
             error: {
@@ -114,15 +128,6 @@ export const aiApi = baseApi.injectEndpoints({
               data: err instanceof Error ? err.message : "AI stream failed",
             },
           };
-        } finally {
-          try {
-            const globalAny = window as any;
-            if (globalAny.__aiAbortControllers) {
-              delete globalAny.__aiAbortControllers[arg.sessionId];
-            }
-          } catch {
-            // ignore
-          }
         }
       },
     }),

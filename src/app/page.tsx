@@ -86,24 +86,24 @@ export default async function Home() {
   }
 
   return (
-    <main id="main-content" className="min-h-svh bg-white text-slate-950">
-      <section className="relative isolate overflow-hidden bg-slate-950 text-white">
+    <main id="main-content" className="min-h-svh bg-white text-zinc-950">
+      <section className="relative isolate overflow-hidden bg-zinc-950 text-white">
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-cover bg-center opacity-[0.36]"
           style={{ backgroundImage: "url('/opengraph-image')" }}
         />
-        <div aria-hidden="true" className="absolute inset-0 bg-slate-950/72" />
+        <div aria-hidden="true" className="absolute inset-0 bg-zinc-950/72" />
 
         <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-24">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">
               Phần mềm quản lý kho cho doanh nghiệp
             </p>
-            <h1 className="mt-5 text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
               {SITE_NAME}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-200">
               Hệ thống WMS hỗ trợ quản lý tồn kho, nhập xuất hàng, picking,
               putaway, kiểm kê và báo cáo vận hành trên một nền tảng web tập
               trung.
@@ -111,7 +111,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/login"
-                className="inline-flex h-11 items-center justify-center rounded-md bg-white px-5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+                className="inline-flex h-11 items-center justify-center rounded-md bg-white px-5 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-100"
               >
                 Đăng nhập hệ thống
               </Link>
@@ -124,10 +124,10 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="rounded-[8px] border border-white/15 bg-white/[0.94] p-5 text-slate-950 shadow-2xl">
+          <div className="rounded-[8px] border border-white/15 bg-white/[0.94] p-5 text-zinc-950 shadow-2xl">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Tổng quan vận hành
                 </p>
                 <p className="mt-1 text-2xl font-bold">Kho đang kiểm soát tốt</p>
@@ -143,9 +143,9 @@ export default async function Home() {
                 ["Đơn xuất hôm nay", "186"],
                 ["Dòng cần kiểm", "42"],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-[8px] border border-slate-200 p-4">
-                  <p className="text-xs font-semibold text-slate-500">{label}</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+                <div key={label} className="rounded-[8px] border border-zinc-200 p-4">
+                  <p className="text-xs font-semibold text-zinc-500">{label}</p>
+                  <p className="mt-2 text-2xl font-bold text-zinc-950">{value}</p>
                 </div>
               ))}
             </div>
@@ -158,13 +158,13 @@ export default async function Home() {
               ].map(([label, value, color]) => (
                 <div
                   key={label}
-                  className="flex items-center justify-between rounded-[8px] border border-slate-200 px-4 py-3"
+                  className="flex items-center justify-between rounded-[8px] border border-zinc-200 px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className={`h-9 w-1.5 rounded-full ${color}`} />
                     <span className="font-semibold">{label}</span>
                   </div>
-                  <span className="text-sm text-slate-600">{value}</span>
+                  <span className="text-sm text-zinc-600">{value}</span>
                 </div>
               ))}
             </div>
@@ -172,13 +172,13 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="tinh-nang" className="border-b border-slate-200 bg-slate-50">
+      <section id="tinh-nang" className="border-b border-zinc-200 bg-zinc-50">
         <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8">
           <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950">
+            <h2 className="text-3xl font-semibold tracking-tight text-zinc-950">
               Đủ nghiệp vụ cốt lõi cho hệ thống quản lý kho
             </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <p className="mt-4 text-base leading-7 text-zinc-600">
               StockMaster WMS tập trung vào các màn hình vận hành kho thường
               dùng: tồn kho, nhập hàng, xuất hàng, vị trí lưu trữ, kiểm kê,
               hoàn hàng, báo cáo và phân quyền người dùng.
@@ -192,15 +192,15 @@ export default async function Home() {
               return (
                 <article
                   key={feature.title}
-                  className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-sm"
+                  className="rounded-[8px] border border-zinc-200 bg-white p-5 shadow-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-700">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Icon className="size-5" aria-hidden="true" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-slate-950">
+                  <h3 className="mt-5 text-lg font-semibold text-zinc-950">
                     {feature.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 text-zinc-600">
                     {feature.description}
                   </p>
                 </article>
@@ -213,13 +213,13 @@ export default async function Home() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-indigo-700">
+            <p className="text-sm font-bold uppercase tracking-wider text-primary">
               Vận hành rõ ràng
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
               Từ dữ liệu kho đến quyết định quản lý
             </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <p className="mt-4 text-base leading-7 text-zinc-600">
               Nội dung trên website dùng từ khóa tự nhiên cho thị trường Việt
               Nam: phần mềm quản lý kho, hệ thống WMS, quản lý tồn kho, nhập
               xuất kho, kiểm kê kho và báo cáo kho.
@@ -230,31 +230,31 @@ export default async function Home() {
             {workflowItems.map((item, index) => (
               <div
                 key={item}
-                className="flex gap-4 rounded-[8px] border border-slate-200 bg-slate-50 p-4"
+                className="flex gap-4 rounded-[8px] border border-zinc-200 bg-zinc-50 p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-950 text-sm font-bold text-white">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-zinc-950 text-sm font-bold text-white">
                   {index + 1}
                 </span>
-                <p className="text-sm leading-6 text-slate-700">{item}</p>
+                <p className="text-sm leading-6 text-zinc-700">{item}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-slate-200 bg-slate-950 text-white">
+      <section className="border-t border-zinc-200 bg-zinc-950 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-5 py-10 sm:px-8 md:grid-cols-3">
           {assuranceItems.map((item) => {
             const FeatureIcon = item.icon;
 
             return (
               <div key={item.title} className="flex gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/10 text-cyan-200">
-                  <FeatureIcon className="h-5 w-5" aria-hidden="true" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/10 text-cyan-200">
+                  <FeatureIcon className="size-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold">{item.title}</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-300">
+                  <h2 className="text-base font-semibold">{item.title}</h2>
+                  <p className="mt-1 text-sm leading-6 text-zinc-300">
                     {item.description}
                   </p>
                 </div>

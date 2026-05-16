@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -45,6 +44,15 @@ interface CreateCycleCountModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function createDefaultValues(): FormValues {
+  return {
+    warehouseId: "",
+    scope: "WAREHOUSE",
+    countName: `Kiểm kê định kỳ - ${new Date().toLocaleDateString("vi-VN")}`,
+    description: "",
+  };
+}
+
 export function CreateCycleCountModal({
   open,
   onOpenChange,
@@ -63,12 +71,7 @@ export function CreateCycleCountModal({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      warehouseId: "",
-      scope: "WAREHOUSE",
-      countName: `Kiểm kê định kỳ - ${new Date().toLocaleDateString("vi-VN")}`,
-      description: "",
-    },
+    defaultValues: createDefaultValues(),
   });
   const selectedWarehouseId = useWatch({ control, name: "warehouseId" });
   const { data: stockRes, isLoading: stockLoading } = useGetStockListQuery(
@@ -82,28 +85,25 @@ export function CreateCycleCountModal({
     { skip: !selectedWarehouseId },
   );
 
-  // Reset form when modal opens
-  useEffect(() => {
-    if (open) {
-      reset({
-        warehouseId: "",
-        scope: "WAREHOUSE",
-        countName: `Kiểm kê định kỳ - ${new Date().toLocaleDateString("vi-VN")}`,
-        description: "",
-      });
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      reset(createDefaultValues());
     }
-  }, [open, reset]);
+    onOpenChange(nextOpen);
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
       const stockRows = stockRes?.data?.content ?? [];
-      const items = stockRows
-        .filter((row) => row.productId && row.locationId)
-        .map((row) => ({
+      const items = stockRows.reduce<Array<{ productId: string; locationId: string; lotNumber?: string }>>((acc, row) => {
+        if (!row.productId || !row.locationId) return acc;
+        acc.push({
           productId: row.productId,
           locationId: row.locationId,
           lotNumber: row.lotNumber || undefined,
-        }));
+        });
+        return acc;
+      }, []);
 
       if (!items.length) {
         toast.error("Kho đã chọn chưa có tồn kho để sinh dòng kiểm kê.");
@@ -119,7 +119,7 @@ export function CreateCycleCountModal({
       }).unwrap();
       
       toast.success("Đã tạo đợt kiểm kê mới thành công");
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể tạo đợt kiểm kê"));
     }
@@ -128,21 +128,21 @@ export function CreateCycleCountModal({
   const warehouses = warehousesRes?.data?.content ?? [];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px] rounded-2xl border-none shadow-2xl">
         <DialogHeader>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 mb-4 dark:bg-indigo-950/30">
-            <ClipboardList className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 dark:bg-primary/15">
+            <ClipboardList className="size-6" />
           </div>
           <DialogTitle className="text-xl font-bold">Tạo đợt kiểm kê mới</DialogTitle>
-          <DialogDescription className="text-slate-500">
+          <DialogDescription className="text-zinc-500">
             Khởi tạo đợt kiểm tra hàng hoá thực tế tại kho để đối soát tồn kho.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+            <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">
               Kho kiểm kê <span className="text-rose-500">*</span>
             </Label>
             <Controller
@@ -154,8 +154,8 @@ export function CreateCycleCountModal({
                   value={field.value}
                   disabled={warehousesLoading}
                 >
-                  <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800">
-                    <SelectValue placeholder={warehousesLoading ? "Đang tải..." : "Chọn kho hàng để kiểm kê"} />
+                  <SelectTrigger className="h-11 rounded-xl border-zinc-200 dark:border-zinc-800">
+                    <SelectValue placeholder={warehousesLoading ? "Đang tải…" : "Chọn kho hàng để kiểm kê"} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     {warehouses.map((wh) => (
@@ -173,7 +173,7 @@ export function CreateCycleCountModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+            <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">
               Phạm vi kiểm kê <span className="text-rose-500">*</span>
             </Label>
             <Controller
@@ -184,7 +184,7 @@ export function CreateCycleCountModal({
                   onValueChange={field.onChange}
                   value={field.value}
                 >
-                  <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800">
+                  <SelectTrigger className="h-11 rounded-xl border-zinc-200 dark:border-zinc-800">
                     <SelectValue placeholder="Chọn phạm vi" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -202,15 +202,15 @@ export function CreateCycleCountModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+            <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">
               Tên đợt kiểm kê <span className="text-rose-500">*</span>
             </Label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
               <Input
                 {...register("countName")}
                 placeholder="VD: Kiểm kê kho A cuối tháng 5"
-                className="h-11 pl-10 rounded-xl border-slate-200 dark:border-slate-800 focus:ring-indigo-500/20"
+                className="h-11 pl-10 rounded-xl border-zinc-200 dark:border-zinc-800 focus:ring-primary/20"
               />
             </div>
             {errors.countName && (
@@ -219,18 +219,18 @@ export function CreateCycleCountModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+            <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">
               Ghi chú
             </Label>
             <Textarea
               {...register("description")}
-              placeholder="Mục đích kiểm kê hoặc lưu ý đặc biệt..."
-              className="min-h-[100px] rounded-xl border-slate-200 dark:border-slate-800 resize-none focus:ring-indigo-500/20"
+              placeholder="Mục đích kiểm kê hoặc lưu ý đặc biệt…"
+              className="min-h-[100px] rounded-xl border-zinc-200 dark:border-zinc-800 resize-none focus:ring-primary/20"
             />
-            <p className="text-[11px] italic text-slate-400">
+            <p className="text-[11px] italic text-zinc-400">
               Hệ thống sẽ sinh dòng kiểm từ các tồn kho hiện có trong kho đã chọn.
               {selectedWarehouseId
-                ? ` ${stockLoading ? "Đang tải tồn kho..." : `Sẵn sàng ${stockRes?.data?.content?.length ?? 0} dòng.`}`
+                ? ` ${stockLoading ? "Đang tải tồn kho…" : `Sẵn sàng ${stockRes?.data?.content?.length ?? 0} dòng.`}`
                 : ""}
             </p>
             {errors.description && (
@@ -242,7 +242,7 @@ export function CreateCycleCountModal({
             <Button
               type="button"
               variant="ghost"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               className="rounded-xl"
             >
               Hủy bỏ
@@ -250,12 +250,12 @@ export function CreateCycleCountModal({
             <Button
               type="submit"
               disabled={isSubmitting || stockLoading}
-              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none min-w-[140px]"
+              className="rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 dark:shadow-none min-w-[140px]"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang tạo...
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Đang tạo…
                 </>
               ) : (
                 "Tạo đợt kiểm"

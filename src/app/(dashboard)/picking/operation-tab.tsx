@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { ReactNode, useMemo, useReducer } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -42,6 +42,39 @@ type OperationTabProps = {
   onClose?: () => void;
 };
 
+type OperationState = {
+  sessionStarted: boolean;
+  selectedTaskId: string | null;
+  doneIds: string[];
+  currentStep: PickStep;
+  scannedLoc: string;
+  scannedSku: string;
+  pickedQty: string;
+  isExceptionOpen: boolean;
+};
+
+const INITIAL_OPERATION_STATE: OperationState = {
+  sessionStarted: false,
+  selectedTaskId: null,
+  doneIds: [],
+  currentStep: "location",
+  scannedLoc: "",
+  scannedSku: "",
+  pickedQty: "",
+  isExceptionOpen: false,
+};
+
+function operationReducer(state: OperationState, patch: Partial<OperationState>) {
+  return { ...state, ...patch };
+}
+
+const EMPTY_ROUTE_FIELDS = {
+  currentStep: "location" as const,
+  scannedLoc: "",
+  scannedSku: "",
+  pickedQty: "",
+};
+
 const EXCEPTION_REASONS = [
   {
     label: "Thiếu hàng tại vị trí",
@@ -70,7 +103,7 @@ function normalize(value: string | null | undefined) {
 }
 
 function sortByPickPath(items: PickingItem[]) {
-  return [...items].sort((a, b) => {
+  return items.toSorted((a, b) => {
     const sequenceDiff = Number(a.pickSequence ?? 9999) - Number(b.pickSequence ?? 9999);
     if (sequenceDiff !== 0) return sequenceDiff;
 
@@ -125,7 +158,7 @@ function StepPill({
             : "border-border bg-muted/50 text-muted-foreground"
       )}
     >
-      {done ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> : null}
+      {done ? <CheckCircle2 className="size-3.5 shrink-0" /> : null}
       <span className="truncate">{label}</span>
     </div>
   );
@@ -138,14 +171,17 @@ export function OperationTab({ onClose }: OperationTabProps) {
   const [updatePickingItem, { isLoading: isCompleting }] =
     useUpdatePickingItemMutation();
 
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [doneIds, setDoneIds] = useState<string[]>([]);
-  const [currentStep, setCurrentStep] = useState<PickStep>("location");
-  const [scannedLoc, setScannedLoc] = useState("");
-  const [scannedSku, setScannedSku] = useState("");
-  const [pickedQty, setPickedQty] = useState("");
-  const [isExceptionOpen, setIsExceptionOpen] = useState(false);
+  const [state, dispatch] = useReducer(operationReducer, INITIAL_OPERATION_STATE);
+  const {
+    sessionStarted,
+    selectedTaskId,
+    doneIds,
+    currentStep,
+    scannedLoc,
+    scannedSku,
+    pickedQty,
+    isExceptionOpen,
+  } = state;
 
   const allItems = useMemo(() => pagedData?.data?.content ?? [], [pagedData]);
   const pendingTasks = useMemo(
@@ -179,26 +215,21 @@ export function OperationTab({ onClose }: OperationTabProps) {
 
   function chooseNextTask(finishedTaskId: string) {
     const nextTask = pendingTasks.find((task) => task.id !== finishedTaskId);
-    setSelectedTaskId(nextTask?.id ?? null);
-    setCurrentStep("location");
-    setScannedLoc("");
-    setScannedSku("");
-    setPickedQty("");
+    dispatch({ selectedTaskId: nextTask?.id ?? null, ...EMPTY_ROUTE_FIELDS });
   }
 
   function finishTaskLocally(taskId: string) {
-    setDoneIds((prev) => (prev.includes(taskId) ? prev : [...prev, taskId]));
+    dispatch({ doneIds: doneIds.includes(taskId) ? doneIds : [...doneIds, taskId] });
     window.setTimeout(() => chooseNextTask(taskId), 450);
   }
 
   function handleStart() {
     if (pendingTasks.length === 0) return;
-    setSessionStarted(true);
-    setSelectedTaskId(pendingTasks[0].id);
-    setCurrentStep("location");
-    setScannedLoc("");
-    setScannedSku("");
-    setPickedQty("");
+    dispatch({
+      sessionStarted: true,
+      selectedTaskId: pendingTasks[0].id,
+      ...EMPTY_ROUTE_FIELDS,
+    });
   }
 
   function handleScanLocation() {
@@ -209,12 +240,12 @@ export function OperationTab({ onClose }: OperationTabProps) {
 
     if (!scanned || scanned !== expected) {
       toast.error("Vị trí không khớp. Kiểm tra lại mã kệ/bin.");
-      setScannedLoc("");
+      dispatch({ scannedLoc: "" });
       return;
     }
 
     toast.success("Đã xác thực đúng vị trí");
-    setCurrentStep("sku");
+    dispatch({ currentStep: "sku" });
   }
 
   function handleScanSku() {
@@ -230,13 +261,12 @@ export function OperationTab({ onClose }: OperationTabProps) {
 
     if (!scanned || !validCodes.includes(scanned)) {
       toast.error("Mã sản phẩm không khớp.");
-      setScannedSku("");
+      dispatch({ scannedSku: "" });
       return;
     }
 
     toast.success("Đã xác nhận đúng sản phẩm");
-    setPickedQty(String(activeItem.qtyToPick));
-    setCurrentStep("qty");
+    dispatch({ pickedQty: String(activeItem.qtyToPick), currentStep: "qty" });
   }
 
   async function handleConfirmPick() {
@@ -273,129 +303,59 @@ export function OperationTab({ onClose }: OperationTabProps) {
     if (!activeItem) return;
 
     toast.warning(`Đã bỏ qua tác vụ trong phiên hiện tại: ${reason}`);
-    setIsExceptionOpen(false);
+    dispatch({ isExceptionOpen: false });
     finishTaskLocally(activeItem.id);
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background p-8">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Đang đồng bộ tác vụ lấy hàng
-        </p>
-      </div>
-    );
+    return <PickingLoadingState />;
   }
 
   if (totalCount === 0) {
     return (
-      <div className="flex min-h-svh flex-col bg-background">
-        <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Không có tác vụ" />
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-            <PackageCheck className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h2 className="mt-4 text-lg font-black text-foreground">
-              Chưa có tác vụ picking
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Khi có đơn xuất cần lấy hàng, danh sách sẽ xuất hiện tại đây.
-            </p>
-            <Button className="mt-5 w-full rounded-lg" onClick={() => refetch()}>
-              Làm mới
-            </Button>
-          </div>
-        </div>
-      </div>
+      <NoPickingTasksState
+        onClose={onClose}
+        onRefresh={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
   if (pendingTasks.length === 0) {
     return (
-      <div className="flex min-h-svh flex-col bg-background">
-        <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Hoàn tất tuyến" />
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success-foreground">
-              <CheckCircle2 className="h-9 w-9" />
-            </div>
-            <h2 className="mt-5 text-xl font-black uppercase text-foreground">
-              Đã hoàn tất
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Toàn bộ tác vụ trong tuyến lấy hàng hiện tại đã được xử lý.
-            </p>
-            <Button
-              className="mt-5 h-12 w-full rounded-lg font-bold"
-              onClick={() => {
-                setSessionStarted(false);
-                setSelectedTaskId(null);
-                setDoneIds([]);
-                void refetch();
-              }}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Đồng bộ lại danh sách
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PickingCompleteState
+        onClose={onClose}
+        onRefresh={() => {
+          dispatch({
+            ...INITIAL_OPERATION_STATE,
+            doneIds: [],
+          });
+          void refetch();
+        }}
+      />
     );
   }
 
   if (!sessionStarted || !activeItem) {
     return (
-      <div className="flex min-h-svh flex-col bg-background">
-        <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Chuẩn bị tuyến" />
-        <div className="flex-1 overflow-y-auto px-4 py-5">
-          <div className="mx-auto max-w-sm space-y-4">
-            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase text-muted-foreground">
-                    Tiến độ hôm nay
-                  </p>
-                  <h1 className="mt-2 text-2xl font-black text-foreground">
-                    {pendingTasks.length} tác vụ chờ
-                  </h1>
-                </div>
-                <StatusBadge tone={isFetching ? "warning" : "info"}>
-                  {isFetching ? "Đang sync" : "Sẵn sàng"}
-                </StatusBadge>
-              </div>
-              <div className="mt-5 space-y-2">
-                <div className="flex justify-between text-xs font-bold text-muted-foreground">
-                  <span>Đã xử lý</span>
-                  <span>
-                    {Math.min(completedCount, totalCount)}/{totalCount}
-                  </span>
-                </div>
-                <ProgressBar value={progress} />
-              </div>
-              <Button
-                className="mt-5 h-12 w-full rounded-lg font-black"
-                onClick={handleStart}
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Bắt đầu lấy hàng
-              </Button>
-            </div>
-
-            <TaskRouteList
-              tasks={pendingTasks}
-              selectedTaskId={selectedTaskId}
-              onSelect={(id) => {
-                setSessionStarted(true);
-                setSelectedTaskId(id);
-                setCurrentStep("location");
-                setScannedLoc("");
-                setScannedSku("");
-                setPickedQty("");
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      <PickingStartState
+        completedCount={completedCount}
+        isFetching={isFetching}
+        onClose={onClose}
+        onSelectTask={(id) => {
+          dispatch({
+            sessionStarted: true,
+            selectedTaskId: id,
+            ...EMPTY_ROUTE_FIELDS,
+          });
+        }}
+        onStart={handleStart}
+        pendingTasks={pendingTasks}
+        progress={progress}
+        selectedTaskId={selectedTaskId}
+        totalCount={totalCount}
+      />
     );
   }
 
@@ -403,240 +363,575 @@ export function OperationTab({ onClose }: OperationTabProps) {
   const skuDone = currentStep === "qty";
 
   return (
+    <ActivePickingTask
+      activeIndex={activeIndex}
+      activeItem={activeItem}
+      completedCount={completedCount}
+      currentStep={currentStep}
+      isCompleting={isCompleting}
+      isDetailFetching={isDetailFetching}
+      isExceptionOpen={isExceptionOpen}
+      locationDone={locationDone}
+      onBackToRoute={() => dispatch({ sessionStarted: false, selectedTaskId: null })}
+      onClose={onClose}
+      onConfirmPick={handleConfirmPick}
+      onExceptionOpenChange={(isExceptionOpen) => dispatch({ isExceptionOpen })}
+      onOpenException={() => dispatch({ isExceptionOpen: true })}
+      onPickedQtyChange={(pickedQty) => dispatch({ pickedQty })}
+      onReportException={handleReportException}
+      onScanLocation={handleScanLocation}
+      onScanSku={handleScanSku}
+      onScannedLocChange={(scannedLoc) => dispatch({ scannedLoc })}
+      onScannedSkuChange={(scannedSku) => dispatch({ scannedSku })}
+      pendingCount={pendingTasks.length}
+      pickedQty={pickedQty}
+      progress={progress}
+      scannedLoc={scannedLoc}
+      scannedSku={scannedSku}
+      skuDone={skuDone}
+      totalCount={totalCount}
+    />
+  );
+}
+
+function PickingLoadingState() {
+  return (
+    <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background p-8">
+      <div className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Đang đồng bộ tác vụ lấy hàng
+      </p>
+    </div>
+  );
+}
+
+function NoPickingTasksState({
+  onClose,
+  onRefresh,
+}: {
+  onClose?: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Không có tác vụ" />
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+          <PackageCheck className="mx-auto size-12 text-muted-foreground" />
+          <h2 className="mt-4 text-lg font-semibold text-foreground">
+            Chưa có tác vụ picking
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Khi có đơn xuất cần lấy hàng, danh sách sẽ xuất hiện tại đây.
+          </p>
+          <Button className="mt-5 w-full rounded-lg" onClick={onRefresh}>
+            Làm mới
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PickingCompleteState({
+  onClose,
+  onRefresh,
+}: {
+  onClose?: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Hoàn tất tuyến" />
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-success-soft text-success-foreground">
+            <CheckCircle2 className="size-9" />
+          </div>
+          <h2 className="mt-5 text-xl font-semibold uppercase text-foreground">
+            Đã hoàn tất
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Toàn bộ tác vụ trong tuyến lấy hàng hiện tại đã được xử lý.
+          </p>
+          <Button className="mt-5 h-12 w-full rounded-lg font-bold" onClick={onRefresh}>
+            <RotateCcw className="mr-2 size-4" />
+            Đồng bộ lại danh sách
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PickingStartState({
+  completedCount,
+  isFetching,
+  onClose,
+  onSelectTask,
+  onStart,
+  pendingTasks,
+  progress,
+  selectedTaskId,
+  totalCount,
+}: {
+  completedCount: number;
+  isFetching: boolean;
+  onClose?: () => void;
+  onSelectTask: (id: string) => void;
+  onStart: () => void;
+  pendingTasks: PickingItem[];
+  progress: number;
+  selectedTaskId: string | null;
+  totalCount: number;
+}) {
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      <MobileHeader onClose={onClose} title="Lấy hàng" subtitle="Chuẩn bị tuyến" />
+      <div className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="mx-auto max-w-sm space-y-4">
+          <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase text-muted-foreground">
+                  Tiến độ hôm nay
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold text-foreground">
+                  {pendingTasks.length} tác vụ chờ
+                </h1>
+              </div>
+              <StatusBadge tone={isFetching ? "warning" : "info"}>
+                {isFetching ? "Đang sync" : "Sẵn sàng"}
+              </StatusBadge>
+            </div>
+            <div className="mt-5 space-y-2">
+              <div className="flex justify-between text-xs font-bold text-muted-foreground">
+                <span>Đã xử lý</span>
+                <span>
+                  {Math.min(completedCount, totalCount)}/{totalCount}
+                </span>
+              </div>
+              <ProgressBar value={progress} />
+            </div>
+            <Button className="mt-5 h-12 w-full rounded-lg font-black" onClick={onStart}>
+              <Play className="mr-2 size-4" />
+              Bắt đầu lấy hàng
+            </Button>
+          </div>
+
+          <TaskRouteList
+            tasks={pendingTasks}
+            selectedTaskId={selectedTaskId}
+            onSelect={onSelectTask}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivePickingTask({
+  activeIndex,
+  activeItem,
+  completedCount,
+  currentStep,
+  isCompleting,
+  isDetailFetching,
+  isExceptionOpen,
+  locationDone,
+  onBackToRoute,
+  onClose,
+  onConfirmPick,
+  onExceptionOpenChange,
+  onOpenException,
+  onPickedQtyChange,
+  onReportException,
+  onScanLocation,
+  onScanSku,
+  onScannedLocChange,
+  onScannedSkuChange,
+  pendingCount,
+  pickedQty,
+  progress,
+  scannedLoc,
+  scannedSku,
+  skuDone,
+  totalCount,
+}: {
+  activeIndex: number;
+  activeItem: PickingItem;
+  completedCount: number;
+  currentStep: PickStep;
+  isCompleting: boolean;
+  isDetailFetching: boolean;
+  isExceptionOpen: boolean;
+  locationDone: boolean;
+  onBackToRoute: () => void;
+  onClose?: () => void;
+  onConfirmPick: () => Promise<void>;
+  onExceptionOpenChange: (open: boolean) => void;
+  onOpenException: () => void;
+  onPickedQtyChange: (value: string) => void;
+  onReportException: (reason: string) => Promise<void>;
+  onScanLocation: () => void;
+  onScanSku: () => void;
+  onScannedLocChange: (value: string) => void;
+  onScannedSkuChange: (value: string) => void;
+  pendingCount: number;
+  pickedQty: string;
+  progress: number;
+  scannedLoc: string;
+  scannedSku: string;
+  skuDone: boolean;
+  totalCount: number;
+}) {
+  return (
     <div className="flex min-h-svh flex-col bg-background">
       <MobileHeader
         onClose={onClose}
         title="Đang lấy hàng"
-        subtitle={`Task ${activeIndex + 1}/${pendingTasks.length}`}
+        subtitle={`Task ${activeIndex + 1}/${pendingCount}`}
         right={<StatusBadge tone="info">Đang lấy</StatusBadge>}
       />
 
-      <main className="flex-1 overflow-y-auto px-4 py-4 pb-28">
+      <main className="flex-1 overflow-y-auto p-4 pb-28">
         <div className="mx-auto max-w-sm space-y-4">
-          <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-lg"
-                onClick={() => {
-                  setSessionStarted(false);
-                  setSelectedTaskId(null);
-                }}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div className="min-w-0 flex-1">
-                <div className="flex justify-between text-xs font-bold text-muted-foreground">
-                  <span>Tuyến lấy hàng</span>
-                  <span>
-                    {Math.min(completedCount, totalCount)}/{totalCount}
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <ProgressBar value={progress} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-            <div className="border-b border-border bg-muted/40 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
-                    Vị trí cần đến
-                  </p>
-                  <h2 className="mt-2 truncate font-mono text-3xl font-black leading-none text-foreground">
-                    {activeItem.locationCode || "N/A"}
-                  </h2>
-                  {(activeItem.zone || activeItem.aisle) ? (
-                    <p className="mt-2 text-xs font-bold text-muted-foreground">
-                      {[activeItem.zone, activeItem.aisle].filter(Boolean).join(" / ")}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <MapPin className="h-6 w-6" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 p-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
-                  Sản phẩm
-                </p>
-                <h3 className="mt-1 text-base font-black leading-tight text-foreground">
-                  {getTaskTitle(activeItem)}
-                </h3>
-                <p className="mt-1 font-mono text-xs font-bold uppercase text-muted-foreground">
-                  {activeItem.productSku || activeItem.productCode || activeItem.barcodeEan13 || "—"}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <StepPill
-                  step="location"
-                  currentStep={currentStep}
-                  done={locationDone}
-                  label="Vị trí"
-                />
-                <StepPill
-                  step="sku"
-                  currentStep={currentStep}
-                  done={skuDone}
-                  label="SKU"
-                />
-                <StepPill
-                  step="qty"
-                  currentStep={currentStep}
-                  done={false}
-                  label="Số lượng"
-                />
-              </div>
-
-              <div className="rounded-lg border border-border bg-background p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase text-muted-foreground">
-                    Cần lấy
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black tabular-nums text-foreground">
-                      {activeItem.qtyToPick}
-                    </span>
-                    <span className="text-xs font-bold uppercase text-muted-foreground">
-                      {activeItem.baseUnit || "đv"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {isDetailFetching ? (
-                <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-xs font-bold text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Đang tải chi tiết tác vụ...
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-            {currentStep === "location" ? (
-              <ScanField
-                label="Bước 1: quét vị trí"
-                placeholder="Quét hoặc nhập mã vị trí"
-                value={scannedLoc}
-                onChange={setScannedLoc}
-                onSubmit={handleScanLocation}
-                icon={<MapPin className="h-5 w-5" />}
-                autoFocus
-              />
-            ) : null}
-
-            {currentStep === "sku" ? (
-              <ScanField
-                label="Bước 2: quét SKU/barcode"
-                placeholder="Quét hoặc nhập mã sản phẩm"
-                value={scannedSku}
-                onChange={setScannedSku}
-                onSubmit={handleScanSku}
-                icon={<Box className="h-5 w-5" />}
-                autoFocus
-              />
-            ) : null}
-
-            {currentStep === "qty" ? (
-              <div className="space-y-3">
-                <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
-                  Bước 3: xác nhận số lượng thực lấy
-                </p>
-                <Input
-                  type="number"
-                  min={1}
-                  max={activeItem.qtyToPick}
-                  value={pickedQty}
-                  onChange={(event) => setPickedQty(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") void handleConfirmPick();
-                  }}
-                  className="h-14 rounded-lg font-mono text-xl font-black"
-                  autoFocus
-                />
-              </div>
-            ) : null}
-          </section>
+          <PickingProgressCard
+            completedCount={completedCount}
+            onBackToRoute={onBackToRoute}
+            progress={progress}
+            totalCount={totalCount}
+          />
+          <ActiveTaskCard
+            activeItem={activeItem}
+            currentStep={currentStep}
+            isDetailFetching={isDetailFetching}
+            locationDone={locationDone}
+            skuDone={skuDone}
+          />
+          <ActiveTaskInput
+            activeItem={activeItem}
+            currentStep={currentStep}
+            onConfirmPick={onConfirmPick}
+            onPickedQtyChange={onPickedQtyChange}
+            onScanLocation={onScanLocation}
+            onScanSku={onScanSku}
+            onScannedLocChange={onScannedLocChange}
+            onScannedSkuChange={onScannedSkuChange}
+            pickedQty={pickedQty}
+            scannedLoc={scannedLoc}
+            scannedSku={scannedSku}
+          />
         </div>
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/80">
-        <div className="mx-auto flex max-w-sm gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 flex-1 rounded-lg font-bold"
-            onClick={() => setIsExceptionOpen(true)}
-            disabled={isCompleting}
-          >
-            Báo lỗi
-          </Button>
-          <Button
-            type="button"
-            className="h-12 flex-[1.4] rounded-lg font-black"
-            onClick={() => void handleConfirmPick()}
-            disabled={currentStep !== "qty" || isCompleting}
-          >
-            {isCompleting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ClipboardCheck className="mr-2 h-4 w-4" />
-            )}
-            Xác nhận
-          </Button>
-        </div>
-      </footer>
+      <PickingActionFooter
+        currentStep={currentStep}
+        isCompleting={isCompleting}
+        onConfirmPick={onConfirmPick}
+        onOpenException={onOpenException}
+      />
 
-      <Dialog open={isExceptionOpen} onOpenChange={setIsExceptionOpen}>
-        <DialogContent className="top-auto bottom-0 left-0 max-w-none translate-x-0 translate-y-0 rounded-b-none rounded-t-2xl p-0 sm:left-1/2 sm:max-w-md sm:-translate-x-1/2">
-          <DialogHeader className="border-b border-border p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning-soft text-warning-foreground">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-base font-black">
-                  Báo lỗi tác vụ
-                </DialogTitle>
-                <DialogDescription className="text-xs">
-                  Chọn lý do để ghi nhận ngoại lệ và chuyển sang tác vụ kế tiếp.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="space-y-2 p-4">
-            {EXCEPTION_REASONS.map((reason) => (
-              <button
-                key={reason.value}
-                type="button"
-                onClick={() => void handleReportException(reason.value)}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-warning/40 hover:bg-warning-soft/30 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span>
-                  <span className="block text-sm font-black text-foreground">
-                    {reason.label}
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {reason.description}
-                  </span>
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PickingExceptionDialog
+        open={isExceptionOpen}
+        onOpenChange={onExceptionOpenChange}
+        onReportException={onReportException}
+      />
     </div>
+  );
+}
+
+function PickingProgressCard({
+  completedCount,
+  onBackToRoute,
+  progress,
+  totalCount,
+}: {
+  completedCount: number;
+  onBackToRoute: () => void;
+  progress: number;
+  totalCount: number;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-lg"
+          onClick={onBackToRoute}
+        >
+          <ArrowLeft className="size-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <div className="flex justify-between text-xs font-bold text-muted-foreground">
+            <span>Tuyến lấy hàng</span>
+            <span>
+              {Math.min(completedCount, totalCount)}/{totalCount}
+            </span>
+          </div>
+          <div className="mt-2">
+            <ProgressBar value={progress} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActiveTaskCard({
+  activeItem,
+  currentStep,
+  isDetailFetching,
+  locationDone,
+  skuDone,
+}: {
+  activeItem: PickingItem;
+  currentStep: PickStep;
+  isDetailFetching: boolean;
+  locationDone: boolean;
+  skuDone: boolean;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="border-b border-border bg-muted/40 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+              Vị trí cần đến
+            </p>
+            <h2 className="mt-2 truncate font-mono text-3xl font-semibold leading-none text-foreground">
+              {activeItem.locationCode || "N/A"}
+            </h2>
+            {activeItem.zone || activeItem.aisle ? (
+              <p className="mt-2 text-xs font-bold text-muted-foreground">
+                {[activeItem.zone, activeItem.aisle].filter(Boolean).join(" / ")}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <MapPin className="size-6" />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <ActiveTaskProduct activeItem={activeItem} />
+        <div className="grid grid-cols-3 gap-2">
+          <StepPill step="location" currentStep={currentStep} done={locationDone} label="Vị trí" />
+          <StepPill step="sku" currentStep={currentStep} done={skuDone} label="SKU" />
+          <StepPill step="qty" currentStep={currentStep} done={false} label="Số lượng" />
+        </div>
+        <ActiveTaskQuantity activeItem={activeItem} />
+        {isDetailFetching ? (
+          <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-xs font-bold text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Đang tải chi tiết tác vụ…
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ActiveTaskProduct({ activeItem }: { activeItem: PickingItem }) {
+  return (
+    <div>
+      <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+        Sản phẩm
+      </p>
+      <h3 className="mt-1 text-base font-semibold leading-tight text-foreground">
+        {getTaskTitle(activeItem)}
+      </h3>
+      <p className="mt-1 font-mono text-xs font-bold uppercase text-muted-foreground">
+        {activeItem.productSku || activeItem.productCode || activeItem.barcodeEan13 || "—"}
+      </p>
+    </div>
+  );
+}
+
+function ActiveTaskQuantity({ activeItem }: { activeItem: PickingItem }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-black uppercase text-muted-foreground">
+          Cần lấy
+        </span>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-black tabular-nums text-foreground">
+            {activeItem.qtyToPick}
+          </span>
+          <span className="text-xs font-bold uppercase text-muted-foreground">
+            {activeItem.baseUnit || "đv"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActiveTaskInput({
+  activeItem,
+  currentStep,
+  onConfirmPick,
+  onPickedQtyChange,
+  onScanLocation,
+  onScanSku,
+  onScannedLocChange,
+  onScannedSkuChange,
+  pickedQty,
+  scannedLoc,
+  scannedSku,
+}: {
+  activeItem: PickingItem;
+  currentStep: PickStep;
+  onConfirmPick: () => Promise<void>;
+  onPickedQtyChange: (value: string) => void;
+  onScanLocation: () => void;
+  onScanSku: () => void;
+  onScannedLocChange: (value: string) => void;
+  onScannedSkuChange: (value: string) => void;
+  pickedQty: string;
+  scannedLoc: string;
+  scannedSku: string;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      {currentStep === "location" ? (
+        <ScanField
+          label="Bước 1: quét vị trí"
+          placeholder="Quét hoặc nhập mã vị trí"
+          value={scannedLoc}
+          onChange={onScannedLocChange}
+          onSubmit={onScanLocation}
+          icon={<MapPin className="size-5" />}
+        />
+      ) : null}
+
+      {currentStep === "sku" ? (
+        <ScanField
+          label="Bước 2: quét SKU/barcode"
+          placeholder="Quét hoặc nhập mã sản phẩm"
+          value={scannedSku}
+          onChange={onScannedSkuChange}
+          onSubmit={onScanSku}
+          icon={<Box className="size-5" />}
+        />
+      ) : null}
+
+      {currentStep === "qty" ? (
+        <div className="space-y-3">
+          <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+            Bước 3: xác nhận số lượng thực lấy
+          </p>
+          <Input
+            type="number"
+            min={1}
+            max={activeItem.qtyToPick}
+            value={pickedQty}
+            onChange={(event) => onPickedQtyChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void onConfirmPick();
+            }}
+            className="h-14 rounded-lg font-mono text-xl font-black"
+          />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function PickingActionFooter({
+  currentStep,
+  isCompleting,
+  onConfirmPick,
+  onOpenException,
+}: {
+  currentStep: PickStep;
+  isCompleting: boolean;
+  onConfirmPick: () => Promise<void>;
+  onOpenException: () => void;
+}) {
+  return (
+    <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+      <div className="mx-auto flex max-w-sm gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 flex-1 rounded-lg font-bold"
+          onClick={onOpenException}
+          disabled={isCompleting}
+        >
+          Báo lỗi
+        </Button>
+        <Button
+          type="button"
+          className="h-12 flex-[1.4] rounded-lg font-black"
+          onClick={() => void onConfirmPick()}
+          disabled={currentStep !== "qty" || isCompleting}
+        >
+          {isCompleting ? (
+            <Loader2 className="mr-2 size-4 animate-spin" />
+          ) : (
+            <ClipboardCheck className="mr-2 size-4" />
+          )}
+          Xác nhận
+        </Button>
+      </div>
+    </footer>
+  );
+}
+
+function PickingExceptionDialog({
+  open,
+  onOpenChange,
+  onReportException,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onReportException: (reason: string) => Promise<void>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="top-auto bottom-0 left-0 max-w-none translate-x-0 translate-y-0 rounded-b-none rounded-t-2xl p-0 sm:left-1/2 sm:max-w-md sm:-translate-x-1/2">
+        <DialogHeader className="border-b border-border p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-warning-soft text-warning-foreground">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-black">
+                Báo lỗi tác vụ
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Chọn lý do để ghi nhận ngoại lệ và chuyển sang tác vụ kế tiếp.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="space-y-2 p-4">
+          {EXCEPTION_REASONS.map((reason) => (
+            <button
+              key={reason.value}
+              type="button"
+              onClick={() => void onReportException(reason.value)}
+              className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-4 text-left transition-colors hover:border-warning/40 hover:bg-warning-soft/30 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span>
+                <span className="block text-sm font-black text-foreground">
+                  {reason.label}
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  {reason.description}
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -649,16 +944,16 @@ function MobileHeader({
   onClose?: () => void;
   title: string;
   subtitle: string;
-  right?: React.ReactNode;
+  right?: ReactNode;
 }) {
   return (
     <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border bg-background px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <ScanBarcode className="h-5 w-5" />
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <ScanBarcode className="size-5" />
         </div>
         <div className="min-w-0">
-          <h1 className="truncate text-sm font-black uppercase tracking-wide text-foreground">
+          <h1 className="truncate text-sm font-semibold uppercase tracking-wide text-foreground">
             {title}
           </h1>
           <p className="mt-0.5 truncate text-xs font-bold text-muted-foreground">
@@ -676,7 +971,7 @@ function MobileHeader({
             className="rounded-lg"
             onClick={onClose}
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </Button>
         ) : null}
       </div>
@@ -711,7 +1006,7 @@ function TaskRouteList({
                 : "border-border bg-background hover:border-primary/30"
             )}
           >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-black text-muted-foreground">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-black text-muted-foreground">
               {index + 1}
             </span>
             <span className="min-w-0 flex-1">
@@ -722,7 +1017,7 @@ function TaskRouteList({
                 {task.productSku || getTaskTitle(task)} · x{task.qtyToPick}
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
           </button>
         ))}
       </div>
@@ -737,15 +1032,13 @@ function ScanField({
   onChange,
   onSubmit,
   icon,
-  autoFocus,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
-  icon: React.ReactNode;
-  autoFocus?: boolean;
+  icon: ReactNode;
 }) {
   return (
     <div className="space-y-3">
@@ -761,7 +1054,6 @@ function ScanField({
           }}
           placeholder={placeholder}
           className="h-14 rounded-lg pr-14 font-mono text-base font-black uppercase"
-          autoFocus={autoFocus}
         />
         <div className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground">
           {icon}

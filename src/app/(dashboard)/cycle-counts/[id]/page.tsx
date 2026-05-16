@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 
 export default function CycleCountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const { push } = useRouter();
   
   const { data: countRes, isLoading, refetch, isFetching } = useGetCycleCountByIdQuery(id);
   const count = countRes?.data;
@@ -87,7 +87,7 @@ export default function CycleCountDetailPage() {
     try {
       await completeCount(id).unwrap();
       toast.success("Đã hoàn tất và duyệt điều chỉnh kho");
-      router.push("/cycle-counts");
+      push("/cycle-counts");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể hoàn tất kiểm kê"));
     }
@@ -106,7 +106,7 @@ export default function CycleCountDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -116,11 +116,11 @@ export default function CycleCountDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/cycle-counts")} className="-ml-2 h-8">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button variant="ghost" size="sm" onClick={() => push("/cycle-counts")} className="-ml-2 h-8">
+          <ArrowLeft className="mr-2 size-4" />
           Quay lại danh sách
         </Button>
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="size-4" />
         <span className="font-mono">{count.countNumber || count.id}</span>
       </div>
 
@@ -130,18 +130,18 @@ export default function CycleCountDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
             {count.status === "PENDING" && (
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-md" onClick={handleStart} disabled={isStarting}>
-                {isStarting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+              <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md" onClick={handleStart} disabled={isStarting}>
+                {isStarting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ClipboardCheck className="mr-2 size-4" />}
                 Bắt đầu kiểm
               </Button>
             )}
             {count.status === "IN_PROGRESS" && (
               <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 shadow-md" onClick={handleComplete} disabled={isCompleting}>
-                {isCompleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                {isCompleting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
                 Hoàn tất & Điều chỉnh
               </Button>
             )}
@@ -149,20 +149,20 @@ export default function CycleCountDetailPage() {
         }
       />
 
-      <Card className="overflow-hidden border-indigo-100 dark:border-indigo-900/30">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20">
+      <Card className="overflow-hidden border-primary/20 dark:border-primary/30">
+        <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-indigo-600" />
+              <ClipboardCheck className="size-5 text-primary" />
               <CardTitle className="text-base">Bảng ghi nhận số đếm</CardTitle>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-white dark:bg-slate-950">
+              <Badge variant="outline" className="bg-white dark:bg-zinc-950">
                 {count.status}
               </Badge>
               {count.status === "IN_PROGRESS" && (
                 <Button size="sm" variant="outline" onClick={handleSaveResults} disabled={isRecording}>
-                  {isRecording ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isRecording ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                   Lưu bản nháp
                 </Button>
               )}
@@ -190,7 +190,7 @@ export default function CycleCountDetailPage() {
                   <TableRow key={line.id} className="hover:bg-muted/50">
                     <TableCell className="pl-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-800">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-zinc-100 font-mono text-[10px] font-bold text-zinc-600 dark:bg-zinc-800">
                           {line.locationCode?.slice(-2) || "—"}
                         </div>
                         <div>
@@ -211,7 +211,7 @@ export default function CycleCountDetailPage() {
                         type="number"
                         className={cn(
                           "h-9 text-center font-bold",
-                          count.status !== "IN_PROGRESS" && "bg-slate-50 opacity-80"
+                          count.status !== "IN_PROGRESS" && "bg-zinc-50 opacity-80"
                         )}
                         defaultValue={line.countedQty ?? 0}
                         onChange={(e) => handleRecordChange(line.id, e.target.value)}
@@ -222,9 +222,9 @@ export default function CycleCountDetailPage() {
                     <TableCell className="text-center">
                       <div className={cn(
                         "flex items-center justify-center gap-1 font-mono font-bold",
-                        variance === 0 ? "text-slate-400" : variance > 0 ? "text-emerald-600" : "text-rose-600"
+                        variance === 0 ? "text-zinc-400" : variance > 0 ? "text-emerald-600" : "text-rose-600"
                       )}>
-                        {variance !== 0 && <Scale className="h-3 w-3" />}
+                        {variance !== 0 && <Scale className="size-3" />}
                         {variance > 0 ? `+${variance}` : variance}
                       </div>
                     </TableCell>
@@ -254,14 +254,14 @@ export default function CycleCountDetailPage() {
       
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-amber-100 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <AlertTriangle className="size-5 text-amber-600 mt-0.5" />
           <div>
             <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Lưu ý quan trọng</p>
             <p className="text-xs text-amber-700 dark:text-amber-300">Việc hoàn tất kiểm kê sẽ tự động tạo các phiếu điều chỉnh tồn kho để khớp với số liệu thực tế.</p>
           </div>
         </div>
         {count.status === "IN_PROGRESS" && (
-          <Button className="bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap" onClick={handleSaveResults}>
+          <Button className="bg-primary hover:bg-primary/90 whitespace-nowrap" onClick={handleSaveResults}>
             Gửi kết quả lên hệ thống
           </Button>
         )}

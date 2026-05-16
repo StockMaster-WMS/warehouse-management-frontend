@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -36,6 +36,29 @@ import { useGetCycleCountsQuery } from "@/store/services/cycle-count.service";
 
 const PAGE_SIZE = 20;
 
+type CycleCountsPageState = {
+  page: number;
+  pageSize: number;
+  keyword: string;
+  status: CycleCountStatus | "";
+  createModalOpen: boolean;
+};
+
+const INITIAL_CYCLE_COUNTS_PAGE_STATE: CycleCountsPageState = {
+  page: 0,
+  pageSize: PAGE_SIZE,
+  keyword: "",
+  status: "",
+  createModalOpen: false,
+};
+
+function cycleCountsPageReducer(
+  state: CycleCountsPageState,
+  patch: Partial<CycleCountsPageState>,
+) {
+  return { ...state, ...patch };
+}
+
 const STATUS_LABEL: Record<CycleCountStatus, string> = {
   DRAFT: "Nháp",
   OPEN: "Đã mở",
@@ -53,7 +76,7 @@ function statusClass(status: CycleCountStatus) {
   if (status === "COUNTING" || status === "OPEN" || status === "IN_PROGRESS") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
   if (status === "REVIEW") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300";
   if (status === "CANCELLED") return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300";
-  return "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300";
+  return "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300";
 }
 
 function formatDate(value?: string | null) {
@@ -72,11 +95,11 @@ function lineStats(count: CycleCount) {
 }
 
 export default function CycleCountsPage() {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<CycleCountStatus | "">("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [state, dispatch] = useReducer(
+    cycleCountsPageReducer,
+    INITIAL_CYCLE_COUNTS_PAGE_STATE,
+  );
+  const { page, pageSize, keyword, status, createModalOpen } = state;
 
   const { data, isLoading, isFetching, error, refetch } = useGetCycleCountsQuery({
     page,
@@ -100,18 +123,18 @@ export default function CycleCountsPage() {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-md" onClick={() => setCreateModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md" onClick={() => dispatch({ createModalOpen: true })}>
+              <Plus className="mr-2 size-4" />
               Tạo đợt kiểm
             </Button>
           </div>
         }
       />
 
-      <CreateCycleCountModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
+      <CreateCycleCountModal open={createModalOpen} onOpenChange={(createModalOpen) => dispatch({ createModalOpen })} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
         <StatCard label="Tổng đợt kiểm" value={totalElements.toLocaleString("vi-VN")} icon={ClipboardCheck} showAccentBar={false} />
@@ -123,21 +146,22 @@ export default function CycleCountsPage() {
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <SearchToolbar
           noContainer
-          placeholder="Tìm theo mã kiểm kê, tiêu đề, kho, vị trí..."
+          placeholder="Tìm theo mã kiểm kê, tiêu đề, kho, vị trí…"
           value={keyword}
           onValueChange={(value) => {
-            setKeyword(value);
-            setPage(0);
+            dispatch({ keyword: value, page: 0 });
           }}
           right={
             <Select
               value={status || "all"}
               onValueChange={(value) => {
-                setStatus(value === "all" ? "" : (value as CycleCountStatus));
-                setPage(0);
+                dispatch({
+                  status: value === "all" ? "" : (value as CycleCountStatus),
+                  page: 0,
+                });
               }}
             >
-              <SelectTrigger className="h-10 w-44 rounded-xl border-slate-200 dark:border-slate-700">
+              <SelectTrigger className="h-10 w-44 rounded-xl border-zinc-200 dark:border-zinc-700">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -202,7 +226,7 @@ export default function CycleCountsPage() {
                     <TableRow key={row.id} className="hover:bg-muted/50">
                       <TableCell className="px-4 py-3">
                         <Link href={`/cycle-counts/${row.id}`} className="hover:underline">
-                          <div className="font-mono text-xs font-bold text-indigo-600">{row.countNumber || row.id}</div>
+                          <div className="font-mono text-xs font-bold text-primary">{row.countNumber || row.id}</div>
                         </Link>
                         <div className="mt-1 text-xs text-muted-foreground">{row.title || "Không có tiêu đề"}</div>
                       </TableCell>
@@ -244,11 +268,10 @@ export default function CycleCountsPage() {
           isLoading={isLoading}
           isError={Boolean(error)}
           isFetching={isFetching}
-          onPrevPage={() => setPage((value) => Math.max(0, value - 1))}
-          onNextPage={() => setPage((value) => value + 1)}
+          onPrevPage={() => dispatch({ page: Math.max(0, page - 1) })}
+          onNextPage={() => dispatch({ page: page + 1 })}
           onPageSizeChange={(nextSize) => {
-            setPageSize(nextSize);
-            setPage(0);
+            dispatch({ pageSize: nextSize, page: 0 });
           }}
         />
       </div>

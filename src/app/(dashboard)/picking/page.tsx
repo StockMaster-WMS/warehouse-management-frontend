@@ -26,7 +26,7 @@ export default function PickingPage() {
                         onClick={() => setIsMobileMode(true)}
                         size="sm"
                     >
-                        <ScanBarcode className="mr-2 h-4 w-4" />
+                        <ScanBarcode className="mr-2 size-4" />
                         Chế độ Mobile
                     </Button>
                 }
