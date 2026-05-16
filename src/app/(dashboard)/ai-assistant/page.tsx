@@ -6,6 +6,7 @@ import {
   Boxes,
   ClipboardList,
   Loader2,
+  Pause,
   RotateCcw,
   Send,
   Sparkles,
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
+import { axiosInstance } from "@/lib/axios-instance";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface Message {
   id: string;
@@ -54,6 +57,7 @@ export default function AiAssistantPage() {
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const currentAssistantMsgId = useRef<string | null>(null);
+  const activeStreamMsgId = useRef<string | null>(null);
   const sessionIdRef = useRef(createSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -62,19 +66,22 @@ export default function AiAssistantPage() {
   }, [messages, streamResult]);
 
   useEffect(() => {
-    if (!streamResult || !currentAssistantMsgId.current) return;
+    if (!streamResult) return;
+    const msgId = activeStreamMsgId.current ?? currentAssistantMsgId.current;
+    if (!msgId) return;
 
-    const msgId = currentAssistantMsgId.current;
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId ? { ...msg, content: streamResult } : msg
-      )
-    );
+    setMessages((prev) => prev.map((msg) => (msg.id === msgId ? { ...msg, content: streamResult } : msg)));
   }, [streamResult]);
 
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
-    if (!trimmed || isFetching) return;
+    if (!trimmed) return;
+    if (isFetching) {
+      // cancel any in-progress stream before sending a new question
+      await cancelStream();
+      // small pause to allow abort/cleanup
+      await new Promise((r) => setTimeout(r, 120));
+    }
 
     const userMsg: Message = {
       id: createMessageId(),
@@ -83,6 +90,7 @@ export default function AiAssistantPage() {
     };
     const assistantMsgId = createMessageId();
     currentAssistantMsgId.current = assistantMsgId;
+    activeStreamMsgId.current = assistantMsgId;
 
     setMessages((prev) => [
       ...prev,
@@ -92,10 +100,22 @@ export default function AiAssistantPage() {
     setInput("");
 
     try {
+      ;(window as any).__aiAbortControllers = (window as any).__aiAbortControllers || {};
+      const controller = new AbortController();
+      (window as any).__aiAbortControllers[sessionIdRef.current] = controller;
+
       await triggerStream({
         question: trimmed,
         sessionId: sessionIdRef.current,
       }).unwrap();
+      // clear active streaming id after stream finishes
+      activeStreamMsgId.current = null;
+      try {
+        const globalAny = window as any;
+        if (globalAny.__aiAbortControllers) {
+          delete globalAny.__aiAbortControllers[sessionIdRef.current];
+        }
+      } catch {}
     } catch {
       setMessages((prev) =>
         prev.map((msg) =>
@@ -108,6 +128,33 @@ export default function AiAssistantPage() {
             : msg
         )
       );
+      activeStreamMsgId.current = null;
+    }
+  }
+
+  async function cancelStream() {
+    try {
+      try {
+        const controller = (window as any).__aiAbortControllers?.[sessionIdRef.current];
+        if (controller) {
+          controller.abort();
+        }
+      } catch {}
+
+      // Optimistically mark the active streaming assistant message as cancelled
+      const targetId = activeStreamMsgId.current ?? currentAssistantMsgId.current;
+      if (targetId) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === targetId ? { ...m, content: "(Đã huỷ)" } : m))
+        );
+      }
+      activeStreamMsgId.current = null;
+
+      await axiosInstance.post(`${API_BASE_URL}/v1/ai/cancel`, null, {
+        params: { sessionId: sessionIdRef.current },
+      });
+    } catch (err) {
+      console.error("Cancel stream error", err);
     }
   }
 
@@ -241,6 +288,18 @@ export default function AiAssistantPage() {
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Đang soạn câu trả lời...</span>
+                          {isFetching && currentAssistantMsgId.current === msg.id ? (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={cancelStream}
+                              className="h-7 w-7 p-0"
+                              aria-label="Dừng trả lời"
+                            >
+                              <Pause className="h-4 w-4" />
+                            </Button>
+                          ) : null}
                         </div>
                       )}
                     </div>
@@ -267,27 +326,36 @@ export default function AiAssistantPage() {
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void sendQuestion(input);
-                  }
+                      event.preventDefault();
+                      void sendQuestion(input);
+                    }
                 }}
                 placeholder="Hỏi AI về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành..."
                 className="max-h-36 min-h-12 resize-none rounded-lg bg-background text-sm"
                 disabled={isFetching}
               />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-12 w-12 shrink-0 rounded-lg"
-                disabled={!input.trim() || isFetching}
-                aria-label="Gửi câu hỏi"
-              >
-                {isFetching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+              {isFetching ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  className="h-12 w-12 shrink-0 rounded-lg"
+                  onClick={cancelStream}
+                  aria-label="Dừng trả lời"
+                >
+                  <Pause className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="h-12 w-12 shrink-0 rounded-lg"
+                  disabled={!input.trim()}
+                  aria-label="Gửi câu hỏi"
+                >
                   <Send className="h-4 w-4" />
-                )}
-              </Button>
+                </Button>
+              )}
             </div>
             <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
               Nhấn Enter để gửi, Shift + Enter để xuống dòng.

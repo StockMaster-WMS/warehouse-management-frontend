@@ -37,15 +37,18 @@ export const aiApi = baseApi.injectEndpoints({
             token = await refreshAccessToken();
           }
 
-          const openStream = (accessToken: string) =>
-            fetch(url, {
+          const openStream = (accessToken: string) => {
+            const globalAny = window as any;
+            const usedSignal = globalAny.__aiAbortControllers?.[arg.sessionId]?.signal ?? signal;
+            return fetch(url, {
               headers: {
                 ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                 Accept: "text/event-stream",
               },
               credentials: "include",
-              signal, // Hỗ trợ abort request khi component unmount
+              signal: usedSignal, // Hỗ trợ abort request khi component unmount hoặc user dừng
             });
+          };
 
           let response = await openStream(token);
           if (response.status === 401) {
@@ -103,7 +106,7 @@ export const aiApi = baseApi.injectEndpoints({
             }
           }
           return { data: fullText };
-        } catch (err: unknown) {
+        } catch (err) {
           console.error("AI Stream Error:", err);
           return {
             error: {
@@ -111,6 +114,15 @@ export const aiApi = baseApi.injectEndpoints({
               data: err instanceof Error ? err.message : "AI stream failed",
             },
           };
+        } finally {
+          try {
+            const globalAny = window as any;
+            if (globalAny.__aiAbortControllers) {
+              delete globalAny.__aiAbortControllers[arg.sessionId];
+            }
+          } catch {
+            // ignore
+          }
         }
       },
     }),
