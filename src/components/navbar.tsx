@@ -70,7 +70,7 @@ export function Navbar() {
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
   const searchShortcut = useSearchShortcutLabel();
   const pathname = usePathname();
-  const router = useRouter();
+  const { replace } = useRouter();
   const dispatch = useAppDispatch();
 
   const { data: user } = useGetCurrentUserQuery();
@@ -108,7 +108,7 @@ export function Navbar() {
     markExplicitLogout();
     clearToken();
     dispatch(baseApi.util.resetApiState());
-    router.replace("/login");
+    replace("/login");
   };
 
   const handleLogout = async () => {
@@ -123,24 +123,24 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-indigo-500/20 bg-indigo-600 text-white shadow-sm transition-all duration-300 dark:border-indigo-500/20 dark:bg-indigo-950">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-primary text-primary-foreground shadow-sm transition-all duration-300 dark:border-border dark:bg-primary">
       {/* Mobile layout - single row */}
       <div className="flex h-16 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:hidden lg:hidden">
         <div className="flex min-w-0 items-center gap-2 flex-1">
-          <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
+          <SidebarTrigger className="-ml-1 text-primary-foreground hover:bg-white/10 hover:text-white" />
 
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0 text-indigo-100 hover:bg-white/10 hover:text-white"
+            className="shrink-0 text-primary-foreground hover:bg-white/10 hover:text-white"
             onClick={() => setQuickSearchOpen(true)}
             aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
           >
-            <Search className="h-5 w-5" />
+            <Search className="size-5" />
           </Button>
 
-          <span className="text-xs sm:text-sm font-medium text-white truncate flex-1">
+          <span className="text-xs sm:text-sm font-medium text-primary-foreground truncate flex-1">
             {pageTitle}
           </span>
         </div>
@@ -152,21 +152,21 @@ export function Navbar() {
             nativeButton={false}
             variant="ghost"
             size="icon-sm"
-            className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+            className="rounded-full text-primary-foreground hover:bg-white/10 hover:text-white"
             aria-label="Cài đặt"
           >
-            <CircleHelp className="h-5 w-5" />
+            <CircleHelp className="size-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon-sm"
-            className="relative rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+            className="relative rounded-full text-primary-foreground/85 hover:bg-white/10 hover:text-white"
             aria-label="Thông báo"
           >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1 right-1 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+            <Bell className="size-4" />
+            <span className="absolute top-1 right-1 flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex size-2 rounded-full bg-red-500"></span>
             </span>
           </Button>
         </div>
@@ -175,11 +175,11 @@ export function Navbar() {
       {/* Tablet/Desktop layout */}
       <div className="hidden md:flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
         <div className="flex min-w-0 items-center gap-4 flex-1">
-          <SidebarTrigger className="-ml-1 text-indigo-100 hover:bg-white/10 hover:text-white" />
+          <SidebarTrigger className="-ml-1 text-primary-foreground/85 hover:bg-white/10 hover:text-white" />
 
           <div className="hidden min-w-0 md:flex md:flex-col md:gap-0.5 flex-1">
-            <div className="flex min-w-0 items-center gap-1 text-[11px] text-indigo-100">
-              <Home className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex min-w-0 items-center gap-1 text-[11px] text-primary-foreground/85">
+              <Home className="size-3.5 shrink-0" />
               <span className="truncate">StockMaster</span>
               {pathSegments.slice(0, 2).map((segment) => (
                 <div key={segment} className="flex min-w-0 items-center gap-1">
@@ -193,18 +193,18 @@ export function Navbar() {
 
           <div className="hidden items-center gap-2 lg:flex flex-1 lg:max-w-md">
             <div className="relative flex items-center w-full">
-              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-indigo-200" />
+              <Search className="pointer-events-none absolute left-3 size-4 text-primary-foreground/70" />
               <button
                 type="button"
                 onClick={() => setQuickSearchOpen(true)}
-                className="flex h-9 w-full cursor-pointer items-center rounded-full border border-transparent bg-white/10 py-0 pr-20 pl-10 text-left text-sm text-indigo-100/95 transition-colors hover:bg-white/15 focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                className="flex h-9 w-full cursor-pointer items-center rounded-full border border-transparent bg-white/10 py-0 pr-20 pl-10 text-left text-sm text-primary-foreground/95 transition-colors hover:bg-white/15 focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
                 aria-label={`Mở tìm kiếm nhanh (${searchShortcut})`}
               >
-                <span className="truncate text-xs sm:text-sm text-indigo-100/90">
+                <span className="truncate text-xs text-primary-foreground/90 sm:text-sm">
                   Tìm kiếm…
                 </span>
               </button>
-              <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-indigo-100 sm:flex">
+                <kbd className="pointer-events-none absolute right-3 hidden h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-primary-foreground sm:flex">
                 {searchShortcut}
               </kbd>
             </div>
@@ -213,9 +213,9 @@ export function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
           <div className="hidden items-center pr-2 xl:flex">
-            <div className="flex max-w-[20rem] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-50">
-              <Sparkles className="h-3.5 w-3.5 shrink-0 fill-indigo-300 text-indigo-300" />
-              <span className="truncate">StockMaster — sẵn sàng vận hành</span>
+            <div className="flex max-w-[20rem] items-center gap-2 truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-primary-foreground/90">
+              <Sparkles className="size-3.5 shrink-0 fill-primary-foreground/70 text-primary-foreground/70" />
+              <span className="truncate">StockMaster: sẵn sàng vận hành</span>
             </div>
           </div>
 
@@ -226,22 +226,22 @@ export function Navbar() {
               nativeButton={false}
               variant="ghost"
               size="icon-sm"
-              className="rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+              className="rounded-full text-primary-foreground/85 hover:bg-white/10 hover:text-white"
               aria-label="Giúp đỡ"
             >
-              <CircleHelp className="h-5 w-5" />
+              <CircleHelp className="size-5" />
             </Button>
 
             <Button
               variant="ghost"
               size="icon-sm"
-              className="relative rounded-full text-indigo-100 hover:bg-white/10 hover:text-white"
+              className="relative rounded-full text-primary-foreground/85 hover:bg-white/10 hover:text-white"
               aria-label="Thông báo"
             >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+              <Bell className="size-5" />
+              <span className="absolute top-1.5 right-1.5 flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex size-2 rounded-full bg-red-500"></span>
               </span>
             </Button>
           </div>
@@ -260,10 +260,10 @@ export function Navbar() {
                     className="ring-2 ring-white/30 transition-all group-hover:ring-white"
                   >
                     <AvatarImage
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || user?.name || user?.username || "User")}&background=fff&color=4F46E5`}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || user?.name || user?.username || "User")}&background=fff&color=111827`}
                       alt="User avatar"
                     />
-                    <AvatarFallback className="bg-white text-indigo-600">
+                    <AvatarFallback className="bg-white text-primary">
                       {(user?.fullName || user?.name || user?.username || "US").substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -271,11 +271,11 @@ export function Navbar() {
                     <span className="text-sm font-semibold leading-none text-white">
                       {user?.fullName || user?.name || user?.username || "Người dùng"}
                     </span>
-                    <span className="text-[10px] font-medium text-indigo-100">
+                    <span className="text-[10px] font-medium text-primary-foreground/85">
                       {roleLabel}
                     </span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-indigo-200 transition-transform group-data-[state=open]:rotate-180" />
+                  <ChevronDown className="size-4 text-primary-foreground/70 transition-transform group-data-[state=open]:rotate-180" />
                 </Button>
               }
             />
@@ -283,15 +283,15 @@ export function Navbar() {
             <DropdownMenuContent
               sideOffset={8}
               align="end"
-              className="w-60 sm:w-64 rounded-xl p-2 shadow-xl ring-1 ring-slate-200 dark:ring-slate-800"
+              className="w-60 sm:w-64 rounded-xl p-2 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-800"
             >
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="px-2 py-1.5 font-normal">
-                  <div className="flex flex-col space-y-1">
+                  <div className="flex flex-col gap-y-1">
                     <p className="text-sm font-semibold leading-none">
                       {user?.fullName || user?.name || user?.username || "Người dùng"}
                     </p>
-                    <p className="text-xs leading-none text-slate-500 font-medium truncate">
+                    <p className="text-xs leading-none text-zinc-500 font-medium truncate">
                       {user?.email || "Email chưa cập nhật"}
                     </p>
                   </div>
@@ -299,17 +299,17 @@ export function Navbar() {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/profile" />}>
-                <UserCog className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                <UserCog className="mr-2 size-4 shrink-0 text-zinc-500" />
                 <span className="truncate">Trang cá nhân</span>
               </DropdownMenuItem>
               <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
                 <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
-                  <Settings className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                  <Settings className="mr-2 size-4 shrink-0 text-zinc-500" />
                   <span className="truncate">Cài đặt hệ thống</span>
                 </DropdownMenuItem>
               </PermissionControl>
               <DropdownMenuItem className="rounded-lg py-2">
-                <Languages className="mr-2 h-4 w-4 shrink-0 text-slate-500" />
+                <Languages className="mr-2 size-4 shrink-0 text-zinc-500" />
                 <span className="truncate">Ngôn ngữ: Tiếng Việt</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -317,7 +317,7 @@ export function Navbar() {
                 className="rounded-lg py-2 text-red-600 focus:bg-red-50 focus:text-red-600 cursor-pointer"
                 onClick={handleLogout}
               >
-                <LogOut className="mr-2 h-4 w-4 shrink-0" />
+                <LogOut className="mr-2 size-4 shrink-0" />
                 <span className="truncate">Đăng xuất</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

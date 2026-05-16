@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
@@ -38,9 +38,44 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
 
+const RMA_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "--";
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return value;
+  return RMA_DATE_TIME_FORMATTER.format(timestamp);
+}
+
+type ReceiveFormState = {
+  selectedLineId: string;
+  actualQty: string;
+  locationId: string;
+  condition: string;
+  notes: string;
+};
+
+const INITIAL_RECEIVE_FORM: ReceiveFormState = {
+  selectedLineId: "",
+  actualQty: "",
+  locationId: "",
+  condition: "RETURNED",
+  notes: "",
+};
+
+function receiveFormReducer(
+  state: ReceiveFormState,
+  patch: Partial<ReceiveFormState>,
+) {
+  return { ...state, ...patch };
+}
+
 export default function RMADetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const { push } = useRouter();
   
   const { data: rmaRes, isLoading, refetch, isFetching } = useGetReturnRequestByIdQuery(id);
   const rma = rmaRes?.data;
@@ -48,12 +83,10 @@ export default function RMADetailPage() {
   const [receiveReturn, { isLoading: isReceiving }] = useReceiveReturnMutation();
   const [closeReturn, { isLoading: isClosing }] = useCloseReturnRequestMutation();
   
-  // Form state for receiving
-  const [selectedLineId, setSelectedLineId] = useState("");
-  const [actualQty, setActualQty] = useState("");
-  const [locationId, setLocationId] = useState("");
-  const [condition, setCondition] = useState("RETURNED");
-  const [notes, setNotes] = useState("");
+  const [receiveForm, updateReceiveForm] = useReducer(
+    receiveFormReducer,
+    INITIAL_RECEIVE_FORM,
+  );
 
   const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsListQuery({
     page: 0,
@@ -69,7 +102,7 @@ export default function RMADetailPage() {
   }, [locationsRes]);
 
   const lines = useMemo(() => rma?.lines ?? [], [rma?.lines]);
-  const selectedLine = lines.find((line) => line.id === selectedLineId) ?? lines[0];
+  const selectedLine = lines.find((line) => line.id === receiveForm.selectedLineId) ?? lines[0];
   const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
   const lineOptions = useMemo(
     () =>
@@ -81,12 +114,12 @@ export default function RMADetailPage() {
   );
 
   const handleReceive = async () => {
-    const receivedQty = Number(actualQty);
+    const receivedQty = Number(receiveForm.actualQty);
     if (!selectedLine) {
       toast.error("RMA chưa có dòng hàng để nhận");
       return;
     }
-    if (!locationId) {
+    if (!receiveForm.locationId) {
       toast.error("Vui lòng chọn vị trí nhập hàng");
       return;
     }
@@ -101,14 +134,13 @@ export default function RMADetailPage() {
         body: {
           itemId: selectedLine.id,
           receivedQty,
-          locationId,
-          condition: condition.trim() || undefined,
-          notes: notes.trim() || undefined,
+          locationId: receiveForm.locationId,
+          condition: receiveForm.condition.trim() || undefined,
+          notes: receiveForm.notes.trim() || undefined,
         }
       }).unwrap();
       toast.success("Đã ghi nhận nhập hàng trả");
-      setActualQty("");
-      setNotes("");
+      updateReceiveForm({ actualQty: "", notes: "" });
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể nhận hàng"));
@@ -119,7 +151,7 @@ export default function RMADetailPage() {
     try {
       await closeReturn(id).unwrap();
       toast.success("Đã đóng hồ sơ RMA");
-      router.push("/returns");
+      push("/returns");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể đóng hồ sơ"));
     }
@@ -128,7 +160,7 @@ export default function RMADetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -138,11 +170,11 @@ export default function RMADetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/returns")} className="-ml-2 h-8">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button variant="ghost" size="sm" onClick={() => push("/returns")} className="-ml-2 h-8">
+          <ArrowLeft className="mr-2 size-4" />
           Quay lại danh sách
         </Button>
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="size-4" />
         <span className="font-mono">{rma.rmaNumber || rma.id}</span>
       </div>
 
@@ -152,7 +184,7 @@ export default function RMADetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
             {!isCompleted && (
@@ -172,7 +204,7 @@ export default function RMADetailPage() {
                 <CardTitle>Thông tin tiếp nhận</CardTitle>
                 <CardDescription>Chi tiết nguồn hàng và lý do trả.</CardDescription>
               </div>
-              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200">
+              <Badge className="bg-primary/10 text-primary border-primary/20">
                 {rma.status}
               </Badge>
             </CardHeader>
@@ -189,7 +221,7 @@ export default function RMADetailPage() {
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Kho xử lý</p>
                   <p className="flex items-center gap-1.5 font-semibold">
-                    <Warehouse className="h-4 w-4 text-slate-400" />
+                    <Warehouse className="size-4 text-zinc-400" />
                     {rma.warehouseName || rma.warehouseId}
                   </p>
                 </div>
@@ -204,7 +236,7 @@ export default function RMADetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardList className="h-5 w-5 text-indigo-600" />
+                <ClipboardList className="size-5 text-primary" />
                 Danh sách sản phẩm
               </CardTitle>
             </CardHeader>
@@ -228,7 +260,7 @@ export default function RMADetailPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center font-semibold">{line.expectedQty}</TableCell>
-                      <TableCell className="text-center font-bold text-indigo-600">{line.receivedQty || 0}</TableCell>
+                      <TableCell className="text-center font-bold text-primary">{line.receivedQty || 0}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px] uppercase">
                           {line.condition || line.reason || rma.reason}
@@ -250,10 +282,10 @@ export default function RMADetailPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-indigo-100 bg-indigo-50/30 dark:border-indigo-900/30 dark:bg-indigo-950/10">
+          <Card className="border-primary/20 bg-primary/10 dark:border-primary/30 dark:bg-primary/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Package className="h-5 w-5 text-indigo-600" />
+                <Package className="size-5 text-primary" />
                 Ghi nhận Nhận hàng
               </CardTitle>
               <CardDescription>Nhập số lượng thực tế nhận được vào kho.</CardDescription>
@@ -264,8 +296,8 @@ export default function RMADetailPage() {
                 <SearchableSelect
                   options={lineOptions}
                   value={selectedLine?.id ?? ""}
-                  onValueChange={setSelectedLineId}
-                  placeholder="Chọn dòng hàng..."
+                  onValueChange={(selectedLineId) => updateReceiveForm({ selectedLineId })}
+                  placeholder="Chọn dòng hàng…"
                   dialogTitle="Chọn dòng hàng RMA"
                   disabled={!lineOptions.length || isCompleted}
                 />
@@ -274,9 +306,9 @@ export default function RMADetailPage() {
                 <Label>Vị trí nhập kho</Label>
                 <SearchableSelect
                   options={locationOptions}
-                  value={locationId}
-                  onValueChange={setLocationId}
-                  placeholder="Chọn vị trí..."
+                  value={receiveForm.locationId}
+                  onValueChange={(locationId) => updateReceiveForm({ locationId })}
+                  placeholder="Chọn vị trí…"
                   dialogTitle="Chọn vị trí nhập kho"
                   loading={locationsLoading}
                   disabled={isCompleted}
@@ -286,8 +318,8 @@ export default function RMADetailPage() {
                 <Label>Số lượng nhận</Label>
                 <Input 
                   type="number" 
-                  value={actualQty} 
-                  onChange={(e) => setActualQty(e.target.value)}
+                  value={receiveForm.actualQty} 
+                  onChange={(e) => updateReceiveForm({ actualQty: e.target.value })}
                   min={1}
                   max={selectedLine?.expectedQty}
                   disabled={isCompleted}
@@ -296,27 +328,27 @@ export default function RMADetailPage() {
               <div className="space-y-2">
                 <Label>Tình trạng</Label>
                 <Input
-                  value={condition}
-                  onChange={(event) => setCondition(event.target.value)}
-                  placeholder="Nguyên vẹn, xước nhẹ, lỗi..."
+                  value={receiveForm.condition}
+                  onChange={(event) => updateReceiveForm({ condition: event.target.value })}
+                  placeholder="Nguyên vẹn, xước nhẹ, lỗi…"
                   disabled={isCompleted}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Ghi chú</Label>
                 <Input
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
+                  value={receiveForm.notes}
+                  onChange={(event) => updateReceiveForm({ notes: event.target.value })}
                   placeholder="Ghi chú xử lý nếu có"
                   disabled={isCompleted}
                 />
               </div>
               <Button 
-                className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                className="w-full bg-primary hover:bg-primary/90" 
                 onClick={handleReceive}
                 disabled={isReceiving || isCompleted || !selectedLine}
               >
-                {isReceiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                {isReceiving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
                 Xác nhận Nhận hàng
               </Button>
             </CardContent>
@@ -328,10 +360,10 @@ export default function RMADetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3 text-xs">
-                <div className="mt-1 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <div className="mt-1 size-2 rounded-full bg-emerald-500 shrink-0" />
                 <div>
                   <p className="font-semibold">Khởi tạo RMA</p>
-                  <p className="text-muted-foreground">{new Date(rma.createdAt!).toLocaleString()}</p>
+                  <p className="text-muted-foreground">{formatDateTime(rma.createdAt)}</p>
                 </div>
               </div>
             </CardContent>

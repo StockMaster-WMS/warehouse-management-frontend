@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, ReactNode, RefObject, useCallback, useEffect, useRef, useState } from "react";
 import {
   Bot,
   Boxes,
   ClipboardList,
   Loader2,
+  Pause,
   RotateCcw,
   Send,
   Sparkles,
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
+import { axiosInstance } from "@/lib/axios-instance";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface Message {
   id: string;
@@ -53,28 +56,42 @@ export default function AiAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const currentAssistantMsgId = useRef<string | null>(null);
+  const activeStreamMsgId = useRef<string | null>(null);
+  const activeRequestId = useRef<string | null>(null);
+  const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
   const sessionIdRef = useRef(createSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, streamResult]);
+  const scrollMessagesToEnd = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
+  }, []);
 
   useEffect(() => {
-    if (!streamResult || !currentAssistantMsgId.current) return;
+    if (!streamResult) return;
+    if (streamResult.requestId !== activeRequestId.current) return;
+    const msgId = activeStreamMsgId.current ?? currentAssistantMsgId.current;
+    if (!msgId) return;
 
-    const msgId = currentAssistantMsgId.current;
     setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId ? { ...msg, content: streamResult } : msg
-      )
+      prev.map((msg) => (msg.id === msgId ? { ...msg, content: streamResult.text } : msg))
     );
-  }, [streamResult]);
+    scrollMessagesToEnd();
+  }, [scrollMessagesToEnd, streamResult]);
 
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
-    if (!trimmed || isFetching) return;
+    if (!trimmed) return;
+    if (isStreaming || isFetching) {
+      // cancel any in-progress stream before sending a new question
+      await cancelStream();
+      // small pause to allow abort/cleanup
+      await new Promise((r) => setTimeout(r, 120));
+    }
 
     const userMsg: Message = {
       id: createMessageId(),
@@ -82,32 +99,99 @@ export default function AiAssistantPage() {
       content: trimmed,
     };
     const assistantMsgId = createMessageId();
+    const requestId = assistantMsgId;
     currentAssistantMsgId.current = assistantMsgId;
+    activeStreamMsgId.current = assistantMsgId;
+    activeRequestId.current = requestId;
+    setStreamingMessageId(assistantMsgId);
 
     setMessages((prev) => [
       ...prev,
       userMsg,
       { id: assistantMsgId, role: "assistant", content: "" },
     ]);
+    scrollMessagesToEnd();
     setInput("");
 
     try {
-      await triggerStream({
+      setIsStreaming(true);
+      const streamPromise = triggerStream({
         question: trimmed,
         sessionId: sessionIdRef.current,
-      }).unwrap();
+        requestId,
+      });
+      activeTriggerRef.current = streamPromise;
+
+      const result = await streamPromise.unwrap();
+      if (result.aborted) {
+        if (activeRequestId.current === requestId) {
+          activeStreamMsgId.current = null;
+          activeRequestId.current = null;
+          activeTriggerRef.current = null;
+          setStreamingMessageId(null);
+          setIsStreaming(false);
+        }
+        return;
+      }
+      // clear active streaming id after stream finishes
+      if (activeRequestId.current === requestId) {
+        activeStreamMsgId.current = null;
+        activeRequestId.current = null;
+        activeTriggerRef.current = null;
+        setStreamingMessageId(null);
+        setIsStreaming(false);
+      }
     } catch {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMsgId
-            ? {
-                ...msg,
-                content:
-                  "Không thể kết nối trợ lý AI lúc này. Vui lòng kiểm tra backend hoặc thử lại sau.",
-              }
-            : msg
-        )
-      );
+      if (activeRequestId.current === requestId) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content:
+                    "Không thể kết nối trợ lý AI lúc này. Vui lòng kiểm tra backend hoặc thử lại sau.",
+                }
+              : msg
+          )
+        );
+        scrollMessagesToEnd();
+        activeStreamMsgId.current = null;
+        activeRequestId.current = null;
+        activeTriggerRef.current = null;
+        setStreamingMessageId(null);
+        setIsStreaming(false);
+      }
+    }
+  }
+
+  async function cancelStream() {
+    const targetRequestId = activeRequestId.current;
+    try {
+      activeTriggerRef.current?.abort();
+
+      // Optimistically mark the active streaming assistant message as cancelled
+      const targetId = activeStreamMsgId.current ?? currentAssistantMsgId.current;
+      if (targetId) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === targetId
+              ? { ...m, content: m.content ? `${m.content}\n(Đã huỷ)` : "(Đã huỷ)" }
+              : m
+          )
+        );
+        scrollMessagesToEnd();
+      }
+      activeStreamMsgId.current = null;
+      activeRequestId.current = null;
+      activeTriggerRef.current = null;
+      setStreamingMessageId(null);
+      setIsStreaming(false);
+
+      await axiosInstance.post(`${API_BASE_URL}/v1/ai/cancel`, null, {
+        params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
+      });
+    } catch (err) {
+      console.error("Cancel stream error", err);
     }
   }
 
@@ -117,184 +201,286 @@ export default function AiAssistantPage() {
   }
 
   function resetConversation() {
+    void cancelStream();
     currentAssistantMsgId.current = null;
+    activeRequestId.current = null;
+    activeTriggerRef.current = null;
     sessionIdRef.current = createSessionId();
+    setStreamingMessageId(null);
+    setIsStreaming(false);
     setInput("");
     setMessages([INITIAL_MESSAGE]);
+    scrollMessagesToEnd();
   }
 
   return (
     <section className="flex h-[calc(100svh-7.5rem)] min-h-[38rem] flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-      <header className="flex shrink-0 flex-col gap-4 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold text-foreground">
-              Trợ lý AI vận hành kho
-            </h1>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  isFetching ? "bg-amber-500" : "bg-emerald-500"
-                )}
-              />
-              {isFetching ? "Đang phân tích dữ liệu" : "Sẵn sàng hỗ trợ"}
-            </div>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full rounded-lg sm:w-auto"
-          onClick={resetConversation}
-          disabled={isFetching}
-        >
-          <RotateCcw className="mr-1.5 h-4 w-4" />
-          Cuộc hội thoại mới
-        </Button>
-      </header>
+      <AiAssistantHeader
+        busy={isStreaming || isFetching}
+        onReset={resetConversation}
+      />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-border bg-muted/30 p-4 lg:block">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-semibold uppercase text-muted-foreground">
-                Gợi ý nhanh
-              </p>
-              <div className="mt-3 space-y-2">
-                {SUGGESTIONS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => void sendQuestion(item)}
-                    disabled={isFetching}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border bg-background p-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Boxes className="h-4 w-4 text-primary" />
-                Phạm vi hỗ trợ
-              </div>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                Tồn kho, đơn hàng, nhập kho, putaway, kiểm kê, cảnh báo và báo
-                cáo vận hành.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-background p-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <ClipboardList className="h-4 w-4 text-primary" />
-                Lưu ý
-              </div>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                Với số liệu quan trọng, hãy đối chiếu lại trong màn hình nghiệp
-                vụ trước khi ra quyết định.
-              </p>
-            </div>
-          </div>
-        </aside>
+        <AiAssistantSidebar onAsk={sendQuestion} />
 
         <div className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-3 py-5 sm:px-5">
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-              {messages.map((msg) => {
-                const isUser = msg.role === "user";
-
-                return (
-                  <article
-                    key={msg.id}
-                    className={cn(
-                      "flex gap-3",
-                      isUser ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {!isUser ? (
-                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <Bot className="h-4 w-4" />
-                      </div>
-                    ) : null}
-
-                    <div
-                      className={cn(
-                        "max-w-[min(44rem,85%)] rounded-lg px-4 py-3 text-sm leading-6 shadow-sm",
-                        isUser
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border bg-card text-card-foreground"
-                      )}
-                    >
-                      {msg.content ? (
-                        <p className="whitespace-pre-wrap break-words">
-                          {msg.content}
-                        </p>
-                      ) : (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Đang soạn câu trả lời...</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {isUser ? (
-                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground">
-                        <User className="h-4 w-4" />
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-
-          <form
+          <AiMessages
+            busy={isStreaming || isFetching}
+            messages={messages}
+            streamingMessageId={streamingMessageId}
+            messagesEndRef={messagesEndRef}
+            onCancel={cancelStream}
+          />
+          <AiComposer
+            busy={isStreaming || isFetching}
+            input={input}
+            onInputChange={setInput}
+            onCancel={cancelStream}
             onSubmit={handleSubmit}
-            className="shrink-0 border-t border-border bg-card p-3 sm:p-4"
-          >
-            <div className="mx-auto flex w-full max-w-4xl items-end gap-2">
-              <Textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void sendQuestion(input);
-                  }
-                }}
-                placeholder="Hỏi AI về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành..."
-                className="max-h-36 min-h-12 resize-none rounded-lg bg-background text-sm"
-                disabled={isFetching}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-12 w-12 shrink-0 rounded-lg"
-                disabled={!input.trim() || isFetching}
-                aria-label="Gửi câu hỏi"
-              >
-                {isFetching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
-              Nhấn Enter để gửi, Shift + Enter để xuống dòng.
-            </p>
-          </form>
+            onSend={sendQuestion}
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+function AiAssistantHeader({
+  busy,
+  onReset,
+}: {
+  busy: boolean;
+  onReset: () => void;
+}) {
+  return (
+    <header className="flex shrink-0 flex-col gap-4 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Sparkles className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-semibold text-foreground">
+            Trợ lý AI vận hành kho
+          </h1>
+          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={cn("size-2 rounded-full", busy ? "bg-amber-500" : "bg-emerald-500")} />
+            {busy ? "Đang phân tích dữ liệu" : "Sẵn sàng hỗ trợ"}
+          </div>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="w-full rounded-lg sm:w-auto"
+        onClick={onReset}
+      >
+        <RotateCcw className="mr-1.5 size-4" />
+        Cuộc hội thoại mới
+      </Button>
+    </header>
+  );
+}
+
+function AiAssistantSidebar({ onAsk }: { onAsk: (question: string) => void }) {
+  return (
+    <aside className="hidden border-r border-border bg-muted/30 p-4 lg:block">
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
+            Gợi ý nhanh
+          </p>
+          <div className="mt-3 space-y-2">
+            {SUGGESTIONS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => void onAsk(item)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <AiInfoBlock icon={Boxes} title="Phạm vi hỗ trợ">
+          Tồn kho, đơn hàng, nhập kho, putaway, kiểm kê, cảnh báo và báo cáo vận hành.
+        </AiInfoBlock>
+        <AiInfoBlock icon={ClipboardList} title="Lưu ý">
+          Với số liệu quan trọng, hãy đối chiếu lại trong màn hình nghiệp vụ trước khi ra quyết định.
+        </AiInfoBlock>
+      </div>
+    </aside>
+  );
+}
+
+function AiInfoBlock({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof Boxes;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <Icon className="size-4 text-primary" />
+        {title}
+      </div>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
+function AiMessages({
+  busy,
+  messages,
+  streamingMessageId,
+  messagesEndRef,
+  onCancel,
+}: {
+  busy: boolean;
+  messages: Message[];
+  streamingMessageId: string | null;
+  messagesEndRef: RefObject<HTMLDivElement | null>;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-3 py-5 sm:px-5">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+        {messages.map((msg) => (
+          <AiMessageBubble
+            key={msg.id}
+            busy={busy}
+            message={msg}
+            isStreaming={streamingMessageId === msg.id}
+            onCancel={onCancel}
+          />
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+    </div>
+  );
+}
+
+function AiMessageBubble({
+  busy,
+  message,
+  isStreaming,
+  onCancel,
+}: {
+  busy: boolean;
+  message: Message;
+  isStreaming: boolean;
+  onCancel: () => void;
+}) {
+  const isUser = message.role === "user";
+
+  return (
+    <article className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
+      {!isUser ? (
+        <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Bot className="size-4" />
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "max-w-[min(44rem,85%)] rounded-lg px-4 py-3 text-sm leading-6 shadow-sm",
+          isUser ? "bg-primary text-primary-foreground" : "border border-border bg-card text-card-foreground",
+        )}
+      >
+        {message.content ? (
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        ) : (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            <span>Đang soạn câu trả lời…</span>
+            {busy && isStreaming ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={onCancel}
+                className="size-7 p-0"
+                aria-label="Dừng trả lời"
+              >
+                <Pause className="size-4" />
+              </Button>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {isUser ? (
+        <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground">
+          <User className="size-4" />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function AiComposer({
+  busy,
+  input,
+  onInputChange,
+  onCancel,
+  onSubmit,
+  onSend,
+}: {
+  busy: boolean;
+  input: string;
+  onInputChange: (value: string) => void;
+  onCancel: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSend: (question: string) => void;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="shrink-0 border-t border-border bg-card p-3 sm:p-4">
+      <div className="mx-auto flex w-full max-w-4xl items-end gap-2">
+        <Textarea
+          value={input}
+          onChange={(event) => onInputChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              void onSend(input);
+            }
+          }}
+          placeholder="Hỏi AI về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành…"
+          className="max-h-36 min-h-12 resize-none rounded-lg bg-background text-sm"
+        />
+        {busy && !input.trim() ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="destructive"
+            className="size-12 shrink-0 rounded-lg"
+            onClick={onCancel}
+            aria-label="Dừng trả lời"
+          >
+            <Pause className="size-4" />
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            size="icon"
+            className="size-12 shrink-0 rounded-lg"
+            disabled={!input.trim()}
+            aria-label="Gửi câu hỏi"
+          >
+            <Send className="size-4" />
+          </Button>
+        )}
+      </div>
+      <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
+        Nhấn Enter để gửi, Shift + Enter để xuống dòng.
+      </p>
+    </form>
   );
 }

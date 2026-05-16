@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { Dispatch, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
 import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2 } from "lucide-react";
@@ -37,12 +37,28 @@ interface GroupedPicking {
     status: "PENDING" | "PARTIAL" | "PICKED";
 }
 
+type OverviewState = {
+    searchTerm: string;
+    selectedId: string | null;
+    expandedGroups: Record<string, boolean>;
+    advancedOpen: boolean;
+};
+
+const INITIAL_OVERVIEW_STATE: OverviewState = {
+    searchTerm: "",
+    selectedId: null,
+    expandedGroups: {},
+    advancedOpen: false,
+};
+
+function overviewReducer(state: OverviewState, patch: Partial<OverviewState>) {
+    return { ...state, ...patch };
+}
+
 export function OverviewTab() {
-    const [filter] = useState<string>("pending");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const filter = "pending";
+    const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
+    const { searchTerm, selectedId, expandedGroups, advancedOpen } = state;
 
     const { data, isLoading } = useGetPickingItemsQuery({
         status: filter === "all" ? undefined : filter.toUpperCase()
@@ -151,7 +167,7 @@ export function OverviewTab() {
     }, [data, searchTerm]);
 
     const toggleGroup = (so: string) => {
-        setExpandedGroups(prev => ({ ...prev, [so]: !prev[so] }));
+        dispatch({ expandedGroups: { ...expandedGroups, [so]: !expandedGroups[so] } });
     };
 
     const detailItem = detailData?.data;
@@ -161,279 +177,389 @@ export function OverviewTab() {
             <div className="ui-surface flex flex-col overflow-hidden transition-all duration-300">
                 <SearchToolbar
                     noContainer
-                    placeholder="Tìm theo đơn hàng, SKU, vị trí..."
+                    placeholder="Tìm theo đơn hàng, SKU, vị trí…"
                     value={searchTerm}
-                    onValueChange={setSearchTerm}
+                    onValueChange={(searchTerm) => dispatch({ searchTerm })}
                     right={
                         <AdvancedFilterActions
                             open={advancedOpen}
-                            onToggle={() => setAdvancedOpen(!advancedOpen)}
+                            onToggle={() => dispatch({ advancedOpen: !advancedOpen })}
                             activeCount={0}
                             hasAnyFilter={false}
-                            onClear={() => setSearchTerm("")}
+                            onClear={() => dispatch({ searchTerm: "" })}
                         />
                     }
                 />
 
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader className="ui-table-header">
-                            <TableRow>
-                                <TableHead className="ui-label w-12 px-3 py-3 text-center"></TableHead>
-                                <TableHead className="ui-label px-3 py-3">Chi tiết Pick</TableHead>
-                                <TableHead className="ui-label px-3 py-3">Vị trí kho</TableHead>
-                                <TableHead className="ui-label px-3 py-3 text-center">Tiến độ</TableHead>
-                                <TableHead className="ui-label px-3 py-3 text-center">Trạng thái</TableHead>
-                                <TableHead className="ui-label w-[120px] px-3 py-3 pr-6 text-right">Thao tác</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="py-20 text-center text-muted-foreground">
-                                        <div className="flex flex-col items-center gap-2 animate-pulse">
-                                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                            <span className="font-semibold text-xs uppercase tracking-widest">Đang tải dữ liệu...</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : groupedData.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="p-0">
-                                        <EmptyState
-                                            icon={Package2}
-                                            title="Không tìm thấy dữ liệu picking"
-                                            description="Thử đổi từ khóa tìm kiếm hoặc kiểm tra danh sách lệnh lấy hàng."
-                                            className="py-12"
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ) : groupedData.map((group) => (
-                                <React.Fragment key={group.soNumber}>
-                                    <TableRow
-                                        className="ui-table-row group cursor-pointer"
-                                        onClick={() => toggleGroup(group.soNumber)}
-                                    >
-                                        <TableCell className="pl-4">
-                                            {expandedGroups[group.soNumber] === true ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                                        </TableCell>
-                                        <TableCell colSpan={2} className="py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex flex-col">
-                                                    <span className="ui-label mb-1 leading-none">Đơn hàng</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-black tabular-nums tracking-tight text-foreground">
-                                                            {group.soNumber}
-                                                        </span>
-                                                        <StatusBadge dot={false} tone="neutral" className="h-4 px-1 text-[9px]">
-                                                            {group.items.length} SKU
-                                                        </StatusBadge>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-black tabular-nums text-foreground">{group.totalPicked}/{group.totalToPick}</span>
-                                                    <span className={cn(
-                                                        "rounded px-1.5 py-0.5 text-[10px] font-bold",
-                                                        group.progress === 100 ? "bg-success-soft text-success-foreground" : "bg-info-soft text-info-foreground font-black"
-                                                    )}>
-                                                        {Math.round(group.progress)}%
-                                                    </span>
-                                                </div>
-                                                <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
-                                                    <div
-                                                        className={cn("h-full transition-all duration-700", group.progress === 100 ? "bg-success" : "bg-primary")}
-                                                        style={{ width: `${group.progress}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <StatusBadge tone={statusTone(group.status)}>
-                                                {group.status === "PICKED" ? "Hoàn tất" : group.status === "PARTIAL" ? "Đang lấy" : "Chờ lấy"}
-                                            </StatusBadge>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                                            <span className="text-[11px] font-bold text-muted-foreground">
-                                                Điều phối qua tuyến pick
-                                            </span>
-                                        </TableCell>
-                                    </TableRow>
-
-                                    {expandedGroups[group.soNumber] === true && group.items.map((item) => (
-                                        <TableRow
-                                            key={item.id}
-                                            className="ui-table-row group/row animate-in fade-in slide-in-from-left-2 duration-300"
-                                        >
-                                            <TableCell className="pl-6"></TableCell>
-                                            <TableCell className="py-4 pl-4">
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[13px] font-black uppercase tracking-tight text-foreground">{item.productSku}</span>
-                                                    </div>
-                                                    <span className="mt-0.5 line-clamp-1 max-w-[250px] text-[11px] font-medium text-muted-foreground">{item.productName}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <div className="inline-flex items-center gap-1.5 rounded bg-info-soft px-2 py-1 font-mono text-xs font-black text-info-foreground ring-1 ring-inset ring-info/20">
-                                                        <MapPin className="h-3 w-3" />
-                                                        {item.locationCode}
-                                                    </div>
-                                                    {item.zone && <span className="mt-1 pl-1 text-[10px] font-bold capitalize text-muted-foreground">{item.zone} - {item.aisle}</span>}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="rounded-full bg-card px-2 py-0.5 text-xs font-bold tabular-nums text-foreground ring-1 ring-border shadow-sm">
-                                                        {item.qtyPicked || 0} / {item.qtyToPick}
-                                                    </span>
-                                                    <span className="mt-1 text-[9px] font-black uppercase tracking-tighter text-muted-foreground">{item.baseUnit}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
-                                                {item.status === "PENDING" ? "Cần lấy" : "Đã lấy"}
-                                            </TableCell>
-                                            <TableCell className="text-right pr-6">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 w-8 rounded-lg text-primary shadow-sm ring-1 ring-border"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedId(item.id);
-                                                    }}
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </React.Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                <PickingOverviewTable
+                    expandedGroups={expandedGroups}
+                    groupedData={groupedData}
+                    isLoading={isLoading}
+                    onDispatch={dispatch}
+                    onToggleGroup={toggleGroup}
+                />
             </div>
 
-            <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-                <DialogContent className="w-[calc(100vw-2rem)] overflow-hidden rounded-lg p-0 shadow-2xl sm:max-w-2xl">
-                    <DialogHeader className="border-b border-border bg-muted/45 p-5">
-                        <DialogTitle className="flex min-w-0 items-center gap-3 text-lg font-black text-foreground">
-                            <div className="ui-icon-tile h-9 w-9 bg-primary text-primary-foreground">
-                                <Package2 className="h-5 w-5" />
-                            </div>
-                            <span className="truncate">
-                                {detailItem?.salesOrderNumber || "Chi tiết Picking"}
-                            </span>
-                        </DialogTitle>
-                    </DialogHeader>
-                    {isDetailLoading ? (
-                        <div className="py-20 text-center">
-                            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                            <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">Đang truy xuất dữ liệu...</p>
-                        </div>
-                    ) : detailItem ? (
-                        <div className="space-y-4 p-5">
-                            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                                <div className="ui-muted-surface p-4">
-                                    <p className="ui-label mb-1">Thứ tự lấy hàng</p>
-                                    <p className="text-sm font-black text-primary">SEQ-{detailItem.pickSequence || 1}</p>
-                                </div>
-                                <div className="flex sm:justify-end">
-                                    <StatusBadge tone={detailItem.status === "PICKED" ? "success" : (detailItem.qtyPicked || 0) > 0 ? "warning" : "info"}>
-                                        {detailItem.status === "PICKED" ? "Hoàn tất" : (detailItem.qtyPicked || 0) > 0 ? "Đang lấy" : "Chờ lấy"}
-                                    </StatusBadge>
-                                </div>
-                            </div>
+            <PickingDetailDialog
+                detailItem={detailItem}
+                isDetailLoading={isDetailLoading}
+                open={!!selectedId}
+                onOpenChange={(open) => !open && dispatch({ selectedId: null })}
+            />
+        </div>
+    );
+}
 
-                            <div className="ui-surface p-4">
-                                <div className="grid gap-5 md:grid-cols-2">
-                                    <div className="space-y-4">
-                                        <div className="space-y-1">
-                                            <p className="ui-label">SKU / Mã sản phẩm</p>
-                                            <p className="truncate text-base font-black uppercase text-foreground">{detailItem.productSku}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="ui-label">Tên sản phẩm</p>
-                                            <p className="text-sm font-bold leading-relaxed text-muted-foreground">{detailItem.productName || "—"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <p className="ui-label">Danh mục</p>
-                                            <p className="truncate text-xs font-bold text-muted-foreground">{detailItem.categoryName || "—"}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="ui-label">Mã vạch</p>
-                                            <p className="truncate font-mono text-xs font-bold text-muted-foreground">{detailItem.barcodeEan13 || "—"}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="ui-surface p-4">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex min-w-0 items-center gap-4">
-                                        <div className="ui-icon-tile h-12 w-12 text-primary">
-                                            <MapPin className="h-6 w-6" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="ui-label mb-1">Vị trí lưu kho</p>
-                                            <p className="truncate text-2xl font-black uppercase leading-none tabular-nums text-foreground">{detailItem.locationCode || "—"}</p>
-                                        </div>
-                                    </div>
-                                    {(detailItem.zone || detailItem.aisle) && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {detailItem.zone ? (
-                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Khu vực {detailItem.zone}</span>
-                                            ) : null}
-                                            {detailItem.aisle ? (
-                                                <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Dãy {detailItem.aisle}</span>
-                                            ) : null}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="ui-muted-surface p-4 text-center">
-                                    <span className="ui-label">Số lượng đặt</span>
-                                    <div className="mt-2 flex items-baseline justify-center gap-1">
-                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyToPick}</span>
-                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
-                                    </div>
-                                </div>
-                                <div className="ui-muted-surface p-4 text-center">
-                                    <span className="ui-label">Đã lấy</span>
-                                    <div className="mt-2 flex items-baseline justify-center gap-1">
-                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyPicked || 0}</span>
-                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
-                                    </div>
-                                </div>
-                                <div className="ui-muted-surface p-4 text-center">
-                                    <span className="ui-label">Hiện có</span>
-                                    <div className="mt-2 flex items-baseline justify-center gap-1">
-                                        <span className="text-2xl font-black tabular-nums text-foreground">{detailItem.qtyAvailable ?? "0"}</span>
-                                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+function PickingOverviewTable({
+    expandedGroups,
+    groupedData,
+    isLoading,
+    onDispatch,
+    onToggleGroup,
+}: {
+    expandedGroups: Record<string, boolean>;
+    groupedData: GroupedPicking[];
+    isLoading: boolean;
+    onDispatch: Dispatch<Partial<OverviewState>>;
+    onToggleGroup: (so: string) => void;
+}) {
+    return (
+        <div className="overflow-x-auto">
+            <Table>
+                <TableHeader className="ui-table-header">
+                    <TableRow>
+                        <TableHead className="ui-label w-12 p-3 text-center"></TableHead>
+                        <TableHead className="ui-label p-3">Chi tiết Pick</TableHead>
+                        <TableHead className="ui-label p-3">Vị trí kho</TableHead>
+                        <TableHead className="ui-label p-3 text-center">Tiến độ</TableHead>
+                        <TableHead className="ui-label p-3 text-center">Trạng thái</TableHead>
+                        <TableHead className="ui-label w-[120px] p-3 pr-6 text-right">Thao tác</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {isLoading ? (
+                        <PickingLoadingRow />
+                    ) : groupedData.length === 0 ? (
+                        <PickingEmptyRow />
                     ) : (
-                        <div className="py-20 text-center">
-                            <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft text-destructive">
-                                <Archive className="h-7 w-7" />
-                            </div>
-                            <h4 className="text-sm font-black uppercase tracking-widest text-destructive">Dữ liệu không phản hồi</h4>
-                            <p className="mt-2 text-xs text-muted-foreground">Kiểm tra kết nối hoặc thử lại sau.</p>
-                        </div>
+                        groupedData.map((group) => (
+                            <PickingGroupRows
+                                key={group.soNumber}
+                                expanded={expandedGroups[group.soNumber] === true}
+                                group={group}
+                                onDispatch={onDispatch}
+                                onToggleGroup={onToggleGroup}
+                            />
+                        ))
                     )}
-                </DialogContent>
-            </Dialog>
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function PickingLoadingRow() {
+    return (
+        <TableRow>
+            <TableCell colSpan={6} className="py-20 text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-2 animate-pulse">
+                    <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="font-semibold text-xs uppercase tracking-widest">Đang tải dữ liệu…</span>
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function PickingEmptyRow() {
+    return (
+        <TableRow>
+            <TableCell colSpan={6} className="p-0">
+                <EmptyState
+                    icon={Package2}
+                    title="Không tìm thấy dữ liệu picking"
+                    description="Thử đổi từ khóa tìm kiếm hoặc kiểm tra danh sách lệnh lấy hàng."
+                    className="py-12"
+                />
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function PickingGroupRows({
+    expanded,
+    group,
+    onDispatch,
+    onToggleGroup,
+}: {
+    expanded: boolean;
+    group: GroupedPicking;
+    onDispatch: Dispatch<Partial<OverviewState>>;
+    onToggleGroup: (so: string) => void;
+}) {
+    return (
+        <React.Fragment>
+            <TableRow className="ui-table-row group cursor-pointer" onClick={() => onToggleGroup(group.soNumber)}>
+                <TableCell className="pl-4">
+                    {expanded ? <ChevronDown className="size-4 text-primary" /> : <ChevronRight className="size-4 text-muted-foreground" />}
+                </TableCell>
+                <TableCell colSpan={2} className="py-4">
+                    <div className="flex flex-col">
+                        <span className="ui-label mb-1 leading-none">Đơn hàng</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-black tabular-nums tracking-tight text-foreground">{group.soNumber}</span>
+                            <StatusBadge dot={false} tone="neutral" className="h-4 px-1 text-[9px]">
+                                {group.items.length} SKU
+                            </StatusBadge>
+                        </div>
+                    </div>
+                </TableCell>
+                <TableCell className="text-center">
+                    <PickingGroupProgress group={group} />
+                </TableCell>
+                <TableCell className="text-center">
+                    <StatusBadge tone={statusTone(group.status)}>
+                        {group.status === "PICKED" ? "Hoàn tất" : group.status === "PARTIAL" ? "Đang lấy" : "Chờ lấy"}
+                    </StatusBadge>
+                </TableCell>
+                <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
+                    <span className="text-[11px] font-bold text-muted-foreground">Điều phối qua tuyến pick</span>
+                </TableCell>
+            </TableRow>
+
+            {expanded
+                ? group.items.map((item) => (
+                    <PickingItemRow key={item.id} item={item} onDispatch={onDispatch} />
+                ))
+                : null}
+        </React.Fragment>
+    );
+}
+
+function PickingGroupProgress({ group }: { group: GroupedPicking }) {
+    return (
+        <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+                <span className="text-xs font-black tabular-nums text-foreground">{group.totalPicked}/{group.totalToPick}</span>
+                <span
+                    className={cn(
+                        "rounded px-1.5 py-0.5 text-[10px] font-bold",
+                        group.progress === 100 ? "bg-success-soft text-success-foreground" : "bg-info-soft text-info-foreground font-black",
+                    )}
+                >
+                    {Math.round(group.progress)}%
+                </span>
+            </div>
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
+                <div
+                    className={cn("h-full transition-all duration-700", group.progress === 100 ? "bg-success" : "bg-primary")}
+                    style={{ width: `${group.progress}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
+function PickingItemRow({
+    item,
+    onDispatch,
+}: {
+    item: PickingItem;
+    onDispatch: Dispatch<Partial<OverviewState>>;
+}) {
+    return (
+        <TableRow className="ui-table-row group/row animate-in fade-in slide-in-from-left-2 duration-300">
+            <TableCell className="pl-6"></TableCell>
+            <TableCell className="py-4 pl-4">
+                <div className="flex flex-col">
+                    <span className="text-[13px] font-black uppercase tracking-tight text-foreground">{item.productSku}</span>
+                    <span className="mt-0.5 line-clamp-1 max-w-[250px] text-[11px] font-medium text-muted-foreground">{item.productName}</span>
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="flex flex-col">
+                    <div className="inline-flex items-center gap-1.5 rounded bg-info-soft px-2 py-1 font-mono text-xs font-black text-info-foreground ring-1 ring-inset ring-info/20">
+                        <MapPin className="size-3" />
+                        {item.locationCode}
+                    </div>
+                    {item.zone ? <span className="mt-1 pl-1 text-[10px] font-bold capitalize text-muted-foreground">{item.zone} - {item.aisle}</span> : null}
+                </div>
+            </TableCell>
+            <TableCell className="text-center">
+                <div className="flex flex-col items-center">
+                    <span className="rounded-full bg-card px-2 py-0.5 text-xs font-bold tabular-nums text-foreground ring-1 ring-border shadow-sm">
+                        {item.qtyPicked || 0} / {item.qtyToPick}
+                    </span>
+                    <span className="mt-1 text-[9px] font-black uppercase tracking-tighter text-muted-foreground">{item.baseUnit}</span>
+                </div>
+            </TableCell>
+            <TableCell className="text-center text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
+                {item.status === "PENDING" ? "Cần lấy" : "Đã lấy"}
+            </TableCell>
+            <TableCell className="text-right pr-6">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="size-8 rounded-lg text-primary shadow-sm ring-1 ring-border"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onDispatch({ selectedId: item.id });
+                    }}
+                >
+                    <Eye className="size-4" />
+                </Button>
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function PickingDetailDialog({
+    detailItem,
+    isDetailLoading,
+    open,
+    onOpenChange,
+}: {
+    detailItem?: PickingItem;
+    isDetailLoading: boolean;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="w-[calc(100vw-2rem)] overflow-hidden rounded-lg p-0 shadow-2xl sm:max-w-2xl">
+                <DialogHeader className="border-b border-border bg-muted/45 p-5">
+                    <DialogTitle className="flex min-w-0 items-center gap-3 text-lg font-black text-foreground">
+                        <div className="ui-icon-tile size-9 bg-primary text-primary-foreground">
+                            <Package2 className="size-5" />
+                        </div>
+                        <span className="truncate">{detailItem?.salesOrderNumber || "Chi tiết Picking"}</span>
+                    </DialogTitle>
+                </DialogHeader>
+                {isDetailLoading ? (
+                    <PickingDetailLoading />
+                ) : detailItem ? (
+                    <PickingDetailContent detailItem={detailItem} />
+                ) : (
+                    <PickingDetailEmpty />
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function PickingDetailLoading() {
+    return (
+        <div className="py-20 text-center">
+            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">Đang truy xuất dữ liệu…</p>
+        </div>
+    );
+}
+
+function PickingDetailContent({ detailItem }: { detailItem: PickingItem }) {
+    return (
+        <div className="space-y-4 p-5">
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="ui-muted-surface p-4">
+                    <p className="ui-label mb-1">Thứ tự lấy hàng</p>
+                    <p className="text-sm font-black text-primary">SEQ-{detailItem.pickSequence || 1}</p>
+                </div>
+                <div className="flex sm:justify-end">
+                    <StatusBadge tone={detailItem.status === "PICKED" ? "success" : (detailItem.qtyPicked || 0) > 0 ? "warning" : "info"}>
+                        {detailItem.status === "PICKED" ? "Hoàn tất" : (detailItem.qtyPicked || 0) > 0 ? "Đang lấy" : "Chờ lấy"}
+                    </StatusBadge>
+                </div>
+            </div>
+            <PickingDetailProduct detailItem={detailItem} />
+            <PickingDetailLocation detailItem={detailItem} />
+            <PickingDetailStats detailItem={detailItem} />
+        </div>
+    );
+}
+
+function PickingDetailProduct({ detailItem }: { detailItem: PickingItem }) {
+    return (
+        <div className="ui-surface p-4">
+            <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <p className="ui-label">SKU / Mã sản phẩm</p>
+                        <p className="truncate text-base font-black uppercase text-foreground">{detailItem.productSku}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="ui-label">Tên sản phẩm</p>
+                        <p className="text-sm font-bold leading-relaxed text-muted-foreground">{detailItem.productName || "—"}</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <p className="ui-label">Danh mục</p>
+                        <p className="truncate text-xs font-bold text-muted-foreground">{detailItem.categoryName || "—"}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="ui-label">Mã vạch</p>
+                        <p className="truncate font-mono text-xs font-bold text-muted-foreground">{detailItem.barcodeEan13 || "—"}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function PickingDetailLocation({ detailItem }: { detailItem: PickingItem }) {
+    return (
+        <div className="ui-surface p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-4">
+                    <div className="ui-icon-tile size-12 text-primary">
+                        <MapPin className="size-6" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="ui-label mb-1">Vị trí lưu kho</p>
+                        <p className="truncate text-2xl font-black uppercase leading-none tabular-nums text-foreground">{detailItem.locationCode || "—"}</p>
+                    </div>
+                </div>
+                {detailItem.zone || detailItem.aisle ? (
+                    <div className="flex flex-wrap gap-2">
+                        {detailItem.zone ? <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Khu vực {detailItem.zone}</span> : null}
+                        {detailItem.aisle ? <span className="rounded bg-info-soft px-2 py-1 text-[10px] font-black uppercase text-info-foreground">Dãy {detailItem.aisle}</span> : null}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function PickingDetailStats({ detailItem }: { detailItem: PickingItem }) {
+    const stats = [
+        ["Số lượng đặt", detailItem.qtyToPick],
+        ["Đã lấy", detailItem.qtyPicked || 0],
+        ["Hiện có", detailItem.qtyAvailable ?? "0"],
+    ] as const;
+
+    return (
+        <div className="grid gap-3 sm:grid-cols-3">
+            {stats.map(([label, value]) => (
+                <div key={label} className="ui-muted-surface p-4 text-center">
+                    <span className="ui-label">{label}</span>
+                    <div className="mt-2 flex items-baseline justify-center gap-1">
+                        <span className="text-2xl font-black tabular-nums text-foreground">{value}</span>
+                        <span className="text-[10px] font-black uppercase text-muted-foreground">{detailItem.baseUnit || "Đv"}</span>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function PickingDetailEmpty() {
+    return (
+        <div className="py-20 text-center">
+            <div className="mb-4 inline-flex size-14 items-center justify-center rounded-full bg-danger-soft text-destructive">
+                <Archive className="size-7" />
+            </div>
+            <h4 className="text-sm font-semibold uppercase tracking-widest text-destructive">Dữ liệu không phản hồi</h4>
+            <p className="mt-2 text-xs text-muted-foreground">Kiểm tra kết nối hoặc thử lại sau.</p>
         </div>
     );
 }
