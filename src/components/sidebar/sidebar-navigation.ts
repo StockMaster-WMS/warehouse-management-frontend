@@ -74,7 +74,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
   {
     label: "Trí tuệ nhân tạo",
     items: [
-      { label: "Trợ lý AI", href: "/ai-assistant", icon: Sparkles, tag: "AI", roles: ADMIN_MANAGER_ROLES },
+      { label: "Trợ lý AI", href: "/ai-assistant", icon: Sparkles, tag: "AI", roles: READ_OPERATION_ROLES },
     ],
   },
   {

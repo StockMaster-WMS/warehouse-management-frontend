@@ -51,15 +51,46 @@ export default function CycleCountDetailPage() {
   
   // Local state for counts
   const [actualCounts, setActualCounts] = useState<Record<string, number>>({});
+  const countLines = count?.lines ?? [];
+  const isInProgress = count?.status === "IN_PROGRESS";
+  const hasPendingLocalCounts = Object.keys(actualCounts).length > 0;
+  const canComplete =
+    isInProgress &&
+    !hasPendingLocalCounts &&
+    countLines.length > 0 &&
+    countLines.every(
+      (line) =>
+        line.status !== "PENDING" &&
+        line.countedQty !== null &&
+        line.countedQty !== undefined,
+    );
 
   const handleRecordChange = (lineId: string, value: string) => {
+    if (value.trim() === "") {
+      setActualCounts((prev) => {
+        const next = { ...prev };
+        delete next[lineId];
+        return next;
+      });
+      return;
+    }
+
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue < 0) {
+      return;
+    }
+
     setActualCounts(prev => ({
       ...prev,
-      [lineId]: Number(value)
+      [lineId]: numericValue
     }));
   };
 
   const handleSaveResults = async () => {
+    if (!isInProgress) {
+      toast.error("Chỉ ghi nhận kết quả khi đợt kiểm kê đang diễn ra");
+      return;
+    }
     if (Object.keys(actualCounts).length === 0) {
       toast.error("Vui lòng nhập ít nhất một kết quả kiểm đếm");
       return;
@@ -67,6 +98,19 @@ export default function CycleCountDetailPage() {
 
     try {
       const rows = count?.lines?.filter((line) => actualCounts[line.id] !== undefined) ?? [];
+      if (rows.length === 0) {
+        toast.error("Không tìm thấy dòng kiểm kê hợp lệ để lưu");
+        return;
+      }
+      const invalidLine = rows.find((line) => {
+        const value = actualCounts[line.id];
+        return !Number.isFinite(value) || value < 0;
+      });
+      if (invalidLine) {
+        toast.error("Số đếm thực tế phải là số không âm");
+        return;
+      }
+
       await Promise.all(
         rows.map((line) =>
           recordResults({
@@ -77,6 +121,7 @@ export default function CycleCountDetailPage() {
         ),
       );
       toast.success("Đã lưu kết quả kiểm đếm");
+      setActualCounts({});
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể lưu kết quả"));
@@ -84,6 +129,10 @@ export default function CycleCountDetailPage() {
   };
 
   const handleComplete = async () => {
+    if (!canComplete) {
+      toast.error("Cần lưu số đếm cho tất cả dòng trước khi hoàn tất kiểm kê");
+      return;
+    }
     try {
       await completeCount(id).unwrap();
       toast.success("Đã hoàn tất và duyệt điều chỉnh kho");
@@ -140,7 +189,7 @@ export default function CycleCountDetailPage() {
               </Button>
             )}
             {count.status === "IN_PROGRESS" && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 shadow-md" onClick={handleComplete} disabled={isCompleting}>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 shadow-md" onClick={handleComplete} disabled={!canComplete || isCompleting}>
                 {isCompleting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
                 Hoàn tất & Điều chỉnh
               </Button>
@@ -161,7 +210,7 @@ export default function CycleCountDetailPage() {
                 {count.status}
               </Badge>
               {count.status === "IN_PROGRESS" && (
-                <Button size="sm" variant="outline" onClick={handleSaveResults} disabled={isRecording}>
+                <Button size="sm" variant="outline" onClick={handleSaveResults} disabled={!isInProgress || isRecording}>
                   {isRecording ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                   Lưu bản nháp
                 </Button>
@@ -211,11 +260,11 @@ export default function CycleCountDetailPage() {
                         type="number"
                         className={cn(
                           "h-9 text-center font-bold",
-                          count.status !== "IN_PROGRESS" && "bg-zinc-50 opacity-80"
+                          !isInProgress && "bg-zinc-50 opacity-80"
                         )}
                         defaultValue={line.countedQty ?? 0}
                         onChange={(e) => handleRecordChange(line.id, e.target.value)}
-                        disabled={count.status !== "IN_PROGRESS"}
+                        disabled={!isInProgress}
                         min={0}
                       />
                     </TableCell>
@@ -261,7 +310,7 @@ export default function CycleCountDetailPage() {
           </div>
         </div>
         {count.status === "IN_PROGRESS" && (
-          <Button className="bg-primary hover:bg-primary/90 whitespace-nowrap" onClick={handleSaveResults}>
+          <Button className="bg-primary hover:bg-primary/90 whitespace-nowrap" onClick={handleSaveResults} disabled={!isInProgress || isRecording}>
             Gửi kết quả lên hệ thống
           </Button>
         )}

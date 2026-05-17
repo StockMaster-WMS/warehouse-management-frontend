@@ -43,6 +43,7 @@ type OverviewState = {
     expandedGroups: Record<string, boolean>;
     advancedOpen: boolean;
 };
+type PickingStatusFilter = "pending" | "partial" | "picked";
 
 const INITIAL_OVERVIEW_STATE: OverviewState = {
     searchTerm: "",
@@ -56,12 +57,12 @@ function overviewReducer(state: OverviewState, patch: Partial<OverviewState>) {
 }
 
 export function OverviewTab() {
-    const filter = "pending";
+    const filter: PickingStatusFilter = "pending";
     const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
     const { searchTerm, selectedId, expandedGroups, advancedOpen } = state;
 
     const { data, isLoading } = useGetPickingItemsQuery({
-        status: filter === "all" ? undefined : filter.toUpperCase()
+        status: filter.toUpperCase()
     });
 
     const { data: detailData, isFetching: isDetailLoading } = useGetPickingItemByIdQuery(

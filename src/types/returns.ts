@@ -33,6 +33,7 @@ export type ReturnLine = {
   productName?: string | null;
   expectedQty: number;
   receivedQty: number;
+  receivedLocationId?: string | null;
   acceptedQty?: number;
   rejectedQty?: number;
   reason?: ReturnReason;

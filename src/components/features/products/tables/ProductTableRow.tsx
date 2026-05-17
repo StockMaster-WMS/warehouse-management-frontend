@@ -2,9 +2,9 @@ import { memo } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
+  CircleOff,
   Edit2,
   MoreHorizontal,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -141,8 +141,8 @@ export const ProductTableRow = memo(function ProductTableRow({
                 className="rounded-lg text-destructive focus:text-destructive"
                 onClick={() => onRequestDelete({ id: product.id, name: product.name })}
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa
+                <CircleOff className="mr-2 h-4 w-4" />
+                Ngừng dùng
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -256,8 +256,8 @@ export const ProductTableRow = memo(function ProductTableRow({
                   className="text-destructive focus:text-destructive"
                   onClick={() => onRequestDelete({ id: product.id, name: product.name })}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Xóa
+                  <CircleOff className="mr-2 h-4 w-4" />
+                  Ngừng dùng
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
