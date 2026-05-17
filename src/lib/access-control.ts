@@ -107,6 +107,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/orders/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/orders", roles: READ_OPERATION_ROLES },
   { pattern: "/picking", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/returns/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/returns", roles: READ_OPERATION_ROLES },
 
   { pattern: "/customers/new", roles: ADMIN_MANAGER_ROLES },

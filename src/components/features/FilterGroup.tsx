@@ -5,13 +5,12 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
 } from "@/components/ui/select";
 
 export interface FilterOption {
     label: string;
     value: string;
-    options: string[];
+    options: Array<string | { label: string; value: string }>;
     placeholder?: string;
     width?: string;
     onChange: (value: string) => void;
@@ -34,6 +33,14 @@ export function FilterGroup({
     showTitle = true,
     showClear = true,
 }: FilterGroupProps) {
+    const optionLabel = (filter: FilterOption) => {
+        const explicit = filter.options.find((opt) =>
+            typeof opt === "string" ? opt === filter.value : opt.value === filter.value,
+        );
+        if (explicit) return typeof explicit === "string" ? explicit : explicit.label;
+        return filter.value || filter.placeholder || filter.label;
+    };
+
     return (
         <>
             {showTitle ? (
@@ -51,17 +58,21 @@ export function FilterGroup({
                     <SelectTrigger
                         className={`h-10 w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 ${filter.width || "sm:w-[160px]"}`}
                     >
-                        <SelectValue placeholder={filter.placeholder || filter.label} />
+                        <span className="truncate text-sm">{optionLabel(filter)}</span>
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
                         <SelectItem value={`Tất cả ${filter.label}`} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
                             Tất cả {filter.label}
                         </SelectItem>
-                        {filter.options.map((opt) => (
-                            <SelectItem key={opt} value={opt} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                                {opt}
+                        {filter.options.map((opt) => {
+                            const value = typeof opt === "string" ? opt : opt.value;
+                            const label = typeof opt === "string" ? opt : opt.label;
+                            return (
+                            <SelectItem key={value} value={value} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                                {label}
                             </SelectItem>
-                        ))}
+                            );
+                        })}
                     </SelectContent>
                 </Select>
             ))}
