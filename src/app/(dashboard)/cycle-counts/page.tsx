@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useReducer } from "react";
 import Link from "next/link";
@@ -228,7 +228,7 @@ export default function CycleCountsPage() {
                         <Link href={`/cycle-counts/${row.id}`} className="hover:underline">
                           <div className="font-mono text-xs font-bold text-primary">{row.countNumber || row.id}</div>
                         </Link>
-                        <div className="mt-1 text-xs text-muted-foreground">{row.title || "Không có tiêu đề"}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{row.description || "Không có tiêu đề"}</div>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-foreground">
                         <div className="font-semibold">{row.warehouseName || row.warehouseId || "Kho chưa xác định"}</div>

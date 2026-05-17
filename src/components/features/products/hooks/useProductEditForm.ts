@@ -11,6 +11,7 @@ import {
   useGetProductByIdQuery,
 } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { apiErrMessage } from "@/types/api";
 
 export function useProductEditForm(productId: string) {
@@ -36,6 +37,7 @@ export function useProductEditForm(productId: string) {
       isFragile: false,
       isHazmat: false,
       isHeavy: false,
+      supplierId: "",
       status: "ACTIVE",
     },
   });
@@ -50,6 +52,10 @@ export function useProductEditForm(productId: string) {
     error: categoryError,
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
+  const {
+    data: supplierData,
+    isLoading: isLoadingSuppliers,
+  } = useGetSuppliersQuery({ size: 100 });
 
   useEffect(() => {
     if (!data?.data) return;
@@ -68,6 +74,7 @@ export function useProductEditForm(productId: string) {
       isFragile: Boolean(p.isFragile),
       isHazmat: Boolean(p.isHazmat),
       isHeavy: Boolean(p.isHeavy),
+      supplierId: p.primarySupplierId ?? "",
       status: p.status ?? "ACTIVE",
     });
   }, [data, reset]);
@@ -88,6 +95,7 @@ export function useProductEditForm(productId: string) {
         weightKg: formValues.weightKg ? Number(formValues.weightKg) : null,
         volumeCm3: formValues.volumeCm3 ? Number(formValues.volumeCm3) : null,
         minStockQty: formValues.minStock ? Number(formValues.minStock) : null,
+        primarySupplierId: formValues.supplierId?.trim() || null,
         isLotTracked: Boolean(formValues.isLotTracked),
         isExpiryTracked: Boolean(formValues.isExpiryTracked),
         isFrozen: Boolean(formValues.isFrozen),
@@ -127,6 +135,8 @@ export function useProductEditForm(productId: string) {
     isLoadingCategories,
     categoryError,
     refetchCategories,
+    supplierData,
+    isLoadingSuppliers,
     onValid,
     onInvalid,
   };
