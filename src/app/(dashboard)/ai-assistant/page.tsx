@@ -5,7 +5,6 @@ import {
   Bot,
   Boxes,
   ClipboardList,
-  Loader2,
   Pause,
   RotateCcw,
   Send,
@@ -18,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
 import { axiosInstance } from "@/lib/axios-instance";
-import { API_BASE_URL } from "@/lib/constants";
 
 interface Message {
   id: string;
@@ -26,12 +24,6 @@ interface Message {
   content: string;
 }
 
-const INITIAL_MESSAGE: Message = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Tôi có thể hỗ trợ tra cứu tồn kho, đơn nhập/xuất, cảnh báo thiếu hàng và gợi ý thao tác vận hành. Bạn muốn kiểm tra nội dung nào?",
-};
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -39,6 +31,13 @@ const SUGGESTIONS = [
   "Đơn xuất nào cần ưu tiên xử lý?",
   "Kiểm tra các đơn nhập đang chờ putaway",
 ];
+
+const INITIAL_MESSAGE: Message = {
+  id: "initial-assistant-message",
+  role: "assistant",
+  content:
+    "Xin chào, tôi là trợ lý AI vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
+};
 
 function createMessageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -53,7 +52,7 @@ function createSessionId() {
 
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -64,6 +63,7 @@ export default function AiAssistantPage() {
   const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
   const sessionIdRef = useRef(createSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const busy = isStreaming || streamingMessageId !== null;
 
   const scrollMessagesToEnd = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -86,11 +86,9 @@ export default function AiAssistantPage() {
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
     if (!trimmed) return;
-    if (isStreaming || isFetching) {
+    if (busy || isFetching) {
       // cancel any in-progress stream before sending a new question
       await cancelStream();
-      // small pause to allow abort/cleanup
-      await new Promise((r) => setTimeout(r, 120));
     }
 
     const userMsg: Message = {
@@ -125,6 +123,11 @@ export default function AiAssistantPage() {
       const result = await streamPromise.unwrap();
       if (result.aborted) {
         if (activeRequestId.current === requestId) {
+          if (result.text) {
+            setMessages((prev) =>
+              prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, content: result.text } : msg))
+            );
+          }
           activeStreamMsgId.current = null;
           activeRequestId.current = null;
           activeTriggerRef.current = null;
@@ -135,6 +138,19 @@ export default function AiAssistantPage() {
       }
       // clear active streaming id after stream finishes
       if (activeRequestId.current === requestId) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content:
+                    result.text ||
+                    "Tôi chưa nhận được nội dung trả lời. Bạn vui lòng thử lại.",
+                }
+              : msg
+          )
+        );
+        scrollMessagesToEnd();
         activeStreamMsgId.current = null;
         activeRequestId.current = null;
         activeTriggerRef.current = null;
@@ -149,7 +165,7 @@ export default function AiAssistantPage() {
               ? {
                   ...msg,
                   content:
-                    "Không thể kết nối trợ lý AI lúc này. Vui lòng kiểm tra backend hoặc thử lại sau.",
+                    "Không thể kết nối trợ lý AI lúc này. Vui lòng kiểm tra hoặc thử lại sau.",
                 }
               : msg
           )
@@ -167,8 +183,6 @@ export default function AiAssistantPage() {
   async function cancelStream() {
     const targetRequestId = activeRequestId.current;
     try {
-      activeTriggerRef.current?.abort();
-
       // Optimistically mark the active streaming assistant message as cancelled
       const targetId = activeStreamMsgId.current ?? currentAssistantMsgId.current;
       if (targetId) {
@@ -187,8 +201,14 @@ export default function AiAssistantPage() {
       setStreamingMessageId(null);
       setIsStreaming(false);
 
-      await axiosInstance.post(`${API_BASE_URL}/v1/ai/cancel`, null, {
+      const cancelRequest = axiosInstance.post("/v1/ai/cancel", null, {
         params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
+      });
+
+      activeTriggerRef.current?.abort();
+
+      void cancelRequest.catch((error) => {
+        console.error("Cancel stream error", error);
       });
     } catch (err) {
       console.error("Cancel stream error", err);
@@ -216,7 +236,7 @@ export default function AiAssistantPage() {
   return (
     <section className="flex h-[calc(100svh-7.5rem)] min-h-[38rem] flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm">
       <AiAssistantHeader
-        busy={isStreaming || isFetching}
+        busy={busy}
         onReset={resetConversation}
       />
 
@@ -225,14 +245,14 @@ export default function AiAssistantPage() {
 
         <div className="flex min-h-0 flex-col">
           <AiMessages
-            busy={isStreaming || isFetching}
+            busy={busy}
             messages={messages}
             streamingMessageId={streamingMessageId}
             messagesEndRef={messagesEndRef}
             onCancel={cancelStream}
           />
           <AiComposer
-            busy={isStreaming || isFetching}
+            busy={busy}
             input={input}
             onInputChange={setInput}
             onCancel={cancelStream}
@@ -398,8 +418,7 @@ function AiMessageBubble({
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            <span>Đang soạn câu trả lời…</span>
+            <TypingDots />
             {busy && isStreaming ? (
               <Button
                 type="button"
@@ -422,6 +441,20 @@ function AiMessageBubble({
         </div>
       ) : null}
     </article>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className="flex h-6 items-center gap-1" aria-label="AI đang trả lời">
+      {[0, 1, 2].map((dot) => (
+        <span
+          key={dot}
+          className="size-2 rounded-full bg-muted-foreground animate-bounce"
+          style={{ animationDelay: `${dot * 120}ms` }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -455,7 +488,7 @@ function AiComposer({
           placeholder="Hỏi AI về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành…"
           className="max-h-36 min-h-12 resize-none rounded-lg bg-background text-sm"
         />
-        {busy && !input.trim() ? (
+        {busy ? (
           <Button
             type="button"
             size="icon"
@@ -466,17 +499,16 @@ function AiComposer({
           >
             <Pause className="size-4" />
           </Button>
-        ) : (
-          <Button
-            type="submit"
-            size="icon"
-            className="size-12 shrink-0 rounded-lg"
-            disabled={!input.trim()}
-            aria-label="Gửi câu hỏi"
-          >
-            <Send className="size-4" />
-          </Button>
-        )}
+        ) : null}
+        <Button
+          type="submit"
+          size="icon"
+          className="size-12 shrink-0 rounded-lg"
+          disabled={!input.trim()}
+          aria-label="Gửi câu hỏi"
+        >
+          <Send className="size-4" />
+        </Button>
       </div>
       <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
         Nhấn Enter để gửi, Shift + Enter để xuống dòng.

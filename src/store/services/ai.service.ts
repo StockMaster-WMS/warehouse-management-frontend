@@ -118,10 +118,9 @@ export const aiApi = baseApi.injectEndpoints({
           }
           return { data: { requestId: arg.requestId, text: fullText } };
         } catch (err) {
-          if (err instanceof DOMException && err.name === "AbortError") {
+          if (signal.aborted || (err instanceof DOMException && err.name === "AbortError")) {
             return { data: { requestId: arg.requestId, text: fullText, aborted: true } };
           }
-          console.error("AI Stream Error:", err);
           return {
             error: {
               status: undefined,
