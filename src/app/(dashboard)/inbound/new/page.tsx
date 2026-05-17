@@ -330,7 +330,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   // Auto-focus first qty input
   useEffect(() => {
     if (!detailLoading) {
-      setTimeout(() => firstInputRef.current?.focus(), 150);
+      const focusTimer = window.setTimeout(() => firstInputRef.current?.focus(), 150);
+      return () => window.clearTimeout(focusTimer);
     }
   }, [detailLoading]);
 
