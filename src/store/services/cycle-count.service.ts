@@ -1,4 +1,4 @@
-import { baseApi } from "@/store/services/api";
+﻿import { baseApi } from "@/store/services/api";
 import {
   normalizeApiResponsePaged,
   type ApiResponse,
@@ -9,6 +9,7 @@ import type {
   CycleCount,
   CycleCountLine,
   CycleCountStatus,
+  RecordCycleCountResult,
 } from "@/types/cycle-count";
 
 export type GetCycleCountsParams = {
@@ -159,9 +160,11 @@ const cycleCountApi = baseApi.injectEndpoints({
         method: "POST",
         data: {
           warehouseId: body.warehouseId,
-          description: body.description || body.title,
+          description: body.description,
           scheduledAt: body.scheduledAt,
-          items: body.items ?? [],
+          scope: "scope" in body ? body.scope : undefined,
+          scopeValue: "scopeValue" in body ? body.scopeValue : undefined,
+          items: "items" in body ? body.items : [],
         },
       }),
       transformResponse: normalizeCycleCountResponse,
@@ -179,24 +182,47 @@ const cycleCountApi = baseApi.injectEndpoints({
 
     recordCycleCount: builder.mutation<
       ApiResponse<CycleCount>,
-      { id: string; lineId: string; countedQty: number; note?: string }
+      { id: string; results: RecordCycleCountResult[] }
     >({
-      query: ({ id, lineId, countedQty, note }) => ({
+      query: ({ id, results }) => ({
         url: `/cycle-counts/${id}/record`,
         method: "POST",
-        data: { itemId: lineId, countedQty, notes: note },
+        data: { results },
       }),
       transformResponse: normalizeCycleCountResponse,
-      invalidatesTags: (_r, _e, arg) => [{ type: "CycleCount", id: arg.id }],
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "CycleCount", id: arg.id },
+        { type: "CycleCount", id: "LIST" },
+      ],
     }),
 
-    completeCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
+    /** Nộp kết quả: IN_PROGRESS → COMPLETED (chờ duyệt) */
+    submitCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
       query: (id) => ({ url: `/cycle-counts/${id}/complete`, method: "POST" }),
       transformResponse: normalizeCycleCountResponse,
       invalidatesTags: (_r, _e, id) => [
         { type: "CycleCount", id },
         { type: "CycleCount", id: "LIST" },
+      ],
+    }),
+
+    /** Duyệt & điều chỉnh tồn kho: COMPLETED → APPROVED */
+    completeCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
+      query: (id) => ({ url: `/cycle-counts/${id}/approve`, method: "POST" }),
+      transformResponse: normalizeCycleCountResponse,
+      invalidatesTags: (_r, _e, id) => [
+        { type: "CycleCount", id },
+        { type: "CycleCount", id: "LIST" },
         { type: "Stock", id: "LIST" },
+      ],
+    }),
+
+    cancelCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
+      query: (id) => ({ url: `/cycle-counts/${id}/cancel`, method: "POST" }),
+      transformResponse: normalizeCycleCountResponse,
+      invalidatesTags: (_r, _e, id) => [
+        { type: "CycleCount", id },
+        { type: "CycleCount", id: "LIST" },
       ],
     }),
 
@@ -209,5 +235,7 @@ export const {
   useCreateCycleCountMutation,
   useStartCycleCountMutation,
   useRecordCycleCountMutation,
+  useSubmitCycleCountMutation,
   useCompleteCycleCountMutation,
+  useCancelCycleCountMutation,
 } = cycleCountApi;

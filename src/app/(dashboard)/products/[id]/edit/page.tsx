@@ -1,8 +1,8 @@
 "use client";
 
-import { use, type ReactNode } from "react";
+import { use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Info, Ruler, Save } from "lucide-react";
+import { AlertCircle, ArrowLeft, Info, Ruler, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +18,6 @@ import {
 import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelectItems";
 import { ProductFormField, useProductEditForm } from "@/components/features/products";
 import { getProductCategoryDisplayName } from "@/lib/product-display";
-import { AlertCircle } from "lucide-react";
 import { Controller } from "react-hook-form";
 import { Switch } from "@/components/ui/switch";
 
@@ -34,7 +33,7 @@ export default function EditProductPage({
     register,
     handleSubmit,
     control,
-      formState,
+    formState,
     submitMessage,
     data,
     error,
@@ -45,11 +44,13 @@ export default function EditProductPage({
     isLoadingCategories,
     categoryError,
     refetchCategories,
+    supplierData,
+    isLoadingSuppliers,
     onValid,
     onInvalid,
   } = useProductEditForm(id);
 
-    const { errors, isSubmitting } = formState;
+  const { errors, isSubmitting } = formState;
 
   if (isLoading) {
     return (
@@ -197,6 +198,45 @@ export default function EditProductPage({
                           {categoryData?.data?.content?.length ? (
                             <CategoryTreeSelectItems categories={categoryData.data.content} />
                           ) : null}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </ProductFormField>
+                <ProductFormField label="Nhà cung cấp" htmlFor="supplier" error={errors.supplierId?.message}>
+                  <Controller
+                    name="supplierId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          id="supplier"
+                          aria-invalid={!!errors.supplierId}
+                          className="h-auto min-h-10 w-full min-w-0 border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingSuppliers
+                                ? "Đang tải nhà cung cấp..."
+                                : "Chọn nhà cung cấp..."
+                            }
+                          >
+                            {(val) => {
+                              if (!val) return null;
+                              const supplier = supplierData?.data?.content?.find((item) => item.id === val);
+                              return supplier ? supplier.name : "Đang tải nhà cung cấp...";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {supplierData?.data?.content?.map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     )}
@@ -370,28 +410,6 @@ export default function EditProductPage({
           </div>
         </div>
       </form>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  htmlFor,
-  error,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <label htmlFor={htmlFor} className="text-xs font-bold uppercase text-slate-500">
-        {label}
-      </label>
-      {children}
-      {error ? <p className="text-[11px] font-medium text-rose-600">{error}</p> : null}
     </div>
   );
 }

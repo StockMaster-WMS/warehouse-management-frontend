@@ -3,8 +3,12 @@ import type { ApiResponse } from "@/types/api";
 export interface Stock {
   id: string;
   productId: string;
+  productSku?: string | null;
+  productName?: string | null;
   warehouseId: string;
   locationId: string;
+  locationCode?: string | null;
+  warehouseCode?: string | null;
   lotNumber: string;
   expiryDate: string | null;
   qtyOnHand: number;

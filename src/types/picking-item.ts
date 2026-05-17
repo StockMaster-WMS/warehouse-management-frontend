@@ -13,6 +13,7 @@ export interface PickingItem {
   createdAt?: string | null;
   updatedAt?: string | null;
   salesOrderNumber?: string | null;
+  assigneeId?: string | null;
   
   // Extended fields from detailed API
   productSku?: string | null;
