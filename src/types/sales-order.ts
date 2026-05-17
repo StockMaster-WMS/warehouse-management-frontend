@@ -69,7 +69,10 @@ export function salesOrderStatusColor(status: SalesOrderStatus | null | undefine
 
 export function formatShippingShort(addr: ShippingAddress | null | undefined): string {
   if (!addr) return "";
-  const parts = [addr.line1, addr.ward, addr.district, addr.city].map((s) => (s ?? "").trim()).filter(Boolean);
+  const parts = [addr.line1, addr.ward, addr.district, addr.city].flatMap((s) => {
+    const value = (s ?? "").trim();
+    return value ? [value] : [];
+  });
   return parts.join(", ");
 }
 

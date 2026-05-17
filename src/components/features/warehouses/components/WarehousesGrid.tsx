@@ -27,6 +27,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrMessage } from "@/types/api";
 import type { Warehouse } from "@/types/warehouse";
 
+const viDateFormatter = new Intl.DateTimeFormat("vi-VN");
+
+function formatDate(value?: string | null) {
+  return value ? viDateFormatter.format(new Date(value)) : "—";
+}
+
 type WarehousesGridProps = {
   warehouses: Warehouse[];
   error: unknown;
@@ -134,9 +140,7 @@ export function WarehousesGrid({
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {warehouses.map((warehouse) => {
-              const createdDate = warehouse.createdAt
-                ? new Date(warehouse.createdAt).toLocaleDateString("vi-VN")
-                : "—";
+              const createdDate = formatDate(warehouse.createdAt);
 
               return (
                 <div

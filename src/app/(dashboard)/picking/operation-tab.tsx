@@ -40,7 +40,7 @@ export function OperationTab() {
     const [pickedQty, setPickedQty] = useState<string>("");
 
     const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
-    const tasks = useMemo(() => [...allItems].sort((a, b) => (a.pickSequence || 0) - (b.pickSequence || 0)), [allItems]);
+    const tasks = useMemo(() => allItems.toSorted((a, b) => (a.pickSequence || 0) - (b.pickSequence || 0)), [allItems]);
 
     const activeSummary = useMemo(() => selectedTaskId ? tasks.find(t => t.id === selectedTaskId) || null : null, [tasks, selectedTaskId]);
     const { data: detailData } = useGetPickingItemByIdQuery(activeSummary?.id as string, { skip: !activeSummary?.id });
@@ -301,7 +301,6 @@ export function OperationTab() {
                                 </p>
                                 <Input
                                     placeholder={placeholder}
-                                    autoFocus={currentStep === key}
                                     className="mt-0.5 h-8 border-none bg-transparent p-0 text-base font-black uppercase placeholder:text-slate-300 focus-visible:ring-0 shadow-none"
                                     value={value}
                                     disabled={currentStep !== key}

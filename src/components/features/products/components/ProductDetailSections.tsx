@@ -20,9 +20,10 @@ export function formatLocationCode(location?: Location) {
     location.rack,
     location.level != null ? String(location.level) : "",
     location.bin,
-  ]
-    .map((value) => (typeof value === "string" ? value.trim() : value))
-    .filter(Boolean);
+  ].flatMap((value) => {
+    const normalized = typeof value === "string" ? value.trim() : value;
+    return normalized ? [normalized] : [];
+  });
   return pieces.length ? pieces.join("-") : "--";
 }
 
@@ -32,8 +33,10 @@ function getLocationParts(location?: Location, fallbackLocationId?: string) {
     if (!normalized) return null;
     const chunks = normalized
       .split(/[-_/\.\s]+/)
-      .map((value) => value.trim())
-      .filter(Boolean);
+      .flatMap((value) => {
+        const trimmed = value.trim();
+        return trimmed ? [trimmed] : [];
+      });
     if (chunks.length < 3) return null;
     return {
       zone: chunks[0],
@@ -253,7 +256,7 @@ export function StockByLocationList({
     );
   }
 
-  const sortedStocks = [...stocks].sort((a, b) => {
+  const sortedStocks = stocks.toSorted((a, b) => {
     const availableDiff = Number(b.qtyAvailable || 0) - Number(a.qtyAvailable || 0);
     if (availableDiff !== 0) return availableDiff;
     return Number(b.qtyOnHand || 0) - Number(a.qtyOnHand || 0);

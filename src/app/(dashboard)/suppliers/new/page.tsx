@@ -39,7 +39,7 @@ function FieldError({ msg }: { msg?: string }) {
 }
 
 export default function NewSupplierPage() {
-  const router = useRouter();
+  const { push } = useRouter();
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -117,7 +117,7 @@ export default function NewSupplierPage() {
         return;
       }
       toast.success(res.message || "Đã tạo nhà cung cấp thành công");
-      router.push("/suppliers");
+      push("/suppliers");
     } catch (err) {
       const msg = apiErrMessage(err);
       if (msg.includes("Mã nhà cung cấp đã tồn tại")) {
@@ -141,7 +141,7 @@ export default function NewSupplierPage() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
             onClick={() => {
-              if (confirmLeave()) router.push("/suppliers");
+              if (confirmLeave()) push("/suppliers");
             }}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -373,7 +373,7 @@ export default function NewSupplierPage() {
                   variant="outline"
                   className="w-full border-slate-200 bg-white"
                   onClick={() => {
-                    if (confirmLeave()) router.push("/suppliers");
+                    if (confirmLeave()) push("/suppliers");
                   }}
                 >
                   Hủy bỏ

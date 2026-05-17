@@ -5,6 +5,8 @@ import { MoveLeft, HelpCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const COPYRIGHT_YEAR = 2026;
+
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
@@ -42,7 +44,7 @@ export default function NotFound() {
       </div>
 
       <div className="mt-16 text-sm text-slate-400">
-        © {new Date().getFullYear()} StockMaster. All rights reserved.
+        © {COPYRIGHT_YEAR} StockMaster. All rights reserved.
       </div>
     </div>
   );

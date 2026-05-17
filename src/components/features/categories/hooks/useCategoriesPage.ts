@@ -61,7 +61,7 @@ export function useCategoriesPageLogic() {
       for (const category of categories) {
         const name = category.name?.toLowerCase() ?? "";
         const code = category.code?.toLowerCase() ?? "";
-        if (name.includes(normalizedQuery) || code.includes(normalizedQuery)) {
+        if (name.indexOf(normalizedQuery) !== -1 || code.indexOf(normalizedQuery) !== -1) {
           matchedIds.add(category.id);
         }
       }
@@ -88,13 +88,14 @@ export function useCategoriesPageLogic() {
     }
 
     const visibleSet = hasQuery ? new Set<string>([...matchedIds, ...ancestorIds]) : null;
+    const visibleIds = visibleSet ?? new Set<string>();
 
     const visibleNodes: Array<{ cat: Category; treeDepth: number; hasChildren: boolean }> = [];
 
     const walk = (category: Category, depth: number) => {
       const children = childrenByParentId.get(category.id) ?? [];
       const hasChildren = children.length > 0;
-      const shouldShow = !hasQuery || visibleSet!.has(category.id);
+      const shouldShow = !hasQuery || visibleIds.has(category.id);
 
       if (shouldShow) {
         visibleNodes.push({ cat: category, treeDepth: depth, hasChildren });

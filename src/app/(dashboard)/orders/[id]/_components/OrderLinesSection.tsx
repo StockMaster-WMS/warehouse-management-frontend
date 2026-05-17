@@ -120,7 +120,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   );
   const lineStockRows = useMemo(() => {
     const rows = lineStocksRes?.data?.content ?? [];
-    return [...rows].sort((a, b) => Number(b.qtyAvailable ?? 0) - Number(a.qtyAvailable ?? 0));
+    return rows.toSorted((a, b) => Number(b.qtyAvailable ?? 0) - Number(a.qtyAvailable ?? 0));
   }, [lineStocksRes]);
   const lineStockTotalAvailable = useMemo(
     () => lineStockRows.reduce((s, r) => s + Number(r.qtyAvailable ?? 0), 0),
@@ -154,7 +154,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       if (prev) prev.totalAvail += add;
       else map.set(wid, { warehouseId: wid, label, totalAvail: add });
     }
-    return [...map.values()].sort((a, b) => b.totalAvail - a.totalAvail);
+    return Array.from(map.values()).toSorted((a, b) => b.totalAvail - a.totalAvail);
   }, [productStocksRes]);
 
   const newOrderWarehousePrefillId = useMemo(() => {
@@ -194,7 +194,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       else grouped.set(key, { row: r, avail });
     }
 
-    const availableRows = [...grouped.values()].sort((a, b) => b.avail - a.avail);
+    const availableRows = Array.from(grouped.values()).toSorted((a, b) => b.avail - a.avail);
 
     const totalAvail = availableRows.reduce((s, x) => s + x.avail, 0);
     if (totalAvail < qty) {

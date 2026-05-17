@@ -75,7 +75,7 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 text-center space-y-3 bg-red-50 rounded-2xl border border-red-100">
+      <div className="flex flex-col items-center justify-center gap-y-3 rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
         <AlertCircle className="h-10 w-10 text-red-500" />
         <p className="text-xs font-bold text-red-900 leading-relaxed">{error}</p>
         <p className="text-[10px] text-red-600">Nếu bạn đang test qua IP, hãy sử dụng Localhost trên máy tính.</p>
@@ -84,7 +84,7 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-black shadow-inner relative min-h-[300px] flex items-center justify-center">
+    <div className="overflow-hidden rounded-2xl bg-zinc-950 shadow-inner relative min-h-[300px] flex items-center justify-center">
       <div id="reader" className="w-full"></div>
     </div>
   );

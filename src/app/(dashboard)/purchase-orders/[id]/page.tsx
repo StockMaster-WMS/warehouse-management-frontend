@@ -76,6 +76,15 @@ import { PermissionControl } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundReceipt } from "@/types/inbound-receipt";
 
+const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+function formatDateTime(value?: string | null) {
+  return value ? viDateTimeFormatter.format(new Date(value)) : "—";
+}
+
 /* ── Status configs ────────────────────────────────────────────────── */
 const PO_STATUS: Record<string, { label: string; cls: string; dotCls: string }> = {
   DRAFT: {
@@ -234,9 +243,12 @@ export default function PurchaseOrderDetailPage({
 
   /* ── Open GRN dialog ── */
   function openGrn() {
-    const lines = items
-      .filter((item) => Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0) > 0)
-      .map((item) => ({ poItemId: item.id, receivedQty: "", note: "" }));
+    const lines: { poItemId: string; receivedQty: string; note: string }[] = [];
+    for (const item of items) {
+      if (Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0) > 0) {
+        lines.push({ poItemId: item.id, receivedQty: "", note: "" });
+      }
+    }
     setGrnLines(lines);
     setGrnLocationId("");
     setGrnNote("");
@@ -278,18 +290,22 @@ export default function PurchaseOrderDetailPage({
 
   async function handleSubmitGrn(e: React.FormEvent) {
     e.preventDefault();
-    const validLines = grnLines
-      .map((l) => {
-        const qty = Number(l.receivedQty.replace(",", "."));
-        if (!qty || Number.isNaN(qty) || qty <= 0) return null;
-        return { poItemId: l.poItemId, receivedQty: qty, ...(l.note.trim() ? { note: l.note.trim() } : {}) };
-      })
-      .filter(Boolean) as { poItemId: string; receivedQty: number; note?: string }[];
+    const validLines: { poItemId: string; receivedQty: number; note?: string }[] = [];
+    for (const line of grnLines) {
+      const qty = Number(line.receivedQty.replace(",", "."));
+      if (!qty || Number.isNaN(qty) || qty <= 0) continue;
+      validLines.push({
+        poItemId: line.poItemId,
+        receivedQty: qty,
+        ...(line.note.trim() ? { note: line.note.trim() } : {}),
+      });
+    }
 
     if (validLines.length === 0) { toast.error("Nhập số lượng ít nhất 1 dòng hàng"); return; }
 
+    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const line of validLines) {
-      const item = items.find((i) => i.id === line.poItemId);
+      const item = itemsById.get(line.poItemId);
       if (!item) continue;
       const remain = Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0);
       if (line.receivedQty > remain) {
@@ -431,8 +447,8 @@ export default function PurchaseOrderDetailPage({
       {detailLoading ? (
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            {["supplier", "warehouse", "expected-date", "status"].map((key) => (
+              <div key={key} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <Skeleton className="h-3 w-16 mb-2 rounded" />
                 <Skeleton className="h-6 w-20 rounded" />
               </div>
@@ -596,12 +612,12 @@ export default function PurchaseOrderDetailPage({
                     <InfoRow
                       icon={<Clock className="h-3.5 w-3.5" />}
                       label="Ngày tạo đơn"
-                      value={po.createdAt ? new Date(po.createdAt).toLocaleString("vi-VN") : "—"}
+                      value={formatDateTime(po.createdAt)}
                     />
                     <InfoRow
                       icon={<Activity className="h-3.5 w-3.5" />}
                       label="Cập nhật lần cuối"
-                      value={po.updatedAt ? new Date(po.updatedAt).toLocaleString("vi-VN") : "—"}
+                      value={formatDateTime(po.updatedAt)}
                     />
                   </div>
                 </div>
@@ -716,7 +732,7 @@ export default function PurchaseOrderDetailPage({
                             </TableCell>
                             <TableCell className="max-w-48 truncate px-3 py-3.5 text-sm text-slate-600 dark:text-slate-400">{r.note ?? "—"}</TableCell>
                             <TableCell className="px-3 py-3.5 pr-5 text-right text-xs text-slate-500">
-                              {r.createdAt ? new Date(r.createdAt).toLocaleString("vi-VN") : "—"}
+                              {formatDateTime(r.createdAt)}
                             </TableCell>
                           </TableRow>
                         ))}

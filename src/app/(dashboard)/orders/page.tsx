@@ -1,17 +1,19 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PermissionControl } from "@/components/permission-control";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useOrdersPageLogic,
   OrdersSearchSection,
   OrdersTable,
 } from "@/components/features/orders";
 
-export default function OrderPage() {
+function OrderPageContent() {
   const logic = useOrdersPageLogic();
 
   return (
@@ -81,5 +83,20 @@ export default function OrderPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-[520px] w-full rounded-2xl" />
+        </div>
+      }
+    >
+      <OrderPageContent />
+    </Suspense>
   );
 }

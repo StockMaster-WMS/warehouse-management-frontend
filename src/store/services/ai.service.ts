@@ -78,14 +78,13 @@ export const aiApi = baseApi.injectEndpoints({
             let buffer = "";
 
             const appendEvent = (event: string) => {
-              const content = event
-                .split(/\r?\n/)
-                .filter((line) => line.startsWith("data:"))
-                .map((line) => {
-                  const data = line.slice("data:".length);
-                  return data.startsWith(" ") ? data.slice(1) : data;
-                })
-                .join("\n");
+              const dataLines: string[] = [];
+              for (const line of event.split(/\r?\n/)) {
+                if (!line.startsWith("data:")) continue;
+                const data = line.slice("data:".length);
+                dataLines.push(data.startsWith(" ") ? data.slice(1) : data);
+              }
+              const content = dataLines.join("\n");
 
               if (!content) return;
 

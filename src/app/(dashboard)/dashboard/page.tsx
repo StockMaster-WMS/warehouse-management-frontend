@@ -27,8 +27,10 @@ const METRIC_META: Record<string, Pick<StatItem, "icon" | "color">> = {
   "low-stock": { icon: AlertTriangle, color: "text-rose-500" },
 };
 
+const viNumberFormatter = new Intl.NumberFormat("vi-VN");
+
 function formatNumber(value: number) {
-  return new Intl.NumberFormat("vi-VN").format(value);
+  return viNumberFormatter.format(value);
 }
 
 function NoticeIcon({ type }: { type: DashboardNoticeType }) {

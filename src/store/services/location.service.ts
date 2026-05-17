@@ -108,7 +108,13 @@ const locationApi = baseApi.injectEndpoints({
     }),
     getLocationsByIds: builder.query<ApiResponse<Location[]>, string[]>({
       queryFn: async (ids, _api, _extraOptions, baseQuery) => {
-        const uniqueIds = [...new Set(ids.map(id => id.trim()).filter(Boolean))];
+        const uniqueIds = Array.from(
+          ids.reduce((set, id) => {
+            const trimmedId = id.trim();
+            if (trimmedId) set.add(trimmedId);
+            return set;
+          }, new Set<string>()),
+        );
         if (uniqueIds.length === 0) {
           return { data: { data: [], message: "OK", success: true, timestamp: new Date().toISOString() } };
         }

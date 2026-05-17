@@ -55,16 +55,18 @@ import {
 } from "@/types/supplier";
 
 /* ── helpers ── */
+const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
+    return viDateTimeFormatter.format(new Date(iso));
   } catch {
     return iso;
   }
@@ -189,7 +191,7 @@ export default function SupplierDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(paramsPromise);
-  const router = useRouter();
+  const { push } = useRouter();
 
   const {
     data: supplierRes,
@@ -216,7 +218,7 @@ export default function SupplierDetailPage({
         return;
       }
       toast.success(res.message || "Đã xóa nhà cung cấp");
-      router.push("/suppliers");
+      push("/suppliers");
     } catch (err) {
       const msg = apiErrMessage(err);
       if (msg.includes("đơn nhập hàng")) {

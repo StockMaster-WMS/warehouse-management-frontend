@@ -29,7 +29,7 @@ export function AuthGuard({
   children: React.ReactNode; 
   initialHasSession?: boolean;
 }) {
-  const router = useRouter();
+  const { replace } = useRouter();
   const pathname = usePathname();
   const refreshAttempted = useRef(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function AuthGuard({
   useEffect(() => {
     if (!hasAccessToken) {
       if (hasExplicitLogoutSnapshot()) {
-        router.replace("/login");
+        replace("/login");
         return;
       }
 
@@ -84,7 +84,7 @@ export function AuthGuard({
           if (!token) {
             markExplicitLogout();
             clearAccessToken();
-            router.replace("/login");
+            replace("/login");
           }
         })
         .catch(() => {
@@ -105,7 +105,7 @@ export function AuthGuard({
       canAccessDashboard &&
       pathname !== "/dashboard"
     ) {
-      router.replace("/dashboard");
+      replace("/dashboard");
     }
   }, [
     canAccessCurrentPath,
@@ -114,7 +114,7 @@ export function AuthGuard({
     pathname,
     refreshToken,
     retryNonce,
-    router,
+    replace,
     user,
   ]);
 

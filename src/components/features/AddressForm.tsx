@@ -34,12 +34,13 @@ async function loadProvinceOptions(): Promise<SelectOption[]> {
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) return [];
 
-    return data
-        .map((item) => ({
-            label: String((item as { name?: string }).name || ""),
-            value: String((item as { code?: string | number }).code || ""),
-        }))
-        .filter((item) => item.label && item.value);
+    const options: SelectOption[] = [];
+    for (const item of data) {
+        const label = String((item as { name?: string }).name || "");
+        const value = String((item as { code?: string | number }).code || "");
+        if (label && value) options.push({ label, value });
+    }
+    return options;
 }
 
 async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
@@ -49,12 +50,13 @@ async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) return [];
 
-    return data
-        .map((item) => ({
-            label: String((item as { name?: string }).name || ""),
-            value: String((item as { code?: string | number }).code || ""),
-        }))
-        .filter((item) => item.label && item.value);
+    const options: SelectOption[] = [];
+    for (const item of data) {
+        const label = String((item as { name?: string }).name || "");
+        const value = String((item as { code?: string | number }).code || "");
+        if (label && value) options.push({ label, value });
+    }
+    return options;
 }
 
 export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, required }) => {
