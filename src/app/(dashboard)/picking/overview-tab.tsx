@@ -3,7 +3,8 @@
 import React, { Dispatch, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
-import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2 } from "lucide-react";
+import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Users } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -34,7 +35,11 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useGetPickingItemsQuery, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
+import {
+    useAssignPickingTaskMutation,
+    useGetPickingItemByIdQuery,
+    useGetPickingItemsQuery,
+} from "@/store/services/picking-item.service";
 
 interface GroupedPicking {
     soNumber: string;
@@ -86,6 +91,7 @@ export function OverviewTab() {
     const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
     const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
+    const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
 
     const { data, isLoading, isFetching, isError } = useGetPickingItemsQuery({
         page,
@@ -200,6 +206,26 @@ export function OverviewTab() {
         dispatch({ expandedGroups: { ...expandedGroups, [so]: !expandedGroups[so] } });
     };
 
+    const handleAssignGroup = async (event: React.MouseEvent, group: GroupedPicking) => {
+        event.stopPropagation();
+
+        try {
+            const demoUserId = "00000000-0000-0000-0000-000000000001";
+            await Promise.all(
+                group.items.map((item) =>
+                    assignTask({
+                        id: item.id,
+                        soItemId: item.soItemId,
+                        assigneeId: demoUserId,
+                    }).unwrap(),
+                ),
+            );
+            toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
+        } catch {
+            toast.error("Lỗi khi phân công tác vụ!");
+        }
+    };
+
     const detailItem = detailData?.data;
     const totalElements = data?.data?.total_elements ?? 0;
     const totalPages = data?.data?.total_pages ?? 0;
@@ -244,7 +270,9 @@ export function OverviewTab() {
                 <PickingOverviewTable
                     expandedGroups={expandedGroups}
                     groupedData={groupedData}
+                    isAssigning={isAssigning}
                     isLoading={isLoading}
+                    onAssignGroup={handleAssignGroup}
                     onDispatch={dispatch}
                     onToggleGroup={toggleGroup}
                 />
@@ -331,13 +359,17 @@ function PickingAdvancedFilters({
 function PickingOverviewTable({
     expandedGroups,
     groupedData,
+    isAssigning,
     isLoading,
+    onAssignGroup,
     onDispatch,
     onToggleGroup,
 }: {
     expandedGroups: Record<string, boolean>;
     groupedData: GroupedPicking[];
+    isAssigning: boolean;
     isLoading: boolean;
+    onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
 }) {
@@ -365,6 +397,8 @@ function PickingOverviewTable({
                                 key={group.soNumber}
                                 expanded={expandedGroups[group.soNumber] === true}
                                 group={group}
+                                isAssigning={isAssigning}
+                                onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
                                 onToggleGroup={onToggleGroup}
                             />
@@ -407,11 +441,15 @@ function PickingEmptyRow() {
 function PickingGroupRows({
     expanded,
     group,
+    isAssigning,
+    onAssignGroup,
     onDispatch,
     onToggleGroup,
 }: {
     expanded: boolean;
     group: GroupedPicking;
+    isAssigning: boolean;
+    onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
 }) {
@@ -441,7 +479,17 @@ function PickingGroupRows({
                     </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                    <span className="text-[11px] font-bold text-muted-foreground">Điều phối qua tuyến pick</span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isAssigning || group.items.every((item) => item.assigneeId)}
+                        onClick={(event) => onAssignGroup(event, group)}
+                        className="h-8 gap-1.5 rounded-lg"
+                    >
+                        <Users className="size-3.5" />
+                        Phân công
+                    </Button>
                 </TableCell>
             </TableRow>
 

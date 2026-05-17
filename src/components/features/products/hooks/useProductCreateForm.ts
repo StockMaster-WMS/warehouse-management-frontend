@@ -1,21 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import {
     createProductSchema,
     type CreateProductFormValues,
 } from "../schemas/productFormSchema";
 import { useCreateProductMutation } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 import { apiErrMessage } from "@/types/api";
 
 export function useProductCreateForm() {
+    const router = useRouter();
     const {
         register,
         handleSubmit,
         control,
         formState,
+        setValue,
     } = useForm<CreateProductFormValues>({
         resolver: zodResolver(createProductSchema),
         defaultValues: {
@@ -32,8 +37,19 @@ export function useProductCreateForm() {
             isFragile: false,
             isHazmat: false,
             isHeavy: false,
+            supplierId: "",
+            createdBy: "",
         },
     });
+
+    const { data: currentUser } = useGetCurrentUserQuery();
+
+    // Cập nhật createdBy với ID (UUID) của người dùng hiện tại
+    useEffect(() => {
+        if (currentUser?.id) {
+            setValue("createdBy", currentUser.id);
+        }
+    }, [currentUser, setValue]);
 
     const [submitMessage, setSubmitMessage] = useState("");
     const [createProduct] = useCreateProductMutation();
@@ -44,6 +60,11 @@ export function useProductCreateForm() {
         refetch: refetchCategories,
     } = useGetCategoriesQuery();
 
+    const {
+        data: supplierData,
+        isLoading: isLoadingSuppliers,
+    } = useGetSuppliersQuery({ size: 100 });
+
     const onValid = async (formValues: CreateProductFormValues) => {
         setSubmitMessage("");
         try {
@@ -51,7 +72,7 @@ export function useProductCreateForm() {
                 barcodeEan13: formValues.barcode?.trim() || undefined,
                 name: formValues.name.trim(),
                 categoryId: formValues.category.trim(),
-                primarySupplierId: null,
+                primarySupplierId: formValues.supplierId?.trim() || null,
                 baseUnit: formValues.baseUnit.trim(),
                 weightKg: formValues.weightKg ? Number(formValues.weightKg) : null,
                 volumeCm3: formValues.volumeCm3 ? Number(formValues.volumeCm3) : null,
@@ -62,9 +83,16 @@ export function useProductCreateForm() {
                 isFragile: Boolean(formValues.isFragile),
                 isHazmat: Boolean(formValues.isHazmat),
                 isHeavy: Boolean(formValues.isHeavy),
+                createdBy: formValues.createdBy,
             }).unwrap();
-            setSubmitMessage("Tạo sản phẩm thành công.");
-            toast.success("Đã tạo sản phẩm mới");
+            
+            toast.success("Đã tạo sản phẩm mới thành công!");
+            
+            // Chuyển về trang danh sách sau 1.5s để người dùng kịp đọc thông báo
+            setTimeout(() => {
+                router.push("/products");
+            }, 1500);
+            
         } catch (submitError) {
             const message = apiErrMessage(submitError, "Không thể tạo sản phẩm. Vui lòng thử lại.");
             setSubmitMessage(message);
@@ -88,5 +116,7 @@ export function useProductCreateForm() {
         refetchCategories,
         onValid,
         onInvalid,
+        supplierData,
+        isLoadingSuppliers,
     };
 }

@@ -50,6 +50,7 @@ import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { InboundReceipt, InboundReceiptPrintResponse } from "@/types/inbound-receipt";
 import type { Warehouse } from "@/types/warehouse";
 import { InboundPrintModal } from "./_components/InboundPrintModal";
+import { PermissionControl } from "@/components/permission-control";
 
 const STATUS_OPTIONS = [
   "RECEIVED",
@@ -209,15 +210,17 @@ export default function InboundPage() {
         title="Phiếu nhập kho"
         description="Quản lý phiếu nhập kho (GRN) từ đơn mua hàng."
         actions={
-          <Button
-            render={<Link href="/inbound/new" />}
-            nativeButton={false}
-            size="sm"
-            className="gap-1.5"
-          >
-            <PackagePlus className="h-4 w-4" />
-            Tạo phiếu nhập
-          </Button>
+          <PermissionControl allowedRoles={["ADMIN", "WAREHOUSE_MANAGER"]}>
+            <Button
+              render={<Link href="/inbound/new" />}
+              nativeButton={false}
+              size="sm"
+              className="gap-1.5"
+            >
+              <PackagePlus className="h-4 w-4" />
+              Tạo phiếu nhập
+            </Button>
+          </PermissionControl>
         }
       />
 
@@ -419,15 +422,17 @@ export default function InboundPage() {
                       title="Chưa có phiếu nhập"
                       description="Chưa có phiếu nhập kho nào hoặc không khớp với kết quả tìm kiếm."
                       action={
-                        <Button
-                          render={<Link href="/inbound/new" />}
-                          nativeButton={false}
-                          size="sm"
-                          className="gap-1.5"
-                        >
-                          <PackagePlus className="h-4 w-4" />
-                          Tạo phiếu đầu tiên
-                        </Button>
+                        <PermissionControl allowedRoles={["ADMIN", "WAREHOUSE_MANAGER"]}>
+                          <Button
+                            render={<Link href="/inbound/new" />}
+                            nativeButton={false}
+                            size="sm"
+                            className="gap-1.5"
+                          >
+                            <PackagePlus className="h-4 w-4" />
+                            Tạo phiếu đầu tiên
+                          </Button>
+                        </PermissionControl>
                       }
                     />
                   </TableCell>

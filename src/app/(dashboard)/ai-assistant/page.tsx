@@ -195,6 +195,7 @@ export default function AiAssistantPage() {
         );
         scrollMessagesToEnd();
       }
+      activeTriggerRef.current?.abort();
       activeStreamMsgId.current = null;
       activeRequestId.current = null;
       activeTriggerRef.current = null;
@@ -204,9 +205,6 @@ export default function AiAssistantPage() {
       const cancelRequest = axiosInstance.post("/v1/ai/cancel", null, {
         params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
       });
-
-      activeTriggerRef.current?.abort();
-
       void cancelRequest.catch((error) => {
         console.error("Cancel stream error", error);
       });

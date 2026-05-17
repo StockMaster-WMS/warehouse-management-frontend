@@ -1,4 +1,4 @@
-import { baseApi } from "@/store/services/api";
+﻿import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
 import type { CreatePickingItemPayload, PickingItem, UpdatePickingItemPayload } from "@/types/picking-item";
 
@@ -75,6 +75,45 @@ const pickingItemApi = baseApi.injectEndpoints({
         { type: "SalesOrder" as const, id: "LIST" },
       ],
     }),
+
+    reportPickingException: builder.mutation<ApiResponse<PickingItem>, { id: string; soItemId?: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/picking-items/${id}/exception`,
+        method: "POST",
+        data: { reason },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: arg.id },
+        ...(arg.soItemId ? [{ type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` }] : []),
+        { type: "PickingItem" as const, id: "LIST" },
+      ],
+    }),
+
+    assignPickingTask: builder.mutation<ApiResponse<PickingItem>, { id: string; soItemId?: string; assigneeId: string }>({
+      query: ({ id, assigneeId }) => ({
+        url: `/picking-items/${id}/assign`,
+        method: "POST",
+        data: { assigneeId },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PickingItem" as const, id: arg.id },
+        ...(arg.soItemId ? [{ type: "PickingItem" as const, id: `PARENT-SoItem:${arg.soItemId}` }] : []),
+        { type: "PickingItem" as const, id: "LIST" },
+      ],
+    }),
+
+    completeMobilePicking: builder.mutation<ApiResponse<PickingItem>, string>({
+      query: (id) => ({
+        url: `/picking-items/${id}/complete-mobile`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, id) => [
+        { type: "PickingItem" as const, id },
+        { type: "PickingItem" as const, id: "LIST" },
+        { type: "SalesOrder" as const, id: "LIST" },
+        { type: "Stock" as const, id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -85,5 +124,8 @@ export const {
   useCreatePickingItemMutation,
   useUpdatePickingItemMutation,
   useDeletePickingItemMutation,
+  useReportPickingExceptionMutation,
+  useAssignPickingTaskMutation,
+  useCompleteMobilePickingMutation,
 } = pickingItemApi;
 

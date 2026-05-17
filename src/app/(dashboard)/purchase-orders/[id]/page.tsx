@@ -901,7 +901,6 @@ export default function PurchaseOrderDetailPage({
                         <span className="truncate text-sm">
                           {grnLocationId
                             ? (locationOptions.find((l) => l.id === grnLocationId)?.code ??
-                              locationOptions.find((l) => l.id === grnLocationId)?.name ??
                               grnLocationId)
                             : "Chọn vị trí nhận hàng…"}
                         </span>
@@ -909,7 +908,7 @@ export default function PurchaseOrderDetailPage({
                       <SelectContent className="rounded-xl">
                         {locationOptions.map((loc) => (
                           <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
-                            {loc.code ?? loc.name ?? loc.id}
+                            {loc.code ?? loc.id}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -970,7 +969,6 @@ export default function PurchaseOrderDetailPage({
                   <span className="truncate text-sm">
                     {actualLocationId
                       ? (locationOptions.find((l) => l.id === actualLocationId)?.code ??
-                        locationOptions.find((l) => l.id === actualLocationId)?.name ??
                         actualLocationId)
                       : "Chọn vị trí thực tế…"}
                   </span>
@@ -979,7 +977,7 @@ export default function PurchaseOrderDetailPage({
                   <SelectItem value="__empty__" className="rounded-lg text-slate-400">Chọn vị trí…</SelectItem>
                   {locationOptions.map((loc) => (
                     <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
-                      {loc.code ?? loc.name ?? loc.id}
+                      {loc.code ?? loc.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
