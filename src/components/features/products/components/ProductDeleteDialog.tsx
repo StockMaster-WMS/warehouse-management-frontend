@@ -19,6 +19,10 @@ export function ProductDeleteDialog({
       onOpenChange={onOpenChange}
       onConfirm={onConfirm}
       itemName={itemName}
+      title="Ngừng sử dụng sản phẩm"
+      description="Sản phẩm sẽ được chuyển sang trạng thái ngừng dùng thay vì bị xóa khỏi hệ thống."
+      confirmText="Ngừng sử dụng"
+      variant="warning"
     />
   );
 }

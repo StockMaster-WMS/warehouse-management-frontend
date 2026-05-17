@@ -207,7 +207,7 @@ export default function PurchaseOrderDetailPage({
   const isDraft = poStatus === "DRAFT";
   const canApprove = isDraft && items.length > 0;
   const canReceive = poStatus === "APPROVED" || poStatus === "PARTIAL";
-  const canCancel = poStatus === "DRAFT" || poStatus === "APPROVED" || poStatus === "PARTIAL";
+  const canCancel = poStatus === "DRAFT" || poStatus === "APPROVED";
 
   /* ── Warehouses & Suppliers ── */
   const { data: warehousesRes } = useGetWarehousesForPoQuery({ size: 200 });
@@ -226,7 +226,11 @@ export default function PurchaseOrderDetailPage({
     { warehouseId: selectedWhId, size: 100 },
     { skip: !selectedWhId }
   );
-  const locationOptions = whLocRes?.data?.content ?? [];
+  const locationOptions = Array.isArray(whLocRes?.data?.content)
+    ? whLocRes.data.content
+    : Array.isArray(whLocRes?.data)
+      ? whLocRes.data
+      : [];
 
   /* ── Open GRN dialog ── */
   function openGrn() {

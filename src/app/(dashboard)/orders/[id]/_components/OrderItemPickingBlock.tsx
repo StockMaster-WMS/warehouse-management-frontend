@@ -53,7 +53,7 @@ export function OrderItemPickingBlock({
     const [deleteTarget, setDeleteTarget] = useState<PickingItem | null>(null);
 
     const allowPickingMutation = salesOrderStatus === "PICKING";
-    const allowDeletePicking = salesOrderStatus === "PENDING" || salesOrderStatus === "PICKING";
+    const allowDeletePicking = salesOrderStatus === "PICKING";
     const summary = useMemo(() => computePickedSummary(soItem, picks), [soItem, picks]);
     const product = productsById.get(soItem.productId);
     const remainingQty = Math.max(0, Number(soItem.orderedQty ?? 0) - summary.totalToPick);
@@ -152,7 +152,7 @@ export function OrderItemPickingBlock({
 
     async function onDeletePicking(p: PickingItem) {
         if (!allowDeletePicking) {
-            toast.error("Chỉ được xóa lệnh lấy hàng khi đơn đang CHỜ XỬ LÝ hoặc ĐANG LẤY HÀNG.");
+            toast.error("Chỉ được xóa lệnh lấy hàng khi đơn đang ĐANG LẤY HÀNG.");
             return;
         }
         setDeleteTarget(p);

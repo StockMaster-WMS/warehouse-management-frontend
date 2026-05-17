@@ -120,7 +120,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
 
   { pattern: "/settings", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/security", roles: ["ADMIN"] },
-  { pattern: "/ai-assistant", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/ai-assistant", roles: READ_OPERATION_ROLES },
 ];
 
 function normalizePathname(pathname: string): string {

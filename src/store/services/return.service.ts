@@ -53,6 +53,7 @@ type BackendRmaItem = {
   productId: string;
   expectedQty: number;
   receivedQty?: number | null;
+  receivedLocationId?: string | null;
   lotNumber?: string | null;
   condition?: string | null;
   notes?: string | null;
@@ -83,6 +84,8 @@ function normalizeReturnLine(
     productName: "productName" in item ? item.productName : null,
     expectedQty: Number(item.expectedQty ?? 0),
     receivedQty: Number(item.receivedQty ?? 0),
+    receivedLocationId:
+      "receivedLocationId" in item ? item.receivedLocationId ?? null : null,
     acceptedQty: "acceptedQty" in item ? item.acceptedQty : undefined,
     rejectedQty: "rejectedQty" in item ? item.rejectedQty : undefined,
     reason: "reason" in item ? item.reason : defaultReason,

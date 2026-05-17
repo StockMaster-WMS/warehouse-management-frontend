@@ -119,9 +119,25 @@ export default function CycleCountDetailPage() {
 
   // Local state: map lineId -> actual count entered by user
   const [actualCounts, setActualCounts] = useState<Record<string, number>>({});
-
   const handleRecordChange = (lineId: string, value: string) => {
-    setActualCounts((prev) => ({ ...prev, [lineId]: Number(value) }));
+    if (value.trim() === "") {
+      setActualCounts((prev) => {
+        const next = { ...prev };
+        delete next[lineId];
+        return next;
+      });
+      return;
+    }
+
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue < 0) {
+      return;
+    }
+
+    setActualCounts(prev => ({
+      ...prev,
+      [lineId]: numericValue
+    }));
   };
 
   // ── Actions ────────────────────────────────────────────────────────────────
@@ -139,6 +155,10 @@ export default function CycleCountDetailPage() {
 
   const handleSaveResults = async () => {
     const lines = count?.lines ?? [];
+    if (!count || !isCountingPhase(count.status)) {
+      toast.error("Chỉ ghi nhận kết quả khi đợt kiểm kê đang diễn ra");
+      return;
+    }
     if (lines.length === 0) {
       toast.error("Chưa có dòng kiểm kê. Hãy bấm 'Làm mới' để tải lại.");
       return;
@@ -215,6 +235,10 @@ export default function CycleCountDetailPage() {
   };
 
   const handleComplete = async () => {
+    if (!count || !canApprove(count.status)) {
+      toast.error("Chỉ duyệt khi đợt kiểm kê đang chờ duyệt");
+      return;
+    }
     try {
       await completeCount(id).unwrap();
       toast.success("Đã duyệt và hoàn tất — tồn kho đã được điều chỉnh!");
