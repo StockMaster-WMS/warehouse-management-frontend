@@ -118,11 +118,11 @@ export function useProductsPageLogic() {
 
     try {
       await deleteProduct(deleteTarget.id).unwrap();
-      toast.success(`Đã xóa sản phẩm ${deleteTarget.name}`);
+      toast.success(`Đã ngừng sử dụng sản phẩm ${deleteTarget.name}`);
       setIsDeleteDialogOpen(false);
       setDeleteTarget(null);
     } catch (err) {
-      toast.error(apiErrMessage(err, "Xóa sản phẩm thất bại"));
+      toast.error(apiErrMessage(err, "Không thể ngừng sử dụng sản phẩm"));
     }
   }, [deleteProduct, deleteTarget]);
 

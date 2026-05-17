@@ -296,7 +296,11 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
     { warehouseId: po?.warehouseId ?? "", size: 100 },
     { skip: !po?.warehouseId },
   );
-  const locationOptions = Array.isArray(whLocRes?.data) ? whLocRes.data : [];
+  const locationOptions = Array.isArray(whLocRes?.data?.content)
+    ? whLocRes.data.content
+    : Array.isArray(whLocRes?.data)
+      ? whLocRes.data
+      : [];
 
   const [locationId, setLocationId] = useState("");
   const [note, setNote] = useState("");
