@@ -102,6 +102,17 @@ function normalize(value: string | null | undefined) {
   return (value ?? "").trim().toUpperCase();
 }
 
+function looksLikeUuid(value?: string | null) {
+  return Boolean(value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+}
+
+function displayLocationCode(item: PickingItem) {
+  if (!item.locationCode || looksLikeUuid(item.locationCode)) {
+    return "Vị trí chưa xác định";
+  }
+  return item.locationCode;
+}
+
 function sortByPickPath(items: PickingItem[]) {
   return items.toSorted((a, b) => {
     const sequenceDiff = Number(a.pickSequence ?? 9999) - Number(b.pickSequence ?? 9999);
@@ -236,7 +247,7 @@ export function OperationTab({ onClose }: OperationTabProps) {
     if (!activeItem) return;
 
     const scanned = normalize(scannedLoc);
-    const expected = normalize(activeItem.locationCode || activeItem.locationId);
+    const expected = normalize(looksLikeUuid(activeItem.locationCode) ? "" : activeItem.locationCode);
 
     if (!scanned || scanned !== expected) {
       toast.error("Vị trí không khớp. Kiểm tra lại mã kệ/bin.");
@@ -702,7 +713,7 @@ function ActiveTaskCard({
               Vị trí cần đến
             </p>
             <h2 className="mt-2 truncate font-mono text-3xl font-semibold leading-none text-foreground">
-              {activeItem.locationCode || "N/A"}
+              {displayLocationCode(activeItem)}
             </h2>
             {activeItem.zone || activeItem.aisle ? (
               <p className="mt-2 text-xs font-bold text-muted-foreground">
@@ -1011,7 +1022,7 @@ function TaskRouteList({
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-black text-foreground">
-                {task.locationCode || "N/A"}
+                {displayLocationCode(task)}
               </span>
               <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                 {task.productSku || getTaskTitle(task)} · x{task.qtyToPick}

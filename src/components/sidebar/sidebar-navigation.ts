@@ -113,7 +113,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
         children: [
           { label: "Đơn xuất", href: "/orders", icon: ListOrdered, color: "rose", roles: READ_OPERATION_ROLES },
           { label: "Lấy hàng", href: "/picking", icon: Scissors, color: "orange", roles: WAREHOUSE_OPERATION_ROLES },
-          { label: "Hàng trả / RMA", href: "/returns", icon: RotateCcw, color: "amber", roles: READ_OPERATION_ROLES },
+          { label: "Hàng trả", href: "/returns", icon: RotateCcw, color: "amber", roles: READ_OPERATION_ROLES },
         ],
       },
     ],

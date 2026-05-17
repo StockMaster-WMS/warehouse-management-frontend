@@ -43,6 +43,12 @@ import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import {
+  DEFAULT_OPERATION_DATE_PRESET,
+  getOperationDateRange,
+  operationDatePresetLabel,
+  type OperationDatePreset,
+} from "@/lib/date-range";
 import type { Supplier } from "@/types/supplier";
 import type { Warehouse } from "@/types/warehouse";
 
@@ -108,7 +114,9 @@ export default function PurchaseOrdersPage() {
   const [status, setStatus] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
+  const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
 
   const {
     data: suppliersRes,
@@ -141,6 +149,7 @@ export default function PurchaseOrdersPage() {
       ...(status ? { status } : {}),
       ...(supplierId ? { supplierId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
+      ...dateRange,
     });
 
   const rows: PurchaseOrder[] = data?.data?.content ?? EMPTY_PURCHASE_ORDERS;
@@ -174,8 +183,9 @@ export default function PurchaseOrdersPage() {
     if (status) count++;
     if (supplierId) count++;
     if (warehouseId) count++;
+    if (datePreset !== DEFAULT_OPERATION_DATE_PRESET) count++;
     return count;
-  }, [status, supplierId, warehouseId]);
+  }, [status, supplierId, warehouseId, datePreset]);
 
   const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0);
 
@@ -184,6 +194,7 @@ export default function PurchaseOrdersPage() {
     setStatus("");
     setSupplierId("");
     setWarehouseId("");
+    setDatePreset(DEFAULT_OPERATION_DATE_PRESET);
     setPage(0);
   };
 
@@ -313,10 +324,36 @@ export default function PurchaseOrdersPage() {
                           </span>
                         </span>
                       ) : null}
+                      {datePreset !== DEFAULT_OPERATION_DATE_PRESET ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                          Thời gian:{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                            {operationDatePresetLabel(datePreset)}
+                          </span>
+                        </span>
+                      ) : null}
                     </div>
                   ) : null
                 }
               >
+                <Select
+                  value={datePreset}
+                  onValueChange={(v) => {
+                    setDatePreset(v as OperationDatePreset);
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                    <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="today" className="rounded-lg">Hôm nay</SelectItem>
+                    <SelectItem value="7d" className="rounded-lg">7 ngày gần nhất</SelectItem>
+                    <SelectItem value="30d" className="rounded-lg">30 ngày gần nhất</SelectItem>
+                    <SelectItem value="all" className="rounded-lg">Tất cả thời gian</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Select
                   value={status}
                   onValueChange={(v) => {

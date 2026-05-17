@@ -1,6 +1,7 @@
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import { OrdersFiltersPanel } from "@/components/features/orders/components/OrdersFiltersPanel";
+import type { OperationDatePreset } from "@/lib/date-range";
 
 type OrdersSearchSectionProps = {
   searchInput: string;
@@ -11,6 +12,8 @@ type OrdersSearchSectionProps = {
   hasAnyFilter: boolean;
   statusFilter: string;
   onStatusChange: (value: string) => void;
+  datePreset: OperationDatePreset;
+  onDatePresetChange: (value: OperationDatePreset) => void;
   onClearFilters: () => void;
   noContainer?: boolean;
 };
@@ -24,6 +27,8 @@ export function OrdersSearchSection({
   hasAnyFilter,
   statusFilter,
   onStatusChange,
+  datePreset,
+  onDatePresetChange,
   onClearFilters,
   noContainer = false,
 }: OrdersSearchSectionProps) {
@@ -52,6 +57,8 @@ export function OrdersSearchSection({
             hasAnyFilter={hasAnyFilter}
             statusFilter={statusFilter}
             onStatusChange={onStatusChange}
+            datePreset={datePreset}
+            onDatePresetChange={onDatePresetChange}
             onClear={onClearFilters}
           />
         ) : null

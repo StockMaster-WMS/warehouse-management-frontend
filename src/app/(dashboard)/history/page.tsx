@@ -35,6 +35,12 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+  DEFAULT_OPERATION_DATE_PRESET,
+  getOperationDateRange,
+  operationDatePresetLabel,
+  type OperationDatePreset,
+} from "@/lib/date-range";
 import { cn } from "@/lib/utils";
 import { useGetAuditLogsQuery } from "@/store/services/audit-log.service";
 import { apiErrMessage } from "@/types/api";
@@ -92,7 +98,9 @@ export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [moduleFilter, setModuleFilter] = useState("ALL");
+  const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 300);
+  const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
 
   const { data, isLoading, isFetching, error, refetch } = useGetAuditLogsQuery({
     page: 0,
@@ -100,6 +108,7 @@ export default function HistoryPage() {
     module: moduleFilter,
     actionType: typeFilter,
     keyword: debouncedSearch,
+    ...dateRange,
   });
 
   const logs = useMemo(() => data?.data?.content ?? [], [data]);
@@ -154,6 +163,18 @@ export default function HistoryPage() {
               <SelectItem value="SUPPLIER">Nhà cung cấp</SelectItem>
               <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
               <SelectItem value="WAREHOUSE">Kho bãi</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={datePreset} onValueChange={(value) => setDatePreset(value as OperationDatePreset)}>
+            <SelectTrigger className="h-10 w-[180px] rounded-xl border-slate-200 shrink-0 dark:border-slate-800">
+              <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+              <SelectValue placeholder="Thời gian" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="today">{operationDatePresetLabel("today")}</SelectItem>
+              <SelectItem value="7d">{operationDatePresetLabel("7d")}</SelectItem>
+              <SelectItem value="30d">{operationDatePresetLabel("30d")}</SelectItem>
+              <SelectItem value="all">{operationDatePresetLabel("all")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value || "ALL")}>

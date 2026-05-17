@@ -11,7 +11,7 @@ import {
 export interface FilterOption {
     label: string;
     value: string;
-    options: string[];
+    options: Array<string | { label: string; value: string }>;
     placeholder?: string;
     width?: string;
     onChange: (value: string) => void;
@@ -57,11 +57,15 @@ export function FilterGroup({
                         <SelectItem value={`Tất cả ${filter.label}`} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
                             Tất cả {filter.label}
                         </SelectItem>
-                        {filter.options.map((opt) => (
-                            <SelectItem key={opt} value={opt} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
-                                {opt}
+                        {filter.options.map((opt) => {
+                            const value = typeof opt === "string" ? opt : opt.value;
+                            const label = typeof opt === "string" ? opt : opt.label;
+                            return (
+                            <SelectItem key={value} value={value} className="rounded-lg focus:bg-indigo-50 focus:text-indigo-600 dark:focus:bg-indigo-500/10 dark:focus:text-indigo-400">
+                                {label}
                             </SelectItem>
-                        ))}
+                            );
+                        })}
                     </SelectContent>
                 </Select>
             ))}

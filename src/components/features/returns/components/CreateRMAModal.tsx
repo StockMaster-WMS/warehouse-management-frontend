@@ -75,11 +75,11 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
       if (data.lines.some(l => !l.productId)) return toast.error("Vui lòng chọn sản phẩm");
 
       await createRMA(data).unwrap();
-      toast.success("Đã tạo phiếu RMA thành công");
+      toast.success("Đã tạo phiếu trả hàng thành công");
       form.reset();
       onOpenChange(false);
     } catch (err) {
-      toast.error(apiErrMessage(err, "Không thể tạo phiếu RMA"));
+      toast.error(apiErrMessage(err, "Không thể tạo phiếu trả hàng"));
     }
   };
 
@@ -93,7 +93,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Tạo phiếu RMA / Hàng trả</DialogTitle>
+          <DialogTitle>Tạo phiếu trả hàng</DialogTitle>
           <DialogDescription>
             Khởi tạo hồ sơ tiếp nhận hàng trả về hoặc hàng lỗi trong kho.
           </DialogDescription>
@@ -240,7 +240,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Hủy</Button>
             <Button type="submit" disabled={isCreating} className="bg-indigo-600 hover:bg-indigo-700">
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Package className="mr-2 h-4 w-4" />}
-              Tạo phiếu RMA
+              Tạo phiếu trả hàng
             </Button>
           </DialogFooter>
         </form>

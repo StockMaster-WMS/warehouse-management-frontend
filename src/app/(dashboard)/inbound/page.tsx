@@ -38,6 +38,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { statusTone } from "@/lib/design-system";
+import {
+  DEFAULT_OPERATION_DATE_PRESET,
+  getOperationDateRange,
+  operationDatePresetLabel,
+  type OperationDatePreset,
+} from "@/lib/date-range";
 import { useGetInboundReceiptsQuery, useLazyGetInboundReceiptPrintDataQuery } from "@/store/services/inbound.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
@@ -65,7 +71,9 @@ export default function InboundPage() {
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
+  const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
 
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [printData, setPrintData] = useState<InboundReceiptPrintResponse | null>(null);
@@ -88,6 +96,7 @@ export default function InboundPage() {
       ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
       ...(status ? { status } : {}),
       ...(warehouseId ? { warehouseId } : {}),
+      ...dateRange,
     });
 
   const receipts = data?.data?.content ?? EMPTY_RECEIPTS;
@@ -119,8 +128,9 @@ export default function InboundPage() {
     let count = 0;
     if (status) count++;
     if (warehouseId) count++;
+    if (datePreset !== DEFAULT_OPERATION_DATE_PRESET) count++;
     return count;
-  }, [status, warehouseId]);
+  }, [status, warehouseId, datePreset]);
 
   const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0);
 
@@ -128,6 +138,7 @@ export default function InboundPage() {
     setKeyword("");
     setStatus("");
     setWarehouseId("");
+    setDatePreset(DEFAULT_OPERATION_DATE_PRESET);
     setPage(0);
   };
 
@@ -253,10 +264,36 @@ export default function InboundPage() {
                           </span>
                         </span>
                       ) : null}
+                      {datePreset !== DEFAULT_OPERATION_DATE_PRESET ? (
+                        <span className="rounded-full bg-muted px-3 py-1">
+                          Thời gian:{" "}
+                          <span className="font-semibold text-foreground">
+                            {operationDatePresetLabel(datePreset)}
+                          </span>
+                        </span>
+                      ) : null}
                     </div>
                   ) : null
                 }
               >
+                <Select
+                  value={datePreset}
+                  onValueChange={(v) => {
+                    setDatePreset(v as OperationDatePreset);
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-lg">
+                    <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-lg">
+                    <SelectItem value="today" className="rounded-lg">Hôm nay</SelectItem>
+                    <SelectItem value="7d" className="rounded-lg">7 ngày gần nhất</SelectItem>
+                    <SelectItem value="30d" className="rounded-lg">30 ngày gần nhất</SelectItem>
+                    <SelectItem value="all" className="rounded-lg">Tất cả thời gian</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Select
                   value={status}
                   onValueChange={(v) => {

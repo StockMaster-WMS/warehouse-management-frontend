@@ -34,6 +34,7 @@ import {
   useCloseReturnRequestMutation 
 } from "@/store/services/return.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
+import { useGetWarehouseByIdQuery } from "@/store/services/warehouse.service";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,38 @@ function formatDateTime(value?: string | null) {
   const timestamp = Date.parse(value);
   if (Number.isNaN(timestamp)) return value;
   return RMA_DATE_TIME_FORMATTER.format(timestamp);
+}
+
+function displayCode(value?: string | null) {
+  const code = value?.trim();
+  if (!code) return "Chưa có mã";
+  return code.replace(/^RMA-/i, "HT-");
+}
+
+function isUuid(value?: string | null) {
+  return Boolean(value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+}
+
+function displayLinkedOrder(orderNumber?: string | null) {
+  if (!orderNumber || isUuid(orderNumber)) {
+    return "Không gắn đơn";
+  }
+  return orderNumber;
+}
+
+function reasonLabel(reason?: string | null) {
+  if (!reason) return "Chưa xác định";
+  const normalized = reason.trim().toLowerCase();
+  if (normalized === "customer_return") return "Khách trả";
+  if (normalized === "damaged") return "Hàng lỗi / hỏng";
+  if (normalized === "wrong_item") return "Sai hàng";
+  if (normalized === "expired") return "Hết hạn";
+  if (normalized === "quality_check") return "Chờ kiểm định";
+  if (normalized === "supplier_return") return "Trả NCC";
+  if (normalized.includes("khach") && normalized.includes("loi")) {
+    return "Khách trả hàng lỗi";
+  }
+  return reason.replace(/_/g, " ");
 }
 
 type ReceiveFormState = {
@@ -79,6 +112,9 @@ export default function RMADetailPage() {
   
   const { data: rmaRes, isLoading, refetch, isFetching } = useGetReturnRequestByIdQuery(id);
   const rma = rmaRes?.data;
+  const { data: warehouseRes } = useGetWarehouseByIdQuery(rma?.warehouseId ?? "", {
+    skip: !rma?.warehouseId,
+  });
   
   const [receiveReturn, { isLoading: isReceiving }] = useReceiveReturnMutation();
   const [closeReturn, { isLoading: isClosing }] = useCloseReturnRequestMutation();
@@ -123,10 +159,14 @@ export default function RMADetailPage() {
     () =>
       lines.map((line) => ({
         value: line.id,
-        label: `${line.productSku || line.productName || line.productId} · ${line.receivedQty || 0}/${line.expectedQty}`,
+        label: `${line.productSku || line.productName || "Sản phẩm chưa xác định"} · ${line.receivedQty || 0}/${line.expectedQty}`,
       })),
     [lines],
   );
+  const warehouse = warehouseRes?.data;
+  const warehouseLabel =
+    rma?.warehouseName ||
+    (warehouse ? (warehouse.code ? `${warehouse.name} (${warehouse.code})` : warehouse.name) : "Kho chưa xác định");
 
   const handleSelectLine = (selectedLineId: string) => {
     const nextLine = lines.find((line) => line.id === selectedLineId);
@@ -139,7 +179,7 @@ export default function RMADetailPage() {
 
   const handleReceive = async () => {
     if (!selectedLine) {
-      toast.error("RMA chưa có dòng hàng để nhận");
+      toast.error("Hồ sơ chưa có dòng hàng để nhận");
       return;
     }
     const receivedQty = Number(quantityInputValue);
@@ -178,12 +218,12 @@ export default function RMADetailPage() {
 
   const handleClose = async () => {
     if (!canComplete) {
-      toast.error("Chỉ hoàn tất RMA khi tất cả dòng hàng đã nhận đủ");
+      toast.error("Chỉ hoàn tất hồ sơ khi tất cả dòng hàng đã nhận đủ");
       return;
     }
     try {
       await closeReturn(id).unwrap();
-      toast.success("Đã đóng hồ sơ RMA");
+      toast.success("Đã đóng hồ sơ hàng trả");
       push("/returns");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể đóng hồ sơ"));
@@ -208,11 +248,11 @@ export default function RMADetailPage() {
           Quay lại danh sách
         </Button>
         <ChevronRight className="size-4" />
-        <span className="font-mono">{rma.rmaNumber || rma.id}</span>
+        <span className="font-mono">{displayCode(rma.rmaNumber)}</span>
       </div>
 
       <PageHeader
-        title={`Chi tiết RMA: ${rma.rmaNumber || rma.id}`}
+        title={`Chi tiết hàng trả: ${displayCode(rma.rmaNumber)}`}
         description="Theo dõi tiếp nhận và xử lý hàng trả về."
         actions={
           <div className="flex items-center gap-2">
@@ -249,18 +289,18 @@ export default function RMADetailPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Lý do</p>
-                  <p className="font-semibold text-rose-600">{rma.reason}</p>
+                  <p className="font-semibold text-rose-600">{reasonLabel(rma.reason)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Kho xử lý</p>
                   <p className="flex items-center gap-1.5 font-semibold">
                     <Warehouse className="size-4 text-zinc-400" />
-                    {rma.warehouseName || rma.warehouseId}
+                    {warehouseLabel}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Đơn hàng liên quan</p>
-                  <p className="font-mono text-sm">{rma.orderNumber || rma.orderId || "N/A"}</p>
+                  <p className="font-mono text-sm">{displayLinkedOrder(rma.orderNumber)}</p>
                 </div>
               </div>
             </CardContent>
@@ -288,7 +328,7 @@ export default function RMADetailPage() {
                   {lines.map((line) => (
                     <TableRow key={line.id}>
                       <TableCell>
-                        <div className="font-medium">{line.productName || line.productId}</div>
+                        <div className="font-medium">{line.productName || "Sản phẩm chưa xác định"}</div>
                         <div className="text-xs font-mono text-muted-foreground">
                           {line.productSku || line.lotNumber || "Chưa có SKU"}
                         </div>
@@ -298,7 +338,7 @@ export default function RMADetailPage() {
                       <TableCell>
                         {line.receivedLocationId ? (
                           <span className="font-mono text-xs">
-                            {locationLabelById.get(line.receivedLocationId) ?? line.receivedLocationId}
+                            {locationLabelById.get(line.receivedLocationId) ?? "Vị trí chưa xác định"}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">Chưa nhận</span>
@@ -306,7 +346,7 @@ export default function RMADetailPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px] uppercase">
-                          {line.condition || line.reason || rma.reason}
+                          {reasonLabel(line.condition || line.reason || rma.reason)}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -335,13 +375,13 @@ export default function RMADetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Dòng hàng RMA</Label>
+                <Label>Dòng hàng</Label>
                 <SearchableSelect
                   options={lineOptions}
                   value={selectedLine?.id ?? ""}
                   onValueChange={handleSelectLine}
                   placeholder="Chọn dòng hàng…"
-                  dialogTitle="Chọn dòng hàng RMA"
+                  dialogTitle="Chọn dòng hàng"
                   disabled={!lineOptions.length || isCompleted}
                 />
               </div>
@@ -405,7 +445,7 @@ export default function RMADetailPage() {
               <div className="flex items-start gap-3 text-xs">
                 <div className="mt-1 size-2 rounded-full bg-emerald-500 shrink-0" />
                 <div>
-                  <p className="font-semibold">Khởi tạo RMA</p>
+                  <p className="font-semibold">Khởi tạo hồ sơ</p>
                   <p className="text-muted-foreground">{formatDateTime(rma.createdAt)}</p>
                 </div>
               </div>

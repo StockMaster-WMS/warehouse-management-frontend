@@ -47,7 +47,7 @@ function toTitle(segment: string): string {
     products: "Sản phẩm",
     categories: "Nhóm / loại hàng",
     orders: "Xuất kho & giao hàng",
-    returns: "Hàng trả / RMA",
+    returns: "Hàng trả",
     inbound: "Nhập hàng",
     "purchase-orders": "Đơn nhập hàng",
     putaway: "Sắp xếp vào kho",

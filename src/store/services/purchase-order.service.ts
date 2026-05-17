@@ -45,6 +45,8 @@ type GetPurchaseOrdersArgs = {
   status?: string;
   supplierId?: string;
   warehouseId?: string;
+  createdFrom?: string;
+  createdTo?: string;
 };
 
 type GetLocationsArgs = { warehouseId?: string };
@@ -151,6 +153,8 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         status,
         supplierId,
         warehouseId,
+        createdFrom,
+        createdTo,
       } = {}) => {
         const params: Record<string, string | number> = {
           page,
@@ -162,6 +166,8 @@ const purchaseOrderApi = baseApi.injectEndpoints({
         if (status?.trim()) params.status = status.trim();
         if (supplierId?.trim()) params.supplierId = supplierId.trim();
         if (warehouseId?.trim()) params.warehouseId = warehouseId.trim();
+        if (createdFrom) params.createdFrom = createdFrom;
+        if (createdTo) params.createdTo = createdTo;
         return {
           url: "/purchase-orders",
           method: "GET",

@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+  DEFAULT_OPERATION_DATE_PRESET,
+  getOperationDateRange,
+  type OperationDatePreset,
+} from "@/lib/date-range";
 import { useGetSalesOrdersQuery, useLazyGetSalesOrderBySoNumberQuery } from "@/store/services/order.service";
 import { apiErrMessage } from "@/types/api";
 import type { SalesOrder } from "@/types/sales-order";
 import {
   ORDERS_PAGE_SIZE,
-  ORDER_STATUS_FILTER_OPTIONS,
   ORDER_STATUS_LABEL_TO_API,
 } from "@/components/features/orders/constants";
 
@@ -21,6 +25,7 @@ export function useOrdersPageLogic() {
   const [searchInput, setSearchInput] = useState("");
   const [soNumberLookup, setSoNumberLookup] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Tất cả trạng thái");
+  const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(ORDERS_PAGE_SIZE);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -28,6 +33,7 @@ export function useOrdersPageLogic() {
   const [lookupByNumber, { isFetching: lookingUpByNumber }] = useLazyGetSalesOrderBySoNumberQuery();
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const apiStatus = ORDER_STATUS_LABEL_TO_API[statusFilter] ?? "";
+  const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
 
   const listParams = useMemo(
     () => ({
@@ -35,8 +41,9 @@ export function useOrdersPageLogic() {
       size: pageSize,
       keyword: debouncedKeyword || undefined,
       status: apiStatus || undefined,
+      ...dateRange,
     }),
-    [page, pageSize, debouncedKeyword, apiStatus],
+    [page, pageSize, debouncedKeyword, apiStatus, dateRange],
   );
 
   const { data, error, isLoading, isFetching, refetch } = useGetSalesOrdersQuery(listParams);
@@ -47,8 +54,12 @@ export function useOrdersPageLogic() {
   const canGoPrev = page > 0;
   const canGoNext = totalPages > 0 && page < totalPages - 1;
 
-  const hasAnyFilter = searchInput.trim().length > 0 || statusFilter !== "Tất cả trạng thái";
-  const advancedCount = Number(statusFilter !== "Tất cả trạng thái");
+  const hasAnyFilter =
+    searchInput.trim().length > 0 ||
+    statusFilter !== "Tất cả trạng thái" ||
+    datePreset !== DEFAULT_OPERATION_DATE_PRESET;
+  const advancedCount =
+    Number(statusFilter !== "Tất cả trạng thái") + Number(datePreset !== DEFAULT_OPERATION_DATE_PRESET);
 
   useEffect(() => {
     if (!createdId) return;
@@ -58,6 +69,7 @@ export function useOrdersPageLogic() {
   const clearFilters = () => {
     setSearchInput("");
     setStatusFilter("Tất cả trạng thái");
+    setDatePreset(DEFAULT_OPERATION_DATE_PRESET);
     setPage(0);
   };
 
@@ -87,6 +99,8 @@ export function useOrdersPageLogic() {
     setSoNumberLookup,
     statusFilter,
     setStatusFilter,
+    datePreset,
+    setDatePreset,
     page,
     setPage,
     pageSize,
