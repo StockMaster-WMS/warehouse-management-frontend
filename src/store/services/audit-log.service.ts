@@ -13,10 +13,12 @@ export type GetAuditLogsParams = {
   actionType?: string;
   entityType?: string;
   keyword?: string;
+  createdFrom?: string;
+  createdTo?: string;
 };
 
 function buildAuditQueryParams(params: GetAuditLogsParams) {
-  const { page = 0, size = 20, module, actionType, entityType, keyword } = params;
+  const { page = 0, size = 20, module, actionType, entityType, keyword, createdFrom, createdTo } = params;
 
   const query: Record<string, string | number> = {
     page,
@@ -34,6 +36,8 @@ function buildAuditQueryParams(params: GetAuditLogsParams) {
 
   const k = keyword?.trim();
   if (k) query.keyword = k;
+  if (createdFrom) query.createdFrom = createdFrom;
+  if (createdTo) query.createdTo = createdTo;
 
   return query;
 }

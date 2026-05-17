@@ -1,6 +1,10 @@
 import { AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { ORDER_STATUS_FILTER_OPTIONS } from "@/components/features/orders/constants";
+import {
+  operationDatePresetLabel,
+  type OperationDatePreset,
+} from "@/lib/date-range";
 
 type OrdersFiltersPanelProps = {
   open: boolean;
@@ -8,6 +12,8 @@ type OrdersFiltersPanelProps = {
   hasAnyFilter: boolean;
   statusFilter: string;
   onStatusChange: (value: string) => void;
+  datePreset: OperationDatePreset;
+  onDatePresetChange: (value: OperationDatePreset) => void;
   onClear: () => void;
 };
 
@@ -17,6 +23,8 @@ export function OrdersFiltersPanel({
   hasAnyFilter,
   statusFilter,
   onStatusChange,
+  datePreset,
+  onDatePresetChange,
   onClear,
 }: OrdersFiltersPanelProps) {
   return (
@@ -28,6 +36,14 @@ export function OrdersFiltersPanel({
             {statusFilter !== "Tất cả trạng thái" ? (
               <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
                 Trạng thái: <span className="font-semibold text-slate-800 dark:text-slate-100">{statusFilter}</span>
+              </span>
+            ) : null}
+            {datePreset !== "today" ? (
+              <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                Thời gian:{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-100">
+                  {operationDatePresetLabel(datePreset)}
+                </span>
               </span>
             ) : null}
           </div>
@@ -46,6 +62,19 @@ export function OrdersFiltersPanel({
             value: statusFilter,
             onChange: onStatusChange,
             options: [...ORDER_STATUS_FILTER_OPTIONS],
+            width: "sm:w-[200px]",
+          },
+          {
+            label: "thời gian",
+            placeholder: "Thời gian",
+            value: datePreset,
+            onChange: (value) => onDatePresetChange(value as OperationDatePreset),
+            options: [
+              { label: "Hôm nay", value: "today" },
+              { label: "7 ngày gần nhất", value: "7d" },
+              { label: "30 ngày gần nhất", value: "30d" },
+              { label: "Tất cả thời gian", value: "all" },
+            ],
             width: "sm:w-[200px]",
           },
         ]}

@@ -70,6 +70,11 @@ export function AuthGuard({
         return;
       }
 
+      if (!initialHasSession) {
+        router.replace("/login");
+        return;
+      }
+
       if (refreshAttempted.current) return;
 
       refreshAttempted.current = true;

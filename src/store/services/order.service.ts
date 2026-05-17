@@ -9,6 +9,8 @@ export type GetOrdersParams = {
   sortDir?: "asc" | "desc";
   keyword?: string;
   status?: string;
+  createdFrom?: string;
+  createdTo?: string;
 };
 
 export type CreateSalesOrderPayload = {
@@ -25,7 +27,7 @@ export type CreateSalesOrderPayload = {
 };
 
 function buildOrdersQueryParams(params: GetOrdersParams) {
-  const { page = 0, size = 20, sort = "createdAt", sortDir = "desc", keyword, status } = params;
+  const { page = 0, size = 20, sort = "createdAt", sortDir = "desc", keyword, status, createdFrom, createdTo } = params;
 
   const query: Record<string, string | number> = {
     page,
@@ -37,6 +39,8 @@ function buildOrdersQueryParams(params: GetOrdersParams) {
   if (k) query.keyword = k;
   const st = status?.trim();
   if (st) query.status = st;
+  if (createdFrom) query.createdFrom = createdFrom;
+  if (createdTo) query.createdTo = createdTo;
   return query;
 }
 

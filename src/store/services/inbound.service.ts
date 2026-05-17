@@ -18,6 +18,8 @@ export type GetInboundReceiptsParams = {
   status?: string;
   purchaseOrderId?: string;
   warehouseId?: string;
+  createdFrom?: string;
+  createdTo?: string;
 };
 
 function buildInboundReceiptsQueryParams(params: GetInboundReceiptsParams) {
@@ -30,6 +32,8 @@ function buildInboundReceiptsQueryParams(params: GetInboundReceiptsParams) {
     status,
     purchaseOrderId,
     warehouseId,
+    createdFrom,
+    createdTo,
   } = params;
 
   const query: Record<string, string | number> = { page, size, sort, sortDir };
@@ -41,6 +45,8 @@ function buildInboundReceiptsQueryParams(params: GetInboundReceiptsParams) {
   if (poId) query.purchaseOrderId = poId;
   const whId = warehouseId?.trim();
   if (whId) query.warehouseId = whId;
+  if (createdFrom) query.createdFrom = createdFrom;
+  if (createdTo) query.createdTo = createdTo;
   return query;
 }
 

@@ -53,6 +53,11 @@ function OrderPageContent() {
             logic.setStatusFilter(value);
             logic.setPage(0);
           }}
+          datePreset={logic.datePreset}
+          onDatePresetChange={(value) => {
+            logic.setDatePreset(value);
+            logic.setPage(0);
+          }}
           onClearFilters={() => {
             logic.clearFilters();
             logic.setAdvancedOpen(false);
