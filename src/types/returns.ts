@@ -8,7 +8,8 @@ export type ReturnStatus =
   | "RESTOCKED"
   | "SCRAPPED"
   | "REJECTED"
-  | "CLOSED";
+  | "CLOSED"
+  | "COMPLETED";
 
 export type ReturnReason =
   | "CUSTOMER_RETURN"
@@ -32,11 +33,13 @@ export type ReturnLine = {
   productName?: string | null;
   expectedQty: number;
   receivedQty: number;
-  acceptedQty: number;
-  rejectedQty: number;
-  reason: ReturnReason;
+  acceptedQty?: number;
+  rejectedQty?: number;
+  reason?: ReturnReason;
   disposition?: ReturnDisposition | null;
   note?: string | null;
+  lotNumber?: string | null;
+  condition?: string | null;
 };
 
 export type ReturnRequest = {
@@ -80,12 +83,11 @@ export type CreateReturnRequestPayload = {
 };
 
 export type ReceiveReturnPayload = {
-  receivedBy?: string;
-  lines: Array<{
-    lineId: string;
-    receivedQty: number;
-    note?: string;
-  }>;
+  itemId: string;
+  receivedQty: number;
+  locationId?: string;
+  condition?: string;
+  notes?: string;
 };
 
 export type InspectReturnLinePayload = {

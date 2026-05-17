@@ -6,9 +6,9 @@ import {
 } from "@/types/api";
 import type {
   CreateReturnRequestPayload,
-  InspectReturnLinePayload,
   ReceiveReturnPayload,
   ReturnReason,
+  ReturnLine,
   ReturnRequest,
   ReturnSourceType,
   ReturnStatus,
@@ -48,6 +48,96 @@ function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
   return query;
 }
 
+type BackendRmaItem = {
+  id: string;
+  productId: string;
+  expectedQty: number;
+  receivedQty?: number | null;
+  lotNumber?: string | null;
+  condition?: string | null;
+  notes?: string | null;
+};
+
+type BackendRmaResponse = Omit<Partial<ReturnRequest>, "lines"> & {
+  salesOrderId?: string | null;
+  items?: BackendRmaItem[];
+};
+
+function isUuid(value: string | null | undefined) {
+  return Boolean(
+    value &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value,
+      ),
+  );
+}
+
+function normalizeReturnLine(
+  item: BackendRmaItem | ReturnLine,
+  defaultReason?: ReturnReason,
+): ReturnLine {
+  return {
+    id: item.id,
+    productId: item.productId,
+    productSku: "productSku" in item ? item.productSku : null,
+    productName: "productName" in item ? item.productName : null,
+    expectedQty: Number(item.expectedQty ?? 0),
+    receivedQty: Number(item.receivedQty ?? 0),
+    acceptedQty: "acceptedQty" in item ? item.acceptedQty : undefined,
+    rejectedQty: "rejectedQty" in item ? item.rejectedQty : undefined,
+    reason: "reason" in item ? item.reason : defaultReason,
+    disposition: "disposition" in item ? item.disposition : null,
+    note: "note" in item ? item.note : "notes" in item ? item.notes : null,
+    lotNumber: item.lotNumber ?? null,
+    condition: "condition" in item ? item.condition : null,
+  };
+}
+
+function normalizeReturnRequest(raw: BackendRmaResponse | ReturnRequest): ReturnRequest {
+  const reason = (raw.reason ?? "CUSTOMER_RETURN") as ReturnReason;
+  const backendItems = "items" in raw ? raw.items : undefined;
+  const frontendLines = "lines" in raw ? raw.lines : undefined;
+  const salesOrderId = "salesOrderId" in raw ? raw.salesOrderId : undefined;
+
+  return {
+    ...raw,
+    id: raw.id ?? "",
+    rmaNumber: raw.rmaNumber ?? raw.id ?? "",
+    sourceType: raw.sourceType ?? "CUSTOMER",
+    status: (raw.status ?? "REQUESTED") as ReturnStatus,
+    reason,
+    orderId: raw.orderId ?? salesOrderId ?? null,
+    orderNumber: raw.orderNumber ?? salesOrderId ?? null,
+    lines: (frontendLines ?? backendItems ?? []).map((line) =>
+      normalizeReturnLine(line, reason),
+    ),
+  };
+}
+
+function normalizeReturnResponse(
+  response: ApiResponse<BackendRmaResponse | ReturnRequest>,
+): ApiResponse<ReturnRequest> {
+  return {
+    ...response,
+    data: normalizeReturnRequest(response.data),
+  };
+}
+
+function normalizeReturnPagedResponse(
+  response: ApiResponse<
+    Array<BackendRmaResponse | ReturnRequest> | PagedResponse<BackendRmaResponse | ReturnRequest>
+  >,
+): ApiResponse<PagedResponse<ReturnRequest>> {
+  const paged = normalizeApiResponsePaged(response);
+  return {
+    ...paged,
+    data: {
+      ...paged.data,
+      content: paged.data.content.map(normalizeReturnRequest),
+    },
+  };
+}
+
 const returnApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getReturnRequests: builder.query<
@@ -55,13 +145,11 @@ const returnApi = baseApi.injectEndpoints({
       GetReturnRequestsParams
     >({
       query: (params) => ({
-        url: "/returns",
+        url: "/rma",
         method: "GET",
         params: buildReturnRequestsQueryParams(params),
       }),
-      transformResponse: (
-        r: ApiResponse<ReturnRequest[] | PagedResponse<ReturnRequest>>,
-      ) => normalizeApiResponsePaged(r),
+      transformResponse: normalizeReturnPagedResponse,
       providesTags: (result) => {
         const rows = result?.data?.content ?? [];
         return rows.length
@@ -77,7 +165,8 @@ const returnApi = baseApi.injectEndpoints({
     }),
 
     getReturnRequestById: builder.query<ApiResponse<ReturnRequest>, string>({
-      query: (id) => ({ url: `/returns/${id}`, method: "GET" }),
+      query: (id) => ({ url: `/rma/${id}`, method: "GET" }),
+      transformResponse: normalizeReturnResponse,
       providesTags: (_r, _e, id) => [{ type: "ReturnRequest" as const, id }],
     }),
 
@@ -85,7 +174,21 @@ const returnApi = baseApi.injectEndpoints({
       ApiResponse<ReturnRequest>,
       CreateReturnRequestPayload
     >({
-      query: (body) => ({ url: "/returns", method: "POST", data: body }),
+      query: (body) => ({
+        url: "/rma",
+        method: "POST",
+        data: {
+          salesOrderId: isUuid(body.orderId) ? body.orderId : undefined,
+          customerName: body.customerId || undefined,
+          warehouseId: body.warehouseId,
+          reason: body.reason,
+          items: body.lines.map((line) => ({
+            productId: line.productId,
+            expectedQty: line.expectedQty,
+          })),
+        },
+      }),
+      transformResponse: normalizeReturnResponse,
       invalidatesTags: [{ type: "ReturnRequest", id: "LIST" }],
     }),
 
@@ -94,10 +197,11 @@ const returnApi = baseApi.injectEndpoints({
       { id: string; body: ReceiveReturnPayload }
     >({
       query: ({ id, body }) => ({
-        url: `/returns/${id}/receive`,
+        url: `/rma/${id}/receive`,
         method: "POST",
         data: body,
       }),
+      transformResponse: normalizeReturnResponse,
       invalidatesTags: (_r, _e, arg) => [
         { type: "ReturnRequest", id: arg.id },
         { type: "ReturnRequest", id: "LIST" },
@@ -106,25 +210,9 @@ const returnApi = baseApi.injectEndpoints({
       ],
     }),
 
-    inspectReturnLine: builder.mutation<
-      ApiResponse<ReturnRequest>,
-      InspectReturnLinePayload
-    >({
-      query: ({ returnId, lineId, ...body }) => ({
-        url: `/returns/${returnId}/lines/${lineId}/inspect`,
-        method: "POST",
-        data: body,
-      }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "ReturnRequest", id: arg.returnId },
-        { type: "ReturnRequest", id: "LIST" },
-        { type: "Stock", id: "LIST" },
-        { type: "StockMovement", id: "LIST" },
-      ],
-    }),
-
     closeReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, string>({
-      query: (id) => ({ url: `/returns/${id}/close`, method: "POST" }),
+      query: (id) => ({ url: `/rma/${id}/complete`, method: "POST" }),
+      transformResponse: normalizeReturnResponse,
       invalidatesTags: (_r, _e, id) => [
         { type: "ReturnRequest", id },
         { type: "ReturnRequest", id: "LIST" },
@@ -138,6 +226,5 @@ export const {
   useGetReturnRequestByIdQuery,
   useCreateReturnRequestMutation,
   useReceiveReturnMutation,
-  useInspectReturnLineMutation,
   useCloseReturnRequestMutation,
 } = returnApi;

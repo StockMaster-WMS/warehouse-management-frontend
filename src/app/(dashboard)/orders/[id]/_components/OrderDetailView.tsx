@@ -47,6 +47,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
     onMarkPacked,
     onMarkShipped,
     onConfirmOrder,
+    onCancelOrder,
   } = useSalesOrderDetailLogic(salesOrderId);
 
   if (isLoading) {
@@ -130,6 +131,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
                 variant: "info"
               })}
               onConfirmOrder={onConfirmOrder}
+              onCancelOrder={onCancelOrder}
               onOpenPrint={() => setIsPrintModalOpen(true)}
             />
           </div>

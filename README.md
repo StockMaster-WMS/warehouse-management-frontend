@@ -35,7 +35,7 @@ Trong bối cảnh doanh nghiệp cần theo dõi hàng hóa đa kho, luồng nh
 - **Nhật ký hoạt động**, **Báo cáo**
 - **Cài đặt**, **Bảo mật & phân quyền** (theo tiến độ backend)
 
-Trang gốc `/` redirect sang `/dashboard`.
+Trang gốc `/` là landing page public để công cụ tìm kiếm có nội dung index; các màn vận hành nội bộ vẫn yêu cầu đăng nhập.
 
 ## Yêu cầu môi trường
 
@@ -68,6 +68,7 @@ Tạo file `.env.local` (hoặc `.env`) ở thư mục gốc project:
 | Biến | Mô tả |
 |------|--------|
 | `NEXT_PUBLIC_API_BASE` **hoặc** `NEXT_PUBLIC_API_BASE_URL` | Gốc API mà Axios dùng. Nếu để URL chỉ có origin (vd. `http://localhost:9000`), code có thể tự chuẩn hóa thêm `/api` tùy cấu hình backend. Nếu không set, mặc định dùng `/api` (phù hợp khi dùng rewrite Next.js tới gateway). |
+| `NEXT_PUBLIC_SITE_URL` | URL public sau khi deploy, ví dụ `https://stockmaster.vn`. Biến này được dùng cho canonical URL, Open Graph, `robots.txt` và `sitemap.xml`; cần đặt đúng domain thật trước khi submit Google Search Console. |
 
 Chi tiết logic chuẩn hóa URL nằm trong `src/lib/constants.ts`.
 

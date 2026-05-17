@@ -99,10 +99,13 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!form.code.trim()) e.code = "Mã nhà cung cấp là bắt buộc";
-    else if (form.code.trim().length > 20) e.code = "Tối đa 20 ký tự";
-    if (!form.name.trim()) e.name = "Tên nhà cung cấp là bắt buộc";
-    else if (form.name.trim().length > 200) e.name = "Tối đa 200 ký tự";
+    const code = form.code?.trim() ?? "";
+    const name = form.name.trim();
+
+    if (!code) e.code = "Mã nhà cung cấp là bắt buộc";
+    else if (code.length > 20) e.code = "Tối đa 20 ký tự";
+    if (!name) e.name = "Tên nhà cung cấp là bắt buộc";
+    else if (name.length > 200) e.name = "Tối đa 200 ký tự";
     if (form.taxCode && form.taxCode.length > 20) e.taxCode = "Tối đa 20 ký tự";
     if (
       form.contactEmail &&
@@ -119,7 +122,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
 
     const payload: CreateSupplierRequest = {
       ...form,
-      code: form.code.trim(),
+      code: form.code?.trim(),
       name: form.name.trim(),
       taxCode: form.taxCode?.trim() || undefined,
       contactName: form.contactName?.trim() || undefined,

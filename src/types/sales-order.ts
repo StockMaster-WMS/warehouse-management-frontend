@@ -1,3 +1,5 @@
+import type { SoItem } from "./so-item";
+
 export type SalesOrderStatus = "DRAFT" | "PENDING" | "ON_HOLD" | "PICKING" | "PACKED" | "SHIPPED" | "CANCELLED";
 
 export type SalesOrderAction = 
@@ -25,6 +27,7 @@ export interface SalesOrder {
   warehouseId: string;
   priority?: number | null;
   status: SalesOrderStatus;
+  items?: SoItem[];
   createdAt?: string | null;
   updatedAt?: string | null;
 }

@@ -68,6 +68,7 @@ export const baseApi = createApi({
     "CycleCount",
     "AuditLog",
     "Dashboard",
+    "Report",
   ],
   endpoints: () => ({}),
 });

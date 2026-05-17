@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 
 import { InboundOutboundChartLazy } from "@/components/dashboard/inbound-outbound-chart-lazy";
-import { PageSection } from "@/components/ui/page-section";
 import { Button } from "@/components/ui/button";
+import { PageSection } from "@/components/ui/page-section";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { useGetDashboardSummaryQuery } from "@/store/services/dashboard.service";
 import { apiErrMessage } from "@/types/api";
@@ -49,8 +49,8 @@ function noticeClassName(type: DashboardNoticeType) {
 }
 
 export default function DashboardPage() {
-  const { data, error, isLoading, isFetching, refetch } = useGetDashboardSummaryQuery();
-  const summary = data?.data;
+  const { data: summary, error, isLoading, isFetching, refetch } =
+    useGetDashboardSummaryQuery();
   const errorMessage = error
     ? apiErrMessage(error, "Không thể tải dữ liệu dashboard")
     : null;
@@ -85,7 +85,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2">
         <PageSection
           title="Lưu lượng xuất/nhập"
-          description={isFetching ? "Đang cập nhật dữ liệu 7 ngày gần nhất." : "Theo biến động tồn kho 7 ngày gần nhất."}
+          description={
+            isFetching
+              ? "Đang cập nhật dữ liệu 7 ngày gần nhất."
+              : "Theo biến động tồn kho 7 ngày gần nhất."
+          }
         >
           <InboundOutboundChartLazy data={summary?.flow} />
         </PageSection>
@@ -93,7 +97,13 @@ export default function DashboardPage() {
         <PageSection
           title="Thông báo quan trọng"
           action={
-            <Button render={<Link href="/history" />} nativeButton={false} variant="outline" size="sm" className="rounded-lg">
+            <Button
+              render={<Link href="/history" />}
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              className="rounded-lg"
+            >
               Xem tất cả
             </Button>
           }
@@ -112,7 +122,9 @@ export default function DashboardPage() {
                       {msg.time}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[12px] font-medium opacity-90">{msg.description}</p>
+                  <p className="mt-0.5 text-[12px] font-medium opacity-90">
+                    {msg.description}
+                  </p>
                 </div>
               </div>
             ))}

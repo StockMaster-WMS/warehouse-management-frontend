@@ -3,6 +3,13 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+  getSiteUrl,
+} from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -17,13 +24,64 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StockMaster — Quản lý kho",
-  description:
-    "Giao diện web quản lý kho đa điểm: tồn kho, nhập xuất, đơn hàng và báo cáo.",
-  applicationName: "StockMaster",
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: "StockMaster" }],
+  creator: "StockMaster",
+  publisher: "StockMaster",
+  category: "business software",
+  alternates: {
+    canonical: "/",
+    languages: {
+      vi: "/",
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "StockMaster WMS - phan mem quan ly kho",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/opengraph-image"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: "/icon",
+    apple: "/icon",
+  },
   appleWebApp: {
     capable: true,
-    title: "StockMaster",
+    title: SITE_NAME,
     statusBarStyle: "default",
   },
   formatDetection: {

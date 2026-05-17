@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isProtectedAppPath } from "@/lib/site";
 
 const AUTH_SESSION_COOKIE_NAMES = ["refreshToken", "accessToken"] as const;
 
@@ -11,7 +12,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = hasAuthSession(request);
 
-  const isProtectedPage = pathname === "/" || pathname.startsWith("/dashboard");
+  const isProtectedPage = isProtectedAppPath(pathname);
 
   if (isProtectedPage && !hasSession) {
     const url = new URL("/login", request.url);

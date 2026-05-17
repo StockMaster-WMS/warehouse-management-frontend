@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   CheckCircle2,
   ClipboardCheck,
   ListChecks,
+  Plus,
   RefreshCw,
   Scale,
 } from "lucide-react";
@@ -26,12 +28,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CreateCycleCountModal } from "@/components/features/cycle-counts/components/CreateCycleCountModal";
 import { cn } from "@/lib/utils";
 import { apiErrMessage } from "@/types/api";
 import type { CycleCount, CycleCountStatus } from "@/types/cycle-count";
 import { useGetCycleCountsQuery } from "@/store/services/cycle-count.service";
 
 const PAGE_SIZE = 20;
+
+type CycleCountsPageState = {
+  page: number;
+  pageSize: number;
+  keyword: string;
+  status: CycleCountStatus | "";
+  createModalOpen: boolean;
+};
+
+const INITIAL_CYCLE_COUNTS_PAGE_STATE: CycleCountsPageState = {
+  page: 0,
+  pageSize: PAGE_SIZE,
+  keyword: "",
+  status: "",
+  createModalOpen: false,
+};
+
+function cycleCountsPageReducer(
+  state: CycleCountsPageState,
+  patch: Partial<CycleCountsPageState>,
+) {
+  return { ...state, ...patch };
+}
 
 const STATUS_LABEL: Record<CycleCountStatus, string> = {
   DRAFT: "Nháp",
@@ -40,14 +66,17 @@ const STATUS_LABEL: Record<CycleCountStatus, string> = {
   REVIEW: "Chờ duyệt",
   APPROVED: "Đã duyệt",
   CANCELLED: "Đã hủy",
+  PENDING: "Chờ bắt đầu",
+  IN_PROGRESS: "Đang kiểm",
+  COMPLETED: "Hoàn tất",
 };
 
 function statusClass(status: CycleCountStatus) {
-  if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300";
-  if (status === "COUNTING" || status === "OPEN") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
+  if (status === "APPROVED" || status === "COMPLETED") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300";
+  if (status === "COUNTING" || status === "OPEN" || status === "IN_PROGRESS") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300";
   if (status === "REVIEW") return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300";
   if (status === "CANCELLED") return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300";
-  return "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300";
+  return "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300";
 }
 
 function formatDate(value?: string | null) {
@@ -59,17 +88,18 @@ function formatDate(value?: string | null) {
 
 function lineStats(count: CycleCount) {
   const lines = count.lines ?? [];
-  const counted = lines.filter((line) => line.status === "COUNTED" || line.status === "VARIANCE" || line.status === "APPROVED").length;
-  const variances = lines.filter((line) => Number(line.varianceQty ?? 0) !== 0 || line.status === "VARIANCE").length;
+  const counted = lines.filter((line) => line.status === "COUNTED" || line.status === "VARIANCE" || line.status === "APPROVED" || line.status === "ADJUSTED").length;
+  const variances = lines.filter((line) => Number(line.varianceQty ?? 0) !== 0 || line.status === "VARIANCE" || line.status === "ADJUSTED").length;
   if (!lines.length) return { label: "Chưa sinh dòng kiểm", variances: 0 };
   return { label: `${counted}/${lines.length} đã kiểm`, variances };
 }
 
 export default function CycleCountsPage() {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<CycleCountStatus | "">("");
+  const [state, dispatch] = useReducer(
+    cycleCountsPageReducer,
+    INITIAL_CYCLE_COUNTS_PAGE_STATE,
+  );
+  const { page, pageSize, keyword, status, createModalOpen } = state;
 
   const { data, isLoading, isFetching, error, refetch } = useGetCycleCountsQuery({
     page,
@@ -81,8 +111,8 @@ export default function CycleCountsPage() {
   const rows = data?.data?.content ?? [];
   const totalElements = data?.data?.total_elements ?? 0;
   const totalPages = data?.data?.total_pages ?? 0;
-  const countingCount = rows.filter((row) => row.status === "COUNTING" || row.status === "OPEN").length;
-  const reviewCount = rows.filter((row) => row.status === "REVIEW").length;
+  const countingCount = rows.filter((row) => row.status === "COUNTING" || row.status === "OPEN" || row.status === "IN_PROGRESS").length;
+  const reviewCount = rows.filter((row) => row.status === "REVIEW" || row.status === "PENDING").length;
   const varianceCount = rows.reduce((sum, row) => sum + lineStats(row).variances, 0);
 
   return (
@@ -91,12 +121,20 @@ export default function CycleCountsPage() {
         title="Kiểm kê kho"
         description="Cycle Count: tạo đợt kiểm kê, ghi nhận số lượng thực tế và duyệt chênh lệch tồn."
         actions={
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
-            Làm mới
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
+              Làm mới
+            </Button>
+            <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md" onClick={() => dispatch({ createModalOpen: true })}>
+              <Plus className="mr-2 size-4" />
+              Tạo đợt kiểm
+            </Button>
+          </div>
         }
       />
+
+      <CreateCycleCountModal open={createModalOpen} onOpenChange={(createModalOpen) => dispatch({ createModalOpen })} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
         <StatCard label="Tổng đợt kiểm" value={totalElements.toLocaleString("vi-VN")} icon={ClipboardCheck} showAccentBar={false} />
@@ -108,21 +146,22 @@ export default function CycleCountsPage() {
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <SearchToolbar
           noContainer
-          placeholder="Tìm theo mã kiểm kê, tiêu đề, kho, vị trí..."
+          placeholder="Tìm theo mã kiểm kê, tiêu đề, kho, vị trí…"
           value={keyword}
           onValueChange={(value) => {
-            setKeyword(value);
-            setPage(0);
+            dispatch({ keyword: value, page: 0 });
           }}
           right={
             <Select
               value={status || "all"}
               onValueChange={(value) => {
-                setStatus(value === "all" ? "" : (value as CycleCountStatus));
-                setPage(0);
+                dispatch({
+                  status: value === "all" ? "" : (value as CycleCountStatus),
+                  page: 0,
+                });
               }}
             >
-              <SelectTrigger className="h-10 w-44 rounded-xl border-slate-200 dark:border-slate-700">
+              <SelectTrigger className="h-10 w-44 rounded-xl border-zinc-200 dark:border-zinc-700">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -186,7 +225,9 @@ export default function CycleCountsPage() {
                   return (
                     <TableRow key={row.id} className="hover:bg-muted/50">
                       <TableCell className="px-4 py-3">
-                        <div className="font-mono text-xs font-bold text-foreground">{row.countNumber || row.id}</div>
+                        <Link href={`/cycle-counts/${row.id}`} className="hover:underline">
+                          <div className="font-mono text-xs font-bold text-primary">{row.countNumber || row.id}</div>
+                        </Link>
                         <div className="mt-1 text-xs text-muted-foreground">{row.title || "Không có tiêu đề"}</div>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-foreground">
@@ -227,11 +268,10 @@ export default function CycleCountsPage() {
           isLoading={isLoading}
           isError={Boolean(error)}
           isFetching={isFetching}
-          onPrevPage={() => setPage((value) => Math.max(0, value - 1))}
-          onNextPage={() => setPage((value) => value + 1)}
+          onPrevPage={() => dispatch({ page: Math.max(0, page - 1) })}
+          onNextPage={() => dispatch({ page: page + 1 })}
           onPageSizeChange={(nextSize) => {
-            setPageSize(nextSize);
-            setPage(0);
+            dispatch({ pageSize: nextSize, page: 0 });
           }}
         />
       </div>
