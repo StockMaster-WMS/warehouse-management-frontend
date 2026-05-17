@@ -95,7 +95,7 @@ export function DeleteConfirmDialog({
             </button>
           )}
 
-          <div className="flex flex-col items-center text-center space-y-4">
+          <div className="flex flex-col items-center gap-y-4 text-center">
             {/* Semantic Icon Circle */}
             <div className={`p-3 rounded-full ${getBgColor()}`}>
               {getIcon()}

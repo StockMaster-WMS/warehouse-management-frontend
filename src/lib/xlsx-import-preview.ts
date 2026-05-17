@@ -28,14 +28,15 @@ function normalizeHeaderRow(matrix: string[][]): {
   const headers = matrix[0].map((h) => h.trim());
   if (!headers.some((h) => h.length > 0)) return null;
   const width = headers.length;
-  const dataRows = matrix
-    .slice(1)
-    .map((row) => {
-      const cells = [...row];
-      while (cells.length < width) cells.push("");
-      return cells.slice(0, width);
-    })
-    .filter((row) => row.some((c) => c.trim() !== ""));
+  const dataRows: string[][] = [];
+  for (const row of matrix.slice(1)) {
+    const cells = [...row];
+    while (cells.length < width) cells.push("");
+    const normalizedRow = cells.slice(0, width);
+    if (normalizedRow.some((c) => c.trim() !== "")) {
+      dataRows.push(normalizedRow);
+    }
+  }
   return { headers, dataRows };
 }
 
@@ -50,6 +51,7 @@ export function matrixToImportPreview(
   const { headers, dataRows } = parsed;
   const issues: string[] = [];
   const headerSet = new Set(headers.map((h) => h.toLowerCase()));
+  const headerIndex = new Map(headers.map((h, index) => [h.toLowerCase(), index]));
   const label = (key: string) => config.fieldLabels?.[key] ?? key;
 
   for (const key of config.expectedHeaders) {
@@ -70,17 +72,17 @@ export function matrixToImportPreview(
   const required = config.requiredRowFields ?? [];
   const fieldIndices = required.map((field) => ({
     field,
-    idx: headers.findIndex((h) => h.toLowerCase() === field.toLowerCase()),
+    idx: headerIndex.get(field.toLowerCase()) ?? -1,
   }));
 
-  const rowValueGroups = (config.requireAnyValueInEachRowGroup ?? []).map((group) =>
-    group
-      .map((field) => ({
-        field,
-        idx: headers.findIndex((h) => h.toLowerCase() === field.toLowerCase()),
-      }))
-      .filter((x) => x.idx >= 0),
-  );
+  const rowValueGroups = (config.requireAnyValueInEachRowGroup ?? []).map((group) => {
+    const indices: { field: string; idx: number }[] = [];
+    for (const field of group) {
+      const idx = headerIndex.get(field.toLowerCase()) ?? -1;
+      if (idx >= 0) indices.push({ field, idx });
+    }
+    return indices;
+  });
 
   dataRows.forEach((r, idx) => {
     const line = idx + 2;

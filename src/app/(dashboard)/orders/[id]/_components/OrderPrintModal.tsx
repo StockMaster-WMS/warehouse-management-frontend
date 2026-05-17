@@ -31,19 +31,14 @@ export function OrderPrintModal({
   warehouseLabel,
   items,
   products,
-  title = "Phiếu Xuất Kho / Packing List",
+  title = "Phiáº¿u Xuáº¥t Kho / Packing List",
 }: OrderPrintModalProps) {
   const handlePrint = () => {
     const printContent = document.getElementById("print-area");
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const contentWindow = iframe.contentWindow;
@@ -86,7 +81,7 @@ export function OrderPrintModal({
 
   const formatDateTime = (dateVal: string | Date | number) => {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return "â€”";
     const day = d.getDate().toString().padStart(2, "0");
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
     const year = d.getFullYear();
@@ -102,11 +97,11 @@ export function OrderPrintModal({
           <div>
             <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
             <DialogDescription>
-              Nhấn nút in để tạo bản cứng cho kho lưu trữ hoặc giao hàng.
+              Nháº¥n nÃºt in Ä‘á»ƒ táº¡o báº£n cá»©ng cho kho lÆ°u trá»¯ hoáº·c giao hÃ ng.
             </DialogDescription>
           </div>
           <Button onClick={handlePrint} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-            <Printer className="h-4 w-4" /> In Phiếu
+            <Printer className="h-4 w-4" /> In Phiáº¿u
           </Button>
         </DialogHeader>
 
@@ -119,41 +114,41 @@ export function OrderPrintModal({
             <div>
               <h1 className="text-2xl font-bold uppercase tracking-widest">{title}</h1>
               <p className="font-mono mt-1 text-sm font-semibold">
-                Mã đơn: {salesOrder.soNumber || `SO-${salesOrder.id.slice(0, 8)}`}
+                MÃ£ Ä‘Æ¡n: {salesOrder.soNumber || `SO-${salesOrder.id.slice(0, 8)}`}
               </p>
             </div>
             <div className="text-right text-sm">
-              <p>Ngày in: {formatDateTime(new Date())}</p>
-              <p>Kho xuất: <span className="font-semibold">{warehouseLabel}</span></p>
+              <p suppressHydrationWarning>NgÃ y in: {formatDateTime(new Date())}</p>
+              <p>Kho xuáº¥t: <span className="font-semibold">{warehouseLabel}</span></p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                Thông tin Khách hàng
+                ThÃ´ng tin KhÃ¡ch hÃ ng
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Khách hàng:</span>{" "}
+                <span className="font-semibold inline-block w-24">KhÃ¡ch hÃ ng:</span>{" "}
                 {salesOrder.customerName}
               </p>
               <p className="flex">
-                <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
+                <span className="font-semibold inline-block w-24 shrink-0">Äá»‹a chá»‰:</span>{" "}
                 <span>{formatShippingShort(salesOrder.shippingAddress)}</span>
               </p>
             </div>
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                Thông tin Đơn hàng
+                ThÃ´ng tin ÄÆ¡n hÃ ng
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Ngày tạo:</span>{" "}
+                <span className="font-semibold inline-block w-24">NgÃ y táº¡o:</span>{" "}
                 {salesOrder.createdAt
                   ? formatDateTime(salesOrder.createdAt)
-                  : "—"}
+                  : "â€”"}
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Mức ưu tiên:</span>{" "}
+                <span className="font-semibold inline-block w-24">Má»©c Æ°u tiÃªn:</span>{" "}
                 {salesOrder.priority || 0}
               </p>
             </div>
@@ -163,10 +158,10 @@ export function OrderPrintModal({
             <thead>
               <tr className="border-y-2 border-slate-800 font-bold bg-slate-50">
                 <th className="py-2.5 px-2 text-center w-12 border-x border-slate-300">STT</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Mã SP</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Tên sản phẩm</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Đặt</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thực tế</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">MÃ£ SP</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">TÃªn sáº£n pháº©m</th>
+                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Äáº·t</th>
+                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thá»±c táº¿</th>
               </tr>
             </thead>
             <tbody>
@@ -195,21 +190,21 @@ export function OrderPrintModal({
 
           <div className="flex justify-between mt-16 text-center text-sm break-inside-avoid pt-12">
             <div className="w-48">
-              <p className="font-bold mb-16">Người lập phiếu</p>
+              <p className="font-bold mb-16">NgÆ°á»i láº­p phiáº¿u</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">Thủ kho</p>
+              <p className="font-bold mb-16">Thá»§ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">Bên nhận hàng</p>
+              <p className="font-bold mb-16">BÃªn nháº­n hÃ ng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
             </div>
           </div>

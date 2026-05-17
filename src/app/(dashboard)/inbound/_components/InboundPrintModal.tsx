@@ -24,19 +24,14 @@ export function InboundPrintModal({
   onOpenChange,
   data,
   warehouseLabel,
-  title = "PHIẾU NHẬP KHO / GOODS RECEIPT NOTE",
+  title = "PHIáº¾U NHáº¬P KHO / GOODS RECEIPT NOTE",
 }: InboundPrintModalProps) {
   const handlePrint = () => {
     const printContent = document.getElementById("print-area-inbound");
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const contentWindow = iframe.contentWindow;
@@ -78,9 +73,9 @@ export function InboundPrintModal({
   };
 
   const formatDateTime = (dateVal: string | Date | number | null | undefined) => {
-    if (!dateVal) return "—";
+    if (!dateVal) return "â€”";
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return "â€”";
     const day = d.getDate().toString().padStart(2, "0");
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
     const year = d.getFullYear();
@@ -101,11 +96,11 @@ export function InboundPrintModal({
           <div>
             <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
             <DialogDescription>
-              Nhấn nút in để tạo bản cứng cho kho lưu trữ hoặc nhà cung cấp.
+              Nháº¥n nÃºt in Ä‘á»ƒ táº¡o báº£n cá»©ng cho kho lÆ°u trá»¯ hoáº·c nhÃ  cung cáº¥p.
             </DialogDescription>
           </div>
           <Button onClick={handlePrint} className="gap-2">
-            <Printer className="h-4 w-4" /> In Phiếu
+            <Printer className="h-4 w-4" /> In Phiáº¿u
           </Button>
         </DialogHeader>
 
@@ -118,49 +113,51 @@ export function InboundPrintModal({
             <div>
               <h1 className="text-2xl font-bold uppercase tracking-widest">{title}</h1>
               <p className="font-mono mt-1 text-sm font-semibold">
-                Mã đơn: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
+                MÃ£ Ä‘Æ¡n: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
               </p>
             </div>
             <div className="text-right text-sm">
-              <p>Ngày in: {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}</p>
-              <p>Kho nhập: <span className="font-semibold">{warehouseLabel}</span></p>
-              {data.locationId && <p>Khu vực/Dock: <span className="font-semibold">{data.locationId}</span></p>}
+              <p suppressHydrationWarning>
+                NgÃ y in: {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
+              </p>
+              <p>Kho nháº­p: <span className="font-semibold">{warehouseLabel}</span></p>
+              {data.locationId && <p>Khu vá»±c/Dock: <span className="font-semibold">{data.locationId}</span></p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                Thông tin Nhà cung cấp
+                ThÃ´ng tin NhÃ  cung cáº¥p
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Nhà cung cấp:</span>{" "}
-                {data.supplierName || "—"}
+                <span className="font-semibold inline-block w-24">NhÃ  cung cáº¥p:</span>{" "}
+                {data.supplierName || "â€”"}
               </p>
               <p className="flex">
-                <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
-                <span>{data.supplierAddress || "—"}</span>
+                <span className="font-semibold inline-block w-24 shrink-0">Äá»‹a chá»‰:</span>{" "}
+                <span>{data.supplierAddress || "â€”"}</span>
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Điện thoại:</span>{" "}
-                {data.supplierPhone || "—"}
+                <span className="font-semibold inline-block w-24">Äiá»‡n thoáº¡i:</span>{" "}
+                {data.supplierPhone || "â€”"}
               </p>
             </div>
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                Thông tin Đơn nhập
+                ThÃ´ng tin ÄÆ¡n nháº­p
               </p>
               <p>
-                <span className="font-semibold inline-block w-28">Đơn mua hàng (PO):</span>{" "}
-                {data.poNumber || "—"}
+                <span className="font-semibold inline-block w-28">ÄÆ¡n mua hÃ ng (PO):</span>{" "}
+                {data.poNumber || "â€”"}
               </p>
               <p>
-                <span className="font-semibold inline-block w-28">Ngày nhập hàng:</span>{" "}
-                {data.receivedDate ? formatDateTime(data.receivedDate) : "—"}
+                <span className="font-semibold inline-block w-28">NgÃ y nháº­p hÃ ng:</span>{" "}
+                {data.receivedDate ? formatDateTime(data.receivedDate) : "â€”"}
               </p>
               {data.note && (
                 <p>
-                  <span className="font-semibold inline-block w-28 align-top shrink-0">Ghi chú:</span>{" "}
+                  <span className="font-semibold inline-block w-28 align-top shrink-0">Ghi chÃº:</span>{" "}
                   <span className="inline-block w-[calc(100%-7rem)]">{data.note}</span>
                 </p>
               )}
@@ -171,27 +168,27 @@ export function InboundPrintModal({
             <thead>
               <tr className="border-y-2 border-slate-800 font-bold bg-slate-50">
                 <th className="py-2.5 px-2 text-center w-12 border-x border-slate-300">STT</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Mã SP</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Tên sản phẩm</th>
-                <th className="py-2.5 px-2 text-center w-16 border-x border-slate-300">ĐVT</th>
-                <th className="py-2.5 px-2 text-right w-20 border-x border-slate-300">SL Đặt</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thực nhận</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Ghi chú</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">MÃ£ SP</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">TÃªn sáº£n pháº©m</th>
+                <th className="py-2.5 px-2 text-center w-16 border-x border-slate-300">ÄVT</th>
+                <th className="py-2.5 px-2 text-right w-20 border-x border-slate-300">SL Äáº·t</th>
+                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thá»±c nháº­n</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">Ghi chÃº</th>
               </tr>
             </thead>
             <tbody>
               {data.items && data.items.length > 0 ? (
                 data.items.map((item, idx) => (
-                  <tr key={idx} className="border-b border-slate-300 break-inside-avoid">
+                  <tr key={`${item.lineNumber ?? idx}-${item.productSku ?? item.productName ?? "item"}`} className="border-b border-slate-300 break-inside-avoid">
                     <td className="py-2 px-2 text-center border-x border-slate-300">{item.lineNumber || idx + 1}</td>
                     <td className="py-2 px-2 font-mono text-xs border-x border-slate-300">
-                      {item.productSku || "—"}
+                      {item.productSku || "â€”"}
                     </td>
                     <td className="py-2 px-2 border-x border-slate-300">
-                      {item.productName || item.productSku || "—"}
+                      {item.productName || item.productSku || "â€”"}
                     </td>
                     <td className="py-2 px-2 text-center border-x border-slate-300">
-                      {item.unit || "—"}
+                      {item.unit || "â€”"}
                     </td>
                     <td className="py-2 px-2 text-right border-x border-slate-300">
                       {item.orderedQty ?? 0}
@@ -207,7 +204,7 @@ export function InboundPrintModal({
               ) : (
                 <tr>
                   <td colSpan={7} className="py-4 text-center border-x border-b border-slate-300 text-slate-500">
-                    Không có sản phẩm nào
+                    KhÃ´ng cÃ³ sáº£n pháº©m nÃ o
                   </td>
                 </tr>
               )}
@@ -216,22 +213,22 @@ export function InboundPrintModal({
 
           <div className="flex justify-between mt-16 text-center text-sm break-inside-avoid pt-12">
             <div className="w-48">
-              <p className="font-bold mb-16">Người lập phiếu</p>
+              <p className="font-bold mb-16">NgÆ°á»i láº­p phiáº¿u</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">Thủ kho</p>
+              <p className="font-bold mb-16">Thá»§ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
               {data.receivedBy && <p className="mt-2 font-semibold text-slate-800">{data.receivedBy}</p>}
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">Bên giao hàng</p>
+              <p className="font-bold mb-16">BÃªn giao hÃ ng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (Ký, ghi rõ họ tên)
+                (KÃ½, ghi rÃµ há» tÃªn)
               </p>
             </div>
           </div>

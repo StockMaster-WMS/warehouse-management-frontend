@@ -26,7 +26,13 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   const soItems = useMemo(() => so?.items ?? [], [so?.items]);
 
   const productIds = useMemo(
-    () => [...new Set(soItems.map((item) => String(item.productId)).filter(Boolean))],
+    () => Array.from(
+      soItems.reduce((set, item) => {
+        const productId = String(item.productId);
+        if (productId) set.add(productId);
+        return set;
+      }, new Set<string>()),
+    ),
     [soItems],
   );
   const { data: productsRes } = useGetProductsByIdsQuery(productIds, {

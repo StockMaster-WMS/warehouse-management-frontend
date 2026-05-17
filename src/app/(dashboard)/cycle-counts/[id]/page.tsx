@@ -40,7 +40,7 @@ import {
   useCancelCycleCountMutation,
 } from "@/store/services/cycle-count.service";
 import { apiErrMessage } from "@/types/api";
-import type { CycleCountStatus } from "@/types/cycle-count";
+import type { CycleCountLine, CycleCountStatus } from "@/types/cycle-count";
 import { cn } from "@/lib/utils";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
@@ -102,11 +102,28 @@ function formatDate(value?: string | null) {
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("vi-VN");
 }
 
+function buildCycleCountResults(
+  lines: readonly CycleCountLine[],
+  actualCounts: Record<string, number>,
+) {
+  const results = [];
+  for (const line of lines ?? []) {
+    if (!line.productId) continue;
+    const prevCounted = line.countedQty ?? line.receivedQty;
+    results.push({
+      productId: line.productId,
+      locationId: line.locationId ?? "",
+      actualQty: actualCounts[line.id] !== undefined ? actualCounts[line.id] : (prevCounted ?? 0),
+    });
+  }
+  return results;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CycleCountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const { push } = useRouter();
 
   const { data: countRes, isLoading, refetch, isFetching } = useGetCycleCountByIdQuery(id);
   const count = countRes?.data;
@@ -168,18 +185,7 @@ export default function CycleCountDetailPage() {
       return;
     }
 
-    // Build results array for all lines (use actualCounts if edited, else fallback to visual default)
-    const results = lines
-      .map((line) => {
-        const prevCounted = line.countedQty ?? line.receivedQty;
-        const actualQty = actualCounts[line.id] !== undefined ? actualCounts[line.id] : (prevCounted ?? 0);
-        return {
-          productId: line.productId as string,
-          locationId: (line.locationId ?? "") as string,
-          actualQty,
-        };
-      })
-      .filter((r) => r.productId); // skip lines without productId
+    const results = buildCycleCountResults(lines, actualCounts);
 
     if (results.length === 0) {
       toast.error("Không có dòng hợp lệ để ghi nhận (thiếu productId).");
@@ -202,17 +208,7 @@ export default function CycleCountDetailPage() {
     const hasUnsavedOrPending = Object.keys(actualCounts).length > 0 || lines.some(l => l.status === "PENDING");
 
     if (hasUnsavedOrPending) {
-      const results = lines
-        .map((line) => {
-          const prevCounted = line.countedQty ?? line.receivedQty;
-          const actualQty = actualCounts[line.id] !== undefined ? actualCounts[line.id] : (prevCounted ?? 0);
-          return {
-            productId: line.productId as string,
-            locationId: (line.locationId ?? "") as string,
-            actualQty,
-          };
-        })
-        .filter((r) => r.productId);
+      const results = buildCycleCountResults(lines, actualCounts);
 
       if (results.length > 0) {
         try {
@@ -242,7 +238,7 @@ export default function CycleCountDetailPage() {
     try {
       await completeCount(id).unwrap();
       toast.success("Đã duyệt và hoàn tất — tồn kho đã được điều chỉnh!");
-      router.push("/cycle-counts");
+      push("/cycle-counts");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể hoàn tất kiểm kê"));
     }
@@ -253,7 +249,7 @@ export default function CycleCountDetailPage() {
     try {
       await cancelCount(id).unwrap();
       toast.success("Đã huỷ đợt kiểm kê");
-      router.push("/cycle-counts");
+      push("/cycle-counts");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể huỷ đợt kiểm kê"));
     }
@@ -276,7 +272,7 @@ export default function CycleCountDetailPage() {
         title="Không tìm thấy đợt kiểm kê"
         description="Đợt kiểm kê này không tồn tại hoặc đã bị xoá."
         action={
-          <Button variant="outline" onClick={() => router.push("/cycle-counts")}>
+          <Button variant="outline" onClick={() => push("/cycle-counts")}>
             Quay lại danh sách
           </Button>
         }
@@ -298,7 +294,7 @@ export default function CycleCountDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push("/cycle-counts")}
+          onClick={() => push("/cycle-counts")}
           className="-ml-2 h-8"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -53,9 +53,7 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
         binCount: 1,
     });
 
-    const totalCalculated = useMemo(() => {
-        return form.aisleCount * form.rackCount * form.levelCount * form.binCount;
-    }, [form.aisleCount, form.rackCount, form.levelCount, form.binCount]);
+    const totalCalculated = form.aisleCount * form.rackCount * form.levelCount * form.binCount;
 
     const handleGenerate = async () => {
         if (!form.warehouseId) {

@@ -12,7 +12,7 @@ import { useCreateCustomerMutation } from "@/store/services/customer.service";
 import type { CreateCustomerRequest } from "@/types/customer";
 
 export default function NewCustomerPage() {
-  const router = useRouter();
+  const { push } = useRouter();
   const [createCustomer, { isLoading }] = useCreateCustomerMutation();
 
   const handleCreate = async (body: CreateCustomerRequest) => {
@@ -23,7 +23,7 @@ export default function NewCustomerPage() {
     }
 
     toast.success(res.message || "Đã tạo khách hàng thành công");
-    router.push("/customers");
+    push("/customers");
   };
 
   return (

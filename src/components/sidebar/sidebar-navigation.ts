@@ -176,12 +176,14 @@ export function filterSidebarSections(
   sections: readonly SidebarSectionConfig[],
   userRoles: readonly UserRole[],
 ): SidebarSectionConfig[] {
-  return sections
-    .map((section) => ({
-      ...section,
-      items: filterSidebarItems(section.items, userRoles),
-    }))
-    .filter((section) => section.items.length > 0);
+  const visibleSections: SidebarSectionConfig[] = [];
+  for (const section of sections) {
+    const items = filterSidebarItems(section.items, userRoles);
+    if (items.length > 0) {
+      visibleSections.push({ ...section, items });
+    }
+  }
+  return visibleSections;
 }
 
 export function findExpandedHref(
@@ -189,12 +191,10 @@ export function findExpandedHref(
   pathname: string,
 ): string | null {
   for (const section of sections) {
-    const activeParent = section.items.find(
-      (item) => item.children?.length && isActivePath(pathname, item.href),
-    );
-
-    if (activeParent) {
-      return activeParent.href;
+    for (const item of section.items) {
+      if (item.children?.length && isActivePath(pathname, item.href)) {
+        return item.href;
+      }
     }
   }
 

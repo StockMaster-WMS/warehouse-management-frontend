@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "bwipjs-api.metafloor.com",
+      },
+    ],
+  },
   // API gọi thẳng tới BE qua NEXT_PUBLIC_API_BASE* trong .env — không dùng rewrite /api.
 };
 

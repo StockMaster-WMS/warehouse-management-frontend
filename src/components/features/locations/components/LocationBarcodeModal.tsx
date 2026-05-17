@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { Printer, Download } from "lucide-react";
 import {
   Dialog,
@@ -36,12 +37,7 @@ export function LocationBarcodeModal({
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const contentWindow = iframe.contentWindow;
@@ -123,11 +119,13 @@ export function LocationBarcodeModal({
              </div>
              <div className="text-sm font-black mb-1">{location.code}</div>
              {barcodeUrl ? (
-               /* eslint-disable-next-line @next/next/no-img-element */
-               <img 
-                 src={barcodeUrl} 
+               <Image
+                 src={barcodeUrl}
                  alt={`Mã vạch vị trí ${location.code}`}
-                 className="w-full h-12 object-contain" 
+                 width={176}
+                 height={48}
+                 className="h-12 w-full object-contain"
+                 unoptimized
                />
              ) : (
                <div className="h-12 w-full bg-slate-100 animate-pulse" />

@@ -169,7 +169,7 @@ export function SuppliersTable({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex flex-col gap-y-1">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
                           <User className="h-3 w-3 shrink-0 text-muted-foreground" />
                           <span className="truncate">{supplier.contactName ?? "-"}</span>

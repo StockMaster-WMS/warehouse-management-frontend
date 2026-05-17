@@ -38,8 +38,8 @@ export default function ReportsPage() {
       <div className="space-y-6">
         <PageHeader title="Báo cáo" description="Đang tải dữ liệu phân tích..." />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
+          {["inventory", "orders", "revenue"].map((key) => (
+            <Skeleton key={key} className="h-32 rounded-2xl" />
           ))}
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -49,7 +49,7 @@ export default function EditSupplierPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(paramsPromise);
-  const router = useRouter();
+  const { push } = useRouter();
 
   const {
     data: supplierRes,
@@ -167,7 +167,7 @@ export default function EditSupplierPage({
         return;
       }
       toast.success(res.message || "Đã cập nhật nhà cung cấp");
-      router.push("/suppliers");
+      push("/suppliers");
     } catch (err) {
       const msg = apiErrMessage(err);
       if (msg.includes("Mã nhà cung cấp đã tồn tại")) {
@@ -267,7 +267,7 @@ export default function EditSupplierPage({
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
             onClick={() => {
-              if (confirmLeave()) router.push("/suppliers");
+              if (confirmLeave()) push("/suppliers");
             }}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -482,7 +482,7 @@ export default function EditSupplierPage({
                   variant="outline"
                   className="w-full border-slate-200 bg-white"
                   onClick={() => {
-                    if (confirmLeave()) router.push("/suppliers");
+                    if (confirmLeave()) push("/suppliers");
                   }}
                 >
                   Hủy bỏ
