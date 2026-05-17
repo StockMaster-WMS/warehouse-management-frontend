@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -463,7 +463,7 @@ function ReturnsSearch({
             }
           >
             <SelectTrigger className="h-10 w-44 rounded-xl border-zinc-200 dark:border-zinc-700">
-              <SelectValue placeholder="Thời gian" />
+              <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="today">Hôm nay</SelectItem>
@@ -482,7 +482,9 @@ function ReturnsSearch({
             }
           >
             <SelectTrigger className="h-10 w-44 rounded-xl border-zinc-200 dark:border-zinc-700">
-              <SelectValue placeholder="Trạng thái" />
+              <span className="truncate text-sm">
+                {status ? STATUS_LABEL[status] : "Tất cả trạng thái"}
+              </span>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="all">Tất cả trạng thái</SelectItem>

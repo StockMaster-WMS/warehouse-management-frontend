@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import {
@@ -289,13 +289,19 @@ function PickingAdvancedFilters({
     datePreset: OperationDatePreset;
     onDatePresetChange: (datePreset: OperationDatePreset) => void;
 }) {
+    const statusLabel: Record<OverviewState["status"], string> = {
+        all: "Tất cả trạng thái",
+        PENDING: "Chờ lấy",
+        PICKED: "Đã lấy",
+    };
+
     return (
         <AdvancedFilterPanel open={open}>
             <div className="min-w-52 space-y-1">
                 <p className="ui-label">Thời gian</p>
                 <Select value={datePreset} onValueChange={(value) => onDatePresetChange(value as OperationDatePreset)}>
                     <SelectTrigger className="h-10 rounded-lg bg-background">
-                        <SelectValue placeholder="Thời gian" />
+                        <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="today">{operationDatePresetLabel("today")}</SelectItem>
@@ -309,7 +315,7 @@ function PickingAdvancedFilters({
                 <p className="ui-label">Trạng thái lấy hàng</p>
                 <Select value={status} onValueChange={(value) => onStatusChange(value as OverviewState["status"])}>
                     <SelectTrigger className="h-10 rounded-lg bg-background">
-                        <SelectValue placeholder="Trạng thái" />
+                        <span className="truncate text-sm">{statusLabel[status]}</span>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Tất cả trạng thái</SelectItem>
