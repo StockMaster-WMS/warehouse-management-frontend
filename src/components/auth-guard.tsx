@@ -71,7 +71,7 @@ export function AuthGuard({
       }
 
       if (!initialHasSession) {
-        router.replace("/login");
+        replace("/login");
         return;
       }
 
