@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { OverviewTab } from "./overview-tab";
 import { OperationTab } from "./operation-tab";
@@ -8,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Monitor, Smartphone } from "lucide-react";
 
-export default function PickingPage() {
+function PickingPageContent() {
     const [isMobileMode, setIsMobileMode] = useState(false);
+    const searchParams = useSearchParams();
+    const itemId = searchParams.get("itemId");
 
     return (
         <div className="flex h-full flex-col">
@@ -72,8 +75,16 @@ export default function PickingPage() {
             />
 
             <div className="flex-1 space-y-6 pt-6">
-                <OverviewTab />
+                <OverviewTab initialSelectedId={itemId} />
             </div>
         </div>
+    );
+}
+
+export default function PickingPage() {
+    return (
+        <Suspense>
+            <PickingPageContent />
+        </Suspense>
     );
 }

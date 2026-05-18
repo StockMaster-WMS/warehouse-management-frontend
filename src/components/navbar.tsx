@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
   ChevronDown,
   CircleHelp,
   Home,
@@ -30,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ADMIN_MANAGER_ROLES, getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { PermissionControl } from "@/components/permission-control";
@@ -41,6 +41,7 @@ import { toast } from "sonner";
 
 function toTitle(segment: string): string {
   const map: Record<string, string> = {
+    notifications: "Thông báo",
     dashboard: "Tổng quan kho",
     inventory: "Theo dõi tồn kho",
     warehouses: "Danh sách kho",
@@ -157,18 +158,7 @@ export function Navbar() {
           >
             <CircleHelp className="size-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="relative rounded-full text-primary-foreground/85 hover:bg-white/10 hover:text-white"
-            aria-label="Thông báo"
-          >
-            <Bell className="size-4" />
-            <span className="absolute top-1 right-1 flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex size-2 rounded-full bg-red-500"></span>
-            </span>
-          </Button>
+          <NotificationBell compact />
         </div>
       </div>
 
@@ -232,18 +222,7 @@ export function Navbar() {
               <CircleHelp className="size-5" />
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="relative rounded-full text-primary-foreground/85 hover:bg-white/10 hover:text-white"
-              aria-label="Thông báo"
-            >
-              <Bell className="size-5" />
-              <span className="absolute top-1.5 right-1.5 flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex size-2 rounded-full bg-red-500"></span>
-              </span>
-            </Button>
+            <NotificationBell />
           </div>
 
           <div className="h-6 w-px bg-white/20" />
