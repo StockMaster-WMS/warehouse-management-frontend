@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -81,6 +82,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Tổng quan & tác nghiệp",
     items: [
       { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: ALL_ROLES },
+      { label: "Thông báo", href: "/notifications", icon: Bell, roles: ALL_ROLES },
       { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: READ_OPERATION_ROLES },
       { label: "Danh sách kho", href: "/warehouses", icon: Warehouse, roles: WAREHOUSE_OPERATION_ROLES },
       {

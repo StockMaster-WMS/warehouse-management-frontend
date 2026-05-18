@@ -80,6 +80,7 @@ type RouteAccessRule = {
 export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/dashboard", roles: ALL_ROLES },
   { pattern: "/profile", roles: ALL_ROLES },
+  { pattern: "/notifications", roles: ALL_ROLES },
 
   { pattern: "/inventory", roles: READ_OPERATION_ROLES },
   { pattern: "/history", roles: READ_OPERATION_ROLES },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Dispatch, useMemo, useReducer } from "react";
+import React, { Dispatch, useEffect, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
 import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Users } from "lucide-react";
@@ -87,11 +87,17 @@ function displayPickingLocation(item: PickingItem) {
     return item.locationCode;
 }
 
-export function OverviewTab() {
+export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string | null }) {
     const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
     const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
+
+    useEffect(() => {
+        if (initialSelectedId) {
+            dispatch({ selectedId: initialSelectedId });
+        }
+    }, [initialSelectedId]);
 
     const { data, isLoading, isFetching, isError } = useGetPickingItemsQuery({
         page,
