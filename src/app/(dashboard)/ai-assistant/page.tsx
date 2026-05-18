@@ -24,6 +24,8 @@ interface Message {
   content: string;
 }
 
+const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
+const AI_MESSAGES_STORAGE_KEY = "warehouse-ai-messages";
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -52,7 +54,7 @@ function createSessionId() {
 
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -62,6 +64,7 @@ export default function AiAssistantPage() {
   const activeRequestId = useRef<string | null>(null);
   const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
   const sessionIdRef = useRef(createSessionId());
+  const hasRestoredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const busy = isStreaming || streamingMessageId !== null;
 
@@ -82,6 +85,34 @@ export default function AiAssistantPage() {
     );
     scrollMessagesToEnd();
   }, [scrollMessagesToEnd, streamResult]);
+
+  useEffect(() => {
+    if (hasRestoredRef.current || typeof window === "undefined") return;
+    hasRestoredRef.current = true;
+
+    const storedSessionId = window.localStorage.getItem(AI_SESSION_STORAGE_KEY);
+    if (storedSessionId) {
+      sessionIdRef.current = storedSessionId;
+    }
+
+    const storedMessages = window.localStorage.getItem(AI_MESSAGES_STORAGE_KEY);
+    if (!storedMessages) return;
+
+    try {
+      const parsed = JSON.parse(storedMessages) as Message[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setMessages(parsed);
+      }
+    } catch {
+      window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+    window.localStorage.setItem(AI_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
@@ -224,6 +255,10 @@ export default function AiAssistantPage() {
     activeRequestId.current = null;
     activeTriggerRef.current = null;
     sessionIdRef.current = createSessionId();
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+      window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
+    }
     setStreamingMessageId(null);
     setIsStreaming(false);
     setInput("");
