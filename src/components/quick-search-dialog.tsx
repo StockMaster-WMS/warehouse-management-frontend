@@ -51,7 +51,7 @@ export function QuickSearchDialog({
 function QuickSearchDialogContent({
   onOpenChange,
 }: Pick<QuickSearchDialogProps, "onOpenChange">) {
-  const router = useRouter();
+  const { push } = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -74,9 +74,9 @@ function QuickSearchDialogContent({
   const navigateTo = useCallback(
     (href: string) => {
       onOpenChange(false);
-      router.push(href);
+      push(href);
     },
-    [onOpenChange, router],
+    [onOpenChange, push],
   );
 
   const handleQueryChange = (value: string) => {
@@ -111,6 +111,10 @@ function QuickSearchDialogContent({
 
         <div
           className="flex max-h-[min(70vh,32rem)] flex-col outline-none"
+          role="combobox"
+          aria-controls="quick-search-listbox"
+          aria-expanded="true"
+          aria-haspopup="listbox"
           onKeyDown={handleContainerKeyDown}
         >
           <div className="border-b border-border px-3 py-3">

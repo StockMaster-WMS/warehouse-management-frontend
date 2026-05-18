@@ -58,6 +58,7 @@ export interface CreateProductPayload {
   isFragile?: boolean;
   isHazmat?: boolean;
   isHeavy?: boolean;
+  createdBy: string;
 }
 
 export interface ProductImportRowError {

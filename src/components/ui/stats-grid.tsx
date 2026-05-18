@@ -41,11 +41,13 @@ export function StatsGrid({ stats, cols = 4, isLoading }: StatsGridProps) {
     return (
         <div className={cn("grid gap-4", colClass)}>
             {stats.map((stat) => {
+                const StatElement = stat.onClick ? "button" : "div";
                 const content = (
-                    <div
+                    <StatElement
                         key={stat.label}
+                        type={stat.onClick ? "button" : undefined}
                         className={cn(
-                            "ui-surface group relative overflow-hidden p-5 transition-all",
+                            "ui-surface group relative overflow-hidden p-5 text-left transition-all",
                             stat.onClick && "cursor-pointer hover:border-primary/30 hover:shadow-md",
                             stat.className
                         )}
@@ -65,7 +67,7 @@ export function StatsGrid({ stats, cols = 4, isLoading }: StatsGridProps) {
                         {stat.onClick && (
                             <div className="absolute bottom-0 left-0 h-1 w-full translate-y-full bg-primary transition-transform group-hover:translate-y-0" />
                         )}
-                    </div>
+                    </StatElement>
                 );
 
                 return content;

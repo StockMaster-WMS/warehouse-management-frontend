@@ -52,7 +52,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "returns",
-    label: "Hàng trả / RMA / Hàng lỗi",
+    label: "Hàng trả / Hàng lỗi",
     href: "/returns",
     group: "Kho xuất",
   },

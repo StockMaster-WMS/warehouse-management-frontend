@@ -1,16 +1,19 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PermissionControl } from "@/components/permission-control";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useOrdersPageLogic,
   OrdersSearchSection,
   OrdersTable,
 } from "@/components/features/orders";
 
-export default function OrderPage() {
+function OrderPageContent() {
   const logic = useOrdersPageLogic();
 
   return (
@@ -19,15 +22,17 @@ export default function OrderPage() {
         title="Đơn hàng xuất kho"
         description="Quản lý đơn hàng và theo dõi tiến trình giao nhận."
         actions={
-          <Button
-            render={<Link href="/orders/new" />}
-            nativeButton={false}
-            size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Tạo đơn xuất
-          </Button>
+          <PermissionControl allowedRoles={["ADMIN", "WAREHOUSE_MANAGER"]}>
+            <Button
+              render={<Link href="/orders/new" />}
+              nativeButton={false}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo đơn xuất
+            </Button>
+          </PermissionControl>
         }
       />
 
@@ -46,6 +51,11 @@ export default function OrderPage() {
           statusFilter={logic.statusFilter}
           onStatusChange={(value) => {
             logic.setStatusFilter(value);
+            logic.setPage(0);
+          }}
+          datePreset={logic.datePreset}
+          onDatePresetChange={(value) => {
+            logic.setDatePreset(value);
             logic.setPage(0);
           }}
           onClearFilters={() => {
@@ -78,5 +88,20 @@ export default function OrderPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-[520px] w-full rounded-2xl" />
+        </div>
+      }
+    >
+      <OrderPageContent />
+    </Suspense>
   );
 }

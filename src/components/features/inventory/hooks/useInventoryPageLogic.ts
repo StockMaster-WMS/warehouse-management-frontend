@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+﻿import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrMessage } from "@/types/api";
@@ -15,7 +15,7 @@ import {
 } from "@/store/services/stock.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
-import { useGetProductsQuery } from "@/store/services/product.service";
+import { useGetProductsByIdsQuery, useGetProductsQuery } from "@/store/services/product.service";
 import {
   INVENTORY_PAGE_SIZE,
   NEAR_EXPIRY_DAYS_DEFAULT,
@@ -24,6 +24,7 @@ import {
 } from "@/components/features/inventory/constants";
 import { downloadBlob } from "@/components/features/inventory/utils";
 import type { StockExpanded } from "@/types/stock";
+import type { Product } from "@/types/product";
 
 export type InventoryTab = "stock" | "low-stock" | "near-expiry";
 
@@ -138,20 +139,70 @@ export function useInventoryPageLogic() {
   );
   const nearExpiryItems = useMemo(() => nearExpiryRes?.data ?? [], [nearExpiryRes]);
 
+  const productIdsForDisplay = useMemo(() => {
+    const ids = new Set<string>();
+
+    for (const item of stockList) {
+      if (!item.product?.name && item.productId) ids.add(item.productId);
+    }
+
+    for (const item of lowStockItems) {
+      if (!item.product?.name && item.productId) ids.add(item.productId);
+    }
+
+    for (const item of nearExpiryItems) {
+      if (item.productId) ids.add(item.productId);
+    }
+
+    return Array.from(ids);
+  }, [stockList, lowStockItems, nearExpiryItems]);
+
+  const { data: displayProductsRes } = useGetProductsByIdsQuery(productIdsForDisplay, {
+    skip: productIdsForDisplay.length === 0,
+  });
+
+  const displayProductsById = useMemo(() => {
+    const map = new Map<string, Product>();
+    for (const product of displayProductsRes?.data ?? []) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [displayProductsRes]);
+
+  const withProductFallback = useCallback((item: StockExpanded): StockExpanded => {
+    if (item.product?.name) return item;
+
+    const product = displayProductsById.get(item.productId);
+    return {
+      ...item,
+      product: {
+        id: item.productId,
+        sku: item.product?.sku ?? item.productSku ?? product?.sku ?? "",
+        name: item.product?.name ?? item.productName ?? product?.name ?? "",
+        minQty: item.product?.minQty ?? product?.minStockQty ?? null,
+      },
+    };
+  }, [displayProductsById]);
+
   // ── Unified display items ──
   const displayItems = useMemo(() => {
-    if (activeTab === "low-stock") return lowStockItems;
+    if (activeTab === "low-stock") return lowStockItems.map(withProductFallback);
     if (activeTab === "near-expiry") {
       return nearExpiryItems.map(item => ({
         ...item,
         warehouse: { id: item.warehouseId, code: item.warehouseCode, name: item.warehouseCode },
         location: { id: item.locationId, code: item.locationCode, name: item.locationCode },
-        product: { id: item.productId, sku: "", name: "Sản phẩm " + item.productId, minQty: null },
+        product: {
+          id: item.productId,
+          sku: displayProductsById.get(item.productId)?.sku ?? "",
+          name: displayProductsById.get(item.productId)?.name ?? "Sản phẩm " + item.productId,
+          minQty: displayProductsById.get(item.productId)?.minStockQty ?? null,
+        },
         updatedAt: new Date().toISOString(),
       } as StockExpanded));
     }
-    return stockList;
-  }, [activeTab, stockList, lowStockItems, nearExpiryItems]);
+    return stockList.map(withProductFallback);
+  }, [activeTab, stockList, lowStockItems, nearExpiryItems, displayProductsById, withProductFallback]);
 
   const displayTotalElements = useMemo(() => {
     if (activeTab === "low-stock") return lowStockItems.length;

@@ -45,9 +45,14 @@ export default function ProductDetailPage({
   const stocks = useMemo(() => stocksResponse?.data?.content ?? [], [stocksResponse]);
   
   // 3. Batch fetch locations for all stocks
-  const uniqueLocationIds = useMemo(() => 
-    Array.from(new Set(stocks.map((item) => item.locationId).filter(Boolean))),
-    [stocks]
+  const uniqueLocationIds = useMemo(
+    () => Array.from(
+      stocks.reduce((set, item) => {
+        if (item.locationId) set.add(item.locationId);
+        return set;
+      }, new Set<string>()),
+    ),
+    [stocks],
   );
 
   const { data: locationsRes, isLoading: isLocationsLoading } = useGetLocationsByIdsQuery(

@@ -41,10 +41,10 @@ export function TopSkusTable({ data }: { data?: TopSku[] }) {
                 {sku.productSku}
               </TableCell>
               <TableCell className="text-right font-medium tabular-nums">
-                {sku.totalQty.toLocaleString()}
+                {(sku.totalQty ?? 0).toLocaleString()}
               </TableCell>
               <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                {sku.totalRevenue.toLocaleString()} ₫
+                {(sku.totalRevenue ?? 0).toLocaleString()} ₫
               </TableCell>
             </TableRow>
           ))}

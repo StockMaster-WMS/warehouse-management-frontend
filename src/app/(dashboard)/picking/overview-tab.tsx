@@ -3,13 +3,22 @@
 import React, { Dispatch, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
-import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2 } from "lucide-react";
+import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Users } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
+import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import {
+    DEFAULT_OPERATION_DATE_PRESET,
+    getOperationDateRange,
+    operationDatePresetLabel,
+    type OperationDatePreset,
+} from "@/lib/date-range";
 import { statusTone } from "@/lib/design-system";
 import {
     Table,
@@ -26,7 +35,11 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useGetPickingItemsQuery, useGetPickingItemByIdQuery } from "@/store/services/picking-item.service";
+import {
+    useAssignPickingTaskMutation,
+    useGetPickingItemByIdQuery,
+    useGetPickingItemsQuery,
+} from "@/store/services/picking-item.service";
 
 interface GroupedPicking {
     soNumber: string;
@@ -42,6 +55,10 @@ type OverviewState = {
     selectedId: string | null;
     expandedGroups: Record<string, boolean>;
     advancedOpen: boolean;
+    page: number;
+    pageSize: number;
+    status: "all" | "PENDING" | "PICKED";
+    datePreset: OperationDatePreset;
 };
 
 const INITIAL_OVERVIEW_STATE: OverviewState = {
@@ -49,19 +66,38 @@ const INITIAL_OVERVIEW_STATE: OverviewState = {
     selectedId: null,
     expandedGroups: {},
     advancedOpen: false,
+    page: 0,
+    pageSize: 20,
+    status: "PENDING",
+    datePreset: DEFAULT_OPERATION_DATE_PRESET,
 };
 
 function overviewReducer(state: OverviewState, patch: Partial<OverviewState>) {
     return { ...state, ...patch };
 }
 
-export function OverviewTab() {
-    const filter = "pending";
-    const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
-    const { searchTerm, selectedId, expandedGroups, advancedOpen } = state;
+function looksLikeUuid(value?: string | null) {
+    return Boolean(value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+}
 
-    const { data, isLoading } = useGetPickingItemsQuery({
-        status: filter === "all" ? undefined : filter.toUpperCase()
+function displayPickingLocation(item: PickingItem) {
+    if (!item.locationCode || looksLikeUuid(item.locationCode)) {
+        return "Vị trí chưa xác định";
+    }
+    return item.locationCode;
+}
+
+export function OverviewTab() {
+    const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
+    const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset } = state;
+    const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
+    const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
+
+    const { data, isLoading, isFetching, isError } = useGetPickingItemsQuery({
+        page,
+        size: pageSize,
+        status: status === "all" ? undefined : status,
+        ...dateRange,
     });
 
     const { data: detailData, isFetching: isDetailLoading } = useGetPickingItemByIdQuery(
@@ -75,7 +111,7 @@ export function OverviewTab() {
         // 1. Calculate Global Stats
         const pendingCount = rawItems.filter(i => i.status === "PENDING").length;
         const pickedCount = rawItems.filter(i => i.status === "PICKED").length;
-        const uniqueSOsCount = new Set(rawItems.map(i => i.salesOrderNumber || i.soItemId)).size;
+        const uniqueSOsCount = new Set(rawItems.map(i => i.salesOrderNumber || "Chưa gắn đơn")).size;
 
         // 2. Filter by search
         let filtered = [...rawItems];
@@ -85,7 +121,7 @@ export function OverviewTab() {
                 item.salesOrderNumber?.toLowerCase().includes(s) ||
                 item.productSku?.toLowerCase().includes(s) ||
                 item.productName?.toLowerCase().includes(s) ||
-                item.locationCode?.toLowerCase().includes(s) ||
+                displayPickingLocation(item).toLowerCase().includes(s) ||
                 item.id.toLowerCase().includes(s)
             );
         }
@@ -94,7 +130,7 @@ export function OverviewTab() {
         const groups: Record<string, GroupedPicking> = {};
 
         filtered.forEach(item => {
-            const soKey = item.salesOrderNumber || item.soItemId || "Unknown SO";
+            const soKey = item.salesOrderNumber || "Chưa gắn đơn";
             if (!groups[soKey]) {
                 groups[soKey] = {
                     soNumber: soKey,
@@ -170,7 +206,35 @@ export function OverviewTab() {
         dispatch({ expandedGroups: { ...expandedGroups, [so]: !expandedGroups[so] } });
     };
 
+    const handleAssignGroup = async (event: React.MouseEvent, group: GroupedPicking) => {
+        event.stopPropagation();
+
+        try {
+            const demoUserId = "00000000-0000-0000-0000-000000000001";
+            await Promise.all(
+                group.items.map((item) =>
+                    assignTask({
+                        id: item.id,
+                        soItemId: item.soItemId,
+                        assigneeId: demoUserId,
+                    }).unwrap(),
+                ),
+            );
+            toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
+        } catch {
+            toast.error("Lỗi khi phân công tác vụ!");
+        }
+    };
+
     const detailItem = detailData?.data;
+    const totalElements = data?.data?.total_elements ?? 0;
+    const totalPages = data?.data?.total_pages ?? 0;
+    const rowsCount = data?.data?.content?.length ?? 0;
+    const hasAnyFilter = Boolean(searchTerm.trim() || status !== "all" || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
+    const activeFilterCount =
+        (status !== "all" ? 1 : 0) +
+        (datePreset !== DEFAULT_OPERATION_DATE_PRESET ? 1 : 0) +
+        (searchTerm.trim() ? 1 : 0);
 
     return (
         <div className="space-y-6">
@@ -179,24 +243,54 @@ export function OverviewTab() {
                     noContainer
                     placeholder="Tìm theo đơn hàng, SKU, vị trí…"
                     value={searchTerm}
-                    onValueChange={(searchTerm) => dispatch({ searchTerm })}
+                    onValueChange={(searchTerm) => dispatch({ searchTerm, page: 0 })}
                     right={
                         <AdvancedFilterActions
                             open={advancedOpen}
                             onToggle={() => dispatch({ advancedOpen: !advancedOpen })}
-                            activeCount={0}
-                            hasAnyFilter={false}
-                            onClear={() => dispatch({ searchTerm: "" })}
+                            activeCount={activeFilterCount}
+                            hasAnyFilter={hasAnyFilter}
+                            onClear={() => dispatch({
+                                searchTerm: "",
+                                status: "PENDING",
+                                datePreset: DEFAULT_OPERATION_DATE_PRESET,
+                                page: 0,
+                            })}
                         />
                     }
+                />
+                <PickingAdvancedFilters
+                    open={advancedOpen}
+                    status={status}
+                    onStatusChange={(status) => dispatch({ status, page: 0 })}
+                    datePreset={datePreset}
+                    onDatePresetChange={(datePreset) => dispatch({ datePreset, page: 0 })}
                 />
 
                 <PickingOverviewTable
                     expandedGroups={expandedGroups}
                     groupedData={groupedData}
+                    isAssigning={isAssigning}
                     isLoading={isLoading}
+                    onAssignGroup={handleAssignGroup}
                     onDispatch={dispatch}
                     onToggleGroup={toggleGroup}
+                />
+                <PaginationFooter
+                    itemLabel="dòng lấy hàng"
+                    rowsCount={rowsCount}
+                    page={page}
+                    totalElements={totalElements}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    canGoPrev={page > 0}
+                    canGoNext={totalPages > 0 && page < totalPages - 1}
+                    isLoading={isLoading}
+                    isError={isError}
+                    isFetching={isFetching}
+                    onPrevPage={() => dispatch({ page: Math.max(0, page - 1) })}
+                    onNextPage={() => dispatch({ page: page + 1 })}
+                    onPageSizeChange={(pageSize) => dispatch({ pageSize, page: 0 })}
                 />
             </div>
 
@@ -210,16 +304,72 @@ export function OverviewTab() {
     );
 }
 
+function PickingAdvancedFilters({
+    open,
+    status,
+    onStatusChange,
+    datePreset,
+    onDatePresetChange,
+}: {
+    open: boolean;
+    status: OverviewState["status"];
+    onStatusChange: (status: OverviewState["status"]) => void;
+    datePreset: OperationDatePreset;
+    onDatePresetChange: (datePreset: OperationDatePreset) => void;
+}) {
+    const statusLabel: Record<OverviewState["status"], string> = {
+        all: "Tất cả trạng thái",
+        PENDING: "Chờ lấy",
+        PICKED: "Đã lấy",
+    };
+
+    return (
+        <AdvancedFilterPanel open={open}>
+            <div className="min-w-52 space-y-1">
+                <p className="ui-label">Thời gian</p>
+                <Select value={datePreset} onValueChange={(value) => onDatePresetChange(value as OperationDatePreset)}>
+                    <SelectTrigger className="h-10 rounded-lg bg-background">
+                        <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="today">{operationDatePresetLabel("today")}</SelectItem>
+                        <SelectItem value="7d">{operationDatePresetLabel("7d")}</SelectItem>
+                        <SelectItem value="30d">{operationDatePresetLabel("30d")}</SelectItem>
+                        <SelectItem value="all">{operationDatePresetLabel("all")}</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="min-w-52 space-y-1">
+                <p className="ui-label">Trạng thái lấy hàng</p>
+                <Select value={status} onValueChange={(value) => onStatusChange(value as OverviewState["status"])}>
+                    <SelectTrigger className="h-10 rounded-lg bg-background">
+                        <span className="truncate text-sm">{statusLabel[status]}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                        <SelectItem value="PENDING">Chờ lấy</SelectItem>
+                        <SelectItem value="PICKED">Đã lấy</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </AdvancedFilterPanel>
+    );
+}
+
 function PickingOverviewTable({
     expandedGroups,
     groupedData,
+    isAssigning,
     isLoading,
+    onAssignGroup,
     onDispatch,
     onToggleGroup,
 }: {
     expandedGroups: Record<string, boolean>;
     groupedData: GroupedPicking[];
+    isAssigning: boolean;
     isLoading: boolean;
+    onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
 }) {
@@ -247,6 +397,8 @@ function PickingOverviewTable({
                                 key={group.soNumber}
                                 expanded={expandedGroups[group.soNumber] === true}
                                 group={group}
+                                isAssigning={isAssigning}
+                                onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
                                 onToggleGroup={onToggleGroup}
                             />
@@ -289,11 +441,15 @@ function PickingEmptyRow() {
 function PickingGroupRows({
     expanded,
     group,
+    isAssigning,
+    onAssignGroup,
     onDispatch,
     onToggleGroup,
 }: {
     expanded: boolean;
     group: GroupedPicking;
+    isAssigning: boolean;
+    onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
 }) {
@@ -323,7 +479,17 @@ function PickingGroupRows({
                     </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                    <span className="text-[11px] font-bold text-muted-foreground">Điều phối qua tuyến pick</span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isAssigning || group.items.every((item) => item.assigneeId)}
+                        onClick={(event) => onAssignGroup(event, group)}
+                        className="h-8 gap-1.5 rounded-lg"
+                    >
+                        <Users className="size-3.5" />
+                        Phân công
+                    </Button>
                 </TableCell>
             </TableRow>
 
@@ -380,7 +546,7 @@ function PickingItemRow({
                 <div className="flex flex-col">
                     <div className="inline-flex items-center gap-1.5 rounded bg-info-soft px-2 py-1 font-mono text-xs font-black text-info-foreground ring-1 ring-inset ring-info/20">
                         <MapPin className="size-3" />
-                        {item.locationCode}
+                        {displayPickingLocation(item)}
                     </div>
                     {item.zone ? <span className="mt-1 pl-1 text-[10px] font-bold capitalize text-muted-foreground">{item.zone} - {item.aisle}</span> : null}
                 </div>
@@ -516,7 +682,7 @@ function PickingDetailLocation({ detailItem }: { detailItem: PickingItem }) {
                     </div>
                     <div className="min-w-0">
                         <p className="ui-label mb-1">Vị trí lưu kho</p>
-                        <p className="truncate text-2xl font-black uppercase leading-none tabular-nums text-foreground">{detailItem.locationCode || "—"}</p>
+                        <p className="truncate text-2xl font-black uppercase leading-none tabular-nums text-foreground">{displayPickingLocation(detailItem)}</p>
                     </div>
                 </div>
                 {detailItem.zone || detailItem.aisle ? (

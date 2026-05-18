@@ -15,6 +15,9 @@ import type {
 } from "../types";
 import { defaultAppearanceSettings, mockNotificationData } from "../data";
 
+const APPEARANCE_STORAGE_KEY = "appearanceSettings:v1";
+const LEGACY_APPEARANCE_STORAGE_KEY = "appearanceSettings";
+
 export function useSettingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<SettingsTab>("personal");
@@ -26,7 +29,9 @@ export function useSettingsPage() {
 
   const [appearance, setAppearance] = useState<AppearanceSettings>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("appearanceSettings");
+      const saved =
+        localStorage.getItem(APPEARANCE_STORAGE_KEY) ??
+        localStorage.getItem(LEGACY_APPEARANCE_STORAGE_KEY);
       if (saved) {
         try {
           return JSON.parse(saved) as AppearanceSettings;
@@ -87,7 +92,7 @@ export function useSettingsPage() {
     root.style.setProperty("--date-format", appearance.dateFormat);
     root.style.setProperty("--lang", appearance.locale);
 
-    localStorage.setItem("appearanceSettings", JSON.stringify(appearance));
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
   }, [appearance]);
 
   const updateAppearance = useCallback(

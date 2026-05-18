@@ -2,13 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
 
-
 interface AddressFormProps {
     value?: AddressValue;
     onChange?: (value: AddressValue) => void;
     required?: boolean;
 }
-
 
 export interface AddressValue {
     street: string;
@@ -36,12 +34,13 @@ async function loadProvinceOptions(): Promise<SelectOption[]> {
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) return [];
 
-    return data
-        .map((item) => ({
-            label: String((item as { name?: string }).name || ""),
-            value: String((item as { code?: string | number }).code || ""),
-        }))
-        .filter((item) => item.label && item.value);
+    const options: SelectOption[] = [];
+    for (const item of data) {
+        const label = String((item as { name?: string }).name || "");
+        const value = String((item as { code?: string | number }).code || "");
+        if (label && value) options.push({ label, value });
+    }
+    return options;
 }
 
 async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
@@ -51,14 +50,14 @@ async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) return [];
 
-    return data
-        .map((item) => ({
-            label: String((item as { name?: string }).name || ""),
-            value: String((item as { code?: string | number }).code || ""),
-        }))
-        .filter((item) => item.label && item.value);
+    const options: SelectOption[] = [];
+    for (const item of data) {
+        const label = String((item as { name?: string }).name || "");
+        const value = String((item as { code?: string | number }).code || "");
+        if (label && value) options.push({ label, value });
+    }
+    return options;
 }
-
 
 export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, required }) => {
     const [provinces, setProvinces] = useState<SelectOption[]>([]);
@@ -70,7 +69,6 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
     useEffect(() => {
         let active = true;
-
         async function init() {
             try {
                 const options = await loadProvinceOptions();
@@ -80,15 +78,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                 if (active) setLoadingProvinces(false);
             }
         }
-
         void init();
-
-        return () => {
-            active = false;
-        };
+        return () => { active = false; };
     }, []);
 
-    // Fetch wards when province changes (API mới chỉ cho phép lấy wards theo province)
     useEffect(() => {
         if (!address.provinceCode) {
             setWards([]);
@@ -115,23 +108,22 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
             );
         }
         void loadWardsForProvince();
-
-        return () => {
-            active = false;
-        };
+        return () => { active = false; };
     }, [address.provinceCode, address.provinceName, provinces]);
-
 
     // Propagate changes
     useEffect(() => {
         onChange?.(address);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [address]);
 
     return (
-        <div className="space-y-3">
-            <div>
-                <label className="font-medium">
-                    Tỉnh/thành {required && <span className="text-red-500">*</span>}
+        <div className="space-y-4">
+            {/* Province */}
+            <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Tỉnh / Thành phố
+                    {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Select
                     value={address.provinceCode}
@@ -144,21 +136,24 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     required={required}
                     disabled={loadingProvinces || provinces.length === 0}
                 >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Chọn tỉnh/thành">
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"}>
                             {getOptionLabel(provinces, address.provinceCode)}
                         </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-64">
                         {provinces.map((p) => (
                             <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
             </div>
-            <div>
-                <label className="font-medium">
-                    Phường/xã {required && <span className="text-red-500">*</span>}
+
+            {/* Ward */}
+            <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Phường / Xã
+                    {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Select
                     value={address.wardCode}
@@ -171,27 +166,30 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     required={required}
                     disabled={!address.provinceCode || wards.length === 0}
                 >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Chọn phường/xã">
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : wards.length === 0 ? "Đang tải..." : "Chọn phường/xã"}>
                             {getOptionLabel(wards, address.wardCode)}
                         </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-64">
                         {wards.map((w) => (
                             <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
             </div>
-            <div>
-                <label className="font-medium">
-                    Số nhà, đường...{required && <span className="text-red-500">*</span>}
+
+            {/* Street */}
+            <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Số nhà, tên đường
+                    {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Input
                     value={address.street}
                     onChange={e => setAddress(a => ({ ...a, street: e.target.value }))}
                     required={required}
-                    placeholder="Số nhà, đường..."
+                    placeholder="VD: 154 Tôn Đức Thắng..."
                 />
             </div>
         </div>

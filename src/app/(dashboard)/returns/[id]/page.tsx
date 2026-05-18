@@ -34,6 +34,7 @@ import {
   useCloseReturnRequestMutation 
 } from "@/store/services/return.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
+import { useGetWarehouseByIdQuery } from "@/store/services/warehouse.service";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,38 @@ function formatDateTime(value?: string | null) {
   const timestamp = Date.parse(value);
   if (Number.isNaN(timestamp)) return value;
   return RMA_DATE_TIME_FORMATTER.format(timestamp);
+}
+
+function displayCode(value?: string | null) {
+  const code = value?.trim();
+  if (!code) return "Chưa có mã";
+  return code.replace(/^RMA-/i, "HT-");
+}
+
+function isUuid(value?: string | null) {
+  return Boolean(value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+}
+
+function displayLinkedOrder(orderNumber?: string | null) {
+  if (!orderNumber || isUuid(orderNumber)) {
+    return "Không gắn đơn";
+  }
+  return orderNumber;
+}
+
+function reasonLabel(reason?: string | null) {
+  if (!reason) return "Chưa xác định";
+  const normalized = reason.trim().toLowerCase();
+  if (normalized === "customer_return") return "Khách trả";
+  if (normalized === "damaged") return "Hàng lỗi / hỏng";
+  if (normalized === "wrong_item") return "Sai hàng";
+  if (normalized === "expired") return "Hết hạn";
+  if (normalized === "quality_check") return "Chờ kiểm định";
+  if (normalized === "supplier_return") return "Trả NCC";
+  if (normalized.includes("khach") && normalized.includes("loi")) {
+    return "Khách trả hàng lỗi";
+  }
+  return reason.replace(/_/g, " ");
 }
 
 type ReceiveFormState = {
@@ -79,6 +112,9 @@ export default function RMADetailPage() {
   
   const { data: rmaRes, isLoading, refetch, isFetching } = useGetReturnRequestByIdQuery(id);
   const rma = rmaRes?.data;
+  const { data: warehouseRes } = useGetWarehouseByIdQuery(rma?.warehouseId ?? "", {
+    skip: !rma?.warehouseId,
+  });
   
   const [receiveReturn, { isLoading: isReceiving }] = useReceiveReturnMutation();
   const [closeReturn, { isLoading: isClosing }] = useCloseReturnRequestMutation();
@@ -100,31 +136,64 @@ export default function RMADetailPage() {
       label: loc.code,
     }));
   }, [locationsRes]);
+  const locationLabelById = useMemo(() => {
+    return new Map(
+      (locationsRes?.data?.content ?? []).map((loc) => [loc.id, loc.code]),
+    );
+  }, [locationsRes]);
 
   const lines = useMemo(() => rma?.lines ?? [], [rma?.lines]);
   const selectedLine = lines.find((line) => line.id === receiveForm.selectedLineId) ?? lines[0];
+  const selectedLocationId = receiveForm.locationId || selectedLine?.receivedLocationId || "";
+  const quantityInputValue =
+    receiveForm.actualQty ||
+    (selectedLine ? String(selectedLine.receivedQty ?? 0) : "");
   const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
+  const allLinesReceived =
+    lines.length > 0 &&
+    lines.every(
+      (line) => Number(line.receivedQty ?? 0) >= Number(line.expectedQty ?? 0),
+    );
+  const canComplete = !isCompleted && allLinesReceived;
   const lineOptions = useMemo(
     () =>
       lines.map((line) => ({
         value: line.id,
-        label: `${line.productSku || line.productName || line.productId} · ${line.receivedQty || 0}/${line.expectedQty}`,
+        label: `${line.productSku || line.productName || "Sản phẩm chưa xác định"} · ${line.receivedQty || 0}/${line.expectedQty}`,
       })),
     [lines],
   );
+  const warehouse = warehouseRes?.data;
+  const warehouseLabel =
+    rma?.warehouseName ||
+    (warehouse ? (warehouse.code ? `${warehouse.name} (${warehouse.code})` : warehouse.name) : "Kho chưa xác định");
+
+  const handleSelectLine = (selectedLineId: string) => {
+    const nextLine = lines.find((line) => line.id === selectedLineId);
+    updateReceiveForm({
+      selectedLineId,
+      actualQty: nextLine ? String(nextLine.receivedQty ?? 0) : "",
+      locationId: nextLine?.receivedLocationId ?? "",
+    });
+  };
 
   const handleReceive = async () => {
-    const receivedQty = Number(receiveForm.actualQty);
     if (!selectedLine) {
-      toast.error("RMA chưa có dòng hàng để nhận");
+      toast.error("Hồ sơ chưa có dòng hàng để nhận");
       return;
     }
-    if (!receiveForm.locationId) {
+    const receivedQty = Number(quantityInputValue);
+    const expectedQty = Number(selectedLine.expectedQty ?? 0);
+    if (!Number.isFinite(receivedQty) || receivedQty < 0) {
+      toast.error("Số lượng thực nhận không được âm");
+      return;
+    }
+    if (receivedQty > expectedQty) {
+      toast.error("Số lượng thực nhận không được vượt quá số lượng kỳ vọng");
+      return;
+    }
+    if (receivedQty > 0 && !selectedLocationId) {
       toast.error("Vui lòng chọn vị trí nhập hàng");
-      return;
-    }
-    if (!Number.isFinite(receivedQty) || receivedQty <= 0) {
-      toast.error("Số lượng thực nhận phải lớn hơn 0");
       return;
     }
 
@@ -134,13 +203,13 @@ export default function RMADetailPage() {
         body: {
           itemId: selectedLine.id,
           receivedQty,
-          locationId: receiveForm.locationId,
+          locationId: selectedLocationId || undefined,
           condition: receiveForm.condition.trim() || undefined,
           notes: receiveForm.notes.trim() || undefined,
         }
       }).unwrap();
       toast.success("Đã ghi nhận nhập hàng trả");
-      updateReceiveForm({ actualQty: "", notes: "" });
+      updateReceiveForm({ actualQty: String(receivedQty), notes: "" });
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể nhận hàng"));
@@ -148,9 +217,13 @@ export default function RMADetailPage() {
   };
 
   const handleClose = async () => {
+    if (!canComplete) {
+      toast.error("Chỉ hoàn tất hồ sơ khi tất cả dòng hàng đã nhận đủ");
+      return;
+    }
     try {
       await closeReturn(id).unwrap();
-      toast.success("Đã đóng hồ sơ RMA");
+      toast.success("Đã đóng hồ sơ hàng trả");
       push("/returns");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể đóng hồ sơ"));
@@ -175,11 +248,11 @@ export default function RMADetailPage() {
           Quay lại danh sách
         </Button>
         <ChevronRight className="size-4" />
-        <span className="font-mono">{rma.rmaNumber || rma.id}</span>
+        <span className="font-mono">{displayCode(rma.rmaNumber)}</span>
       </div>
 
       <PageHeader
-        title={`Chi tiết RMA: ${rma.rmaNumber || rma.id}`}
+        title={`Chi tiết hàng trả: ${displayCode(rma.rmaNumber)}`}
         description="Theo dõi tiếp nhận và xử lý hàng trả về."
         actions={
           <div className="flex items-center gap-2">
@@ -188,7 +261,7 @@ export default function RMADetailPage() {
               Làm mới
             </Button>
             {!isCompleted && (
-              <Button size="sm" onClick={handleClose} disabled={isClosing}>
+              <Button size="sm" onClick={handleClose} disabled={!canComplete || isClosing}>
                 Hoàn tất hồ sơ
               </Button>
             )}
@@ -216,18 +289,18 @@ export default function RMADetailPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Lý do</p>
-                  <p className="font-semibold text-rose-600">{rma.reason}</p>
+                  <p className="font-semibold text-rose-600">{reasonLabel(rma.reason)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Kho xử lý</p>
                   <p className="flex items-center gap-1.5 font-semibold">
                     <Warehouse className="size-4 text-zinc-400" />
-                    {rma.warehouseName || rma.warehouseId}
+                    {warehouseLabel}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Đơn hàng liên quan</p>
-                  <p className="font-mono text-sm">{rma.orderNumber || rma.orderId || "N/A"}</p>
+                  <p className="font-mono text-sm">{displayLinkedOrder(rma.orderNumber)}</p>
                 </div>
               </div>
             </CardContent>
@@ -247,6 +320,7 @@ export default function RMADetailPage() {
                     <TableHead>Sản phẩm</TableHead>
                     <TableHead className="text-center">Kỳ vọng</TableHead>
                     <TableHead className="text-center">Thực nhận</TableHead>
+                    <TableHead>Vị trí nhận</TableHead>
                     <TableHead>Lý do</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -254,7 +328,7 @@ export default function RMADetailPage() {
                   {lines.map((line) => (
                     <TableRow key={line.id}>
                       <TableCell>
-                        <div className="font-medium">{line.productName || line.productId}</div>
+                        <div className="font-medium">{line.productName || "Sản phẩm chưa xác định"}</div>
                         <div className="text-xs font-mono text-muted-foreground">
                           {line.productSku || line.lotNumber || "Chưa có SKU"}
                         </div>
@@ -262,15 +336,24 @@ export default function RMADetailPage() {
                       <TableCell className="text-center font-semibold">{line.expectedQty}</TableCell>
                       <TableCell className="text-center font-bold text-primary">{line.receivedQty || 0}</TableCell>
                       <TableCell>
+                        {line.receivedLocationId ? (
+                          <span className="font-mono text-xs">
+                            {locationLabelById.get(line.receivedLocationId) ?? "Vị trí chưa xác định"}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Chưa nhận</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="outline" className="text-[10px] uppercase">
-                          {line.condition || line.reason || rma.reason}
+                          {reasonLabel(line.condition || line.reason || rma.reason)}
                         </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
                   {!lines.length && (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         Chưa có sản phẩm nào được khai báo.
                       </TableCell>
                     </TableRow>
@@ -288,17 +371,17 @@ export default function RMADetailPage() {
                 <Package className="size-5 text-primary" />
                 Ghi nhận Nhận hàng
               </CardTitle>
-              <CardDescription>Nhập số lượng thực tế nhận được vào kho.</CardDescription>
+              <CardDescription>Cập nhật số lượng đã nhận hiện tại cho từng dòng hàng.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Dòng hàng RMA</Label>
+                <Label>Dòng hàng</Label>
                 <SearchableSelect
                   options={lineOptions}
                   value={selectedLine?.id ?? ""}
-                  onValueChange={(selectedLineId) => updateReceiveForm({ selectedLineId })}
+                  onValueChange={handleSelectLine}
                   placeholder="Chọn dòng hàng…"
-                  dialogTitle="Chọn dòng hàng RMA"
+                  dialogTitle="Chọn dòng hàng"
                   disabled={!lineOptions.length || isCompleted}
                 />
               </div>
@@ -306,7 +389,7 @@ export default function RMADetailPage() {
                 <Label>Vị trí nhập kho</Label>
                 <SearchableSelect
                   options={locationOptions}
-                  value={receiveForm.locationId}
+                  value={selectedLocationId}
                   onValueChange={(locationId) => updateReceiveForm({ locationId })}
                   placeholder="Chọn vị trí…"
                   dialogTitle="Chọn vị trí nhập kho"
@@ -315,12 +398,12 @@ export default function RMADetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Số lượng nhận</Label>
+                <Label>Số lượng nhận hiện tại</Label>
                 <Input 
                   type="number" 
-                  value={receiveForm.actualQty} 
+                  value={quantityInputValue}
                   onChange={(e) => updateReceiveForm({ actualQty: e.target.value })}
-                  min={1}
+                  min={0}
                   max={selectedLine?.expectedQty}
                   disabled={isCompleted}
                 />
@@ -349,7 +432,7 @@ export default function RMADetailPage() {
                 disabled={isReceiving || isCompleted || !selectedLine}
               >
                 {isReceiving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
-                Xác nhận Nhận hàng
+                Cập nhật nhận hàng
               </Button>
             </CardContent>
           </Card>
@@ -362,7 +445,7 @@ export default function RMADetailPage() {
               <div className="flex items-start gap-3 text-xs">
                 <div className="mt-1 size-2 rounded-full bg-emerald-500 shrink-0" />
                 <div>
-                  <p className="font-semibold">Khởi tạo RMA</p>
+                  <p className="font-semibold">Khởi tạo hồ sơ</p>
                   <p className="text-muted-foreground">{formatDateTime(rma.createdAt)}</p>
                 </div>
               </div>

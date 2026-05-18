@@ -24,7 +24,7 @@ export default function EditCustomerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(paramsPromise);
-  const router = useRouter();
+  const { push } = useRouter();
 
   const {
     data: customerRes,
@@ -43,7 +43,7 @@ export default function EditCustomerPage({
     }
 
     toast.success(res.message || "Đã cập nhật khách hàng");
-    router.push("/customers");
+    push("/customers");
   };
 
   if (isLoading) {

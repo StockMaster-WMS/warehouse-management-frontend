@@ -45,32 +45,31 @@ export function formatCustomerAddress(address: CustomerAddress | string | null |
   if (!address) return "—";
   if (typeof address === "string") return address.trim() || "—";
 
-  const orderedKeys = [
-    "line1",
-    "street",
-    "wardName",
-    "ward",
-    "districtName",
-    "district",
-    "provinceName",
-    "city",
-    "province",
-    "country",
+  // Group synonym keys — only pick the first non-empty value per group
+  const keyGroups = [
+    ["line1", "street"],
+    ["wardName", "ward"],
+    ["districtName", "district"],
+    ["provinceName", "city", "province"],
   ];
-  const orderedParts = orderedKeys
-    .map((key) => address[key])
-    .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
-    .map((value) => String(value).trim())
-    .filter(Boolean);
 
-  if (orderedParts.length > 0) {
-    return orderedParts.join(", ");
+  const parts: string[] = [];
+  for (const group of keyGroups) {
+    for (const key of group) {
+      const val = address[key];
+      if (typeof val === "string" && val.trim()) {
+        parts.push(val.trim());
+        break;
+      }
+    }
   }
 
-  const fallbackParts = Object.values(address)
-    .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
-    .map((value) => String(value).trim())
-    .filter(Boolean);
+  if (parts.length > 0) return parts.join(", ");
 
-  return fallbackParts.length > 0 ? fallbackParts.join(", ") : "—";
+  // Fallback: deduplicate all string values
+  const seen = new Set<string>();
+  for (const val of Object.values(address)) {
+    if (typeof val === "string" && val.trim()) seen.add(val.trim());
+  }
+  return seen.size > 0 ? [...seen].join(", ") : "—";
 }

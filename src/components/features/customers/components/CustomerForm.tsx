@@ -158,7 +158,7 @@ export function CustomerForm({
   isSubmitting,
   onSubmit,
 }: CustomerFormProps) {
-  const router = useRouter();
+  const { push } = useRouter();
   const initial = useMemo(() => buildInitialValues(customer), [customer]);
   const [values, setValues] = useState<CustomerFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -434,7 +434,7 @@ export function CustomerForm({
                 variant="outline"
                 className="w-full border-slate-200 bg-white"
                 onClick={() => {
-                  if (confirmLeave()) router.push("/customers");
+                  if (confirmLeave()) push("/customers");
                 }}
               >
                 Hủy bỏ

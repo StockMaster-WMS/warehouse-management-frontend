@@ -71,7 +71,13 @@ const productApi = baseApi.injectEndpoints({
     }),
     getProductsByIds: builder.query<ApiResponse<Product[]>, string[]>({
       queryFn: async (ids, _api, _extraOptions, baseQuery) => {
-        const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+        const uniqueIds = Array.from(
+          ids.reduce((set, id) => {
+            const trimmedId = id.trim();
+            if (trimmedId) set.add(trimmedId);
+            return set;
+          }, new Set<string>()),
+        );
 
         if (uniqueIds.length === 0) {
           return {
@@ -98,11 +104,15 @@ const productApi = baseApi.injectEndpoints({
           return { error: failedResult.error };
         }
 
+        const products: Product[] = [];
+        for (const result of results) {
+          const product = (result.data as ApiResponse<Product> | undefined)?.data;
+          if (product?.id) products.push(product);
+        }
+
         return {
           data: {
-            data: results
-              .map((result) => (result.data as ApiResponse<Product> | undefined)?.data)
-              .filter((product): product is Product => Boolean(product?.id)),
+            data: products,
             message: "OK",
             success: true,
             timestamp: new Date().toISOString(),

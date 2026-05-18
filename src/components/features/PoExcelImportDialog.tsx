@@ -58,8 +58,8 @@ export function PoExcelImportDialog({
   onOpenChange,
 }: PoExcelImportDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedFileRef = useRef<File | null>(null);
   const [step, setStep] = useState<Step>("upload");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportProductsExcelResult | null>(null);
@@ -72,7 +72,7 @@ export function PoExcelImportDialog({
 
   function resetState() {
     setStep("upload");
-    setSelectedFile(null);
+    selectedFileRef.current = null;
     setPreview(null);
     setParseError(null);
     setResult(null);
@@ -112,7 +112,7 @@ export function PoExcelImportDialog({
       return;
     }
 
-    setSelectedFile(file);
+    selectedFileRef.current = file;
     setParseError(null);
 
     try {
@@ -135,6 +135,7 @@ export function PoExcelImportDialog({
   }
 
   async function handleUpload() {
+    const selectedFile = selectedFileRef.current;
     if (!selectedFile) return;
     try {
       const res = await importExcel({
@@ -231,8 +232,9 @@ export function PoExcelImportDialog({
           {/* --- Upload step --- */}
           {step === "upload" && (
             <div className="space-y-3">
-              <div
-                className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-indigo-500"
+              <button
+                type="button"
+                className="flex w-full cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-indigo-500"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <FileSpreadsheet className="h-10 w-10 text-slate-400" />
@@ -240,7 +242,7 @@ export function PoExcelImportDialog({
                   Bấm để chọn file .xlsx
                 </p>
                 <p className="text-xs text-slate-500">Tối đa 5 MB</p>
-              </div>
+              </button>
 
               <Button
                 type="button"
@@ -275,8 +277,8 @@ export function PoExcelImportDialog({
 
                   {preview.issues.length > 0 ? (
                     <ul className="list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-200/90">
-                      {preview.issues.slice(0, 10).map((msg, i) => (
-                        <li key={`${i}-${msg.slice(0, 20)}`}>{msg}</li>
+                      {preview.issues.slice(0, 10).map((msg) => (
+                        <li key={msg}>{msg}</li>
                       ))}
                       {preview.issues.length > 10 && (
                         <li>… và {preview.issues.length - 10} mục nữa.</li>
@@ -372,9 +374,9 @@ export function PoExcelImportDialog({
                       </tr>
                     </thead>
                     <tbody>
-                      {result.createdItems.map((item, i) => (
+                      {result.createdItems.map((item) => (
                         <tr
-                          key={`item-${i}`}
+                          key={`${item.lineNumber}-${item.productSku}`}
                           className="border-b border-slate-100 dark:border-slate-800"
                         >
                           <td className="px-3 py-2">{item.lineNumber}</td>
@@ -405,9 +407,9 @@ export function PoExcelImportDialog({
                       </tr>
                     </thead>
                     <tbody>
-                      {result.errors.slice(0, 20).map((err, i) => (
+                      {result.errors.slice(0, 20).map((err) => (
                         <tr
-                          key={`err-${i}`}
+                          key={`${err.row}-${err.field ?? "row"}-${err.message}`}
                           className="border-b border-slate-100 dark:border-slate-800"
                         >
                           <td className="px-3 py-2">{err.row}</td>
@@ -450,7 +452,7 @@ export function PoExcelImportDialog({
                   setStep("upload");
                   setPreview(null);
                   setParseError(null);
-                  setSelectedFile(null);
+                  selectedFileRef.current = null;
                 }}
               >
                 Chọn lại file

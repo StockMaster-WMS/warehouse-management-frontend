@@ -1,5 +1,4 @@
-import { AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+﻿import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { StockExpanded } from "@/types/stock";
-import { formatDate, formatDateTime, daysUntilExpiry } from "@/components/features/inventory/utils";
+import { formatDateTime } from "@/components/features/inventory/utils";
 
 type InventoryStockTableProps = {
   items: StockExpanded[];
@@ -146,9 +145,8 @@ export function InventoryStockTable({
               </TableRow>
             ) : (
               items.map((item, index) => {
-                const days = daysUntilExpiry(item.expiryDate);
-                const isNearExpiry = days !== null && days <= 30;
-                const isExpired = days !== null && days < 0;
+                const productName = item.product?.name || item.productName || `Sản phẩm ${item.productId}`;
+                const productSku = item.product?.sku || item.productSku || item.productId;
                 const isLow =
                   item.product?.minQty != null &&
                   item.qtyAvailable < item.product.minQty;
@@ -179,10 +177,10 @@ export function InventoryStockTable({
                     <TableCell className="px-3 py-3">
                       <div className="space-y-0.5">
                         <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                          {item.product?.name ?? "—"}
+                          {productName}
                         </div>
                         <div className="text-xs text-slate-500">
-                          {item.product?.sku ?? "—"}
+                          {productSku}
                         </div>
                       </div>
                     </TableCell>

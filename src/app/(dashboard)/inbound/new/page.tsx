@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState } from "react";
+import { Suspense, useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -284,7 +284,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
 
 /* ── Step 2: GRN Form ─────────────────────────────────────────────── */
 function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
-  const router = useRouter();
+  const { push } = useRouter();
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   const { data: detailRes, isLoading: detailLoading } = useGetPurchaseOrderDetailQuery(poId);
@@ -296,7 +296,11 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
     { warehouseId: po?.warehouseId ?? "", size: 100 },
     { skip: !po?.warehouseId },
   );
-  const locationOptions = Array.isArray(whLocRes?.data) ? whLocRes.data : [];
+  const locationOptions = Array.isArray(whLocRes?.data?.content)
+    ? whLocRes.data.content
+    : Array.isArray(whLocRes?.data)
+      ? whLocRes.data
+      : [];
 
   const [locationId, setLocationId] = useState("");
   const [note, setNote] = useState("");
@@ -326,7 +330,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   // Auto-focus first qty input
   useEffect(() => {
     if (!detailLoading) {
-      setTimeout(() => firstInputRef.current?.focus(), 150);
+      const focusTimer = window.setTimeout(() => firstInputRef.current?.focus(), 150);
+      return () => window.clearTimeout(focusTimer);
     }
   }, [detailLoading]);
 
@@ -335,21 +340,25 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const validLines = Object.entries(mergedLines)
-      .map(([poItemId, v]) => {
-        const qty = Number(v.qty.replace(",", "."));
-        if (!qty || Number.isNaN(qty) || qty <= 0) return null;
-        return { poItemId, receivedQty: qty, ...(v.note.trim() ? { note: v.note.trim() } : {}) };
-      })
-      .filter(Boolean) as { poItemId: string; receivedQty: number; note?: string }[];
+    const validLines: { poItemId: string; receivedQty: number; note?: string }[] = [];
+    for (const [poItemId, value] of Object.entries(mergedLines)) {
+      const qty = Number(value.qty.replace(",", "."));
+      if (!qty || Number.isNaN(qty) || qty <= 0) continue;
+      validLines.push({
+        poItemId,
+        receivedQty: qty,
+        ...(value.note.trim() ? { note: value.note.trim() } : {}),
+      });
+    }
 
     if (validLines.length === 0) {
       toast.error("Nhập số lượng ít nhất 1 dòng hàng");
       return;
     }
 
+    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const line of validLines) {
-      const item = items.find((i) => i.id === line.poItemId);
+      const item = itemsById.get(line.poItemId);
       if (!item) continue;
       const remain = Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0);
       if (line.receivedQty > remain) {
@@ -376,7 +385,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
         return;
       }
       toast.success(`Đã tạo phiếu nhập kho: ${res.data?.receiptNumber ?? "OK"}`);
-      router.push(`/purchase-orders/${poId}`);
+      push(`/purchase-orders/${poId}`);
     } catch (err) {
       toast.error(apiErrMessage(err));
     }
@@ -620,7 +629,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
 }
 
 /* ── Main Page ────────────────────────────────────────────────────── */
-export default function NewInboundReceiptPage() {
+function NewInboundReceiptContent() {
   const searchParams = useSearchParams();
   const initialPoId = searchParams.get("poId") ?? "";
   const [selectedPoId, setSelectedPoId] = useState(initialPoId);
@@ -659,5 +668,20 @@ export default function NewInboundReceiptPage() {
         <SelectPoStep onSelect={(id) => setSelectedPoId(id)} />
       )}
     </div>
+  );
+}
+
+export default function NewInboundReceiptPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-5">
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
+        </div>
+      }
+    >
+      <NewInboundReceiptContent />
+    </Suspense>
   );
 }

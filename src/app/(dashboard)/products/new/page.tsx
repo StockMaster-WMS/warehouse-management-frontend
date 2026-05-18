@@ -36,6 +36,8 @@ export default function NewProductPage() {
     isLoadingCategories,
     categoryError,
     refetchCategories,
+    supplierData,
+    isLoadingSuppliers,
   } = useProductCreateForm();
 
   const { errors, isSubmitting } = formState;
@@ -145,6 +147,46 @@ export default function NewProductPage() {
                     )}
                   />
                 </ProductFormField>
+                <ProductFormField label="Nhà cung cấp" htmlFor="supplier" error={errors.supplierId?.message}>
+                  <Controller
+                    name="supplierId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          id="supplier"
+                          className="h-auto min-h-10 w-full border-slate-200 bg-slate-50/50 py-2 focus:ring-indigo-500/30"
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingSuppliers
+                                ? "Đang tải nhà cung cấp..."
+                                : "Chọn nhà cung cấp..."
+                            }
+                          >
+                            {(val) => {
+                                if (!val) return null;
+                                const s = supplierData?.data?.content?.find((x) => x.id === val);
+                                return s ? s.name : "Đang tải tên...";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {supplierData?.data?.content?.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </ProductFormField>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-4">
                 <ProductFormField label="Đơn vị tính" htmlFor="base-unit" error={errors.baseUnit?.message}>
                   <Controller
                     name="baseUnit"

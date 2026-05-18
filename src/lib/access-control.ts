@@ -7,6 +7,8 @@ export const ALL_ROLES = [
   "REPORT_VIEWER",
 ] as const satisfies UserRole[];
 
+const ALL_ROLE_SET = new Set<UserRole>(ALL_ROLES);
+
 export const ADMIN_MANAGER_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
@@ -42,16 +44,19 @@ type RoleInput = string | string[] | null | undefined;
 
 function normalizeRole(role: string): UserRole | null {
   const normalized = role.trim().replace(/^ROLE_/i, "");
-  return ALL_ROLES.includes(normalized as UserRole)
+  return ALL_ROLE_SET.has(normalized as UserRole)
     ? (normalized as UserRole)
     : null;
 }
 
 export function getUserRoles(input: RoleInput): UserRole[] {
   const values = Array.isArray(input) ? input : input?.split(",") ?? [];
-  return values
-    .map((role) => normalizeRole(role))
-    .filter((role): role is UserRole => Boolean(role));
+  const roles: UserRole[] = [];
+  for (const role of values) {
+    const normalized = normalizeRole(role);
+    if (normalized) roles.push(normalized);
+  }
+  return roles;
 }
 
 export function getRoleLabel(role: string | null | undefined): string {
@@ -63,7 +68,8 @@ export function hasAnyRole(
   userRoles: readonly UserRole[],
   allowedRoles: readonly UserRole[],
 ): boolean {
-  return allowedRoles.some((role) => userRoles.includes(role));
+  const userRoleSet = new Set(userRoles);
+  return allowedRoles.some((role) => userRoleSet.has(role));
 }
 
 type RouteAccessRule = {
@@ -93,19 +99,21 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/warehouses/:id/edit", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/warehouses", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/locations", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/cycle-counts/:id", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/cycle-counts", roles: WAREHOUSE_OPERATION_ROLES },
 
-  { pattern: "/inbound/new", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/inbound/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
-  { pattern: "/purchase-orders/new", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/purchase-orders/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/purchase-orders", roles: READ_OPERATION_ROLES },
   { pattern: "/putaway", roles: WAREHOUSE_OPERATION_ROLES },
 
-  { pattern: "/orders/new", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/orders/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/orders/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/orders", roles: READ_OPERATION_ROLES },
   { pattern: "/picking", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/returns/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/returns", roles: READ_OPERATION_ROLES },
 
   { pattern: "/customers/new", roles: ADMIN_MANAGER_ROLES },
@@ -119,7 +127,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
 
   { pattern: "/settings", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/security", roles: ["ADMIN"] },
-  { pattern: "/ai-assistant", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/ai-assistant", roles: READ_OPERATION_ROLES },
 ];
 
 function normalizePathname(pathname: string): string {
@@ -127,13 +135,19 @@ function normalizePathname(pathname: string): string {
   return path === "" ? "/dashboard" : path;
 }
 
+function splitPathParts(pathname: string): string[] {
+  const parts: string[] = [];
+  for (const part of normalizePathname(pathname).split("/")) {
+    if (part) parts.push(part);
+  }
+  return parts;
+}
+
 function matchRoutePattern(pattern: string, pathname: string): boolean {
-  const patternParts = normalizePathname(pattern).split("/").filter(Boolean);
-  const pathParts = normalizePathname(pathname).split("/").filter(Boolean);
+  const patternParts = splitPathParts(pattern);
+  const pathParts = splitPathParts(pathname);
 
-  if (patternParts.length !== pathParts.length) return false;
-
-  return patternParts.every((part, index) => {
+  return patternParts.length === pathParts.length && patternParts.every((part, index) => {
     if (part.startsWith(":")) return Boolean(pathParts[index]);
     return part === pathParts[index];
   });

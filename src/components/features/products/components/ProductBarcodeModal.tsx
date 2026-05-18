@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { Printer, Download } from "lucide-react";
 import {
   Dialog,
@@ -37,12 +38,7 @@ export function ProductBarcodeModal({
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const contentWindow = iframe.contentWindow;
@@ -130,11 +126,13 @@ export function ProductBarcodeModal({
                 {product.name}
              </div>
              {barcodeUrl ? (
-               /* eslint-disable-next-line @next/next/no-img-element */
-               <img 
-                 src={barcodeUrl} 
+               <Image
+                 src={barcodeUrl}
                  alt={`Mã vạch ${product.sku}`}
-                 className="w-full h-14 object-contain mt-1" 
+                 width={184}
+                 height={56}
+                 className="mt-1 h-14 w-full object-contain"
+                 unoptimized
                />
              ) : (
                <div className="h-14 w-full bg-slate-100 animate-pulse mt-1" />

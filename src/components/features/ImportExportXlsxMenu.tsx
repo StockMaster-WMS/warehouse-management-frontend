@@ -208,8 +208,8 @@ export function ImportExportXlsxMenu({
 
               {importPreview.issues.length > 0 ? (
                 <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-amber-800 dark:text-amber-200/90 sm:text-[15px]">
-                  {importPreview.issues.slice(0, 14).map((msg, i) => (
-                    <li key={`${i}-${msg.slice(0, 24)}`}>{msg}</li>
+                  {importPreview.issues.slice(0, 14).map((msg) => (
+                    <li key={msg}>{msg}</li>
                   ))}
                   {importPreview.issues.length > 14 ? (
                     <li>… và {importPreview.issues.length - 14} mục nữa.</li>

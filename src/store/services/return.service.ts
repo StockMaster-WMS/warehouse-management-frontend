@@ -24,6 +24,8 @@ export type GetReturnRequestsParams = {
   reason?: ReturnReason | "";
   sourceType?: ReturnSourceType | "";
   warehouseId?: string;
+  createdFrom?: string;
+  createdTo?: string;
 };
 
 function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
@@ -37,6 +39,8 @@ function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
     reason,
     sourceType,
     warehouseId,
+    createdFrom,
+    createdTo,
   } = params;
 
   const query: Record<string, string | number> = { page, size, sort, sortDir };
@@ -45,6 +49,8 @@ function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
   if (reason) query.reason = reason;
   if (sourceType) query.sourceType = sourceType;
   if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
+  if (createdFrom) query.createdFrom = createdFrom;
+  if (createdTo) query.createdTo = createdTo;
   return query;
 }
 
@@ -53,6 +59,7 @@ type BackendRmaItem = {
   productId: string;
   expectedQty: number;
   receivedQty?: number | null;
+  receivedLocationId?: string | null;
   lotNumber?: string | null;
   condition?: string | null;
   notes?: string | null;
@@ -83,6 +90,8 @@ function normalizeReturnLine(
     productName: "productName" in item ? item.productName : null,
     expectedQty: Number(item.expectedQty ?? 0),
     receivedQty: Number(item.receivedQty ?? 0),
+    receivedLocationId:
+      "receivedLocationId" in item ? item.receivedLocationId ?? null : null,
     acceptedQty: "acceptedQty" in item ? item.acceptedQty : undefined,
     rejectedQty: "rejectedQty" in item ? item.rejectedQty : undefined,
     reason: "reason" in item ? item.reason : defaultReason,
@@ -107,7 +116,7 @@ function normalizeReturnRequest(raw: BackendRmaResponse | ReturnRequest): Return
     status: (raw.status ?? "REQUESTED") as ReturnStatus,
     reason,
     orderId: raw.orderId ?? salesOrderId ?? null,
-    orderNumber: raw.orderNumber ?? salesOrderId ?? null,
+    orderNumber: raw.orderNumber ?? null,
     lines: (frontendLines ?? backendItems ?? []).map((line) =>
       normalizeReturnLine(line, reason),
     ),
