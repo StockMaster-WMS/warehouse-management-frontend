@@ -45,9 +45,11 @@ import {
   type OperationDatePreset,
 } from "@/lib/date-range";
 import { useGetInboundReceiptsQuery, useLazyGetInboundReceiptPrintDataQuery } from "@/store/services/inbound.service";
+import { useLazyGetLocationByIdQuery } from "@/store/services/location.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage, type PagedResponse } from "@/types/api";
 import type { InboundReceipt, InboundReceiptPrintResponse } from "@/types/inbound-receipt";
+import type { Location } from "@/types/location";
 import type { Warehouse } from "@/types/warehouse";
 import { InboundPrintModal } from "./_components/InboundPrintModal";
 import { PermissionControl } from "@/components/permission-control";
@@ -79,9 +81,11 @@ export default function InboundPage() {
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [printData, setPrintData] = useState<InboundReceiptPrintResponse | null>(null);
   const [warehouseLabel, setWarehouseLabel] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
   const [printingId, setPrintingId] = useState<string | null>(null);
 
   const [triggerGetPrintData] = useLazyGetInboundReceiptPrintDataQuery();
+  const [triggerGetLocationById] = useLazyGetLocationByIdQuery();
 
   const {
     data: warehousesRes,
@@ -145,6 +149,37 @@ export default function InboundPage() {
 
   const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
 
+  const formatLocationLabel = (
+    location: (Location & { name?: string | null }) | null | undefined,
+    fallback?: string,
+  ) => {
+    const name = String(location?.name ?? "").trim();
+    const code = String(location?.code ?? "").trim();
+
+    if (name && code && name !== code) return `${name} (${code})`;
+    if (name) return name;
+    if (code) return code;
+    return fallback?.trim() || "—";
+  };
+
+  const resolvePrintLocationLabel = async (receipt: InboundReceiptPrintResponse) => {
+    const inlineName = receipt.locationName?.trim();
+    const inlineCode = receipt.locationCode?.trim();
+    if (inlineName && inlineCode && inlineName !== inlineCode) return `${inlineName} (${inlineCode})`;
+    if (inlineName) return inlineName;
+    if (inlineCode) return inlineCode;
+
+    const locationId = receipt.locationId?.trim();
+    if (!locationId) return "—";
+
+    try {
+      const locationResult = await triggerGetLocationById(locationId).unwrap();
+      return formatLocationLabel(locationResult.data, locationId);
+    } catch {
+      return locationId;
+    }
+  };
+
   const handlePrintClick = async (receiptId: string) => {
     try {
       setPrintingId(receiptId);
@@ -152,7 +187,9 @@ export default function InboundPage() {
       if (result && result.data) {
         setPrintData(result.data);
         const w = findWarehouse(result.data.warehouseId);
+        const nextLocationLabel = await resolvePrintLocationLabel(result.data);
         setWarehouseLabel(w ? `${w.name}${w.code ? ` (${w.code})` : ""}` : "—");
+        setLocationLabel(nextLocationLabel);
         setPrintModalOpen(true);
       }
     } catch (err) {
@@ -523,6 +560,7 @@ export default function InboundPage() {
           onOpenChange={setPrintModalOpen}
           data={printData}
           warehouseLabel={warehouseLabel}
+          locationLabel={locationLabel}
         />
       )}
     </div>

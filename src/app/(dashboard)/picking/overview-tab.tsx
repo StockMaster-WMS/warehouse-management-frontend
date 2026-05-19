@@ -13,6 +13,8 @@ import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import { useHasPermissions } from "@/components/permission-control";
+import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 import {
     DEFAULT_OPERATION_DATE_PRESET,
     getOperationDateRange,
@@ -20,6 +22,7 @@ import {
     type OperationDatePreset,
 } from "@/lib/date-range";
 import { statusTone } from "@/lib/design-system";
+import { apiErrMessage } from "@/types/api";
 import {
     Table,
     TableBody,
@@ -92,6 +95,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
     const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
+    const canAssignPicking = useHasPermissions(PICKING_ASSIGN_ROLES);
 
     useEffect(() => {
         if (initialSelectedId) {
@@ -215,6 +219,11 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
     const handleAssignGroup = async (event: React.MouseEvent, group: GroupedPicking) => {
         event.stopPropagation();
 
+        if (!canAssignPicking) {
+            toast.error("Bạn không có quyền thực hiện thao tác này.");
+            return;
+        }
+
         try {
             const demoUserId = "00000000-0000-0000-0000-000000000001";
             await Promise.all(
@@ -227,8 +236,8 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                 ),
             );
             toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
-        } catch {
-            toast.error("Lỗi khi phân công tác vụ!");
+        } catch (err) {
+            toast.error(apiErrMessage(err, "Lỗi khi phân công tác vụ!"));
         }
     };
 
@@ -276,6 +285,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                 <PickingOverviewTable
                     expandedGroups={expandedGroups}
                     groupedData={groupedData}
+                    canAssignPicking={canAssignPicking}
                     isAssigning={isAssigning}
                     isLoading={isLoading}
                     onAssignGroup={handleAssignGroup}
@@ -365,6 +375,7 @@ function PickingAdvancedFilters({
 function PickingOverviewTable({
     expandedGroups,
     groupedData,
+    canAssignPicking,
     isAssigning,
     isLoading,
     onAssignGroup,
@@ -373,6 +384,7 @@ function PickingOverviewTable({
 }: {
     expandedGroups: Record<string, boolean>;
     groupedData: GroupedPicking[];
+    canAssignPicking: boolean;
     isAssigning: boolean;
     isLoading: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
@@ -403,6 +415,7 @@ function PickingOverviewTable({
                                 key={group.soNumber}
                                 expanded={expandedGroups[group.soNumber] === true}
                                 group={group}
+                                canAssignPicking={canAssignPicking}
                                 isAssigning={isAssigning}
                                 onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
@@ -447,6 +460,7 @@ function PickingEmptyRow() {
 function PickingGroupRows({
     expanded,
     group,
+    canAssignPicking,
     isAssigning,
     onAssignGroup,
     onDispatch,
@@ -454,6 +468,7 @@ function PickingGroupRows({
 }: {
     expanded: boolean;
     group: GroupedPicking;
+    canAssignPicking: boolean;
     isAssigning: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
@@ -485,17 +500,19 @@ function PickingGroupRows({
                     </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isAssigning || group.items.every((item) => item.assigneeId)}
-                        onClick={(event) => onAssignGroup(event, group)}
-                        className="h-8 gap-1.5 rounded-lg"
-                    >
-                        <Users className="size-3.5" />
-                        Phân công
-                    </Button>
+                    {canAssignPicking ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isAssigning || group.items.every((item) => item.assigneeId)}
+                            onClick={(event) => onAssignGroup(event, group)}
+                            className="h-8 gap-1.5 rounded-lg"
+                        >
+                            <Users className="size-3.5" />
+                            Phân công
+                        </Button>
+                    ) : null}
                 </TableCell>
             </TableRow>
 

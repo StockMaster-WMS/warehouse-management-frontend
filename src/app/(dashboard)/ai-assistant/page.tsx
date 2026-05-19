@@ -52,9 +52,29 @@ function createSessionId() {
   return `warehouse-ai-${createMessageId()}`;
 }
 
+function getInitialSessionId() {
+  if (typeof window === "undefined") return createSessionId();
+  return window.localStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
+}
+
+function getInitialMessages(): Message[] {
+  if (typeof window === "undefined") return [INITIAL_MESSAGE];
+
+  const storedMessages = window.localStorage.getItem(AI_MESSAGES_STORAGE_KEY);
+  if (!storedMessages) return [INITIAL_MESSAGE];
+
+  try {
+    const parsed = JSON.parse(storedMessages) as Message[];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [INITIAL_MESSAGE];
+  } catch {
+    window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
+    return [INITIAL_MESSAGE];
+  }
+}
+
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -63,8 +83,7 @@ export default function AiAssistantPage() {
   const activeStreamMsgId = useRef<string | null>(null);
   const activeRequestId = useRef<string | null>(null);
   const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
-  const sessionIdRef = useRef(createSessionId());
-  const hasRestoredRef = useRef(false);
+  const sessionIdRef = useRef(getInitialSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const busy = isStreaming || streamingMessageId !== null;
 
@@ -85,28 +104,6 @@ export default function AiAssistantPage() {
     );
     scrollMessagesToEnd();
   }, [scrollMessagesToEnd, streamResult]);
-
-  useEffect(() => {
-    if (hasRestoredRef.current || typeof window === "undefined") return;
-    hasRestoredRef.current = true;
-
-    const storedSessionId = window.localStorage.getItem(AI_SESSION_STORAGE_KEY);
-    if (storedSessionId) {
-      sessionIdRef.current = storedSessionId;
-    }
-
-    const storedMessages = window.localStorage.getItem(AI_MESSAGES_STORAGE_KEY);
-    if (!storedMessages) return;
-
-    try {
-      const parsed = JSON.parse(storedMessages) as Message[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setMessages(parsed);
-      }
-    } catch {
-      window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
-    }
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

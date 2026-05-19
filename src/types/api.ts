@@ -65,7 +65,10 @@ export function apiErrMessage(
 ): string {
   if (typeof error === "string" && error.trim()) return error;
   if (error && typeof error === "object") {
-    const e = error as { data?: unknown; message?: string; error?: string };
+    const e = error as { data?: unknown; message?: string; error?: string; status?: unknown };
+    if (e.status === 403 || e.status === "403") {
+      return "Bạn không có quyền thực hiện thao tác này.";
+    }
     if (typeof e.error === "string" && e.error.trim()) return e.error;
     if (typeof e.message === "string" && e.message.trim()) return e.message;
     const d = e.data;

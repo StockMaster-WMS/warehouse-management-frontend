@@ -143,7 +143,7 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
             ) : (
               <CheckCheck className="h-3.5 w-3.5" />
             )}
-            Mark all as read
+            Đánh dấu tất cả đã đọc
           </Button>
         </div>
 

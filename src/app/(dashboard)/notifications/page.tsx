@@ -32,8 +32,8 @@ import {
 type NotificationFilter = "all" | "unread";
 
 const FILTERS: Array<{ value: NotificationFilter; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "unread", label: "Unread" },
+  { value: "all", label: "Tất cả" },
+  { value: "unread", label: "Chưa đọc" },
 ];
 
 export default function NotificationsPage() {
@@ -92,7 +92,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Notification Center"
+        title="Trung tâm thông báo"
         description="Theo dõi các cảnh báo, phân công và cập nhật hệ thống mới nhất."
         actions={
           <Button
@@ -108,7 +108,7 @@ export default function NotificationsPage() {
             ) : (
               <CheckCheck className="h-4 w-4" />
             )}
-            Mark all as read
+            Đánh dấu tất cả đã đọc
           </Button>
         }
       />

@@ -80,7 +80,7 @@ axiosInstance.interceptors.response.use(
     const { status } = error.response;
 
     if (status === 403) {
-      toast.error("Bạn không có quyền thực hiện chức năng này");
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
       return Promise.reject(error);
     }
 

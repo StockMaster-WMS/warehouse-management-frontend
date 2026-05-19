@@ -22,16 +22,18 @@ import {
   NAV_SEARCH_ITEMS,
   type NavSearchItem,
 } from "@/lib/nav-search-items";
+import { canAccessPath, getUserRoles } from "@/lib/access-control";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 
 type QuickSearchDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-function filterItems(query: string): NavSearchItem[] {
+function filterItems(query: string, items: NavSearchItem[]): NavSearchItem[] {
   const q = query.trim().toLowerCase();
-  if (!q) return NAV_SEARCH_ITEMS;
-  return NAV_SEARCH_ITEMS.filter((item) => {
+  if (!q) return items;
+  return items.filter((item) => {
     const haystack = `${item.label} ${item.href} ${item.group}`.toLowerCase();
     return haystack.includes(q);
   });
@@ -52,12 +54,18 @@ function QuickSearchDialogContent({
   onOpenChange,
 }: Pick<QuickSearchDialogProps, "onOpenChange">) {
   const { push } = useRouter();
+  const { data: user } = useGetCurrentUserQuery();
+  const userRoles = useMemo(() => getUserRoles(user?.roles), [user?.roles]);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const activeItemRef = useRef<HTMLButtonElement | null>(null);
 
-  const filtered = useMemo(() => filterItems(query), [query]);
+  const accessibleItems = useMemo(
+    () => NAV_SEARCH_ITEMS.filter((item) => canAccessPath(item.href, userRoles)),
+    [userRoles],
+  );
+  const filtered = useMemo(() => filterItems(query, accessibleItems), [accessibleItems, query]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
