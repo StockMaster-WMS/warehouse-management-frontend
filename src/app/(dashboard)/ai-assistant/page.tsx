@@ -5,6 +5,7 @@ import {
   Bot,
   Boxes,
   ClipboardList,
+  Cpu,
   Pause,
   RotateCcw,
   Send,
@@ -13,6 +14,12 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
@@ -25,6 +32,39 @@ interface Message {
 }
 
 const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
+const AI_MODEL_STORAGE_KEY = "warehouse-ai-model-selection";
+
+type AiModelOption = {
+  key: string;
+  label: string;
+  provider?: string;
+  model?: string;
+};
+
+const AI_MODEL_OPTIONS: AiModelOption[] = [
+  {
+    key: "ollama:stockmaster-ai",
+    label: "Trợ lý kho nội bộ",
+    provider: "ollama",
+    model: "stockmaster-ai",
+  },
+  {
+    key: "gemini:gemini-flash-lite-latest",
+    label: "Trợ lý AI Google",
+    provider: "gemini",
+    model: "gemini-flash-lite-latest",
+  },
+  {
+    key: "openai:gpt-4o-mini",
+    label: "Trợ lý AI OpenAI",
+    provider: "openai",
+    model: "gpt-4o-mini",
+  },
+];
+
+function getModelOption(key: string) {
+  return AI_MODEL_OPTIONS.find((option) => option.key === key) ?? AI_MODEL_OPTIONS[0];
+}
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -56,6 +96,14 @@ function getInitialSessionId() {
   return window.sessionStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
 }
 
+function getInitialModelKey() {
+  if (typeof window === "undefined") return AI_MODEL_OPTIONS[0].key;
+  const stored = window.localStorage.getItem(AI_MODEL_STORAGE_KEY);
+  return stored && AI_MODEL_OPTIONS.some((option) => option.key === stored)
+    ? stored
+    : AI_MODEL_OPTIONS[0].key;
+}
+
 function getInitialMessages(): Message[] {
   return [INITIAL_MESSAGE];
 }
@@ -63,6 +111,7 @@ function getInitialMessages(): Message[] {
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
+  const [selectedModelKey, setSelectedModelKey] = useState(getInitialModelKey);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -98,6 +147,11 @@ export default function AiAssistantPage() {
     window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(AI_MODEL_STORAGE_KEY, selectedModelKey);
+  }, [selectedModelKey]);
+
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
     if (!trimmed) return;
@@ -128,10 +182,13 @@ export default function AiAssistantPage() {
 
     try {
       setIsStreaming(true);
+      const selectedModel = getModelOption(selectedModelKey);
       const streamPromise = triggerStream({
         question: trimmed,
         sessionId: sessionIdRef.current,
         requestId,
+        provider: selectedModel.provider,
+        model: selectedModel.model,
       });
       activeTriggerRef.current = streamPromise;
 
@@ -259,16 +316,15 @@ export default function AiAssistantPage() {
 
         <div className="flex min-h-0 flex-col">
           <AiMessages
-            busy={busy}
             messages={messages}
-            streamingMessageId={streamingMessageId}
             messagesEndRef={messagesEndRef}
-            onCancel={cancelStream}
           />
           <AiComposer
             busy={busy}
             input={input}
+            selectedModelKey={selectedModelKey}
             onInputChange={setInput}
+            onModelChange={setSelectedModelKey}
             onCancel={cancelStream}
             onSubmit={handleSubmit}
             onSend={sendQuestion}
@@ -371,17 +427,11 @@ function AiInfoBlock({
 }
 
 function AiMessages({
-  busy,
   messages,
-  streamingMessageId,
   messagesEndRef,
-  onCancel,
 }: {
-  busy: boolean;
   messages: Message[];
-  streamingMessageId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  onCancel: () => void;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-3 py-5 sm:px-5">
@@ -389,10 +439,7 @@ function AiMessages({
         {messages.map((msg) => (
           <AiMessageBubble
             key={msg.id}
-            busy={busy}
             message={msg}
-            isStreaming={streamingMessageId === msg.id}
-            onCancel={onCancel}
           />
         ))}
         <div ref={messagesEndRef} />
@@ -402,15 +449,9 @@ function AiMessages({
 }
 
 function AiMessageBubble({
-  busy,
   message,
-  isStreaming,
-  onCancel,
 }: {
-  busy: boolean;
   message: Message;
-  isStreaming: boolean;
-  onCancel: () => void;
 }) {
   const isUser = message.role === "user";
 
@@ -433,18 +474,6 @@ function AiMessageBubble({
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <TypingDots />
-            {busy && isStreaming ? (
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={onCancel}
-                className="size-7 p-0"
-                aria-label="Dừng trả lời"
-              >
-                <Pause className="size-4" />
-              </Button>
-            ) : null}
           </div>
         )}
       </div>
@@ -475,14 +504,18 @@ function TypingDots() {
 function AiComposer({
   busy,
   input,
+  selectedModelKey,
   onInputChange,
+  onModelChange,
   onCancel,
   onSubmit,
   onSend,
 }: {
   busy: boolean;
   input: string;
+  selectedModelKey: string;
   onInputChange: (value: string) => void;
+  onModelChange: (value: string) => void;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSend: (question: string) => void;
@@ -513,20 +546,45 @@ function AiComposer({
           >
             <Pause className="size-4" />
           </Button>
-        ) : null}
-        <Button
-          type="submit"
-          size="icon"
-          className="size-12 shrink-0 rounded-lg"
-          disabled={!input.trim()}
-          aria-label="Gửi câu hỏi"
-        >
-          <Send className="size-4" />
-        </Button>
+        ) : (
+          <Button
+            type="submit"
+            size="icon"
+            className="size-12 shrink-0 rounded-lg"
+            disabled={!input.trim()}
+            aria-label="Gửi câu hỏi"
+          >
+            <Send className="size-4" />
+          </Button>
+        )}
       </div>
-      <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
-        Nhấn Enter để gửi, Shift + Enter để xuống dòng.
-      </p>
+      <div className="mx-auto mt-2 flex w-full max-w-4xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Select
+          value={selectedModelKey}
+          onValueChange={(value) => onModelChange(value || AI_MODEL_OPTIONS[0].key)}
+          disabled={busy}
+        >
+          <SelectTrigger
+            aria-label="Chọn trợ lý AI"
+            className="h-9 w-full rounded-lg bg-background sm:w-56"
+          >
+            <Cpu className="size-4 text-muted-foreground" />
+            <span className="truncate text-sm">
+              {getModelOption(selectedModelKey).label}
+            </span>
+          </SelectTrigger>
+          <SelectContent className="rounded-lg">
+            {AI_MODEL_OPTIONS.map((option) => (
+              <SelectItem key={option.key} value={option.key} className="rounded-lg">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Nhấn Enter để gửi, Shift + Enter để xuống dòng.
+        </p>
+      </div>
     </form>
   );
 }

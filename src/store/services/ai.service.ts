@@ -2,6 +2,7 @@ import { baseApi } from "./api";
 import { getToken, setAccessToken } from "@/lib/auth-token";
 import { axiosInstance } from "@/lib/axios-instance";
 import { API_BASE_URL } from "@/lib/constants";
+import type { ApiResponse } from "@/types/api";
 
 type RefreshResponse = {
   accessToken?: string;
@@ -14,12 +15,27 @@ export type AiStreamRequest = {
   question: string;
   sessionId: string;
   requestId: string;
+  provider?: string;
+  model?: string;
 };
 
 export type AiStreamResult = {
   requestId: string;
   text: string;
   aborted?: boolean;
+};
+
+export type AiCloudKeyStatus = {
+  provider: string;
+  label: string;
+  configured: boolean;
+  keyPreview?: string | null;
+  updatedAt?: string | null;
+};
+
+export type UpdateAiCloudKeyRequest = {
+  provider: string;
+  apiKey: string;
 };
 
 async function refreshAccessToken() {
@@ -35,6 +51,45 @@ async function refreshAccessToken() {
 
 export const aiApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getAiProviderKeyStatuses: builder.query<AiCloudKeyStatus[], void>({
+      query: () => ({
+        url: "/v1/ai/config/providers",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<AiCloudKeyStatus[]>) => response.data,
+      providesTags: [{ type: "AiConfig", id: "PROVIDERS" }],
+    }),
+    getAiCloudKeyStatus: builder.query<AiCloudKeyStatus, void>({
+      query: () => ({
+        url: "/v1/ai/config/cloud-key",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
+      providesTags: [{ type: "AiConfig", id: "CLOUD_KEY" }],
+    }),
+    updateAiCloudKey: builder.mutation<AiCloudKeyStatus, UpdateAiCloudKeyRequest>({
+      query: ({ provider, apiKey }) => ({
+        url: `/v1/ai/config/providers/${provider}/key`,
+        method: "PUT",
+        data: { apiKey },
+      }),
+      transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
+      invalidatesTags: [
+        { type: "AiConfig", id: "CLOUD_KEY" },
+        { type: "AiConfig", id: "PROVIDERS" },
+      ],
+    }),
+    clearAiCloudKey: builder.mutation<AiCloudKeyStatus, string>({
+      query: (provider) => ({
+        url: `/v1/ai/config/providers/${provider}/key`,
+        method: "DELETE",
+      }),
+      transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
+      invalidatesTags: [
+        { type: "AiConfig", id: "CLOUD_KEY" },
+        { type: "AiConfig", id: "PROVIDERS" },
+      ],
+    }),
     streamAiAnswer: builder.query<AiStreamResult, AiStreamRequest>({
       async queryFn(arg, { signal, dispatch }) {
         let fullText = "";
@@ -129,4 +184,10 @@ export const aiApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLazyStreamAiAnswerQuery } = aiApi;
+export const {
+  useLazyStreamAiAnswerQuery,
+  useGetAiProviderKeyStatusesQuery,
+  useGetAiCloudKeyStatusQuery,
+  useUpdateAiCloudKeyMutation,
+  useClearAiCloudKeyMutation,
+} = aiApi;

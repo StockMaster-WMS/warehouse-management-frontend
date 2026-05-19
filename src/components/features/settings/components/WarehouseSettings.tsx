@@ -17,7 +17,7 @@ export function WarehouseSettings({ activeWarehouseSubTab, setActiveWarehouseSub
 
       {activeWarehouseSubTab === "warehouses" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Danh sách kho</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Kho hàng</h3>
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Quản lý kho</CardTitle>

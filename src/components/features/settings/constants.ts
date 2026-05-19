@@ -7,6 +7,7 @@ import {
   Package,
   Workflow,
   Shield,
+  Bot,
 } from "lucide-react";
 import type {
   SettingsTabItem,
@@ -19,14 +20,15 @@ import type {
 } from "./types";
 
 export const tabs: SettingsTabItem[] = [
-  { key: "personal", label: "Cá nhân", icon: UserCog },
-  { key: "notifications", label: "Thông báo", icon: Bell },
+  { key: "personal", label: "Hồ sơ người dùng", icon: UserCog },
   { key: "appearance", label: "Giao diện", icon: Palette },
-  { key: "warehouse", label: "Kho & Vị trí", icon: Warehouse },
-  { key: "products", label: "Sản phẩm", icon: Package },
-  { key: "workflow", label: "Quy trình", icon: Workflow },
-  { key: "security", label: "Bảo mật", icon: Shield },
-  { key: "data", label: "Dữ liệu", icon: Database },
+  { key: "notifications", label: "Thông báo", icon: Bell },
+  { key: "warehouse", label: "Kho & vị trí", icon: Warehouse },
+  { key: "products", label: "Sản phẩm & SKU", icon: Package },
+  { key: "workflow", label: "Luồng xử lý", icon: Workflow },
+  { key: "ai", label: "Trợ lý AI", icon: Bot },
+  { key: "security", label: "Bảo mật & phân quyền", icon: Shield },
+  { key: "data", label: "Dữ liệu hệ thống", icon: Database },
 ];
 
 export const notificationSubTabs: SubTab<NotificationSubTab>[] = [
@@ -45,7 +47,7 @@ export const appearanceSubTabs: SubTab<AppearanceSubTab>[] = [
 ];
 
 export const warehouseSubTabs: SubTab<WarehouseSubTab>[] = [
-  { key: "warehouses", label: "Danh sách kho" },
+  { key: "warehouses", label: "Kho hàng" },
   { key: "locations", label: "Vị trí lưu trữ" },
   { key: "methods", label: "Phương pháp quản lý" },
 ];
@@ -62,5 +64,5 @@ export const workflowSubTabs: SubTab<WorkflowSubTab>[] = [
   { key: "automation", label: "Tự động hóa" },
   { key: "approval", label: "Phê duyệt" },
   { key: "alerts", label: "Cảnh báo" },
-  { key: "reorder", label: "Đặt hàng lại" },
+  { key: "reorder", label: "Điểm đặt hàng lại" },
 ];

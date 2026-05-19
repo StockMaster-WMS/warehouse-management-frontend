@@ -18,6 +18,7 @@ export type SettingsTab =
   | "warehouse"
   | "products"
   | "workflow"
+  | "ai"
   | "security"
   | "data";
 
