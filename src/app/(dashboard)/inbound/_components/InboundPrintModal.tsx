@@ -16,6 +16,7 @@ type InboundPrintModalProps = {
   onOpenChange: (open: boolean) => void;
   data: InboundReceiptPrintResponse;
   warehouseLabel: string;
+  locationLabel?: string;
   title?: string;
 };
 
@@ -24,7 +25,8 @@ export function InboundPrintModal({
   onOpenChange,
   data,
   warehouseLabel,
-  title = "PHIáº¾U NHáº¬P KHO / GOODS RECEIPT NOTE",
+  locationLabel,
+  title = "PHIẾU NHẬP KHO / GOODS RECEIPT NOTE",
 }: InboundPrintModalProps) {
   const handlePrint = () => {
     const printContent = document.getElementById("print-area-inbound");
@@ -72,10 +74,13 @@ export function InboundPrintModal({
     contentWindow.document.close();
   };
 
+  const printableLocationLabel =
+    locationLabel || data.locationName || data.locationCode || data.locationId;
+
   const formatDateTime = (dateVal: string | Date | number | null | undefined) => {
-    if (!dateVal) return "â€”";
+    if (!dateVal) return "—";
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "â€”";
+    if (isNaN(d.getTime())) return "—";
     const day = d.getDate().toString().padStart(2, "0");
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
     const year = d.getFullYear();
@@ -96,11 +101,11 @@ export function InboundPrintModal({
           <div>
             <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
             <DialogDescription>
-              Nháº¥n nÃºt in Ä‘á»ƒ táº¡o báº£n cá»©ng cho kho lÆ°u trá»¯ hoáº·c nhÃ  cung cáº¥p.
+              Nhấn nút in để tạo bản cứng cho kho lưu trữ hoặc nhà cung cấp.
             </DialogDescription>
           </div>
           <Button onClick={handlePrint} className="gap-2">
-            <Printer className="h-4 w-4" /> In Phiáº¿u
+            <Printer className="h-4 w-4" /> In Phiếu
           </Button>
         </DialogHeader>
 
@@ -113,51 +118,55 @@ export function InboundPrintModal({
             <div>
               <h1 className="text-2xl font-bold uppercase tracking-widest">{title}</h1>
               <p className="font-mono mt-1 text-sm font-semibold">
-                MÃ£ Ä‘Æ¡n: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
+                Mã đơn: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
               </p>
             </div>
             <div className="text-right text-sm">
               <p suppressHydrationWarning>
-                NgÃ y in: {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
+                Ngày in: {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
               </p>
-              <p>Kho nháº­p: <span className="font-semibold">{warehouseLabel}</span></p>
-              {data.locationId && <p>Khu vá»±c/Dock: <span className="font-semibold">{data.locationId}</span></p>}
+              <p>Kho nhập: <span className="font-semibold">{warehouseLabel}</span></p>
+              {printableLocationLabel && (
+                <p>
+                  Khu vực/Dock: <span className="font-semibold">{printableLocationLabel}</span>
+                </p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                ThÃ´ng tin NhÃ  cung cáº¥p
+                Thông tin Nhà cung cấp
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">NhÃ  cung cáº¥p:</span>{" "}
-                {data.supplierName || "â€”"}
+                <span className="font-semibold inline-block w-24">Nhà cung cấp:</span>{" "}
+                {data.supplierName || "—"}
               </p>
               <p className="flex">
-                <span className="font-semibold inline-block w-24 shrink-0">Äá»‹a chá»‰:</span>{" "}
-                <span>{data.supplierAddress || "â€”"}</span>
+                <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
+                <span>{data.supplierAddress || "—"}</span>
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Äiá»‡n thoáº¡i:</span>{" "}
-                {data.supplierPhone || "â€”"}
+                <span className="font-semibold inline-block w-24">Điện thoại:</span>{" "}
+                {data.supplierPhone || "—"}
               </p>
             </div>
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
-                ThÃ´ng tin ÄÆ¡n nháº­p
+                Thông tin Đơn nhập
               </p>
               <p>
-                <span className="font-semibold inline-block w-28">ÄÆ¡n mua hÃ ng (PO):</span>{" "}
-                {data.poNumber || "â€”"}
+                <span className="font-semibold inline-block w-28">Đơn mua hàng (PO):</span>{" "}
+                {data.poNumber || "—"}
               </p>
               <p>
-                <span className="font-semibold inline-block w-28">NgÃ y nháº­p hÃ ng:</span>{" "}
-                {data.receivedDate ? formatDateTime(data.receivedDate) : "â€”"}
+                <span className="font-semibold inline-block w-28">Ngày nhập hàng:</span>{" "}
+                {data.receivedDate ? formatDateTime(data.receivedDate) : "—"}
               </p>
               {data.note && (
                 <p>
-                  <span className="font-semibold inline-block w-28 align-top shrink-0">Ghi chÃº:</span>{" "}
+                  <span className="font-semibold inline-block w-28 align-top shrink-0">Ghi chú:</span>{" "}
                   <span className="inline-block w-[calc(100%-7rem)]">{data.note}</span>
                 </p>
               )}
@@ -168,12 +177,12 @@ export function InboundPrintModal({
             <thead>
               <tr className="border-y-2 border-slate-800 font-bold bg-slate-50">
                 <th className="py-2.5 px-2 text-center w-12 border-x border-slate-300">STT</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">MÃ£ SP</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">TÃªn sáº£n pháº©m</th>
-                <th className="py-2.5 px-2 text-center w-16 border-x border-slate-300">ÄVT</th>
-                <th className="py-2.5 px-2 text-right w-20 border-x border-slate-300">SL Äáº·t</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thá»±c nháº­n</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Ghi chÃº</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">Mã SP</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">Tên sản phẩm</th>
+                <th className="py-2.5 px-2 text-center w-16 border-x border-slate-300">ĐVT</th>
+                <th className="py-2.5 px-2 text-right w-20 border-x border-slate-300">SL Đặt</th>
+                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thực nhận</th>
+                <th className="py-2.5 px-2 text-left border-x border-slate-300">Ghi chú</th>
               </tr>
             </thead>
             <tbody>
@@ -182,13 +191,13 @@ export function InboundPrintModal({
                   <tr key={`${item.lineNumber ?? idx}-${item.productSku ?? item.productName ?? "item"}`} className="border-b border-slate-300 break-inside-avoid">
                     <td className="py-2 px-2 text-center border-x border-slate-300">{item.lineNumber || idx + 1}</td>
                     <td className="py-2 px-2 font-mono text-xs border-x border-slate-300">
-                      {item.productSku || "â€”"}
+                      {item.productSku || "—"}
                     </td>
                     <td className="py-2 px-2 border-x border-slate-300">
-                      {item.productName || item.productSku || "â€”"}
+                      {item.productName || item.productSku || "—"}
                     </td>
                     <td className="py-2 px-2 text-center border-x border-slate-300">
-                      {item.unit || "â€”"}
+                      {item.unit || "—"}
                     </td>
                     <td className="py-2 px-2 text-right border-x border-slate-300">
                       {item.orderedQty ?? 0}
@@ -204,7 +213,7 @@ export function InboundPrintModal({
               ) : (
                 <tr>
                   <td colSpan={7} className="py-4 text-center border-x border-b border-slate-300 text-slate-500">
-                    KhÃ´ng cÃ³ sáº£n pháº©m nÃ o
+                    Không có sản phẩm nào
                   </td>
                 </tr>
               )}
@@ -213,22 +222,22 @@ export function InboundPrintModal({
 
           <div className="flex justify-between mt-16 text-center text-sm break-inside-avoid pt-12">
             <div className="w-48">
-              <p className="font-bold mb-16">NgÆ°á»i láº­p phiáº¿u</p>
+              <p className="font-bold mb-16">Người lập phiếu</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (KÃ½, ghi rÃµ há» tÃªn)
+                (Ký, ghi rõ họ tên)
               </p>
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">Thá»§ kho</p>
+              <p className="font-bold mb-16">Thủ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (KÃ½, ghi rÃµ há» tÃªn)
+                (Ký, ghi rõ họ tên)
               </p>
               {data.receivedBy && <p className="mt-2 font-semibold text-slate-800">{data.receivedBy}</p>}
             </div>
             <div className="w-48">
-              <p className="font-bold mb-16">BÃªn giao hÃ ng</p>
+              <p className="font-bold mb-16">Bên giao hàng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
-                (KÃ½, ghi rÃµ há» tÃªn)
+                (Ký, ghi rõ họ tên)
               </p>
             </div>
           </div>

@@ -87,6 +87,9 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  verification: {
+    google: "Reyer451XiPGM6YqQ1YXWlCEOnDKMRNDB23GnJpm4WE",
+  },
 };
 
 export const viewport: Viewport = {
@@ -116,6 +119,29 @@ export default function RootLayout({
         >
           Bỏ qua đến nội dung chính
         </a>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "StockMaster WMS",
+              description: "Phần mềm quản lý kho hàng thông minh số 1 Việt Nam",
+              url: getSiteUrl(),
+              logo: `${getSiteUrl()}/icon`,
+              sameAs: [
+                "https://warehouse.ryon.website",
+              ],
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "Customer Support",
+                availableLanguage: ["vi", "en"],
+              },
+              areaServed: "VN",
+              applicationCategory: "BusinessApplication",
+            }),
+          }}
+        />
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
         </Providers>

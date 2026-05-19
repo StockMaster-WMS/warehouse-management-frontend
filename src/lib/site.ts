@@ -1,21 +1,25 @@
 export const SITE_NAME = "StockMaster WMS";
 
 export const SITE_TITLE =
-  "StockMaster WMS - Phần mềm quản lý kho cho doanh nghiệp";
+  "StockMaster WMS - Phần mềm quản lý kho hàng thông minh số 1 Việt Nam";
 
 export const SITE_DESCRIPTION =
-  "StockMaster WMS hỗ trợ doanh nghiệp quản lý tồn kho, nhập xuất hàng, picking, putaway, kiểm kê và báo cáo kho trên một nền tảng web tập trung.";
+  "StockMaster WMS - Giải pháp quản lý kho hàng toàn diện. Tối ưu tồn kho, nhập xuất, picking, putaway, kiểm kê. Thử miễn phí! Hỗ trợ doanh nghiệp quản lý kho thông minh.";
 
 export const SITE_KEYWORDS = [
   "phần mềm quản lý kho",
-  "hệ thống quản lý kho",
+  "hệ thống quản lý kho hàng",
   "quản lý tồn kho",
-  "WMS",
+  "WMS software",
   "warehouse management system",
   "quản lý nhập xuất kho",
-  "kiểm kê kho",
+  "kiểm kê kho hàng",
   "picking putaway",
   "StockMaster",
+  "phần mềm WMS Việt Nam",
+  "quản lý kho hàng Việt Nam",
+  "hệ thống WMS online",
+  "tối ưu tồn kho",
 ];
 
 export const PROTECTED_APP_PATHS = [

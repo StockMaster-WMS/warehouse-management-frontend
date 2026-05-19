@@ -24,6 +24,7 @@ interface Message {
   content: string;
 }
 
+const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -50,9 +51,18 @@ function createSessionId() {
   return `warehouse-ai-${createMessageId()}`;
 }
 
+function getInitialSessionId() {
+  if (typeof window === "undefined") return createSessionId();
+  return window.sessionStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
+}
+
+function getInitialMessages(): Message[] {
+  return [INITIAL_MESSAGE];
+}
+
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -61,7 +71,7 @@ export default function AiAssistantPage() {
   const activeStreamMsgId = useRef<string | null>(null);
   const activeRequestId = useRef<string | null>(null);
   const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
-  const sessionIdRef = useRef(createSessionId());
+  const sessionIdRef = useRef(getInitialSessionId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const busy = isStreaming || streamingMessageId !== null;
 
@@ -82,6 +92,11 @@ export default function AiAssistantPage() {
     );
     scrollMessagesToEnd();
   }, [scrollMessagesToEnd, streamResult]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+  }, []);
 
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
@@ -205,11 +220,9 @@ export default function AiAssistantPage() {
       const cancelRequest = axiosInstance.post("/v1/ai/cancel", null, {
         params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
       });
-      void cancelRequest.catch((error) => {
-        console.error("Cancel stream error", error);
-      });
-    } catch (err) {
-      console.error("Cancel stream error", err);
+      void cancelRequest.catch(() => undefined);
+    } catch {
+      // Stream cancellation is best-effort; the local UI has already stopped.
     }
   }
 
@@ -224,6 +237,9 @@ export default function AiAssistantPage() {
     activeRequestId.current = null;
     activeTriggerRef.current = null;
     sessionIdRef.current = createSessionId();
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+    }
     setStreamingMessageId(null);
     setIsStreaming(false);
     setInput("");

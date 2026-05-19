@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Dispatch, useMemo, useReducer } from "react";
+import React, { Dispatch, useEffect, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
 import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Users } from "lucide-react";
@@ -13,6 +13,8 @@ import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import { useHasPermissions } from "@/components/permission-control";
+import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 import {
     DEFAULT_OPERATION_DATE_PRESET,
     getOperationDateRange,
@@ -20,6 +22,7 @@ import {
     type OperationDatePreset,
 } from "@/lib/date-range";
 import { statusTone } from "@/lib/design-system";
+import { apiErrMessage } from "@/types/api";
 import {
     Table,
     TableBody,
@@ -40,6 +43,8 @@ import {
     useGetPickingItemByIdQuery,
     useGetPickingItemsQuery,
 } from "@/store/services/picking-item.service";
+import { useGetUsersQuery } from "@/store/services/user-management.service";
+import type { ManagedUser } from "@/types/user-management";
 
 interface GroupedPicking {
     soNumber: string;
@@ -59,6 +64,7 @@ type OverviewState = {
     pageSize: number;
     status: "all" | "PENDING" | "PICKED";
     datePreset: OperationDatePreset;
+    assigneeId: string;
 };
 
 const INITIAL_OVERVIEW_STATE: OverviewState = {
@@ -70,6 +76,7 @@ const INITIAL_OVERVIEW_STATE: OverviewState = {
     pageSize: 20,
     status: "PENDING",
     datePreset: DEFAULT_OPERATION_DATE_PRESET,
+    assigneeId: "",
 };
 
 function overviewReducer(state: OverviewState, patch: Partial<OverviewState>) {
@@ -87,11 +94,34 @@ function displayPickingLocation(item: PickingItem) {
     return item.locationCode;
 }
 
-export function OverviewTab() {
+function userDisplayName(user: ManagedUser) {
+    const primary = user.name?.trim() || user.username || user.email || user.id;
+    const email = user.email?.trim();
+    return email && email !== primary ? `${primary} (${email})` : primary;
+}
+
+export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string | null }) {
     const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
-    const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset } = state;
+    const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset, assigneeId } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
+    const canAssignPicking = useHasPermissions(PICKING_ASSIGN_ROLES);
+    const { data: staffData, isLoading: isStaffLoading, isError: isStaffError } = useGetUsersQuery(
+        { page: 0, size: 100, role: "WAREHOUSE_STAFF", status: "ACTIVE", sort: "name", sortDir: "asc" },
+        { skip: !canAssignPicking },
+    );
+
+    const staffUsers = useMemo(() => staffData?.data?.content ?? [], [staffData]);
+    const selectedAssignee = useMemo(
+        () => staffUsers.find((user) => user.id === assigneeId),
+        [assigneeId, staffUsers],
+    );
+
+    useEffect(() => {
+        if (initialSelectedId) {
+            dispatch({ selectedId: initialSelectedId });
+        }
+    }, [initialSelectedId]);
 
     const { data, isLoading, isFetching, isError } = useGetPickingItemsQuery({
         page,
@@ -209,20 +239,41 @@ export function OverviewTab() {
     const handleAssignGroup = async (event: React.MouseEvent, group: GroupedPicking) => {
         event.stopPropagation();
 
+        if (!canAssignPicking) {
+            toast.error("Bạn không có quyền thực hiện thao tác này.");
+            return;
+        }
+
+        if (!assigneeId) {
+            toast.error("Vui lòng chọn nhân viên nhận nhiệm vụ trước khi phân công.");
+            return;
+        }
+
+        const assignee = staffUsers.find((user) => user.id === assigneeId);
+        if (!assignee) {
+            toast.error("Không tìm thấy nhân viên nhận nhiệm vụ. Vui lòng tải lại danh sách nhân viên.");
+            return;
+        }
+
+        const itemsToAssign = group.items.filter((item) => item.assigneeId !== assigneeId);
+        if (itemsToAssign.length === 0) {
+            toast.info("Các nhiệm vụ này đã được phân công cho nhân viên đã chọn.");
+            return;
+        }
+
         try {
-            const demoUserId = "00000000-0000-0000-0000-000000000001";
             await Promise.all(
-                group.items.map((item) =>
+                itemsToAssign.map((item) =>
                     assignTask({
                         id: item.id,
                         soItemId: item.soItemId,
-                        assigneeId: demoUserId,
+                        assigneeId,
                     }).unwrap(),
                 ),
             );
-            toast.success(`Đã giao ${group.items.length} tác vụ thành công!`);
-        } catch {
-            toast.error("Lỗi khi phân công tác vụ!");
+            toast.success(`Đã giao ${itemsToAssign.length} nhiệm vụ cho ${userDisplayName(assignee)}.`);
+        } catch (err) {
+            toast.error(apiErrMessage(err, "Không thể phân công. Kiểm tra nhân viên nhận nhiệm vụ còn hoạt động."));
         }
     };
 
@@ -235,6 +286,13 @@ export function OverviewTab() {
         (status !== "all" ? 1 : 0) +
         (datePreset !== DEFAULT_OPERATION_DATE_PRESET ? 1 : 0) +
         (searchTerm.trim() ? 1 : 0);
+    const assigneeSelectLabel = isStaffLoading
+        ? "Đang tải nhân viên..."
+        : isStaffError
+          ? "Không tải được nhân viên"
+          : selectedAssignee
+            ? userDisplayName(selectedAssignee)
+            : "Chọn nhân viên phân công";
 
     return (
         <div className="space-y-6">
@@ -245,18 +303,46 @@ export function OverviewTab() {
                     value={searchTerm}
                     onValueChange={(searchTerm) => dispatch({ searchTerm, page: 0 })}
                     right={
-                        <AdvancedFilterActions
-                            open={advancedOpen}
-                            onToggle={() => dispatch({ advancedOpen: !advancedOpen })}
-                            activeCount={activeFilterCount}
-                            hasAnyFilter={hasAnyFilter}
-                            onClear={() => dispatch({
-                                searchTerm: "",
-                                status: "PENDING",
-                                datePreset: DEFAULT_OPERATION_DATE_PRESET,
-                                page: 0,
-                            })}
-                        />
+                        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center md:justify-end">
+                            {canAssignPicking ? (
+                                <Select
+                                    value={assigneeId || "__clear__"}
+                                    onValueChange={(value) => dispatch({ assigneeId: !value || value === "__clear__" ? "" : value })}
+                                    disabled={isStaffLoading || isStaffError}
+                                >
+                                    <SelectTrigger className="h-11 w-full min-w-[260px] rounded-lg bg-background md:w-[300px]">
+                                        <span
+                                            className={cn(
+                                                "min-w-0 flex-1 truncate text-left text-sm",
+                                                selectedAssignee ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
+                                            )}
+                                        >
+                                            {assigneeSelectLabel}
+                                        </span>
+                                    </SelectTrigger>
+                                    <SelectContent align="end">
+                                        <SelectItem value="__clear__">Chọn nhân viên phân công</SelectItem>
+                                        {staffUsers.map((user) => (
+                                            <SelectItem key={user.id} value={user.id}>
+                                                {userDisplayName(user)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : null}
+                            <AdvancedFilterActions
+                                open={advancedOpen}
+                                onToggle={() => dispatch({ advancedOpen: !advancedOpen })}
+                                activeCount={activeFilterCount}
+                                hasAnyFilter={hasAnyFilter}
+                                onClear={() => dispatch({
+                                    searchTerm: "",
+                                    status: "PENDING",
+                                    datePreset: DEFAULT_OPERATION_DATE_PRESET,
+                                    page: 0,
+                                })}
+                            />
+                        </div>
                     }
                 />
                 <PickingAdvancedFilters
@@ -270,6 +356,7 @@ export function OverviewTab() {
                 <PickingOverviewTable
                     expandedGroups={expandedGroups}
                     groupedData={groupedData}
+                    canAssignPicking={canAssignPicking}
                     isAssigning={isAssigning}
                     isLoading={isLoading}
                     onAssignGroup={handleAssignGroup}
@@ -359,6 +446,7 @@ function PickingAdvancedFilters({
 function PickingOverviewTable({
     expandedGroups,
     groupedData,
+    canAssignPicking,
     isAssigning,
     isLoading,
     onAssignGroup,
@@ -367,6 +455,7 @@ function PickingOverviewTable({
 }: {
     expandedGroups: Record<string, boolean>;
     groupedData: GroupedPicking[];
+    canAssignPicking: boolean;
     isAssigning: boolean;
     isLoading: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
@@ -397,6 +486,7 @@ function PickingOverviewTable({
                                 key={group.soNumber}
                                 expanded={expandedGroups[group.soNumber] === true}
                                 group={group}
+                                canAssignPicking={canAssignPicking}
                                 isAssigning={isAssigning}
                                 onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
@@ -441,6 +531,7 @@ function PickingEmptyRow() {
 function PickingGroupRows({
     expanded,
     group,
+    canAssignPicking,
     isAssigning,
     onAssignGroup,
     onDispatch,
@@ -448,6 +539,7 @@ function PickingGroupRows({
 }: {
     expanded: boolean;
     group: GroupedPicking;
+    canAssignPicking: boolean;
     isAssigning: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
@@ -479,17 +571,19 @@ function PickingGroupRows({
                     </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isAssigning || group.items.every((item) => item.assigneeId)}
-                        onClick={(event) => onAssignGroup(event, group)}
-                        className="h-8 gap-1.5 rounded-lg"
-                    >
-                        <Users className="size-3.5" />
-                        Phân công
-                    </Button>
+                    {canAssignPicking ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isAssigning || group.items.every((item) => item.assigneeId)}
+                            onClick={(event) => onAssignGroup(event, group)}
+                            className="h-8 gap-1.5 rounded-lg"
+                        >
+                            <Users className="size-3.5" />
+                            Phân công
+                        </Button>
+                    ) : null}
                 </TableCell>
             </TableRow>
 

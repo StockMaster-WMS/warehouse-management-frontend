@@ -50,6 +50,11 @@ function buildInboundReceiptsQueryParams(params: GetInboundReceiptsParams) {
   return query;
 }
 
+function createIdempotencyKey(prefix: string) {
+  const randomId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}:${randomId}`;
+}
+
 const inboundApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getInboundReceipts: builder.query<
@@ -104,6 +109,9 @@ const inboundApi = baseApi.injectEndpoints({
         url: "/inbound-receipts",
         method: "POST",
         data: body,
+        headers: {
+          "Idempotency-Key": createIdempotencyKey(`inbound-receipt:${body.purchaseOrderId}`),
+        },
       }),
       invalidatesTags: (_r, _e, arg) => [
         { type: "InboundReceipt" as const, id: "LIST" },

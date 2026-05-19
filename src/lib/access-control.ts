@@ -14,6 +14,16 @@ export const ADMIN_MANAGER_ROLES = [
   "WAREHOUSE_MANAGER",
 ] as const satisfies UserRole[];
 
+export const AUDIT_LOG_ROLES = ADMIN_MANAGER_ROLES;
+
+export const PICKING_ASSIGN_ROLES = ADMIN_MANAGER_ROLES;
+
+export const INBOUND_RECEIVE_ROLES = [
+  "ADMIN",
+  "WAREHOUSE_MANAGER",
+  "WAREHOUSE_STAFF",
+] as const satisfies UserRole[];
+
 export const WAREHOUSE_OPERATION_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
@@ -21,6 +31,12 @@ export const WAREHOUSE_OPERATION_ROLES = [
 ] as const satisfies UserRole[];
 
 export const READ_OPERATION_ROLES = [
+  "ADMIN",
+  "WAREHOUSE_MANAGER",
+  "WAREHOUSE_STAFF",
+] as const satisfies UserRole[];
+
+export const INVENTORY_READ_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
   "WAREHOUSE_STAFF",
@@ -39,6 +55,23 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   WAREHOUSE_STAFF: "Nhân viên kho",
   REPORT_VIEWER: "Người xem báo cáo",
 };
+
+export const WAREHOUSE_AUDIT_MODULES = [
+  "PURCHASE_ORDER",
+  "INBOUND_RECEIPT",
+  "PUTAWAY",
+  "RMA",
+  "SALES_ORDER",
+  "PICKING",
+  "STOCK",
+  "PRODUCT",
+  "SUPPLIER",
+  "CATEGORY",
+  "CUSTOMER",
+  "WAREHOUSE",
+  "LOCATION",
+  "CYCLE_COUNT",
+] as const;
 
 type RoleInput = string | string[] | null | undefined;
 
@@ -80,9 +113,10 @@ type RouteAccessRule = {
 export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/dashboard", roles: ALL_ROLES },
   { pattern: "/profile", roles: ALL_ROLES },
+  { pattern: "/notifications", roles: ALL_ROLES },
 
-  { pattern: "/inventory", roles: READ_OPERATION_ROLES },
-  { pattern: "/history", roles: READ_OPERATION_ROLES },
+  { pattern: "/inventory", roles: INVENTORY_READ_ROLES },
+  { pattern: "/history", roles: AUDIT_LOG_ROLES },
   { pattern: "/reports", roles: REPORT_ROLES },
 
   { pattern: "/products/new", roles: ADMIN_MANAGER_ROLES },
@@ -102,7 +136,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/cycle-counts/:id", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/cycle-counts", roles: WAREHOUSE_OPERATION_ROLES },
 
-  { pattern: "/inbound/new", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
   { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/purchase-orders/:id", roles: READ_OPERATION_ROLES },
@@ -125,7 +159,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/suppliers/:id", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/suppliers", roles: WAREHOUSE_OPERATION_ROLES },
 
-  { pattern: "/settings", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/settings", roles: ["ADMIN"] },
   { pattern: "/security", roles: ["ADMIN"] },
   { pattern: "/ai-assistant", roles: READ_OPERATION_ROLES },
 ];

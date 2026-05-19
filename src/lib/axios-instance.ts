@@ -6,7 +6,6 @@ import {
   setAccessToken,
 } from "@/lib/auth-token";
 import { API_BASE_URL } from "@/lib/constants";
-import { toast } from "sonner";
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -80,7 +79,16 @@ axiosInstance.interceptors.response.use(
     const { status } = error.response;
 
     if (status === 403) {
-      toast.error("Bạn không có quyền thực hiện chức năng này");
+      const requestUrl = originalRequest.url ?? "";
+      const message =
+        requestUrl.includes("/picking-items/") || requestUrl.includes("/putaway-tasks/")
+          ? "Bạn chỉ được thao tác nhiệm vụ được phân công cho bạn."
+          : "Bạn không có quyền thực hiện thao tác này.";
+      const responseData = error.response.data;
+      error.response.data =
+        responseData && typeof responseData === "object"
+          ? { ...responseData, message }
+          : { message };
       return Promise.reject(error);
     }
 

@@ -1,15 +1,35 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { OverviewTab } from "./overview-tab";
 import { OperationTab } from "./operation-tab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Monitor, Smartphone } from "lucide-react";
+import { useHasPermissions } from "@/components/permission-control";
+import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 
-export default function PickingPage() {
+function PickingPageContent() {
     const [isMobileMode, setIsMobileMode] = useState(false);
+    const searchParams = useSearchParams();
+    const itemId = searchParams.get("itemId");
+    const canCoordinatePicking = useHasPermissions(PICKING_ASSIGN_ROLES);
+
+    if (!canCoordinatePicking) {
+        return (
+            <div className="flex h-full flex-col">
+                <PageHeader
+                    title="Nhiệm vụ lấy hàng của tôi"
+                    description="Xem, hoàn tất và báo lỗi các nhiệm vụ picking được phân công cho bạn."
+                />
+                <div className="flex-1 pt-4">
+                    <OperationTab />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-full flex-col">
@@ -72,8 +92,16 @@ export default function PickingPage() {
             />
 
             <div className="flex-1 space-y-6 pt-6">
-                <OverviewTab />
+                <OverviewTab initialSelectedId={itemId} />
             </div>
         </div>
+    );
+}
+
+export default function PickingPage() {
+    return (
+        <Suspense>
+            <PickingPageContent />
+        </Suspense>
     );
 }

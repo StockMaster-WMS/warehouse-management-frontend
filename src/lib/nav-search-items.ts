@@ -9,6 +9,12 @@ export type NavSearchItem = {
 /** Các trang có thể tìm và điều hướng nhanh — đồng bộ với menu sidebar. */
 export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   {
+    id: "notifications",
+    label: "Thông báo",
+    href: "/notifications",
+    group: "Tổng quan & tác nghiệp",
+  },
+  {
     id: "dashboard",
     label: "Tổng quan kho",
     href: "/dashboard",

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -26,8 +27,9 @@ import {
 } from "lucide-react";
 
 import {
-  ADMIN_MANAGER_ROLES,
+  AUDIT_LOG_ROLES,
   ALL_ROLES,
+  INVENTORY_READ_ROLES,
   READ_OPERATION_ROLES,
   REPORT_ROLES,
   WAREHOUSE_OPERATION_ROLES,
@@ -81,7 +83,8 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Tổng quan & tác nghiệp",
     items: [
       { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: ALL_ROLES },
-      { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: READ_OPERATION_ROLES },
+      { label: "Thông báo", href: "/notifications", icon: Bell, roles: ALL_ROLES },
+      { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: INVENTORY_READ_ROLES },
       { label: "Danh sách kho", href: "/warehouses", icon: Warehouse, roles: WAREHOUSE_OPERATION_ROLES },
       {
         label: "Sản phẩm",
@@ -126,7 +129,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
       { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Kiểm kê kho", href: "/cycle-counts", icon: ClipboardCheck, roles: WAREHOUSE_OPERATION_ROLES },
-      { label: "Nhật ký hoạt động", href: "/history", icon: History, roles: READ_OPERATION_ROLES },
+      { label: "Nhật ký hoạt động", href: "/history", icon: History, roles: AUDIT_LOG_ROLES },
     ],
   },
   {
@@ -140,7 +143,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Hệ thống",
     className: "mt-2",
     items: [
-      { label: "Cài đặt hệ thống", href: "/settings", icon: Settings, roles: ADMIN_MANAGER_ROLES },
+      { label: "Cài đặt hệ thống", href: "/settings", icon: Settings, roles: ["ADMIN"] },
       { label: "Bảo mật & Phân quyền", href: "/security", icon: ShieldCheck, roles: ["ADMIN"] },
     ],
   },
@@ -165,7 +168,14 @@ function filterSidebarItems(
     const canSeeItem = hasAnyRole(userRoles, item.roles);
 
     if (canSeeItem || children?.length) {
-      visibleItems.push({ ...item, children });
+      const label =
+        item.href === "/history"
+          ? hasAnyRole(userRoles, ["ADMIN"])
+            ? "Nhật ký hệ thống"
+            : "Nhật ký nghiệp vụ kho"
+          : item.label;
+
+      visibleItems.push({ ...item, label, children });
     }
 
     return visibleItems;

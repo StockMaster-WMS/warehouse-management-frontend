@@ -15,7 +15,6 @@ import type { Product } from "@/types/product";
 import type { SalesOrder } from "@/types/sales-order";
 import type { SoItem } from "@/types/so-item";
 import { useCreateSoItemMutation, useDeleteSoItemMutation, useUpdateSoItemMutation } from "@/store/services/so-item.service";
-import { useCreatePickingItemMutation } from "@/store/services/picking-item.service";
 import { useGetStocksQuery } from "@/store/services/stock.service";
 import {
   formatLotLine,
@@ -38,7 +37,6 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   const [createSoItem, { isLoading: creatingLine }] = useCreateSoItemMutation();
   const [updateSoItem, { isLoading: updatingLine }] = useUpdateSoItemMutation();
   const [deleteSoItem, { isLoading: deletingLine }] = useDeleteSoItemMutation();
-  const [createPickingItem] = useCreatePickingItemMutation();
   const [creatingLineAndPicking, setCreatingLineAndPicking] = useState(false);
 
   const [lineProductId, setLineProductId] = useState("");
@@ -164,7 +162,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     return other?.warehouseId ?? null;
   }, [salesOrder, stockHintByWarehouse]);
 
-  async function createLineAndPickingForProduct(productId: string) {
+  async function createLineForProduct(productId: string) {
     if (!allowLineMutation) {
       toast.error("Chỉ được thêm/xóa dòng khi đơn đang NHÁP hoặc SẴN SÀNG.");
       return;
@@ -209,8 +207,6 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     }
 
     const existing = soItems.find((i) => String(i.productId) === String(prod.id));
-    let soItemId = "";
-
     if (existing) {
       // Merge: Update existing item
       const updateRes = await updateSoItem({
@@ -228,7 +224,6 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       if (!updateRes.success || !updateRes.data) {
         throw new Error(updateRes.message || "Cập nhật dòng thất bại");
       }
-      soItemId = existing.id;
     } else {
       // Create new line
       const lineNumber = nextLineNumber;
@@ -244,40 +239,13 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       if (!soItemRes.success || !soItemRes.data) {
         throw new Error(soItemRes.message || "Thêm dòng thất bại");
       }
-      soItemId = soItemRes.data.id;
     }
 
-    let remain = qty;
-    let seq = 1;
-    for (const { row, avail } of availableRows) {
-      if (remain <= 0) break;
-      const allocate = Math.min(remain, avail);
-      if (allocate <= 0) continue;
-
-      const pickRes = await createPickingItem({
-        soItemId: soItemId,
-        productId: String(prod.id),
-        locationId: row.locationId,
-        lotNumber: row.lotNumber ?? undefined,
-        qtyToPick: allocate,
-        qtyPicked: 0,
-        status: "PENDING",
-        pickSequence: seq,
-      }).unwrap();
-
-      if (!pickRes.success) {
-        throw new Error(pickRes.message || "Tạo lệnh lấy hàng thất bại");
-      }
-
-      remain -= allocate;
-      seq += 1;
-    }
-
-    if (remain > 0) {
-      throw new Error("Không đủ tồn kho");
-    }
-
-    toast.success("Đã thêm dòng và tự động tạo lệnh lấy hàng");
+    toast.success(
+      salesOrder.status === "DRAFT"
+        ? "Đã thêm dòng hàng. Lệnh picking sẽ được tạo sau khi xác nhận và bắt đầu lấy hàng."
+        : "Đã thêm dòng hàng. Bấm Bắt đầu lấy hàng để chuyển đơn sang bước picking.",
+    );
     setLineProductId("");
     setSelectedLineProduct(null);
     setProductSearch("");
@@ -311,9 +279,9 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
     try {
       setCreatingLineAndPicking(true);
-      await createLineAndPickingForProduct(parsed.data.productId);
+      await createLineForProduct(parsed.data.productId);
     } catch (err) {
-      toast.error("Không thể ghi nhận sản phẩm hoặc tạo lệnh lấy hàng: " + apiErrMessage(err));
+      toast.error("Không thể ghi nhận sản phẩm: " + apiErrMessage(err));
     } finally {
       setCreatingLineAndPicking(false);
     }

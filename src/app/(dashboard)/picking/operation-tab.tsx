@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useGetPickingItemsQuery, useGetPickingItemByIdQuery, useReportPickingExceptionMutation, useCompleteMobilePickingMutation } from "@/store/services/picking-item.service";
 import { playSuccessSound, playErrorSound } from "@/lib/audio-utils";
 import { BarcodeScanner } from "@/components/ui/barcode-scanner";
+import { taskScopeErrMessage } from "@/types/api";
 
 // ── Step indicator ─────────────────────────────────────────────────────────────
 
@@ -108,9 +109,9 @@ export function OperationTab() {
                 setSelectedTaskId(null);
                 resetState();
             }
-        } catch {
+        } catch (err) {
             playErrorSound();
-            toast.error("Lỗi kết nối! Vui lòng thử lại.");
+            toast.error(taskScopeErrMessage(err));
         }
     };
 
@@ -132,8 +133,8 @@ export function OperationTab() {
                     <CheckCircle2 className="h-10 w-10 text-emerald-600" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white">Tất cả đã hoàn tất!</h2>
-                    <p className="mt-1 text-sm text-slate-500">Không còn nhiệm vụ lấy hàng nào đang chờ.</p>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white">Bạn chưa có nhiệm vụ được phân công.</h2>
+                    <p className="mt-1 text-sm text-slate-500">Các nhiệm vụ picking được giao cho bạn sẽ xuất hiện tại đây.</p>
                 </div>
             </div>
         );
@@ -406,7 +407,7 @@ export function OperationTab() {
                                         toast.warning(`Ghi nhận: ${label}`);
                                         setSelectedTaskId(null);
                                         resetState();
-                                    } catch { toast.error("Lỗi khi ghi nhận ngoại lệ!"); }
+                                    } catch (err) { toast.error(taskScopeErrMessage(err)); }
                                 }}
                             >
                                 {label} <ChevronRight className="h-4 w-4 opacity-30" />

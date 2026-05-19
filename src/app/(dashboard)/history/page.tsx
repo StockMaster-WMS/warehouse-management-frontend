@@ -40,8 +40,14 @@ import {
   operationDatePresetLabel,
   type OperationDatePreset,
 } from "@/lib/date-range";
+import {
+  WAREHOUSE_AUDIT_MODULES,
+  getUserRoles,
+  hasAnyRole,
+} from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import { useGetAuditLogsQuery } from "@/store/services/audit-log.service";
+import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 import { apiErrMessage } from "@/types/api";
 import type { AuditLog } from "@/types/audit-log";
 
@@ -63,16 +69,31 @@ const TYPE_STYLES: Record<LogType, string> = {
   SYSTEM: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400",
 };
 
-const MODULE_LABEL: Record<string, string> = {
-  ALL: "Tất cả module",
-  PRODUCT: "Sản phẩm",
-  STOCK: "Tồn kho",
-  INBOUND: "Nhập kho",
-  OUTBOUND: "Xuất kho",
-  SUPPLIER: "Nhà cung cấp",
-  CUSTOMER: "Khách hàng",
-  WAREHOUSE: "Kho bãi",
-};
+const MODULE_OPTIONS = [
+  { value: "ALL", label: "Tất cả module" },
+  { value: "PURCHASE_ORDER", label: "Đơn nhập" },
+  { value: "INBOUND_RECEIPT", label: "Phiếu nhập" },
+  { value: "PUTAWAY", label: "Putaway" },
+  { value: "RMA", label: "RMA / hàng trả" },
+  { value: "SALES_ORDER", label: "Đơn xuất" },
+  { value: "PICKING", label: "Picking" },
+  { value: "STOCK", label: "Tồn kho" },
+  { value: "PRODUCT", label: "Sản phẩm" },
+  { value: "SUPPLIER", label: "Nhà cung cấp" },
+  { value: "CATEGORY", label: "Danh mục" },
+  { value: "CUSTOMER", label: "Khách hàng" },
+  { value: "WAREHOUSE", label: "Kho" },
+  { value: "LOCATION", label: "Vị trí" },
+  { value: "CYCLE_COUNT", label: "Kiểm kê" },
+  { value: "USER", label: "Người dùng" },
+  { value: "AUTH", label: "Đăng nhập / xác thực" },
+  { value: "SYSTEM", label: "Hệ thống" },
+] as const;
+
+const MODULE_LABEL: Record<string, string> = MODULE_OPTIONS.reduce(
+  (labels, option) => ({ ...labels, [option.value]: option.label }),
+  {} as Record<string, string>,
+);
 
 const ACTION_LABEL: Record<string, string> = {
   ALL: "Tất cả loại",
@@ -118,20 +139,36 @@ function entityLabel(log: AuditLog) {
 }
 
 export default function HistoryPage() {
+  const { data: user } = useGetCurrentUserQuery();
+  const userRoles = getUserRoles(user?.roles);
+  const isAdmin = hasAnyRole(userRoles, ["ADMIN"]);
+  const isWarehouseManager = hasAnyRole(userRoles, ["WAREHOUSE_MANAGER"]);
+  const canReadAuditLogs = isAdmin || isWarehouseManager;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [moduleFilter, setModuleFilter] = useState("ALL");
   const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 300);
   const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
+  const moduleOptions = useMemo(() => {
+    if (isAdmin) return MODULE_OPTIONS;
+    const allowed = new Set<string>(["ALL", ...WAREHOUSE_AUDIT_MODULES]);
+    return MODULE_OPTIONS.filter((option) => allowed.has(option.value));
+  }, [isAdmin]);
+  const effectiveModuleFilter = moduleOptions.some((option) => option.value === moduleFilter)
+    ? moduleFilter
+    : "ALL";
 
   const { data, isLoading, isFetching, error, refetch } = useGetAuditLogsQuery({
     page: 0,
     size: 50,
-    module: moduleFilter,
+    module: effectiveModuleFilter,
     actionType: typeFilter,
     keyword: debouncedSearch,
     ...dateRange,
+  }, {
+    skip: !canReadAuditLogs,
   });
 
   const logs = useMemo(() => data?.data?.content ?? [], [data]);
@@ -139,8 +176,12 @@ export default function HistoryPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
-        title="Nhật ký hoạt động"
-        description="Theo dõi thao tác nghiệp vụ: sản phẩm, nhập hàng, xuất hàng, tồn kho, picking và putaway."
+        title={isAdmin ? "Nhật ký hệ thống" : "Nhật ký nghiệp vụ kho"}
+        description={
+          isAdmin
+            ? "Theo dõi toàn bộ thao tác hệ thống và nghiệp vụ."
+            : "Theo dõi thao tác nghiệp vụ kho: nhập xuất, tồn kho, picking, putaway, kiểm kê và RMA."
+        }
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -172,20 +213,17 @@ export default function HistoryPage() {
               className="h-10 pl-9 rounded-xl border-slate-200 dark:border-slate-800"
             />
           </div>
-          <Select value={moduleFilter} onValueChange={(value) => setModuleFilter(value || "ALL")}>
+          <Select value={effectiveModuleFilter} onValueChange={(value) => setModuleFilter(value || "ALL")}>
             <SelectTrigger className="h-10 w-[160px] rounded-xl border-slate-200 shrink-0 dark:border-slate-800">
               <Filter className="mr-2 h-4 w-4 text-slate-400" />
-              <span className="truncate text-sm">{MODULE_LABEL[moduleFilter] ?? moduleFilter}</span>
+              <span className="truncate text-sm">{MODULE_LABEL[effectiveModuleFilter] ?? effectiveModuleFilter}</span>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="ALL">Tất cả module</SelectItem>
-              <SelectItem value="PRODUCT">Sản phẩm</SelectItem>
-              <SelectItem value="STOCK">Tồn kho</SelectItem>
-              <SelectItem value="INBOUND">Nhập kho</SelectItem>
-              <SelectItem value="OUTBOUND">Xuất kho</SelectItem>
-              <SelectItem value="SUPPLIER">Nhà cung cấp</SelectItem>
-              <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
-              <SelectItem value="WAREHOUSE">Kho bãi</SelectItem>
+              {moduleOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={datePreset} onValueChange={(value) => setDatePreset(value as OperationDatePreset)}>

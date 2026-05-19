@@ -9,7 +9,7 @@ interface PermissionControlProps {
   /** Nội dung hiển thị nếu có quyền */
   children: React.ReactNode;
   /** Danh sách các role được phép (ví dụ: ['ADMIN', 'WAREHOUSE_MANAGER']) */
-  allowedRoles: UserRole | UserRole[];
+  allowedRoles: UserRole | readonly UserRole[];
   /** Nội dung hiển thị nếu KHÔNG có quyền (mặc định là null) */
   fallback?: React.ReactNode;
 }
@@ -43,7 +43,7 @@ export function PermissionControl({
 /**
  * Hook tiện ích để kiểm tra quyền hạn trong logic code.
  */
-export function useHasPermissions(allowedRoles: UserRole | UserRole[]) {
+export function useHasPermissions(allowedRoles: UserRole | readonly UserRole[]) {
   const { data: user } = useGetCurrentUserQuery();
   
   if (!user) return false;

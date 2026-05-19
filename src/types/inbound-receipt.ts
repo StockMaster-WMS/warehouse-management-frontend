@@ -90,6 +90,8 @@ export interface InboundReceiptPrintResponse {
   poNumber: string;
   warehouseId: string;
   locationId?: string;
+  locationCode?: string;
+  locationName?: string;
   receivedDate: string;
   supplierName: string;
   supplierAddress: string;
