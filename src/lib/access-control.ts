@@ -18,6 +18,12 @@ export const AUDIT_LOG_ROLES = ADMIN_MANAGER_ROLES;
 
 export const PICKING_ASSIGN_ROLES = ADMIN_MANAGER_ROLES;
 
+export const INBOUND_RECEIVE_ROLES = [
+  "ADMIN",
+  "WAREHOUSE_MANAGER",
+  "WAREHOUSE_STAFF",
+] as const satisfies UserRole[];
+
 export const WAREHOUSE_OPERATION_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
@@ -130,7 +136,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/cycle-counts/:id", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/cycle-counts", roles: WAREHOUSE_OPERATION_ROLES },
 
-  { pattern: "/inbound/new", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
   { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/purchase-orders/:id", roles: READ_OPERATION_ROLES },

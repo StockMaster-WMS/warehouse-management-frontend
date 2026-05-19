@@ -72,7 +72,7 @@ import {
   useGetInboundReceiptsByPoQuery,
 } from "@/store/services/inbound.service";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
-import { PermissionControl } from "@/components/permission-control";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundReceipt } from "@/types/inbound-receipt";
 
@@ -168,6 +168,7 @@ export default function PurchaseOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(paramsPromise);
+  const canManagePurchaseOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   const {
     data: detailRes,
@@ -214,9 +215,9 @@ export default function PurchaseOrderDetailPage({
 
   const poStatus = po?.status ?? "";
   const isDraft = poStatus === "DRAFT";
-  const canApprove = isDraft && items.length > 0;
+  const canApprove = canManagePurchaseOrder && isDraft && items.length > 0;
   const canReceive = poStatus === "APPROVED" || poStatus === "PARTIAL";
-  const canCancel = poStatus === "DRAFT" || poStatus === "APPROVED";
+  const canCancel = canManagePurchaseOrder && (poStatus === "DRAFT" || poStatus === "APPROVED");
 
   /* ── Warehouses & Suppliers ── */
   const { data: warehousesRes } = useGetWarehousesForPoQuery({ size: 200 });

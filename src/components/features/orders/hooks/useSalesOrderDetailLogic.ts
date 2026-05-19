@@ -122,7 +122,11 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       toast.error("Thêm ít nhất 1 dòng hàng trước khi xác nhận đơn.");
       return;
     }
-    await runOrderAction("confirm", "Đã xác nhận đơn", "Xác nhận thất bại");
+    await runOrderAction(
+      "confirm",
+      "Đã xác nhận đơn. Bấm Bắt đầu lấy hàng để chuyển sang bước picking.",
+      "Xác nhận thất bại",
+    );
   };
 
   const onStartPicking = async () => {
@@ -131,7 +135,11 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
       return;
     }
 
-    await runOrderAction("start-picking", "Đã chuyển sang PICKING", "Không thể bắt đầu lấy hàng");
+    await runOrderAction(
+      "start-picking",
+      "Đã chuyển sang PICKING. Vào tab Lấy hàng để tạo lệnh picking cho từng dòng.",
+      "Không thể bắt đầu lấy hàng",
+    );
   };
 
   const onMarkPacked = async () => {
