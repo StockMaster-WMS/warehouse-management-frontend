@@ -37,12 +37,6 @@ export const aiApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     streamAiAnswer: builder.query<AiStreamResult, AiStreamRequest>({
       async queryFn(arg, { signal, dispatch }) {
-        const url = `${API_BASE_URL}/v1/ai/ask/stream?question=${encodeURIComponent(
-          arg.question
-        )}&sessionId=${encodeURIComponent(arg.sessionId)}&requestId=${encodeURIComponent(
-          arg.requestId
-        )}`;
-
         let fullText = "";
 
         try {
@@ -52,12 +46,15 @@ export const aiApi = baseApi.injectEndpoints({
           }
 
           const openStream = (accessToken: string) =>
-            fetch(url, {
+            fetch(`${API_BASE_URL}/v1/ai/ask/stream`, {
+              method: "POST",
               headers: {
                 ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                 Accept: "text/event-stream",
+                "Content-Type": "application/json",
               },
               credentials: "include",
+              body: JSON.stringify(arg),
               signal,
             });
 

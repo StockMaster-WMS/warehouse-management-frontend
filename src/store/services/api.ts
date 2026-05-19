@@ -8,6 +8,7 @@ export type ApiQueryArgs = {
   method: AxiosRequestConfig["method"];
   data?: AxiosRequestConfig["data"];
   params?: AxiosRequestConfig["params"];
+  headers?: AxiosRequestConfig["headers"];
   timeout?: number;
   responseType?: AxiosRequestConfig["responseType"];
 };
@@ -19,13 +20,14 @@ export type ApiQueryError = {
 
 const axiosBaseQuery =
   (): BaseQueryFn<ApiQueryArgs, unknown, ApiQueryError> =>
-  async ({ url, method, data, params, timeout, responseType }, api) => {
+  async ({ url, method, data, params, headers, timeout, responseType }, api) => {
     try {
       const result = await axiosInstance({
         url,
         method,
         data,
         params,
+        headers,
         timeout,
         responseType,
         signal: api.signal,

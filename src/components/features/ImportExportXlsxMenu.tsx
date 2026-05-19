@@ -61,6 +61,8 @@ const defaultDescription = (
   </>
 );
 
+const MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
+
 export function ImportExportXlsxMenu({
   onExport,
   getExportMatrix,
@@ -121,6 +123,18 @@ export function ImportExportXlsxMenu({
     setImportPreview(null);
     setSelectedImportFile(file ?? null);
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      setImportParseError("Chỉ hỗ trợ file Excel định dạng .xlsx.");
+      setSelectedImportFile(null);
+      setImportDialogOpen(true);
+      return;
+    }
+    if (file.size <= 0 || file.size > MAX_IMPORT_FILE_BYTES) {
+      setImportParseError("File .xlsx phải nhỏ hơn hoặc bằng 10MB.");
+      setSelectedImportFile(null);
+      setImportDialogOpen(true);
+      return;
+    }
 
     try {
       const buf = await file.arrayBuffer();

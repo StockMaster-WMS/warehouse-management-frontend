@@ -25,7 +25,6 @@ interface Message {
 }
 
 const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
-const AI_MESSAGES_STORAGE_KEY = "warehouse-ai-messages";
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -54,22 +53,11 @@ function createSessionId() {
 
 function getInitialSessionId() {
   if (typeof window === "undefined") return createSessionId();
-  return window.localStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
+  return window.sessionStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
 }
 
 function getInitialMessages(): Message[] {
-  if (typeof window === "undefined") return [INITIAL_MESSAGE];
-
-  const storedMessages = window.localStorage.getItem(AI_MESSAGES_STORAGE_KEY);
-  if (!storedMessages) return [INITIAL_MESSAGE];
-
-  try {
-    const parsed = JSON.parse(storedMessages) as Message[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [INITIAL_MESSAGE];
-  } catch {
-    window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
-    return [INITIAL_MESSAGE];
-  }
+  return [INITIAL_MESSAGE];
 }
 
 export default function AiAssistantPage() {
@@ -107,9 +95,8 @@ export default function AiAssistantPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
-    window.localStorage.setItem(AI_MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-  }, [messages]);
+    window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+  }, []);
 
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
@@ -233,11 +220,9 @@ export default function AiAssistantPage() {
       const cancelRequest = axiosInstance.post("/v1/ai/cancel", null, {
         params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
       });
-      void cancelRequest.catch((error) => {
-        console.error("Cancel stream error", error);
-      });
-    } catch (err) {
-      console.error("Cancel stream error", err);
+      void cancelRequest.catch(() => undefined);
+    } catch {
+      // Stream cancellation is best-effort; the local UI has already stopped.
     }
   }
 
@@ -253,8 +238,7 @@ export default function AiAssistantPage() {
     activeTriggerRef.current = null;
     sessionIdRef.current = createSessionId();
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
-      window.localStorage.removeItem(AI_MESSAGES_STORAGE_KEY);
+      window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
     }
     setStreamingMessageId(null);
     setIsStreaming(false);
