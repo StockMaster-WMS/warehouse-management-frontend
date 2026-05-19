@@ -31,7 +31,7 @@ import {
 import { QuickSearchDialog } from "@/components/quick-search-dialog";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ADMIN_MANAGER_ROLES, getRoleLabel, getUserRoles } from "@/lib/access-control";
+import { getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { PermissionControl } from "@/components/permission-control";
 import { clearToken, markExplicitLogout } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
@@ -281,7 +281,7 @@ export function Navbar() {
                 <UserCog className="mr-2 size-4 shrink-0 text-zinc-500" />
                 <span className="truncate">Trang cá nhân</span>
               </DropdownMenuItem>
-              <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              <PermissionControl allowedRoles="ADMIN">
                 <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
                   <Settings className="mr-2 size-4 shrink-0 text-zinc-500" />
                   <span className="truncate">Cài đặt hệ thống</span>
