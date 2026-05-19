@@ -93,3 +93,9 @@ export function apiErrStatus(error: unknown): string | number | undefined {
   }
   return undefined;
 }
+
+export function taskScopeErrMessage(error: unknown): string {
+  return apiErrStatus(error) === 403 || apiErrStatus(error) === "403"
+    ? "Bạn chỉ được thao tác nhiệm vụ được phân công cho bạn."
+    : apiErrMessage(error);
+}

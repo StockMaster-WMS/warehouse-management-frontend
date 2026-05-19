@@ -22,13 +22,21 @@ export function OrderPickingSection({ soItems, salesOrderStatus, warehouseId, pr
         </div>
         <div className="min-w-0">
           <CardTitle className="text-base">Lấy hàng</CardTitle>
-          <CardDescription>Xác nhận từng vị trí/lô sau khi lấy đúng số lượng.</CardDescription>
+          <CardDescription>
+            {salesOrderStatus === "PENDING"
+              ? "Đơn đã sẵn sàng. Bấm Bắt đầu lấy hàng ở tab Tổng quan để chuyển sang bước picking."
+              : "Xác nhận từng vị trí/lô sau khi lấy đúng số lượng."}
+          </CardDescription>
         </div>
       </CardHeader>
       <Separator />
       <CardContent className="space-y-3 pb-5 pt-4">
         {soItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">Thêm dòng hàng để xem lệnh lấy.</p>
+        ) : salesOrderStatus === "DRAFT" || salesOrderStatus === "PENDING" ? (
+          <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+            Chưa có lệnh picking vì đơn chưa chuyển sang trạng thái ĐANG LẤY HÀNG. Hãy xác nhận đơn, sau đó bấm Bắt đầu lấy hàng.
+          </p>
         ) : (
           soItems.map((l) => (
             <OrderItemPickingBlock

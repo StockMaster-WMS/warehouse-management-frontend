@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { statusTone } from "@/lib/design-system";
+import { INBOUND_RECEIVE_ROLES } from "@/lib/access-control";
 import {
   DEFAULT_OPERATION_DATE_PRESET,
   getOperationDateRange,
@@ -247,7 +248,7 @@ export default function InboundPage() {
         title="Phiếu nhập kho"
         description="Quản lý phiếu nhập kho (GRN) từ đơn mua hàng."
         actions={
-          <PermissionControl allowedRoles={["ADMIN", "WAREHOUSE_MANAGER"]}>
+          <PermissionControl allowedRoles={INBOUND_RECEIVE_ROLES}>
             <Button
               render={<Link href="/inbound/new" />}
               nativeButton={false}
@@ -459,7 +460,7 @@ export default function InboundPage() {
                       title="Chưa có phiếu nhập"
                       description="Chưa có phiếu nhập kho nào hoặc không khớp với kết quả tìm kiếm."
                       action={
-                        <PermissionControl allowedRoles={["ADMIN", "WAREHOUSE_MANAGER"]}>
+                        <PermissionControl allowedRoles={INBOUND_RECEIVE_ROLES}>
                           <Button
                             render={<Link href="/inbound/new" />}
                             nativeButton={false}

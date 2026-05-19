@@ -27,6 +27,8 @@ import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { PageHeader } from "@/components/page-header";
+import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import {
   Select,
   SelectContent,
@@ -50,7 +52,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { apiErrMessage } from "@/types/api";
+import { apiErrMessage, taskScopeErrMessage } from "@/types/api";
 import {
   useCompletePutawayTaskMutation,
   useGetLocationsQuery,
@@ -101,6 +103,7 @@ function StatusPill({ status }: { status: string }) {
 const EMPTY_PUTAWAY_TASKS: PutawayTask[] = [];
 
 export default function PutawayPage() {
+  const canCoordinatePutaway = useHasPermissions(ADMIN_MANAGER_ROLES);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
   const [keyword, setKeyword] = useState("");
@@ -221,13 +224,18 @@ export default function PutawayPage() {
       setCompleteOpen(false);
       refetch();
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      toast.error(taskScopeErrMessage(err));
     }
   }
 
   async function submitEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!activeTask) return;
+    if (!canCoordinatePutaway) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
+
     try {
       const res = await patchTask({
         id: activeTask.id,
@@ -413,8 +421,12 @@ export default function PutawayPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={PackageOpen}
-                      title="Không có task putaway"
-                      description="Thử bỏ bộ lọc hoặc tạo phiếu nhập hàng từ đơn PO trước."
+                      title={canCoordinatePutaway ? "Không có task putaway" : "Bạn chưa có nhiệm vụ được phân công."}
+                      description={
+                        canCoordinatePutaway
+                          ? "Thử bỏ bộ lọc hoặc tạo phiếu nhập hàng từ đơn PO trước."
+                          : "Các nhiệm vụ putaway được giao cho bạn sẽ xuất hiện tại đây."
+                      }
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Làm mới</Button>}
                     />
                   </TableCell>
@@ -466,16 +478,18 @@ export default function PutawayPage() {
                       </TableCell>
                       <TableCell className="py-4 pl-3 pr-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2.5 text-xs rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700"
-                            onClick={() => openEdit(t)}
-                            disabled={patching}
-                          >
-                            Sửa
-                          </Button>
+                          {canCoordinatePutaway ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2.5 text-xs rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700"
+                              onClick={() => openEdit(t)}
+                              disabled={patching}
+                            >
+                              Sửa
+                            </Button>
+                          ) : null}
                           <Button
                             type="button"
                             size="sm"
@@ -579,17 +593,18 @@ export default function PutawayPage() {
       </Dialog>
 
       {/* ── Edit Dialog ── */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <form onSubmit={submitEdit}>
-            <DialogHeader>
-              <DialogTitle>Cập nhật task putaway</DialogTitle>
-              {activeTask && (
-                <DialogDescription>
-                  Task <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span>
-                </DialogDescription>
-              )}
-            </DialogHeader>
+      {canCoordinatePutaway ? (
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <form onSubmit={submitEdit}>
+              <DialogHeader>
+                <DialogTitle>Cập nhật task putaway</DialogTitle>
+                {activeTask && (
+                  <DialogDescription>
+                    Task <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span>
+                  </DialogDescription>
+                )}
+              </DialogHeader>
 
             <div className="grid gap-4 py-4">
               <div>
@@ -646,9 +661,10 @@ export default function PutawayPage() {
                 Lưu thay đổi
               </Button>
             </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
 }
