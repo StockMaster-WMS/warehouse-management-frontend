@@ -17,6 +17,7 @@ import { apiErrMessage } from "@/types/api";
 import { useState } from "react";
 import type { Location } from "@/types/location";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import { ImportExportXlsxMenu } from "@/components/features/ImportExportXlsxMenu";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
@@ -66,6 +67,7 @@ export default function LocationsPage() {
         deleteTarget,
         openDeleteDialog,
         handleDeleteLocation,
+        handleBulkDeleteLocations,
 
         warehouseNameMap,
     } = useLocationsPageLogic();
@@ -77,6 +79,47 @@ export default function LocationsPage() {
                 description="Quản lý vị trí theo kho và tra cứu nhanh zone/aisle/rack/bin để vận hành nhập - xuất chính xác."
                 actions={
                     <div className="flex items-center gap-2">
+                        <ImportExportXlsxMenu
+                            triggerClassName="border-slate-200"
+                            menuGroupLabel="Vị trí lưu trữ"
+                            exportItemLabel="Xuất mẫu hiện tại"
+                            templateItemLabel="Tải mẫu vị trí"
+                            importItemLabel="Import Excel"
+                            templateBasename="location-import-template"
+                            getTemplateMatrix={() => [
+                                ["warehouseCode", "zone", "aisle", "rack", "level", "bin", "locationType", "isActive"],
+                                ["WH-A", "MAIN", "A01", "R01", "1", "B01", "PICKING", "TRUE"],
+                            ]}
+                            getExportFilename={() => `locations-${new Date().toISOString().slice(0, 10)}.xlsx`}
+                            getExportMatrix={() => [
+                                ["code", "warehouse", "zone", "aisle", "rack", "level", "bin", "locationType", "status"],
+                                ...locations.map((location) => [
+                                    location.code,
+                                    warehouseNameMap[location.warehouseId] || location.warehouseId,
+                                    location.zone,
+                                    location.aisle,
+                                    location.rack,
+                                    String(location.level ?? ""),
+                                    location.bin,
+                                    location.locationType,
+                                    location.isActive === false ? "INACTIVE" : "ACTIVE",
+                                ]),
+                            ]}
+                            importConfig={{
+                                expectedHeaders: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
+                                requiredRowFields: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
+                                fieldLabels: {
+                                    warehouseCode: "Mã kho",
+                                    zone: "Khu vực",
+                                    aisle: "Dãy",
+                                    rack: "Kệ",
+                                    level: "Tầng",
+                                    bin: "Ngăn",
+                                },
+                            }}
+                            dialogTitle="Kiểm tra file import vị trí"
+                            importPreviewCountLabel="dòng vị trí"
+                        />
                         <Button
                             type="button"
                             variant="outline"
@@ -163,6 +206,7 @@ export default function LocationsPage() {
                     onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}
+                    onBulkDelete={handleBulkDeleteLocations}
                     onPrintBarcode={setBarcodeLocation}
                 />
             )}

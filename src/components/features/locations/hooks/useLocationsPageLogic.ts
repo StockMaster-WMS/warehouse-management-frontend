@@ -195,6 +195,23 @@ export function useLocationsPageLogic() {
         }
     };
 
+    const handleBulkDeleteLocations = async (targets: Location[]) => {
+        if (targets.length === 0) return;
+        try {
+            await Promise.all(
+                targets.map((location) =>
+                    deleteLocation({
+                        id: location.id,
+                        warehouseId: location.warehouseId,
+                    }).unwrap(),
+                ),
+            );
+            toast.success(`Đã xóa ${targets.length} vị trí đã chọn`);
+        } catch (err) {
+            toast.error(apiErrMessage(err, "Không thể xóa toàn bộ vị trí đã chọn"));
+        }
+    };
+
     return {
         searchInput,
         setSearchInput,
@@ -241,6 +258,7 @@ export function useLocationsPageLogic() {
         deleteTarget,
         openDeleteDialog,
         handleDeleteLocation,
+        handleBulkDeleteLocations,
 
         warehouseNameMap,
     };

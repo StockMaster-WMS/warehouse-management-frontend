@@ -11,9 +11,12 @@ import {
     Package,
     ArrowDownToLine,
     Truck,
+    X,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,6 +98,7 @@ type LocationsTableProps = {
     onRetry?: () => void;
     onEdit: (location: Location) => void;
     onDelete: (location: Location) => void;
+    onBulkDelete?: (locations: Location[]) => Promise<void> | void;
     onPrintBarcode: (location: Location) => void;
 };
 
@@ -116,18 +120,89 @@ export function LocationsTable({
     onRetry,
     onEdit,
     onDelete,
+    onBulkDelete,
     onPrintBarcode,
 }: LocationsTableProps) {
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+    const selectedLocations = useMemo(
+        () => visibleLocations.filter((location) => selectedIds.has(location.id)),
+        [selectedIds, visibleLocations],
+    );
+    const allVisibleSelected = visibleLocations.length > 0 && selectedLocations.length === visibleLocations.length;
+
+    const toggleLocation = (locationId: string, checked: boolean) => {
+        setSelectedIds((current) => {
+            const next = new Set(current);
+            if (checked) next.add(locationId);
+            else next.delete(locationId);
+            return next;
+        });
+    };
+
+    const toggleAllVisible = (checked: boolean) => {
+        setSelectedIds((current) => {
+            const next = new Set(current);
+            visibleLocations.forEach((location) => {
+                if (checked) next.add(location.id);
+                else next.delete(location.id);
+            });
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedIds(new Set());
+
+    const handleBulkDelete = async () => {
+        if (!onBulkDelete || selectedLocations.length === 0) return;
+        await onBulkDelete(selectedLocations);
+        clearSelection();
+    };
+
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {selectedLocations.length > 0 ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="h-7 w-7">
+                            <X className="h-4 w-4" />
+                        </Button>
+                        <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
+                            Đã chọn {selectedLocations.length.toLocaleString("vi-VN")} vị trí
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="sm" disabled className="border-indigo-100 bg-white/70">
+                            Sửa loại vị trí
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-rose-100 bg-white/70 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                            onClick={handleBulkDelete}
+                            disabled={!onBulkDelete}
+                        >
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Xóa đã chọn
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
             <div className="hidden md:block">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-50/70 dark:bg-slate-800/50">
+                            <TableHead className="w-10 px-4 py-3">
+                                <Checkbox
+                                    checked={allVisibleSelected}
+                                    onCheckedChange={(checked) => toggleAllVisible(checked === true)}
+                                    aria-label="Chọn tất cả vị trí đang hiển thị"
+                                />
+                            </TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[30%]">Vị trí</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[22%]">Kho & Vùng</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[14%]">Phân loại</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Trạng thái</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[16%]">TT</TableHead>
                             <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -135,6 +210,7 @@ export function LocationsTable({
                         {isLoading ? (
                             Array.from({ length: 6 }).map((_, index) => (
                                 <TableRow key={`location-table-skeleton-${index}`}>
+                                    <TableCell className="px-4 py-3"><Skeleton className="h-4 w-4 rounded" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-52" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
@@ -144,7 +220,7 @@ export function LocationsTable({
                             ))
                         ) : errorMessage ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="px-4 py-8 text-center">
+                                <TableCell colSpan={6} className="px-4 py-8 text-center">
                                     <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Không thể tải danh sách vị trí</p>
                                     <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errorMessage}</p>
                                     <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onRetry}>Thử lại</Button>
@@ -164,6 +240,13 @@ export function LocationsTable({
 
                                 return (
                                     <TableRow key={location.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                        <TableCell className="px-4 py-3 align-middle">
+                                            <Checkbox
+                                                checked={selectedIds.has(location.id)}
+                                                onCheckedChange={(checked) => toggleLocation(location.id, checked === true)}
+                                                aria-label={`Chọn vị trí ${locationCode}`}
+                                            />
+                                        </TableCell>
                                         {/* Col 1: Location code + breadcrumb */}
                                         <TableCell className="px-4 py-3">
                                             <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">{locationCode}</p>

@@ -49,6 +49,14 @@ function TableSkeleton() {
   );
 }
 
+function getStockTone(item: StockExpanded) {
+  const minQty = item.product?.minQty;
+  if (minQty == null || minQty <= 0) return "normal";
+  if (item.qtyAvailable <= 0 || item.qtyAvailable <= minQty * 0.5) return "critical";
+  if (item.qtyAvailable < minQty) return "warning";
+  return "normal";
+}
+
 export function InventoryStockTable({
   items,
   page,
@@ -147,16 +155,17 @@ export function InventoryStockTable({
               items.map((item, index) => {
                 const productName = item.product?.name || item.productName || `Sản phẩm ${item.productId}`;
                 const productSku = item.product?.sku || item.productSku || item.productId;
-                const isLow =
-                  item.product?.minQty != null &&
-                  item.qtyAvailable < item.product.minQty;
-
+                const stockTone = getStockTone(item);
                 return (
                   <TableRow
                     key={item.id}
                     className={cn(
                       "group transition-colors",
                       "odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70",
+                      stockTone === "critical" &&
+                        "!bg-rose-100/70 hover:!bg-rose-100/90 dark:!bg-rose-950/28 dark:hover:!bg-rose-950/36",
+                      stockTone === "warning" &&
+                        "!bg-amber-100/65 hover:!bg-amber-100/85 dark:!bg-amber-950/24 dark:hover:!bg-amber-950/32",
                     )}
                   >
                     <TableCell className="px-3 py-3 text-center">
@@ -230,9 +239,11 @@ export function InventoryStockTable({
                       <span
                         className={cn(
                           "tabular-nums text-sm font-bold",
-                          isLow
+                          stockTone === "critical"
                             ? "text-rose-600 dark:text-rose-400"
-                            : "text-emerald-600 dark:text-emerald-400",
+                            : stockTone === "warning"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-emerald-600 dark:text-emerald-400",
                         )}
                       >
                         {item.qtyAvailable.toLocaleString("vi-VN")}

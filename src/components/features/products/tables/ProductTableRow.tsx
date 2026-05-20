@@ -32,6 +32,10 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleDateString("vi-VN");
 }
 
+function formatStockValue(value?: number | null) {
+  return typeof value === "number" ? value.toLocaleString("vi-VN") : "—";
+}
+
 export const ProductTableRow = memo(function ProductTableRow({
   product,
   rowNumber,
@@ -42,6 +46,12 @@ export const ProductTableRow = memo(function ProductTableRow({
     categoryName || (product.categoryId ? "—" : "Chưa gán danh mục");
   const categorySubline =
     !categoryName && product.categoryId ? "Danh mục chưa xác định" : "";
+  const qtyOnHand = product.qtyOnHand ?? product.currentStock;
+  const qtyAvailable = product.qtyAvailable ?? product.availableStock;
+  const isLowStock =
+    typeof qtyAvailable === "number" &&
+    product.minStockQty != null &&
+    qtyAvailable < product.minStockQty;
 
   return (
     <>
@@ -94,6 +104,16 @@ export const ProductTableRow = memo(function ProductTableRow({
           ) : (
             <span className="text-xs text-muted-foreground">Chưa gán</span>
           )}
+        </TableCell>
+        <TableCell className="px-3 py-3 text-center align-middle">
+          <span className="tabular-nums text-sm font-semibold text-foreground">
+            {formatStockValue(qtyOnHand)}
+          </span>
+        </TableCell>
+        <TableCell className="px-3 py-3 text-center align-middle">
+          <span className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600 dark:text-rose-400" : "tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400"}>
+            {formatStockValue(qtyAvailable)}
+          </span>
         </TableCell>
         <TableCell className="px-3 py-3 text-center align-middle">
           <StatusBadge tone={statusTone(product.status)}>
@@ -207,6 +227,19 @@ export const ProductTableRow = memo(function ProductTableRow({
                 ) : (
                   <span className="text-muted-foreground">Chưa gán</span>
                 )}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="ui-label">Tồn hiện tại</p>
+              <p className="tabular-nums text-sm font-semibold">{formatStockValue(qtyOnHand)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="ui-label">Khả dụng</p>
+              <p className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600" : "tabular-nums text-sm font-semibold text-emerald-600"}>
+                {formatStockValue(qtyAvailable)}
               </p>
             </div>
           </div>

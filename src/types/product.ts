@@ -10,6 +10,10 @@ export interface Product {
   weightKg: number | null;
   volumeCm3: number | null;
   minStockQty: number;
+  qtyOnHand?: number | null;
+  qtyAvailable?: number | null;
+  currentStock?: number | null;
+  availableStock?: number | null;
   isLotTracked: boolean;
   isExpiryTracked: boolean;
   isFrozen: boolean;

@@ -18,7 +18,7 @@ import { apiErrMessage } from "@/types/api";
 import type { Product } from "@/types/product";
 
 const SKELETON_ROWS = 6;
-const COL_COUNT = 10;
+const COL_COUNT = 12;
 
 interface ProductTableProps {
     products: Product[];
@@ -69,6 +69,12 @@ function ProductTableSkeleton() {
                         <Skeleton className="mx-auto h-4 w-10" />
                     </TableCell>
                     <TableCell className="px-3 py-3 text-center">
+                        <Skeleton className="mx-auto h-4 w-10" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-center">
+                        <Skeleton className="mx-auto h-4 w-10" />
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-center">
                         <Skeleton className="mx-auto h-5 w-20 rounded-full" />
                     </TableCell>
                     <TableCell className="px-3 py-3">
@@ -112,7 +118,7 @@ export function ProductTable({
                 </p>
             ) : null}
             <div className="overflow-x-auto">
-                <Table className="min-w-260 text-left">
+                <Table className="min-w-300 text-left">
                     <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
                         <TableRow>
                             <TableHead className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -135,6 +141,12 @@ export function ProductTable({
                             </TableHead>
                             <TableHead className="w-25 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 NCC chính
+                            </TableHead>
+                            <TableHead className="w-24 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                Tồn hiện tại
+                            </TableHead>
+                            <TableHead className="w-24 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                Khả dụng
                             </TableHead>
                             <TableHead className="w-30 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Trạng thái

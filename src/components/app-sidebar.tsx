@@ -21,11 +21,101 @@ import {
 } from "@/components/sidebar/sidebar-navigation";
 import { getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { useGetCurrentUserQuery } from "@/store/services/auth.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+
+function compactText(parts: Array<string | null | undefined>) {
+  return parts.map((part) => part?.trim()).filter(Boolean).join(" · ");
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { data: user } = useGetCurrentUserQuery();
   const userRoles = useMemo(() => getUserRoles(user?.roles), [user?.roles]);
+  const isAdmin = userRoles.includes("ADMIN");
+  const {
+    data: warehousesRes,
+    isLoading: warehousesLoading,
+    isError: warehousesError,
+  } = useGetWarehousesQuery({
+    page: 0,
+    size: isAdmin ? 1 : 10,
+    sort: "name",
+    sortDir: "asc",
+    isActive: isAdmin ? undefined : true,
+  });
+  const warehouses = warehousesRes?.data?.content ?? [];
+  const primaryWarehouse = warehouses[0];
+  const warehousePanel = useMemo(() => {
+    if (isAdmin) {
+      const totalWarehouses = warehousesRes?.data?.total_elements ?? warehouses.length;
+      const activeWarehouses = warehouses.filter((warehouse) => warehouse.isActive).length;
+      return {
+        title: "Tổng quan hệ thống",
+        status: warehousesLoading
+          ? "Đang tải"
+          : `${activeWarehouses}/${totalWarehouses} kho hoạt động`,
+        statusTone: "info" as const,
+        description: warehousesLoading
+          ? "Đang lấy thông tin mạng lưới kho"
+          : "Quản trị toàn bộ mạng lưới kho",
+      };
+    }
+
+    if (warehousesLoading) {
+      return {
+        title: "Đang tải kho",
+        status: "Đồng bộ",
+        statusTone: "info" as const,
+        description: "Đang lấy thông tin kho được phân quyền",
+      };
+    }
+
+    if (warehousesError) {
+      return {
+        title: "Không tải được kho",
+        status: "Lỗi",
+        statusTone: "error" as const,
+        description: "Kiểm tra kết nối hoặc quyền truy cập kho",
+      };
+    }
+
+    if (!primaryWarehouse) {
+      return {
+        title: "Chưa có kho",
+        status: "Chưa gán",
+        statusTone: "warning" as const,
+        description: "Tài khoản chưa được phân quyền kho hoạt động",
+      };
+    }
+
+    return {
+      title: primaryWarehouse.name || primaryWarehouse.code || "Kho chưa đặt tên",
+      status: primaryWarehouse.isActive ? "Đang hoạt động" : "Ngừng hoạt động",
+      statusTone: primaryWarehouse.isActive ? "success" as const : "warning" as const,
+      description:
+        compactText([
+          primaryWarehouse.code,
+          primaryWarehouse.managerName ? `QL: ${primaryWarehouse.managerName}` : null,
+          primaryWarehouse.address,
+        ]) || primaryWarehouse.timezone || "Thông tin kho đang được cập nhật",
+    };
+  }, [isAdmin, primaryWarehouse, warehouses, warehousesError, warehousesLoading, warehousesRes]);
+  const statusClassName =
+    warehousePanel.statusTone === "success"
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+      : warehousePanel.statusTone === "warning"
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+        : warehousePanel.statusTone === "error"
+          ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+          : "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300";
+  const statusDotClassName =
+    warehousePanel.statusTone === "success"
+      ? "bg-emerald-500"
+      : warehousePanel.statusTone === "warning"
+        ? "bg-amber-500"
+        : warehousePanel.statusTone === "error"
+          ? "bg-rose-500"
+          : "bg-indigo-500";
   const visibleSections = useMemo(
     () => filterSidebarSections(SIDEBAR_SECTIONS, userRoles),
     [userRoles],
@@ -60,16 +150,16 @@ export function AppSidebar() {
 
       <div className="mx-4 mb-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 group-data-[collapsible=icon]:hidden dark:border-slate-800 dark:bg-slate-900/60">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-            Kho trung tâm
+          <p className="min-w-0 truncate text-xs font-semibold text-slate-800 dark:text-slate-200" title={warehousePanel.title}>
+            {warehousePanel.title}
           </p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Online
+          <span className={`ml-2 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClassName}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${statusDotClassName}`} />
+            {warehousePanel.status}
           </span>
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">
-          Cập nhật đồng bộ theo thời gian thực
+        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-500" title={warehousePanel.description}>
+          {warehousePanel.description}
         </p>
       </div>
 

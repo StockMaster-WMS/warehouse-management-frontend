@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useEffect, useMemo, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,23 @@ export function LocationFormDialog({
     warehouses,
     onSubmit,
 }: LocationFormDialogProps) {
+    const generatedCode = useMemo(() => {
+        const parts = [
+            formState.zone.trim(),
+            formState.aisle.trim(),
+            formState.rack.trim(),
+            formState.level.trim() ? `L${formState.level.trim().padStart(2, "0")}` : "",
+            formState.bin.trim(),
+        ].filter(Boolean);
+
+        return parts.join("-");
+    }, [formState.aisle, formState.bin, formState.level, formState.rack, formState.zone]);
+
+    useEffect(() => {
+        if (editingLocation) return;
+        setFormState((prev) => (prev.code === generatedCode ? prev : { ...prev, code: generatedCode }));
+    }, [editingLocation, generatedCode, setFormState]);
+
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         await onSubmit();
@@ -93,17 +110,15 @@ export function LocationFormDialog({
                             </Select>
                         </div>
 
-                        {editingLocation && (
-                            <div className="space-y-1.5">
-                                <Label>Mã vị trí</Label>
-                                <Input
-                                    value={formState.code}
-                                    disabled
-                                    className="bg-slate-50 font-mono text-slate-500 font-bold dark:bg-slate-800 dark:text-slate-400 border-slate-200"
-                                    placeholder="Được tạo tự động bởi hệ thống"
-                                />
-                            </div>
-                        )}
+                        <div className="space-y-1.5">
+                            <Label>Mã vị trí</Label>
+                            <Input
+                                value={editingLocation ? formState.code : generatedCode}
+                                disabled
+                                className="bg-slate-50 font-mono text-slate-500 font-bold dark:bg-slate-800 dark:text-slate-400 border-slate-200"
+                                placeholder="Tự động theo khu vực, dãy, kệ, tầng, ngăn"
+                            />
+                        </div>
 
                         <div className="space-y-1.5">
                             <Label>Khu vực (Zone)</Label>
@@ -115,7 +130,7 @@ export function LocationFormDialog({
                                         zone: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: A"
+                                placeholder=""
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -128,7 +143,7 @@ export function LocationFormDialog({
                                         aisle: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: 01"
+                                placeholder=""
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -141,7 +156,7 @@ export function LocationFormDialog({
                                         rack: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: R1"
+                                placeholder=""
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -155,7 +170,7 @@ export function LocationFormDialog({
                                         level: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: 1"
+                                placeholder=""
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -168,7 +183,7 @@ export function LocationFormDialog({
                                         bin: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: B2"
+                                placeholder=""
                             />
                         </div>
 
@@ -182,7 +197,7 @@ export function LocationFormDialog({
                                         locationType: e.target.value,
                                     }))
                                 }
-                                placeholder="VD: PICKING"
+                                placeholder=""
                             />
                         </div>
 
