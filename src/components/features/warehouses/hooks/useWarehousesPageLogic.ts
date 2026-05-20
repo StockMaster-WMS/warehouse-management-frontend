@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useHasPermissions } from "@/components/permission-control";
 import {
   useGetWarehousesQuery,
   useGetWarehouseSummaryQuery,
@@ -8,6 +9,7 @@ import {
   useUpdateWarehouseMutation,
   useDeleteWarehouseMutation,
   useLazyGetWarehouseByIdQuery,
+  useGetWarehouseManagersQuery,
 } from "@/store/services/warehouse.service";
 import { apiErrMessage } from "@/types/api";
 import type { Warehouse, SortDirection, WarehouseSortField } from "@/types/warehouse";
@@ -27,6 +29,7 @@ import {
 } from "@/components/features/warehouses/constants";
 
 export function useWarehousesPageLogic() {
+  const canManageWarehouses = useHasPermissions(["ADMIN"]);
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Warehouse | null>(null);
@@ -67,6 +70,10 @@ export function useWarehousesPageLogic() {
 
   const { data: summaryData } = useGetWarehouseSummaryQuery();
   const summary = summaryData?.data;
+  const { data: managersData, isLoading: isManagersLoading } = useGetWarehouseManagersQuery(undefined, {
+    skip: !canManageWarehouses,
+  });
+  const managers = managersData?.data ?? [];
 
   const [createWarehouse, { isLoading: isCreating }] = useCreateWarehouseMutation();
   const [updateWarehouse, { isLoading: isUpdating }] = useUpdateWarehouseMutation();
@@ -140,7 +147,7 @@ export function useWarehousesPageLogic() {
         code: w.code ?? "",
         name: w.name ?? "",
         address: w.address ?? "",
-        managerName: w.managerName ?? "",
+        managerIds: w.managers?.map((manager) => manager.id) ?? [],
         timezone: w.timezone ?? "Asia/Ho_Chi_Minh",
         isActive: w.isActive,
       });
@@ -177,16 +184,11 @@ export function useWarehousesPageLogic() {
       toast.error("Tên kho không được vượt quá 150 ký tự");
       return false;
     }
-    if (formState.managerName.length > 120) {
-      toast.error("Tên người quản lý không được vượt quá 120 ký tự");
-      return false;
-    }
-
     const payload = {
       code,
       name,
       address: formState.address.trim() || undefined,
-      managerName: formState.managerName.trim() || undefined,
+      managerIds: formState.managerIds,
       timezone: formState.timezone.trim() || undefined,
       isActive: formState.isActive,
     };
@@ -255,6 +257,9 @@ export function useWarehousesPageLogic() {
     totalElements,
     totalPages,
     summary,
+    managers,
+    isManagersLoading,
+    canManageWarehouses,
 
     error,
     isLoading,

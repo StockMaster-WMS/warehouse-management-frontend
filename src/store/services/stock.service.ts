@@ -221,10 +221,14 @@ const stockApi = baseApi.injectEndpoints({
     }),
 
     /** Low stock alerts (no pagination). */
-    getLowStockAlerts: builder.query<ApiResponse<StockExpanded[]>, void>({
-      query: () => ({
+    getLowStockAlerts: builder.query<ApiResponse<StockExpanded[]>, { warehouseId?: string; locationId?: string } | void>({
+      query: (params) => ({
         url: "/stocks/alerts/low-stock",
         method: "GET",
+        params: buildFilterParams({
+          warehouseId: params?.warehouseId,
+          locationId: params?.locationId,
+        }),
       }),
       providesTags: [{ type: "Stock", id: "LOW_STOCK" }],
     }),

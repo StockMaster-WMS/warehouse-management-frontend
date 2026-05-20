@@ -23,7 +23,7 @@ export default function WarehousesPage() {
       <PageHeader
         title="Danh sách kho"
         description="Hệ thống quản lý không gian lưu trữ và mạng lưới kho bãi."
-        actions={
+        actions={logic.canManageWarehouses ? (
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
@@ -32,7 +32,7 @@ export default function WarehousesPage() {
             <Plus className="mr-2 h-4 w-4" />
             Thêm kho mới
           </Button>
-        }
+        ) : null}
       />
 
       <WarehouseStatsGrid summary={logic.summary} isLoading={logic.isLoading} />
@@ -81,6 +81,7 @@ export default function WarehousesPage() {
             onRequestDelete={logic.openDeleteDialog}
             onRequestEdit={logic.openEditDialog}
             onRequestCreate={logic.openCreateDialog}
+            canManageWarehouses={logic.canManageWarehouses}
           />
         </div>
       </div>
@@ -92,6 +93,8 @@ export default function WarehousesPage() {
         isSubmitting={logic.isSubmitting}
         formState={logic.formState}
         setFormState={logic.setFormState}
+        managers={logic.managers}
+        isManagersLoading={logic.isManagersLoading}
         onSubmit={logic.handleSubmitForm}
       />
 
