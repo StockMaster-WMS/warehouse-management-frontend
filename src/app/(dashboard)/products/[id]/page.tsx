@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, ListOrdered, Package } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,8 @@ import {
   ProductStockLedger
 } from "@/components/features/products";
 
-export default function ProductDetailPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const params = use(paramsPromise);
-  const { id } = params;
+export default function ProductDetailPage() {
+  const { id } = useParams<{ id: string }>();
 
   // 1. Fetch Product
   const { data, error, isLoading, refetch, isFetching } = useGetProductByIdQuery(id);
