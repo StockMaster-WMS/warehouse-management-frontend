@@ -265,8 +265,8 @@ export default function PurchaseOrderDetailPage({
     if (!id) return;
     try {
       const res = await approvePo(id).unwrap();
-      if (!res.success) { toast.error(res.message || "Duyệt PO thất bại"); return; }
-      toast.success(res.message || "Đã duyệt PO"); refetch();
+      if (!res.success) { toast.error(res.message || "Duyệt đơn nhập thất bại"); return; }
+      toast.success(res.message || "Đã duyệt đơn nhập"); refetch();
     } catch (err) { toast.error(apiErrMessage(err)); }
   }
 
@@ -274,8 +274,8 @@ export default function PurchaseOrderDetailPage({
     if (!id) return;
     try {
       const res = await cancelPo(id).unwrap();
-      if (!res.success) { toast.error(res.message || "Hủy PO thất bại"); return; }
-      toast.success(res.message || "Đã hủy PO"); refetch();
+      if (!res.success) { toast.error(res.message || "Hủy đơn nhập thất bại"); return; }
+      toast.success(res.message || "Đã hủy đơn nhập"); refetch();
     } catch (err) { toast.error(apiErrMessage(err)); }
   }
 
@@ -284,7 +284,7 @@ export default function PurchaseOrderDetailPage({
     try {
       const res = await deletePo(id).unwrap();
       if (!res.success) { toast.error((res as { message?: string }).message || "Xóa thất bại"); return; }
-      toast.success("Đã xóa PO");
+      toast.success("Đã xóa đơn nhập");
       window.location.href = "/purchase-orders";
     } catch (err) { toast.error(apiErrMessage(err)); }
   }
@@ -358,8 +358,8 @@ export default function PurchaseOrderDetailPage({
         purchaseOrderId: id,
         body: { actualLocationId: parsed.data.actualLocationId },
       }).unwrap();
-      if (!res.success) { toast.error((res as { message?: string }).message || "Hoàn tất putaway thất bại"); return; }
-      toast.success((res as { message?: string }).message || "Đã hoàn tất putaway");
+      if (!res.success) { toast.error((res as { message?: string }).message || "Hoàn tất xếp hàng lên kệ thất bại"); return; }
+      toast.success((res as { message?: string }).message || "Đã hoàn tất xếp hàng lên kệ");
       setPutawayOpen(false); setActiveTask(null); refetch();
     } catch (err) { toast.error(apiErrMessage(err)); }
   }
@@ -376,7 +376,7 @@ export default function PurchaseOrderDetailPage({
       {/* ── Header ── */}
       <PageHeader
         title="Chi tiết đơn mua hàng"
-        description={po ? `Mã PO: ${po.poNumber}` : "Đang tải…"}
+        description={po ? `Mã đơn nhập: ${po.poNumber}` : "Đang tải…"}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -409,7 +409,7 @@ export default function PurchaseOrderDetailPage({
                 className="rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-sm gap-1.5"
               >
                 {approvingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
-                Duyệt PO
+                Duyệt đơn nhập
               </Button>
             )}
 
@@ -422,7 +422,7 @@ export default function PurchaseOrderDetailPage({
                 className="rounded-xl gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-950/20"
               >
                 {cancellingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
-                Hủy PO
+                Hủy đơn nhập
               </Button>
             )}
 
@@ -436,7 +436,7 @@ export default function PurchaseOrderDetailPage({
                   className="rounded-xl gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
                 >
                   {deletingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Xóa PO
+                  Xóa đơn nhập
                 </Button>
               )}
             </PermissionControl>
@@ -553,7 +553,7 @@ export default function PurchaseOrderDetailPage({
                 className="relative flex-1 rounded-none first:rounded-tl-2xl px-5 py-3.5 text-xs font-semibold text-slate-500 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-slate-400 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
               >
                 <FileText className="h-3.5 w-3.5 mr-1.5 inline-block" />
-                Thông tin PO
+                Thông tin đơn nhập
               </TabsTrigger>
               <TabsTrigger
                 value="items"
@@ -633,7 +633,7 @@ export default function PurchaseOrderDetailPage({
                     <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                       <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
                         <TableHead className="py-3.5 pl-5 pr-3 w-12 text-[11px] font-bold uppercase tracking-wider text-slate-400">#</TableHead>
-                        <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU / Tên SP</TableHead>
+                        <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng / tên SP</TableHead>
                         <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
                         <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
                         <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
@@ -701,7 +701,7 @@ export default function PurchaseOrderDetailPage({
                 {receipts.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
                     <FileText className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-                    <p className="text-sm text-slate-500">Chưa có phiếu nhập kho nào cho PO này.</p>
+                    <p className="text-sm text-slate-500">Chưa có phiếu nhập kho nào cho đơn nhập này.</p>
                     {canReceive && (
                       <Button size="sm" onClick={openGrn} className="rounded-xl gap-1.5 bg-indigo-600 hover:bg-indigo-700">
                         <PackagePlus className="h-4 w-4" />
@@ -751,14 +751,14 @@ export default function PurchaseOrderDetailPage({
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
                     <MapPin className="h-8 w-8 text-slate-300 dark:text-slate-600" />
                     <p className="text-sm text-slate-500">Chưa có tác vụ sắp xếp kho nào.</p>
-                    <p className="text-xs text-slate-400">Tạo phiếu nhập hàng để hệ thống tự động sinh putaway task.</p>
+                    <p className="text-xs text-slate-400">Tạo phiếu nhập hàng để hệ thống tự động sinh nhiệm vụ xếp hàng lên kệ.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                         <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                          <TableHead className="py-3.5 pl-5 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task ID</TableHead>
+                          <TableHead className="py-3.5 pl-5 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã nhiệm vụ</TableHead>
                           <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
                           <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
                           <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
@@ -850,7 +850,7 @@ export default function PurchaseOrderDetailPage({
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                     <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                      <TableHead className="py-3 pl-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</TableHead>
+                      <TableHead className="py-3 pl-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng</TableHead>
                       <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đặt</TableHead>
                       <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
                       <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
@@ -965,11 +965,11 @@ export default function PurchaseOrderDetailPage({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <PackageCheck className="h-5 w-5 text-indigo-600" />
-                Hoàn tất Putaway
+                Hoàn tất xếp hàng lên kệ
               </DialogTitle>
               {activeTask && (
                 <DialogDescription>
-                  Task <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span> — xác nhận vị trí đặt hàng thực tế
+                  Nhiệm vụ <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span> - xác nhận vị trí đặt hàng thực tế
                 </DialogDescription>
               )}
             </DialogHeader>

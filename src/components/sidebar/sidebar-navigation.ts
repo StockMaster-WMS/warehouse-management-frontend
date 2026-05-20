@@ -76,7 +76,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     items: [
       { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: ALL_ROLES },
       // { label: "Thông báo", href: "/notifications", icon: Bell, roles: ALL_ROLES },
-      { label: "Trợ lý AI", href: "/ai-assistant", icon: Sparkles, tag: "AI", roles: READ_OPERATION_ROLES },
+      { label: "Trợ lý thông minh", href: "/ai-assistant", icon: Sparkles, roles: READ_OPERATION_ROLES },
     ],
   },
   {
@@ -94,7 +94,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     className: "mt-2",
     items: [
       {
-        label: "Sản phẩm & SKU",
+        label: "Sản phẩm & mã hàng",
         href: "/products",
         icon: Package,
         roles: READ_OPERATION_ROLES,
@@ -113,7 +113,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     items: [
       { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, roles: READ_OPERATION_ROLES },
       { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, roles: READ_OPERATION_ROLES },
-      { label: "Putaway", href: "/putaway", icon: ScanLine, roles: WAREHOUSE_OPERATION_ROLES },
+      { label: "Xếp hàng lên kệ", href: "/putaway", icon: ScanLine, roles: WAREHOUSE_OPERATION_ROLES },
     ],
   },
   {
@@ -121,7 +121,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     className: "mt-2",
     items: [
       { label: "Đơn xuất", href: "/orders", icon: ListOrdered, roles: READ_OPERATION_ROLES },
-      { label: "Picking", href: "/picking", icon: Scissors, roles: WAREHOUSE_OPERATION_ROLES },
+      { label: "Lấy hàng", href: "/picking", icon: Scissors, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Hàng trả", href: "/returns", icon: RotateCcw, roles: READ_OPERATION_ROLES },
     ],
   },
@@ -129,7 +129,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Báo cáo & nhật ký",
     className: "mt-2",
     items: [
-      { label: "Báo cáo vận hành", href: "/reports", icon: BarChart3, tag: "BI", roles: REPORT_ROLES },
+      { label: "Báo cáo vận hành", href: "/reports", icon: BarChart3, roles: REPORT_ROLES },
       { label: "Nhật ký hoạt động", href: "/history", icon: History, roles: AUDIT_LOG_ROLES },
     ],
   },

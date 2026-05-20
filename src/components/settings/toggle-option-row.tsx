@@ -3,6 +3,7 @@
 import React from "react";
 import { LucideIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface ToggleOptionRowProps {
   icon: LucideIcon;
@@ -20,14 +21,19 @@ export function ToggleOptionRow({
   onCheckedChange,
 }: ToggleOptionRowProps) {
   return (
-    <label className="flex items-center justify-between rounded-xl border border-slate-200 p-4 transition-all hover:border-indigo-300 hover:bg-indigo-50/30 hover:shadow-sm dark:border-slate-700 dark:hover:border-indigo-600/50 dark:hover:bg-indigo-950/20 cursor-pointer">
-      <div className="flex items-center gap-3">
-        <Icon className="h-4 w-4 text-indigo-600 flex-shrink-0" />
-        <div>
-          <p className="font-semibold text-slate-900 dark:text-white">
+    <label
+      className={cn(
+        "flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card p-4 transition-colors",
+        "hover:border-primary/30 hover:bg-muted/40",
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">
             {label}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             {description}
           </p>
         </div>

@@ -22,7 +22,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "ai-assistant",
-    label: "Trợ lý AI",
+    label: "Trợ lý thông minh",
     href: "/ai-assistant",
     group: "Tổng quan",
   },
@@ -94,7 +94,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "purchase-orders",
-    label: "Đơn nhập hàng (PO)",
+    label: "Đơn nhập hàng",
     href: "/purchase-orders",
     group: "Nhập kho",
   },
@@ -118,7 +118,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "putaway",
-    label: "Putaway",
+    label: "Xếp hàng lên kệ",
     href: "/putaway",
     group: "Nhập kho",
   },
@@ -130,7 +130,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "picking",
-    label: "Picking",
+    label: "Lấy hàng",
     href: "/picking",
     group: "Xuất kho",
   },

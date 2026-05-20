@@ -61,7 +61,7 @@ export function InventorySearchSection({
   return (
     <SearchToolbar
       noContainer={noContainer}
-      placeholder="Tìm theo SKU, tên sản phẩm, vị trí..."
+      placeholder="Tìm theo mã hàng, tên sản phẩm, vị trí..."
       className="max-w-full"
       value={searchInput}
       onValueChange={onSearchChange}

@@ -298,7 +298,7 @@ export default function SecurityPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-        Contract backend đề xuất: GET /users, PUT /users/:id/roles, POST /users/:id/lock, POST /users/:id/unlock.
+        Trang này hỗ trợ xem người dùng, cập nhật vai trò, khóa và mở khóa tài khoản.
       </div>
     </div>
   );

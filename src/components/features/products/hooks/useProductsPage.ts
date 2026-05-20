@@ -89,10 +89,10 @@ export function useProductsPageLogic() {
       totalElements === 0 ? "—" : `${page + 1} / ${data?.data?.total_pages ?? 1}`;
 
     return [
-      { label: "Tổng SKU", value: totalElements.toString() },
+      { label: "Tổng mã hàng", value: totalElements.toString() },
       { label: "Trang (hiện tại / tổng)", value: pageLabel },
-      { label: "Vị trí lưu trữ", value: "N/A" },
-      { label: "Giá trị hàng", value: "N/A" },
+      { label: "Vị trí lưu trữ", value: "Chưa có" },
+      { label: "Giá trị hàng", value: "Chưa có" },
     ];
   }, [totalElements, page, data?.data?.total_pages]);
 

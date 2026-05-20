@@ -330,7 +330,7 @@ export default function RMADetailPage() {
                       <TableCell>
                         <div className="font-medium">{line.productName || "Sản phẩm chưa xác định"}</div>
                         <div className="text-xs font-mono text-muted-foreground">
-                          {line.productSku || line.lotNumber || "Chưa có SKU"}
+                          {line.productSku || line.lotNumber || "Chưa có mã hàng"}
                         </div>
                       </TableCell>
                       <TableCell className="text-center font-semibold">{line.expectedQty}</TableCell>

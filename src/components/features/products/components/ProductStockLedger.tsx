@@ -119,7 +119,7 @@ export function ProductStockLedger({ productId }: { productId: string }) {
                                     <td className="px-4 py-3">
                                         <div className="flex flex-col">
                                             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                {entry.referenceId || "N/A"}
+                                                {entry.referenceId || "Chưa rõ"}
                                             </span>
                                             {entry.reason && (
                                                 <span className="text-[10px] text-slate-400 italic truncate max-w-[120px]">

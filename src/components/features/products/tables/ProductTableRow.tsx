@@ -41,7 +41,7 @@ export const ProductTableRow = memo(function ProductTableRow({
   const categoryLabel =
     categoryName || (product.categoryId ? "—" : "Chưa gán danh mục");
   const categorySubline =
-    !categoryName && product.categoryId ? `ID: ${product.categoryId}` : "";
+    !categoryName && product.categoryId ? "Danh mục chưa xác định" : "";
 
   return (
     <>
@@ -154,7 +154,7 @@ export const ProductTableRow = memo(function ProductTableRow({
           <div className="ui-surface m-2 p-4">
             <div className="space-y-3">
           <div className="space-y-1">
-            <p className="ui-label">SKU</p>
+            <p className="ui-label">Mã hàng</p>
             <Link
               href={`/products/${product.id}`}
               className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"

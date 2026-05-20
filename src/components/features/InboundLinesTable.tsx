@@ -123,7 +123,7 @@ export function InboundLinesTable({
                 }}
                 options={productOptions}
                 placeholder={productsErr ? "Lỗi tải" : productsLoading ? "Đang tải…" : "Chạm để chọn & tìm SP"}
-                searchPlaceholder="Tên hoặc mã SKU…"
+                searchPlaceholder="Tên hoặc mã hàng…"
                 emptyText="Không có sản phẩm — thử từ khóa khác"
                 disabled={productsErr}
                 loading={productsLoading}
@@ -141,7 +141,7 @@ export function InboundLinesTable({
               ) : null}
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Mã SKU</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Mã hàng</label>
               <Input
                 readOnly
                 value={selectedLineProduct?.sku ?? ""}
@@ -202,7 +202,7 @@ export function InboundLinesTable({
               <TableRow className="border-slate-100 hover:bg-transparent dark:border-slate-800">
                 <TableHead className="w-11 text-xs font-semibold text-slate-500">#</TableHead>
                 <TableHead className="text-xs font-semibold text-slate-500">Sản phẩm</TableHead>
-                <TableHead className="w-36 text-xs font-semibold text-slate-500">SKU</TableHead>
+                <TableHead className="w-36 text-xs font-semibold text-slate-500">Mã hàng</TableHead>
                 <TableHead className="w-32 text-center text-xs font-semibold text-slate-500">Số lượng</TableHead>
                 <TableHead className="w-36 text-center text-xs font-semibold text-slate-500">Đơn giá</TableHead>
                 <TableHead className="w-14 text-right text-xs font-semibold text-slate-500" />

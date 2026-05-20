@@ -55,7 +55,7 @@ import { statusTone } from "@/lib/design-system";
 /* ── Step Indicator ─────────────────────────────────────────────────── */
 function StepIndicator({ step }: { step: 1 | 2 }) {
   const steps = [
-    { label: "Chọn PO", icon: <ClipboardList className="h-4 w-4" /> },
+    { label: "Chọn đơn nhập", icon: <ClipboardList className="h-4 w-4" /> },
     { label: "Nhập số lượng", icon: <PackagePlus className="h-4 w-4" /> },
   ];
 
@@ -135,7 +135,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           <Input
             value={keyword}
             onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
-            placeholder="Tìm theo mã PO..."
+            placeholder="Tìm theo mã đơn nhập..."
             className="h-9 rounded-lg pl-9"
           />
         </div>
@@ -183,7 +183,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
           <Table className="min-w-[600px] text-left">
             <TableHeader className="ui-table-header">
               <TableRow>
-                <TableHead className="ui-label py-3.5 pl-6 pr-3">Mã PO</TableHead>
+                <TableHead className="ui-label py-3.5 pl-6 pr-3">Mã đơn nhập</TableHead>
                 <TableHead className="ui-label px-3 py-3.5">Ngày đặt</TableHead>
                 <TableHead className="ui-label px-3 py-3.5">Dự kiến nhận</TableHead>
                 <TableHead className="ui-label px-3 py-3.5">Trạng thái</TableHead>
@@ -206,7 +206,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
                   <TableCell colSpan={5} className="py-10">
                     <EmptyState
                       icon={AlertCircle}
-                      title="Không tải được danh sách PO"
+                      title="Không tải được danh sách đơn nhập"
                       description={apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối.")}
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Thử lại</Button>}
                     />
@@ -218,7 +218,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
                     <EmptyState
                       icon={FileText}
                       title="Chưa có đơn nhập hàng nào"
-                      description="Hệ thống chưa ghi nhận đơn mua hàng (PO) nào ở trạng thái Đã duyệt để bạn có thể bắt đầu nhập kho."
+                      description="Hệ thống chưa ghi nhận đơn nhập nào ở trạng thái Đã duyệt để bạn có thể bắt đầu nhập kho."
                     />
                   </TableCell>
                 </TableRow>
@@ -395,7 +395,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
     return (
       <div className="ui-surface flex flex-col items-center justify-center gap-3 p-16 text-muted-foreground">
         <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        <p className="text-sm font-medium">Đang tải chi tiết PO…</p>
+        <p className="text-sm font-medium">Đang tải chi tiết đơn nhập...</p>
       </div>
     );
 
@@ -404,7 +404,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       <div className="ui-surface">
         <EmptyState
           icon={AlertCircle}
-          title="Không tải được chi tiết PO"
+          title="Không tải được chi tiết đơn nhập"
           description="Đơn nhập hàng không tồn tại hoặc đã bị xoá."
           action={<Button variant="outline" size="sm" onClick={onBack}>Quay lại</Button>}
           className="py-12"
@@ -476,7 +476,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                 <TableHeader className="ui-table-header">
                   <TableRow>
                     <TableHead className="ui-label w-10 py-3 pl-5 pr-3">#</TableHead>
-                    <TableHead className="ui-label px-3 py-3">SKU / Tên SP</TableHead>
+                    <TableHead className="ui-label px-3 py-3">Mã hàng / tên sản phẩm</TableHead>
                     <TableHead className="ui-label px-3 py-3 text-right">SL đặt</TableHead>
                     <TableHead className="ui-label px-3 py-3 text-right">Đã nhận</TableHead>
                     <TableHead className="ui-label px-3 py-3 text-right">Còn lại</TableHead>
@@ -643,7 +643,7 @@ function NewInboundReceiptContent() {
         description={
           selectedPoId
             ? "Nhập số lượng thực nhận cho từng dòng hàng"
-            : "Chọn đơn mua hàng (PO) đã duyệt để bắt đầu nhập kho"
+            : "Chọn đơn nhập đã duyệt để bắt đầu nhập kho"
         }
         actions={
           <div className="flex items-center gap-4">

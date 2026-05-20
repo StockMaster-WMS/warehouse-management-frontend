@@ -33,7 +33,7 @@ export default function NotFound() {
           className={cn(buttonVariants({ variant: "default" }), "h-11 rounded-full px-8 bg-indigo-600 hover:bg-indigo-700")}
         >
           <MoveLeft className="mr-2 h-4 w-4" />
-          Quay lại dashboard
+          Quay lại tổng quan
         </Link>
         <Link 
           href="/support" 

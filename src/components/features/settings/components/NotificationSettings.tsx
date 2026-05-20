@@ -1,5 +1,10 @@
 import { NotificationChannelSection } from "@/components/settings/notification-channel-section";
 import { SettingsSubTabNav } from "@/components/settings/settings-sub-tab-nav";
+import {
+  SettingsField,
+  SettingsPanel,
+  settingsSelectClassName,
+} from "@/components/settings/settings-layout";
 import { Input } from "@/components/ui/input";
 import type { NotificationSetting, NotificationSubTab } from "../types";
 import { notificationSubTabs } from "../constants";
@@ -53,17 +58,16 @@ export function NotificationSettings({
       )}
       {activeSubTab === "schedule" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Lịch gửi báo cáo</h3>
+          <h3 className="text-base font-semibold text-foreground">Lịch gửi báo cáo</h3>
+          <SettingsPanel title="Lịch báo cáo định kỳ" description="Cấu hình thời điểm gửi báo cáo vận hành">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="daily-report" className="text-sm font-medium text-slate-700 dark:text-slate-200">Báo cáo hàng ngày</label>
+            <SettingsField htmlFor="daily-report" label="Báo cáo hàng ngày">
               <Input id="daily-report" type="time" value={dailyReportTime} onChange={(e) => setDailyReportTime(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="weekly-report" className="text-sm font-medium text-slate-700 dark:text-slate-200">Báo cáo hàng tuần</label>
+            </SettingsField>
+            <SettingsField htmlFor="weekly-report" label="Báo cáo hàng tuần">
               <select
                 id="weekly-report"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className={settingsSelectClassName}
                 value={weeklyReportDay}
                 onChange={(e) => setWeeklyReportDay(e.target.value)}
               >
@@ -75,8 +79,9 @@ export function NotificationSettings({
                 <option value="saturday">Thứ Bảy</option>
                 <option value="sunday">Chủ Nhật</option>
               </select>
-            </div>
+            </SettingsField>
           </div>
+          </SettingsPanel>
         </div>
       )}
     </div>

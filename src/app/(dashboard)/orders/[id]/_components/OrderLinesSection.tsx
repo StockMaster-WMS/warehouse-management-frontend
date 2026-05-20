@@ -243,8 +243,8 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
     toast.success(
       salesOrder.status === "DRAFT"
-        ? "Đã thêm dòng hàng. Lệnh picking sẽ được tạo sau khi xác nhận và bắt đầu lấy hàng."
-        : "Đã thêm dòng hàng. Bấm Bắt đầu lấy hàng để chuyển đơn sang bước picking.",
+        ? "Đã thêm dòng hàng. Lệnh lấy hàng sẽ được tạo sau khi xác nhận và bắt đầu lấy hàng."
+        : "Đã thêm dòng hàng. Bấm Bắt đầu lấy hàng để chuyển đơn sang bước lấy hàng.",
     );
     setLineProductId("");
     setSelectedLineProduct(null);
@@ -351,8 +351,8 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                       ? "Đang tải sản phẩm..."
                       : "Chọn hoặc gõ để tìm..."
                 }
-                searchPlaceholder="Tìm theo tên / SKU…"
-                emptyText="Không tìm thấy sản phẩm active phù hợp"
+                searchPlaceholder="Tìm theo tên / mã hàng…"
+                emptyText="Không tìm thấy sản phẩm đang hoạt động phù hợp"
                 disabled={!allowLineMutation || selectableProductsError}
                 loading={selectableProductsLoading}
                 error={Boolean(lineErrors.productId)}

@@ -1,8 +1,12 @@
 import { Package, Hash, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SettingsSubTabNav } from "@/components/settings/settings-sub-tab-nav";
+import {
+  SettingsField,
+  SettingsPanel,
+  settingsSelectClassName,
+} from "@/components/settings/settings-layout";
 import { productsSubTabs } from "../constants";
 import type { ProductsSubTab } from "../types";
 
@@ -18,98 +22,64 @@ export function ProductsSettings({ activeProductsSubTab, setActiveProductsSubTab
 
       {activeProductsSubTab === "sku" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Quy tắc mã SKU</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Tự động tạo SKU</CardTitle>
-              <CardDescription>Cấu hình format mã SKU tự động</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <h3 className="text-base font-semibold text-foreground">Quy tắc mã hàng</h3>
+          <SettingsPanel title="Tự động tạo mã hàng" description="Cấu hình định dạng mã hàng tự động">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    <Hash className="h-4 w-4 text-indigo-600" />
-                    Format SKU
-                  </label>
+                <SettingsField label="Định dạng mã hàng" icon={Hash}>
                   <Input defaultValue="PROD-{CATEGORY}-{NUMBER}" placeholder="Ví dụ: PROD-ELEC-0001" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Số chữ số</label>
-                  <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                </SettingsField>
+                <SettingsField label="Số chữ số">
+                  <select className={settingsSelectClassName}>
                     <option value="4">4 chữ số (0001)</option>
                     <option value="6">6 chữ số (000001)</option>
                   </select>
-                </div>
+                </SettingsField>
               </div>
-            </CardContent>
-          </Card>
+          </SettingsPanel>
         </div>
       )}
 
       {activeProductsSubTab === "categories" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Danh mục sản phẩm</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Danh mục mặc định</CardTitle>
-              <CardDescription>Cấu hình danh mục sản phẩm cơ bản</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                  <Package className="h-4 w-4 text-indigo-600" />
-                  Danh mục mặc định cho sản phẩm mới
-                </label>
-                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <h3 className="text-base font-semibold text-foreground">Danh mục sản phẩm</h3>
+          <SettingsPanel title="Danh mục mặc định" description="Cấu hình danh mục sản phẩm cơ bản">
+              <SettingsField label="Danh mục mặc định cho sản phẩm mới" icon={Package}>
+                <select className={settingsSelectClassName}>
                   <option value="general">Tổng hợp</option>
                   <option value="electronics">Điện tử</option>
                   <option value="clothing">Quần áo</option>
                   <option value="food">Thực phẩm</option>
                 </select>
-              </div>
-            </CardContent>
-          </Card>
+              </SettingsField>
+          </SettingsPanel>
         </div>
       )}
 
       {activeProductsSubTab === "units" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Đơn vị tính</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Đơn vị đo lường</CardTitle>
-              <CardDescription>Cấu hình đơn vị tính cho sản phẩm</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <h3 className="text-base font-semibold text-foreground">Đơn vị tính</h3>
+          <SettingsPanel title="Đơn vị đo lường" description="Cấu hình đơn vị tính cho sản phẩm">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Đơn vị chính</label>
-                  <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <SettingsField label="Đơn vị chính">
+                  <select className={settingsSelectClassName}>
                     <option value="piece">Cái</option>
                     <option value="kg">Kg</option>
                     <option value="box">Hộp</option>
                     <option value="lot">Lô</option>
                   </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Đơn vị phụ</label>
+                </SettingsField>
+                <SettingsField label="Đơn vị phụ">
                   <Input placeholder="Ví dụ: Bao, Gói..." />
-                </div>
+                </SettingsField>
               </div>
-            </CardContent>
-          </Card>
+          </SettingsPanel>
         </div>
       )}
 
       {activeProductsSubTab === "attributes" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Thuộc tính sản phẩm</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Thuộc tính tùy chỉnh</CardTitle>
-              <CardDescription>Cấu hình thuộc tính cho sản phẩm (size, màu sắc, hạn sử dụng...)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <h3 className="text-base font-semibold text-foreground">Thuộc tính sản phẩm</h3>
+          <SettingsPanel title="Thuộc tính tùy chỉnh" description="Cấu hình thuộc tính cho sản phẩm (size, màu sắc, hạn sử dụng...)">
               <div className="space-y-3">
                 {[
                   { name: "Kích thước", enabled: true },
@@ -118,51 +88,32 @@ export function ProductsSettings({ activeProductsSubTab, setActiveProductsSubTab
                   { name: "Trọng lượng", enabled: false },
                   { name: "Xuất xứ", enabled: false },
                 ].map((attr) => (
-                  <label key={attr.name} className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                    <span className="font-medium text-slate-900 dark:text-white">{attr.name}</span>
+                  <label key={attr.name} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-muted/40">
+                    <span className="text-sm font-medium text-foreground">{attr.name}</span>
                     <Switch defaultChecked={attr.enabled} />
                   </label>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+          </SettingsPanel>
         </div>
       )}
 
       {activeProductsSubTab === "alerts" && (
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Cảnh báo tồn kho</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Ngưỡng cảnh báo</CardTitle>
-              <CardDescription>Cấu hình mức tồn kho tối thiểu, tối đa và điểm đặt hàng lại</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <h3 className="text-base font-semibold text-foreground">Cảnh báo tồn kho</h3>
+          <SettingsPanel title="Ngưỡng cảnh báo" description="Cấu hình mức tồn kho tối thiểu, tối đa và điểm đặt hàng lại">
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    Tồn kho tối thiểu
-                  </label>
+                <SettingsField label="Tồn kho tối thiểu" icon={AlertTriangle}>
                   <Input type="number" defaultValue="10" />
-                </div>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    Điểm đặt hàng lại
-                  </label>
+                </SettingsField>
+                <SettingsField label="Điểm đặt hàng lại" icon={AlertTriangle}>
                   <Input type="number" defaultValue="20" />
-                </div>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    <AlertTriangle className="h-4 w-4 text-blue-600" />
-                    Tồn kho tối đa
-                  </label>
+                </SettingsField>
+                <SettingsField label="Tồn kho tối đa" icon={AlertTriangle}>
                   <Input type="number" defaultValue="1000" />
-                </div>
+                </SettingsField>
               </div>
-            </CardContent>
-          </Card>
+          </SettingsPanel>
         </div>
       )}
     </div>

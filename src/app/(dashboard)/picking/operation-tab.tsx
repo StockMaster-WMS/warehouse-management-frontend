@@ -134,7 +134,7 @@ export function OperationTab() {
                 </div>
                 <div>
                     <h2 className="text-xl font-black text-slate-900 dark:text-white">Bạn chưa có nhiệm vụ được phân công.</h2>
-                    <p className="mt-1 text-sm text-slate-500">Các nhiệm vụ picking được giao cho bạn sẽ xuất hiện tại đây.</p>
+                    <p className="mt-1 text-sm text-slate-500">Các nhiệm vụ lấy hàng được giao cho bạn sẽ xuất hiện tại đây.</p>
                 </div>
             </div>
         );
@@ -196,7 +196,7 @@ export function OperationTab() {
                                         <Hash className="h-2.5 w-2.5" />{task.productSku}
                                     </span>
                                     <span className="text-slate-200 dark:text-slate-700">·</span>
-                                    <span className="text-[10px] text-slate-400 truncate max-w-[80px]">SO: {task.salesOrderNumber?.slice(-8)}</span>
+                                    <span className="text-[10px] text-slate-400 truncate max-w-[80px]">Đơn xuất: {task.salesOrderNumber?.slice(-8)}</span>
                                 </div>
                             </div>
 
@@ -204,7 +204,7 @@ export function OperationTab() {
                             <div className="flex shrink-0 flex-col items-end gap-1">
                                 <div className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[10px] font-black text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
                                     <MapPin className="h-2.5 w-2.5" />
-                                    {task.locationCode || "N/A"}
+                                    {task.locationCode || "Chưa rõ"}
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-500">×{task.qtyToPick} {task.baseUnit}</span>
                             </div>
@@ -265,7 +265,7 @@ export function OperationTab() {
                     <div className="grid grid-cols-2 gap-3">
                         <div className="rounded-2xl bg-indigo-600 p-4 shadow-md shadow-indigo-200">
                             <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Vị trí kệ</p>
-                            <p className="mt-1 text-lg font-black text-white tracking-wider">{activeItem.locationCode || "N/A"}</p>
+                            <p className="mt-1 text-lg font-black text-white tracking-wider">{activeItem.locationCode || "Chưa rõ"}</p>
                         </div>
                         <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 dark:bg-slate-800 dark:border-slate-700">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Số lượng</p>
@@ -283,7 +283,7 @@ export function OperationTab() {
                 {/* Step 1: Location */}
                 {[
                     { key: "location" as const, step: 1, icon: MapPin, label: "Bước 1 · Quét vị trí kệ", placeholder: "QUÉT MÃ KỆ...", value: scannedLoc, setter: setScannedLoc, onEnter: handleScanLocation, done: stepIndex > 1 },
-                    { key: "sku" as const, step: 2, icon: ScanLine, label: "Bước 2 · Quét mã sản phẩm", placeholder: "QUÉT BARCODE...", value: scannedSku, setter: setScannedSku, onEnter: handleScanSku, done: stepIndex > 2 },
+                    { key: "sku" as const, step: 2, icon: ScanLine, label: "Bước 2 · Quét mã sản phẩm", placeholder: "QUÉT MÃ VẠCH...", value: scannedSku, setter: setScannedSku, onEnter: handleScanSku, done: stepIndex > 2 },
                 ].map(({ key, icon: Icon, label, placeholder, value, setter, onEnter, done }) => (
                     <div key={key} className={cn(
                         "overflow-hidden rounded-2xl border transition-all duration-300",

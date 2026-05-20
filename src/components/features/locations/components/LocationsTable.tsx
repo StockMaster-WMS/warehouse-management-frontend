@@ -210,7 +210,7 @@ export function LocationsTable({
                                                         <Pencil className="mr-2 h-3.5 w-3.5" />Sửa
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => onPrintBarcode(location)} className="text-indigo-600 focus:text-indigo-600">
-                                                        <Printer className="mr-2 h-3.5 w-3.5" />In Barcode
+                                                        <Printer className="mr-2 h-3.5 w-3.5" />In mã vạch
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => onDelete(location)} className="text-rose-600 focus:text-rose-600">
@@ -288,8 +288,8 @@ export function LocationsTable({
                                       </div>
 
                                       <div className="mt-4 flex flex-wrap items-center gap-2">
-                                          <Badge variant="outline">Bin: {location.bin || "-"}</Badge>
-                                          <Badge variant="outline">Level: {location.level ?? "-"}</Badge>
+                                          <Badge variant="outline">Ô kệ: {location.bin || "-"}</Badge>
+                                          <Badge variant="outline">Tầng: {location.level ?? "-"}</Badge>
                                           <LocationTypeBadge type={location.locationType} />
                                       </div>
 

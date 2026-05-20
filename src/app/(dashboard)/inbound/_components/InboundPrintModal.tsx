@@ -157,7 +157,7 @@ export function InboundPrintModal({
                 Thông tin Đơn nhập
               </p>
               <p>
-                <span className="font-semibold inline-block w-28">Đơn mua hàng (PO):</span>{" "}
+                <span className="font-semibold inline-block w-28">Đơn nhập:</span>{" "}
                 {data.poNumber || "—"}
               </p>
               <p>

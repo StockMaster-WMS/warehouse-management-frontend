@@ -101,7 +101,7 @@ export function ProductImportExportMenu({ products, listParams }: ProductImportE
       exportItemLabel="Xuất tất cả kết quả (.xlsx)"
       dialogTitle="Kiểm tra file nhập sản phẩm"
       importPreviewCountLabel="dòng sản phẩm"
-      successHint="Tên sản phẩm, nhóm hàng (UUID hoặc mã DM) và đơn vị tính đã có trên các dòng."
+      successHint="Tên sản phẩm, nhóm hàng và đơn vị tính đã có trên các dòng."
       onUploadToServer={handleUpload}
       serverUploadPending={importUploading}
     />

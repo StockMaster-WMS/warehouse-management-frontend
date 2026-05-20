@@ -18,12 +18,12 @@ export function ProductHeroSection({ product, onCopySku, onPrintBarcode }: Produ
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sản phẩm</p>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{product.name}</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Mã SKU: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{product.sku}</span>
+                        Mã hàng: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{product.sku}</span>
                     </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row mt-2 sm:mt-0">
                     <Button variant="outline" size="sm" className="w-fit border-slate-300" onClick={onCopySku}>
-                        Sao chép SKU
+                        Sao chép mã hàng
                     </Button>
                     {onPrintBarcode && (
                         <Button variant="outline" size="sm" className="w-fit border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-300" onClick={onPrintBarcode}>

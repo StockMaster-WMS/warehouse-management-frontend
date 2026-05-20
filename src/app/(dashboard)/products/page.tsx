@@ -24,7 +24,7 @@ export default function ProductsPage() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Sản phẩm"
-        description="Quản lý thông tin SKU, tồn kho đa điểm và vị trí lưu trữ."
+        description="Quản lý mã hàng, tồn kho đa điểm và vị trí lưu trữ."
         actions={
           <div className="flex items-center gap-2">
             <ProductImportExportMenu products={logic.products} pageIndex={logic.page} listParams={logic.listParams} />
