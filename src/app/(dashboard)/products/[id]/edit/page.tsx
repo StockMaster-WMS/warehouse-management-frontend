@@ -91,7 +91,7 @@ export default function EditProductPage({
     <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa sản phẩm"
-        description={`SKU ${data.data.sku} · ${data.data.name}`}
+        description={`Mã hàng ${data.data.sku} · ${data.data.name}`}
         actions={
           <Button
             render={<Link href={`/products/${id}`} />}

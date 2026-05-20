@@ -369,8 +369,8 @@ export function OrderItemPickingBlock({
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={handleConfirmDelete}
                 title="Xóa lệnh lấy hàng"
-                description="Bạn có chắc chắn muốn xóa lệnh lấy hàng này? Hệ thống sẽ giải phóng số lượng tồn kho đã giữ (Reserved) cho đơn hàng."
-                itemName={deleteTarget ? `Vị trí: ${deleteTarget.locationCode || deleteTarget.locationId} - SKU: ${soItem.productSku}` : ""}
+                description="Bạn có chắc chắn muốn xóa lệnh lấy hàng này? Hệ thống sẽ giải phóng số lượng tồn kho đã giữ chỗ cho đơn hàng."
+                itemName={deleteTarget ? `Vị trí: ${deleteTarget.locationCode || deleteTarget.locationId} - Mã hàng: ${soItem.productSku}` : ""}
                 confirmText="Xác nhận xóa"
             />
         </details>

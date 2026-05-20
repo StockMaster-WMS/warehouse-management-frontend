@@ -29,7 +29,7 @@ const tabs = [
   {
     key: "appearance",
     label: "Giao diện",
-    description: "Theme, mật độ, hiển thị",
+    description: "Chế độ màu, mật độ, hiển thị",
     group: "Cá nhân",
     icon: Palette,
   },
@@ -43,14 +43,14 @@ const tabs = [
   {
     key: "warehouse",
     label: "Kho & vị trí",
-    description: "Kho, location, phương pháp lưu trữ",
+    description: "Kho, vị trí, phương pháp lưu trữ",
     group: "Nghiệp vụ kho",
     icon: Warehouse,
   },
   {
     key: "products",
-    label: "Sản phẩm & SKU",
-    description: "SKU, danh mục, đơn vị tính",
+    label: "Sản phẩm & mã hàng",
+    description: "Mã hàng, danh mục, đơn vị tính",
     group: "Nghiệp vụ kho",
     icon: Package,
   },
@@ -63,15 +63,15 @@ const tabs = [
   },
   {
     key: "ai",
-    label: "Trợ lý AI",
-    description: "API key và provider AI",
+    label: "Trợ lý thông minh",
+    description: "Khóa kết nối và nhà cung cấp",
     group: "Quản trị hệ thống",
     icon: Bot,
   },
   {
     key: "security",
     label: "Bảo mật & phân quyền",
-    description: "Mật khẩu, quyền và audit",
+    description: "Mật khẩu, quyền và nhật ký",
     group: "Quản trị hệ thống",
     icon: Shield,
   },
@@ -99,7 +99,7 @@ const tabDetails: Record<SettingsTab, { title: string; description: string }> = 
   },
   appearance: {
     title: "Giao diện hệ thống",
-    description: "Thiết lập theme, mật độ hiển thị, ngôn ngữ và định dạng ngày.",
+    description: "Thiết lập chế độ màu, mật độ hiển thị, ngôn ngữ và định dạng ngày.",
   },
   notifications: {
     title: "Thông báo vận hành",
@@ -107,19 +107,19 @@ const tabDetails: Record<SettingsTab, { title: string; description: string }> = 
   },
   warehouse: {
     title: "Kho & vị trí lưu trữ",
-    description: "Cấu hình kho, location và phương pháp vận hành vị trí.",
+    description: "Cấu hình kho, vị trí và phương pháp vận hành vị trí.",
   },
   products: {
-    title: "Sản phẩm & SKU",
-    description: "Thiết lập SKU, danh mục, đơn vị tính và cảnh báo sản phẩm.",
+    title: "Sản phẩm & mã hàng",
+    description: "Thiết lập mã hàng, danh mục, đơn vị tính và cảnh báo sản phẩm.",
   },
   workflow: {
     title: "Luồng xử lý nghiệp vụ",
     description: "Quản lý tự động hóa, phê duyệt, cảnh báo và reorder.",
   },
   ai: {
-    title: "Cấu hình trợ lý AI",
-    description: "Quản lý provider và API key dùng cho các trợ lý AI đám mây.",
+    title: "Cấu hình trợ lý thông minh",
+    description: "Quản lý nhà cung cấp và khóa kết nối dùng cho trợ lý đám mây.",
   },
   security: {
     title: "Bảo mật & phân quyền",
@@ -170,7 +170,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="rounded-lg border border-border bg-card shadow-sm">
           <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <Settings className="h-4 w-4 text-indigo-600" />
+            <Settings className="h-4 w-4 text-primary" />
             <div>
               <h2 className="text-sm font-semibold text-foreground">Danh mục cài đặt</h2>
               <p className="text-xs text-muted-foreground">Theo nhóm cấu hình</p>
@@ -197,14 +197,14 @@ export default function SettingsPage() {
                           className={cn(
                             "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                             selected
-                              ? "bg-indigo-50 text-indigo-950 ring-1 ring-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-100 dark:ring-indigo-900/50"
+                              ? "bg-primary/5 text-foreground ring-1 ring-primary/10"
                               : "text-foreground hover:bg-muted",
                           )}
                         >
                           <Icon
                             className={cn(
                               "mt-0.5 h-4 w-4 shrink-0",
-                              selected ? "text-indigo-600 dark:text-indigo-300" : "text-muted-foreground",
+                              selected ? "text-primary" : "text-muted-foreground",
                             )}
                           />
                           <span className="min-w-0">
@@ -212,7 +212,7 @@ export default function SettingsPage() {
                             <span
                               className={cn(
                                 "mt-0.5 block text-xs leading-4",
-                                selected ? "text-indigo-700 dark:text-indigo-200" : "text-muted-foreground",
+                                selected ? "text-primary" : "text-muted-foreground",
                               )}
                             >
                               {item.description}
@@ -230,7 +230,7 @@ export default function SettingsPage() {
         <main className="min-w-0 space-y-4">
           <section className="rounded-lg border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ActiveIcon className="h-5 w-5" />
               </div>
               <div className="min-w-0">

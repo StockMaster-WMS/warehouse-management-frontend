@@ -100,7 +100,7 @@ export function SupplierHistoryDialog({ open, onOpenChange, supplier }: Props) {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Mã PO
+                  Mã đơn nhập
                 </TableHead>
                 <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Ngày đặt

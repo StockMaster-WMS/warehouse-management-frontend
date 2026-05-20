@@ -24,9 +24,9 @@ export const tabs: SettingsTabItem[] = [
   { key: "appearance", label: "Giao diện", icon: Palette },
   { key: "notifications", label: "Thông báo", icon: Bell },
   { key: "warehouse", label: "Kho & vị trí", icon: Warehouse },
-  { key: "products", label: "Sản phẩm & SKU", icon: Package },
+  { key: "products", label: "Sản phẩm & mã hàng", icon: Package },
   { key: "workflow", label: "Luồng xử lý", icon: Workflow },
-  { key: "ai", label: "Trợ lý AI", icon: Bot },
+  { key: "ai", label: "Trợ lý thông minh", icon: Bot },
   { key: "security", label: "Bảo mật & phân quyền", icon: Shield },
   { key: "data", label: "Dữ liệu hệ thống", icon: Database },
 ];
@@ -53,7 +53,7 @@ export const warehouseSubTabs: SubTab<WarehouseSubTab>[] = [
 ];
 
 export const productsSubTabs: SubTab<ProductsSubTab>[] = [
-  { key: "sku", label: "Mã SKU" },
+  { key: "sku", label: "Mã hàng" },
   { key: "categories", label: "Danh mục" },
   { key: "units", label: "Đơn vị tính" },
   { key: "attributes", label: "Thuộc tính" },

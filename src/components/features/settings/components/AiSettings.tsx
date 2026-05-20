@@ -6,8 +6,8 @@ import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SettingsField, SettingsPanel } from "@/components/settings/settings-layout";
 import {
   type AiCloudKeyStatus,
   useClearAiCloudKeyMutation,
@@ -18,8 +18,8 @@ import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 const FALLBACK_PROVIDERS: AiCloudKeyStatus[] = [
-  { provider: "gemini", label: "Trợ lý AI Google", configured: false, keyPreview: null, updatedAt: null },
-  { provider: "openai", label: "Trợ lý AI OpenAI", configured: false, keyPreview: null, updatedAt: null },
+  { provider: "gemini", label: "Trợ lý Google", configured: false, keyPreview: null, updatedAt: null },
+  { provider: "openai", label: "Trợ lý OpenAI", configured: false, keyPreview: null, updatedAt: null },
 ];
 
 function mergeProviderStatuses(
@@ -58,7 +58,7 @@ export function AiSettings() {
     event.preventDefault();
     const trimmed = apiKey.trim();
     if (!trimmed) {
-      toast.error("Vui lòng nhập API key.");
+      toast.error("Vui lòng nhập khóa kết nối.");
       return;
     }
 
@@ -66,9 +66,9 @@ export function AiSettings() {
       const saved = await updateKey({ provider: selectedProvider, apiKey: trimmed }).unwrap();
       setLocalStatuses((prev) => ({ ...prev, [saved.provider]: saved }));
       setApiKey("");
-      toast.success("Đã lưu API key.");
+      toast.success("Đã lưu khóa kết nối.");
     } catch (error) {
-      toast.error(apiErrMessage(error, "Không thể lưu API key."));
+      toast.error(apiErrMessage(error, "Không thể lưu khóa kết nối."));
     }
   }
 
@@ -77,25 +77,19 @@ export function AiSettings() {
       const cleared = await clearKey(selectedProvider).unwrap();
       setLocalStatuses((prev) => ({ ...prev, [cleared.provider]: cleared }));
       setApiKey("");
-      toast.success("Đã xóa API key.");
+      toast.success("Đã xóa khóa kết nối.");
     } catch (error) {
-      toast.error(apiErrMessage(error, "Không thể xóa API key."));
+      toast.error(apiErrMessage(error, "Không thể xóa khóa kết nối."));
     }
   }
 
   return (
     <div className="space-y-6">
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Cloud className="h-4 w-4 text-indigo-600" />
-            Provider AI đám mây
-          </CardTitle>
-          <CardDescription>
-            Chọn provider rồi nhập API key. Backend tự dùng model và API URL mặc định.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SettingsPanel
+        icon={Cloud}
+        title="Nhà cung cấp trợ lý đám mây"
+        description="Chọn nhà cung cấp rồi nhập khóa kết nối. Mô hình cụ thể được chọn tại màn hình Trợ lý thông minh."
+      >
           {isError ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -105,27 +99,27 @@ export function AiSettings() {
               </AlertDescription>
             </Alert>
           ) : (
-            <Alert className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60">
+            <Alert className="border-border bg-muted/30">
               {configured ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               ) : (
                 <KeyRound className="h-4 w-4 text-amber-600" />
               )}
               <AlertTitle>
-                {isFetching ? "Đang kiểm tra cấu hình" : configured ? "Đã cấu hình API key" : "Chưa có API key"}
+                {isFetching ? "Đang kiểm tra cấu hình" : configured ? "Đã cấu hình khóa kết nối" : "Chưa có khóa kết nối"}
               </AlertTitle>
               <AlertDescription>
                 {configured
-                  ? `${status?.label ?? "Provider"}: ${status?.keyPreview ?? "đã được lưu"}`
-                  : `${status?.label ?? "Provider"} chưa có API key.`}
+                  ? `${status?.label ?? "Nhà cung cấp"}: ${status?.keyPreview ?? "đã được lưu"}`
+                  : `${status?.label ?? "Nhà cung cấp"} chưa có khóa kết nối.`}
               </AlertDescription>
             </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Provider
+              <label className="text-sm font-medium text-foreground">
+                Nhà cung cấp
               </label>
               <div className="grid gap-2 sm:grid-cols-2">
                 {providerOptions.map((option) => {
@@ -142,7 +136,7 @@ export function AiSettings() {
                       className={cn(
                         "flex min-h-20 items-start gap-3 rounded-lg border px-3 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                         selected
-                          ? "border-indigo-300 bg-indigo-50 text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-100"
+                          ? "border-primary/40 bg-primary/5 text-foreground ring-1 ring-primary/10"
                           : "border-border bg-background hover:bg-muted",
                       )}
                     >
@@ -150,7 +144,7 @@ export function AiSettings() {
                         className={cn(
                           "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
                           selected
-                            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
+                            ? "bg-primary/10 text-primary"
                             : "bg-muted text-muted-foreground",
                         )}
                       >
@@ -162,7 +156,7 @@ export function AiSettings() {
                           {option.configured ? (
                             <>
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                              Đã có key
+                              Đã cấu hình
                             </>
                           ) : (
                             <>
@@ -178,20 +172,17 @@ export function AiSettings() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                API key
-              </label>
+            <SettingsField label="Khóa kết nối">
               <Input
                 type="password"
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
-                placeholder={configured ? "Nhập key mới nếu muốn thay thế" : "Nhập API key"}
+                placeholder={configured ? "Nhập khóa mới nếu muốn thay thế" : "Nhập khóa kết nối"}
                 autoComplete="off"
                 disabled={busy}
                 className="h-10"
               />
-            </div>
+            </SettingsField>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               {configured ? (
@@ -207,25 +198,24 @@ export function AiSettings() {
                   ) : (
                     <Trash2 className="mr-2 h-4 w-4" />
                   )}
-                  Xóa key
+                  Xóa khóa
                 </Button>
               ) : null}
               <Button
                 type="submit"
                 disabled={busy || !apiKey.trim()}
-                className="rounded-lg bg-indigo-600 hover:bg-indigo-700"
+                className="rounded-lg"
               >
                 {isSaving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="mr-2 h-4 w-4" />
                 )}
-                Lưu API key
+                Lưu khóa
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+      </SettingsPanel>
     </div>
   );
 }

@@ -54,7 +54,7 @@ export default function DashboardPage() {
   const { data: summary, error, isLoading, isFetching, refetch } =
     useGetDashboardSummaryQuery();
   const errorMessage = error
-    ? apiErrMessage(error, "Không thể tải dữ liệu dashboard")
+    ? apiErrMessage(error, "Không thể tải dữ liệu trang tổng quan")
     : null;
   const dashboardStats: StatItem[] =
     summary?.metrics?.map((stat) => ({

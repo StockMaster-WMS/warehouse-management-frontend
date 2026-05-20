@@ -22,7 +22,7 @@ function PickingPageContent() {
             <div className="flex h-full flex-col">
                 <PageHeader
                     title="Nhiệm vụ lấy hàng của tôi"
-                    description="Xem, hoàn tất và báo lỗi các nhiệm vụ picking được phân công cho bạn."
+                    description="Xem, hoàn tất và báo lỗi các nhiệm vụ lấy hàng được phân công cho bạn."
                 />
                 <div className="flex-1 pt-4">
                     <OperationTab />

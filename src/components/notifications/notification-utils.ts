@@ -49,9 +49,9 @@ export const NOTIFICATION_SEVERITY_ICON: Record<NotificationSeverity, LucideIcon
 export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   LOW_STOCK: "Tồn kho thấp",
   PURCHASE_ORDER_CREATED: "Đơn nhập",
-  RMA_RECEIVED: "Hàng trả/RMA",
-  PICKING_ASSIGNED: "Picking",
-  PICKING_EXCEPTION: "Lỗi picking",
+  RMA_RECEIVED: "Hàng trả",
+  PICKING_ASSIGNED: "Lấy hàng",
+  PICKING_EXCEPTION: "Lỗi lấy hàng",
   CYCLE_COUNT_CREATED: "Kiểm kê",
   STOCK_DISCREPANCY: "Lệch tồn kho",
   ROLE_CHANGED: "Phân quyền",

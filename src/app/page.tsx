@@ -22,7 +22,7 @@ import { SITE_NAME } from "@/lib/site";
 const seoTitle =
   "StockMaster WMS - Phần mềm quản lý kho, tồn kho và nhập xuất hàng";
 const seoDescription =
-  "StockMaster WMS là hệ thống quản lý kho trên nền tảng web, hỗ trợ quản lý tồn kho, nhập xuất kho, picking, putaway, kiểm kê, báo cáo và phân quyền người dùng.";
+  "StockMaster WMS là hệ thống quản lý kho trên nền tảng web, hỗ trợ quản lý tồn kho, nhập xuất kho, lấy hàng, xếp hàng lên kệ, kiểm kê, báo cáo và phân quyền người dùng.";
 
 const coreFeatures = [
   {
@@ -32,13 +32,13 @@ const coreFeatures = [
     icon: Warehouse,
   },
   {
-    title: "Nhập kho và putaway",
+    title: "Nhập kho và xếp hàng lên kệ",
     description:
       "Quản lý đơn nhập, phiếu nhận hàng, kiểm tra số lượng và phân công đưa hàng vào vị trí phù hợp.",
     icon: Truck,
   },
   {
-    title: "Xuất kho và picking",
+    title: "Xuất kho và lấy hàng",
     description:
       "Tổ chức đơn xuất, tạo tác vụ lấy hàng, kiểm soát tiến độ xử lý và giảm sai lệch khi giao hàng.",
     icon: Route,
@@ -52,7 +52,7 @@ const coreFeatures = [
   {
     title: "Báo cáo vận hành",
     description:
-      "Xem dashboard, báo cáo tồn kho, doanh thu, SKU nổi bật và các chỉ số hỗ trợ quyết định.",
+      "Xem tổng quan, báo cáo tồn kho, doanh thu, mã hàng nổi bật và các chỉ số hỗ trợ quyết định.",
     icon: BarChart3,
   },
   {
@@ -65,7 +65,7 @@ const coreFeatures = [
 
 const businessBenefits = [
   "Tập trung dữ liệu sản phẩm, kho, vị trí, khách hàng và nhà cung cấp vào một nền tảng.",
-  "Giảm thao tác thủ công khi xử lý nhập kho, xuất kho, picking, putaway và kiểm kê.",
+  "Giảm thao tác thủ công khi xử lý nhập kho, xuất kho, lấy hàng, xếp hàng lên kệ và kiểm kê.",
   "Theo dõi được người thao tác, thời điểm thay đổi và trạng thái xử lý của từng nghiệp vụ.",
   "Hỗ trợ đội quản lý nhìn nhanh tình hình tồn kho, đơn hàng và hiệu suất vận hành.",
 ] as const;
@@ -79,12 +79,12 @@ const workflowSteps = [
   {
     title: "Vận hành nhập - xuất",
     description:
-      "Xử lý đơn nhập, phiếu nhận hàng, đơn xuất, picking và các tác vụ liên quan đến hàng hóa.",
+      "Xử lý đơn nhập, phiếu nhận hàng, đơn xuất, lấy hàng và các tác vụ liên quan đến hàng hóa.",
   },
   {
     title: "Kiểm soát và báo cáo",
     description:
-      "Theo dõi tồn kho, kiểm kê, lịch sử thao tác, dashboard và báo cáo quản trị.",
+      "Theo dõi tồn kho, kiểm kê, lịch sử thao tác, tổng quan và báo cáo quản trị.",
   },
 ] as const;
 
@@ -110,7 +110,7 @@ const faqItems = [
   {
     question: "StockMaster WMS phù hợp với doanh nghiệp nào?",
     answer:
-      "Hệ thống phù hợp với doanh nghiệp cần quản lý tồn kho, nhập xuất hàng, nhiều vị trí lưu trữ, quy trình picking và kiểm kê trên một nền tảng web.",
+      "Hệ thống phù hợp với doanh nghiệp cần quản lý tồn kho, nhập xuất hàng, nhiều vị trí lưu trữ, quy trình lấy hàng và kiểm kê trên một nền tảng web.",
   },
   {
     question: "Hệ thống có hỗ trợ phân quyền không?",
@@ -149,7 +149,7 @@ export const metadata: Metadata = {
     "quản lý nhập xuất kho",
     "WMS",
     "warehouse management system",
-    "picking putaway",
+    "lấy hàng xếp hàng lên kệ",
     "kiểm kê kho",
     "StockMaster WMS",
   ],
@@ -205,7 +205,7 @@ export default function Home() {
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-primary-foreground/88 sm:mt-6 sm:text-lg sm:leading-8">
               Hệ thống WMS giúp doanh nghiệp quản lý tồn kho, nhập xuất hàng,
-              picking, putaway, kiểm kê và báo cáo vận hành trong một không
+              lấy hàng, xếp hàng lên kệ, kiểm kê và báo cáo vận hành trong một không
               gian làm việc tập trung.
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-primary-foreground/78 sm:mt-4 sm:text-base sm:leading-7">
@@ -261,7 +261,7 @@ export default function Home() {
 
             <div className="grid border-b border-border sm:grid-cols-3">
               {[
-                ["SKU đang quản lý", "2,480"],
+                ["Mã hàng đang quản lý", "2,480"],
                 ["Đơn cần xử lý", "186"],
                 ["Dòng cần kiểm", "42"],
               ].map(([label, value]) => (
@@ -274,8 +274,8 @@ export default function Home() {
 
             <div className="space-y-0">
               {[
-                ["Nhập kho", "Đơn nhập, nhận hàng và putaway", "bg-info", "84%"],
-                ["Xuất kho", "Đơn xuất, picking và giao hàng", "bg-primary", "71%"],
+                ["Nhập kho", "Đơn nhập, nhận hàng và xếp hàng lên kệ", "bg-info", "84%"],
+                ["Xuất kho", "Đơn xuất, lấy hàng và giao hàng", "bg-primary", "71%"],
                 ["Kiểm kê", "Đối soát tồn kho và chênh lệch", "bg-warning", "56%"],
               ].map(([label, value, color, percent]) => (
                 <div
@@ -444,7 +444,7 @@ export default function Home() {
             {[
               ["Dữ liệu tập trung", "Sản phẩm, kho, vị trí, khách hàng và nhà cung cấp.", Database],
               ["Lịch sử thao tác", "Theo dõi thay đổi quan trọng trong quá trình vận hành.", History],
-              ["Báo cáo quản trị", "Dashboard và chỉ số giúp ra quyết định nhanh hơn.", BarChart3],
+              ["Báo cáo quản trị", "Tổng quan và chỉ số giúp ra quyết định nhanh hơn.", BarChart3],
             ].map(([title, description, Icon]) => (
               <article
                 key={title as string}
@@ -494,7 +494,7 @@ export default function Home() {
               Bắt đầu quản lý kho với {SITE_NAME}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-primary-foreground/78">
-              Đăng nhập để sử dụng dashboard, quản lý tồn kho, nhập xuất hàng,
+              Đăng nhập để sử dụng trang tổng quan, quản lý tồn kho, nhập xuất hàng,
               kiểm kê và báo cáo vận hành.
             </p>
           </div>

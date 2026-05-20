@@ -29,7 +29,7 @@ export function TopSkusTable({ data }: { data?: TopSku[] }) {
       <Table>
         <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
           <TableRow>
-            <TableHead className="text-[11px] font-bold uppercase tracking-wider">Mã SKU</TableHead>
+            <TableHead className="text-[11px] font-bold uppercase tracking-wider">Mã hàng</TableHead>
             <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider">Số lượng</TableHead>
             <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider">Doanh thu</TableHead>
           </TableRow>

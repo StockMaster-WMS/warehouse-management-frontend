@@ -92,7 +92,7 @@ export function OrderSidebar({
                 className="w-full justify-center bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
               >
                 {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                Bắt đầu lấy hàng / tạo picking
+                Bắt đầu lấy hàng / tạo lệnh lấy
               </Button>
             ) : null}
 

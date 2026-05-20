@@ -1,7 +1,7 @@
 import type { SettingsTab, SettingsTabItem } from "@/components/features/settings/types";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface SettingsSidebarProps {
   tabs: SettingsTabItem[];
@@ -11,7 +11,7 @@ interface SettingsSidebarProps {
 
 export function SettingsSidebar({ tabs, activeTab, onTabChange }: SettingsSidebarProps) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border-border shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">Danh mục</CardTitle>
       </CardHeader>
@@ -22,11 +22,12 @@ export function SettingsSidebar({ tabs, activeTab, onTabChange }: SettingsSideba
               <button
                 type="button"
                 onClick={() => onTabChange(item.key)}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold transition-all duration-150 ${
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
                   activeTab === item.key
-                    ? "border-l-4 border-indigo-600 bg-indigo-50/80 text-indigo-600 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-400"
-                    : "border-l-4 border-transparent text-slate-700 hover:bg-slate-50/80 dark:text-slate-300 dark:hover:bg-slate-800/50"
-                }`}
+                    ? "border-l-4 border-primary bg-primary/5 text-primary"
+                    : "border-l-4 border-transparent text-foreground hover:bg-muted",
+                )}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span>{item.label}</span>

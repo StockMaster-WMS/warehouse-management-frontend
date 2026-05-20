@@ -22,6 +22,9 @@ export type AiStreamRequest = {
 export type AiStreamResult = {
   requestId: string;
   text: string;
+  provider?: string;
+  model?: string;
+  modelConfirmed?: boolean;
   aborted?: boolean;
 };
 
@@ -93,6 +96,9 @@ export const aiApi = baseApi.injectEndpoints({
     streamAiAnswer: builder.query<AiStreamResult, AiStreamRequest>({
       async queryFn(arg, { signal, dispatch }) {
         let fullText = "";
+        let provider = arg.provider;
+        let model = arg.model;
+        let modelConfirmed = false;
 
         try {
           let token = getToken();
@@ -129,24 +135,49 @@ export const aiApi = baseApi.injectEndpoints({
           if (reader) {
             let buffer = "";
 
+            const publishStreamState = () => {
+              dispatch(
+                aiApi.util.updateQueryData("streamAiAnswer", arg, () => {
+                  return { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed };
+                })
+              );
+            };
+
             const appendEvent = (event: string) => {
+              let eventName = "message";
               const dataLines: string[] = [];
               for (const line of event.split(/\r?\n/)) {
-                if (!line.startsWith("data:")) continue;
-                const data = line.slice("data:".length);
-                dataLines.push(data.startsWith(" ") ? data.slice(1) : data);
+                if (line.startsWith("event:")) {
+                  const value = line.slice("event:".length).trim();
+                  eventName = value || "message";
+                  continue;
+                }
+                if (line.startsWith("data:")) {
+                  const data = line.slice("data:".length);
+                  dataLines.push(data.startsWith(" ") ? data.slice(1) : data);
+                }
               }
               const content = dataLines.join("\n");
 
               if (!content) return;
 
+              if (eventName === "model") {
+                try {
+                  const meta = JSON.parse(content) as { provider?: string; model?: string };
+                  provider = meta.provider || provider;
+                  model = meta.model || model;
+                  modelConfirmed = true;
+                  publishStreamState();
+                } catch {
+                  // Ignore malformed metadata events; answer streaming can continue.
+                }
+                return;
+              }
+              if (eventName !== "message") return;
+
               fullText += content;
               // Cập nhật dữ liệu vào cache của Redux ngay lập tức để UI hiển thị
-              dispatch(
-                aiApi.util.updateQueryData("streamAiAnswer", arg, () => {
-                  return { requestId: arg.requestId, text: fullText };
-                })
-              );
+              publishStreamState();
             };
 
             while (true) {
@@ -167,10 +198,10 @@ export const aiApi = baseApi.injectEndpoints({
               appendEvent(buffer);
             }
           }
-          return { data: { requestId: arg.requestId, text: fullText } };
+          return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed } };
         } catch (err) {
           if (signal.aborted || (err instanceof DOMException && err.name === "AbortError")) {
-            return { data: { requestId: arg.requestId, text: fullText, aborted: true } };
+            return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed, aborted: true } };
           }
           return {
             error: {

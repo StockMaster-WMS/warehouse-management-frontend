@@ -188,7 +188,7 @@ export default function CycleCountDetailPage() {
     const results = buildCycleCountResults(lines, actualCounts);
 
     if (results.length === 0) {
-      toast.error("Không có dòng hợp lệ để ghi nhận (thiếu productId).");
+      toast.error("Không có dòng hợp lệ để ghi nhận vì thiếu sản phẩm.");
       return;
     }
 
@@ -492,7 +492,7 @@ export default function CycleCountDetailPage() {
                       <TableCell className="pl-6 py-4">
                         <div>
                           <p className="font-semibold text-sm">
-                            {line.productName ?? "Sản phẩm #" + (line.productId?.slice(0, 6) ?? "?")}
+                            {line.productName ?? "Sản phẩm chưa xác định"}
                           </p>
                           {line.productSku && (
                             <p className="text-[10px] font-mono font-bold uppercase text-muted-foreground">
@@ -506,7 +506,7 @@ export default function CycleCountDetailPage() {
                       </TableCell>
                       <TableCell>
                         <p className="font-mono text-xs font-bold">
-                          {line.locationCode ?? line.locationId?.slice(0, 8) ?? "—"}
+                          {line.locationCode ?? "Vị trí chưa xác định"}
                         </p>
                       </TableCell>
                       <TableCell className="text-center font-mono font-semibold">

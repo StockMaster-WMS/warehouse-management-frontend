@@ -1,6 +1,11 @@
 import { Palette, Sun, Moon, Monitor, Sparkles, AlertCircle, Languages, Layout, Eye, Zap, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  SettingsField,
+  SettingsOptionButton,
+  SettingsSection,
+  settingsSelectClassName,
+} from "@/components/settings/settings-layout";
 import { ToggleOptionRow } from "@/components/settings/toggle-option-row";
 import type { AppearanceSettings } from "../types";
 
@@ -25,12 +30,12 @@ const THEME_OPTIONS = [
 }>;
 
 const COLOR_OPTIONS = [
-  { id: "indigo", name: "Indigo", color: "bg-indigo-600" },
-  { id: "blue", name: "Blue", color: "bg-blue-600" },
-  { id: "emerald", name: "Emerald", color: "bg-emerald-600" },
-  { id: "purple", name: "Purple", color: "bg-purple-600" },
-  { id: "rose", name: "Rose", color: "bg-rose-600" },
-  { id: "amber", name: "Amber", color: "bg-amber-600" },
+  { id: "indigo", name: "Chàm", color: "bg-indigo-600" },
+  { id: "blue", name: "Xanh dương", color: "bg-blue-600" },
+  { id: "emerald", name: "Xanh ngọc", color: "bg-emerald-600" },
+  { id: "purple", name: "Tím", color: "bg-purple-600" },
+  { id: "rose", name: "Hồng", color: "bg-rose-600" },
+  { id: "amber", name: "Vàng hổ phách", color: "bg-amber-600" },
 ] as const satisfies ReadonlyArray<{
   id: AppearanceSettings["color"];
   name: string;
@@ -71,150 +76,117 @@ const EXTRA_OPTIONS = [
 
 export function AppearanceSettingsComponent({ appearance, updateAppearance }: AppearanceSettingsProps) {
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Chế độ giao diện</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Chọn chế độ hiển thị phù hợp với bạn</p>
+    <div className="space-y-6">
+      <SettingsSection
+        icon={Palette}
+        title="Chế độ giao diện"
+        description="Chọn chế độ hiển thị phù hợp với bạn"
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {THEME_OPTIONS.map((item) => {
             const ThemeIcon = item.icon;
             return (
-              <button
+              <SettingsOptionButton
                 key={item.id}
+                icon={ThemeIcon}
+                selected={appearance.theme === item.id}
+                title={item.label}
+                description={item.desc}
                 onClick={() => updateAppearance("theme", item.id)}
-                className={`group rounded-xl border-2 p-4 text-left transition-all duration-200 hover:shadow-md active:scale-95 ${
-                  appearance.theme === item.id
-                    ? "border-indigo-500 bg-indigo-50/80 shadow-md dark:border-indigo-400 dark:bg-indigo-950/40"
-                    : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-indigo-600/50 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <ThemeIcon className={`h-5 w-5 mt-1 transition-all ${appearance.theme === item.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400"}`} />
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-white">{item.label}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.desc}</p>
-                  </div>
-                </div>
-              </button>
+              />
             );
           })}
         </div>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Màu sắc chính</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Chọn màu chủ đạo cho ứng dụng</p>
+      <SettingsSection
+        icon={Sparkles}
+        title="Màu sắc chính"
+        description="Chọn màu chủ đạo cho ứng dụng"
+      >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
           {COLOR_OPTIONS.map((item) => (
             <button
               key={item.id}
               onClick={() => updateAppearance("color", item.id)}
-              className={`group rounded-xl border-2 p-3 transition-all duration-200 hover:scale-105 active:scale-95 ${
+              className={`rounded-lg border p-3 transition-colors ${
                 appearance.color === item.id
-                  ? "border-slate-900 shadow-lg dark:border-white"
-                  : "border-slate-200 hover:border-indigo-300 dark:border-slate-700 dark:hover:border-indigo-600/50"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/10"
+                  : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
               }`}
             >
-              <div className={`h-12 w-full rounded-lg ${item.color} mb-2 shadow-md`} />
-              <p className="text-xs font-medium text-center text-slate-700 dark:text-slate-200">{item.name}</p>
+              <div className={`mb-2 h-12 w-full rounded-md ${item.color} shadow-sm`} />
+              <p className="text-center text-xs font-medium text-foreground">{item.name}</p>
             </button>
           ))}
         </div>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Languages className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Ngôn ngữ và hiển thị</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Cập nhật cài đặt cơ bản cho trải nghiệm cá nhân</p>
+      <SettingsSection
+        icon={Languages}
+        title="Ngôn ngữ và hiển thị"
+        description="Cập nhật cài đặt cơ bản cho trải nghiệm cá nhân"
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Ngôn ngữ giao diện</label>
+          <SettingsField label="Ngôn ngữ giao diện">
             <select
               value={appearance.locale}
               onChange={(e) => updateAppearance("locale", e.target.value as AppearanceSettings["locale"])}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className={settingsSelectClassName}
             >
               <option value="vi">Tiếng Việt</option>
               <option value="en">English</option>
             </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Số dòng mỗi trang</label>
+          </SettingsField>
+          <SettingsField label="Số dòng mỗi trang">
             <select
               value={appearance.rowsPerPage}
               onChange={(e) => updateAppearance("rowsPerPage", Number(e.target.value))}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className={settingsSelectClassName}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Định dạng ngày</label>
+          </SettingsField>
+          <SettingsField label="Định dạng ngày">
             <select
               value={appearance.dateFormat}
               onChange={(e) => updateAppearance("dateFormat", e.target.value as AppearanceSettings["dateFormat"])}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className={settingsSelectClassName}
             >
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
               <option value="MM/DD/YYYY">MM/DD/YYYY</option>
               <option value="YYYY-MM-DD">YYYY-MM-DD</option>
             </select>
-          </div>
+          </SettingsField>
         </div>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Layout className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Mật độ hiển thị</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Điều chỉnh khoảng cách và kích cỡ phần tử</p>
+      <SettingsSection
+        icon={Layout}
+        title="Mật độ hiển thị"
+        description="Điều chỉnh khoảng cách và kích cỡ phần tử"
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {DENSITY_OPTIONS.map((item) => (
-            <button
+            <SettingsOptionButton
               key={item.id}
+              selected={appearance.density === item.id}
+              title={item.label}
+              description={item.desc}
               onClick={() => updateAppearance("density", item.id)}
-              className={`rounded-xl border-2 p-4 text-left transition-all duration-200 hover:shadow-md active:scale-95 ${
-                appearance.density === item.id
-                  ? "border-indigo-500 bg-indigo-50/80 shadow-md dark:border-indigo-400 dark:bg-indigo-950/40"
-                  : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-indigo-600/50 dark:hover:bg-slate-800/50"
-              }`}
-            >
-              <p className="font-semibold text-slate-900 dark:text-white">{item.label}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.desc}</p>
-            </button>
+            />
           ))}
         </div>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
+      <SettingsSection icon={Eye} title="Kích thước chữ" description="Điều chỉnh kích thước chữ để dễ đọc hơn">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Eye className="h-5 w-5 text-indigo-600" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Kích thước chữ</h3>
-          </div>
-          <span className="font-bold text-indigo-600 dark:text-indigo-400">{appearance.fontSize}px</span>
+          <span className="text-sm font-medium text-muted-foreground">Cỡ chữ hiện tại</span>
+          <span className="font-semibold text-primary">{appearance.fontSize}px</span>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Điều chỉnh kích thước chữ để dễ đọc hơn</p>
         <input
           type="range"
           min="12"
@@ -222,33 +194,30 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
           step="1"
           value={appearance.fontSize}
           onChange={(e) => updateAppearance("fontSize", parseInt(e.target.value, 10))}
-          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:bg-slate-700"
+          className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
         />
-        <Card className="bg-slate-50 dark:bg-slate-800/50">
+        <Card className="border-border bg-muted/30">
           <CardContent className="p-4">
-            <p style={{ fontSize: `${appearance.fontSize}px` }} className="text-slate-700 dark:text-slate-300 text-center font-medium">
+            <p style={{ fontSize: `${appearance.fontSize}px` }} className="text-center font-medium text-foreground">
               Đây là ví dụ về kích thước chữ hiện tại
             </p>
           </CardContent>
         </Card>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Layout className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Thanh bên</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Cấu hình cách hiển thị menu thanh bên</p>
+      <SettingsSection
+        icon={Layout}
+        title="Thanh bên"
+        description="Cấu hình cách hiển thị menu thanh bên"
+      >
         <div className="grid gap-3">
           {SIDEBAR_OPTIONS.map((item) => (
             <label
               key={item.id}
-              className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
                 appearance.sidebar === item.id
-                  ? "border-indigo-500 bg-indigo-50/80 dark:border-indigo-400 dark:bg-indigo-950/40"
-                  : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-indigo-600/50 dark:hover:bg-slate-800/50"
+                  ? "border-primary/40 bg-primary/5 ring-1 ring-primary/10"
+                  : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
               }`}
             >
               <input
@@ -256,25 +225,22 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
                 name="sidebar"
                 checked={appearance.sidebar === item.id}
                 onChange={() => updateAppearance("sidebar", item.id)}
-                className="w-4 h-4 accent-indigo-600"
+                className="h-4 w-4 accent-primary"
               />
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white">{item.label}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{item.desc}</p>
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                <p className="text-xs leading-5 text-muted-foreground">{item.desc}</p>
               </div>
             </label>
           ))}
         </div>
-      </div>
+      </SettingsSection>
 
-      <Separator className="dark:bg-slate-700" />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Tùy chọn khác</h3>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Bật/tắt các tính năng bổ sung</p>
+      <SettingsSection
+        icon={Sparkles}
+        title="Tùy chọn khác"
+        description="Bật/tắt các tính năng bổ sung"
+      >
         <div className="space-y-2">
           {EXTRA_OPTIONS.map((item) => (
             <ToggleOptionRow
@@ -287,7 +253,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
             />
           ))}
         </div>
-      </div>
+      </SettingsSection>
     </div>
   );
 }

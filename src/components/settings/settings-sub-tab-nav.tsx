@@ -2,6 +2,8 @@
 
 import React from "react";
 
+import { cn } from "@/lib/utils";
+
 export interface SubTab<T extends string = string> {
   key: T;
   label: string;
@@ -19,16 +21,17 @@ export function SettingsSubTabNav<T extends string>({
   onTabChange,
 }: SettingsSubTabNavProps<T>) {
   return (
-    <div className="flex flex-wrap justify-center gap-x-4 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+    <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-card p-1 shadow-sm">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onTabChange(tab.key)}
-          className={`px-8 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 -mb-px ${
+          className={cn(
+            "min-h-9 flex-1 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors sm:flex-none",
             activeTab === tab.key
-              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-              : "border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-          }`}
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
         >
           {tab.label}
         </button>

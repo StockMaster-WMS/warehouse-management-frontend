@@ -364,7 +364,7 @@ export function PoExcelImportDialog({
                     <thead>
                       <tr className="border-b bg-emerald-50 dark:bg-emerald-900/30">
                         <th className="px-3 py-2 font-semibold">Dòng</th>
-                        <th className="px-3 py-2 font-semibold">SKU</th>
+                        <th className="px-3 py-2 font-semibold">Mã hàng</th>
                         <th className="px-3 py-2 font-semibold text-right">
                           SL đặt
                         </th>

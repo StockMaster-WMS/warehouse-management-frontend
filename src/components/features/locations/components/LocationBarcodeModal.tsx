@@ -133,7 +133,7 @@ export function LocationBarcodeModal({
           </div>
           
           <p className="mt-4 text-[10px] text-slate-400 font-medium">
-            * Nhãn bao gồm: Kho, Mã vị trí và Barcode 128
+            * Nhãn bao gồm: Kho, mã vị trí và mã vạch Code 128
           </p>
         </div>
 

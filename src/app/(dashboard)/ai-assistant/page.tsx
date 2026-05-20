@@ -29,34 +29,41 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  targetContent?: string;
+  modelLabel?: string;
+  provider?: string;
+  model?: string;
+  modelConfirmed?: boolean;
 }
 
 const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
 const AI_MODEL_STORAGE_KEY = "warehouse-ai-model-selection";
+const TYPEWRITER_INTERVAL_MS = 16;
+const TYPEWRITER_CHARS_PER_TICK = 2;
 
 type AiModelOption = {
   key: string;
   label: string;
-  provider?: string;
-  model?: string;
+  provider: string;
+  model: string;
 };
 
 const AI_MODEL_OPTIONS: AiModelOption[] = [
   {
     key: "ollama:stockmaster-ai",
-    label: "Trợ lý kho nội bộ",
+    label: "Mô hình nội bộ",
     provider: "ollama",
     model: "stockmaster-ai",
   },
   {
-    key: "gemini:gemini-flash-lite-latest",
-    label: "Trợ lý AI Google",
+    key: "gemini:gemini-2.5-flash",
+    label: "Google Gemini",
     provider: "gemini",
-    model: "gemini-flash-lite-latest",
+    model: "gemini-2.5-flash",
   },
   {
     key: "openai:gpt-4o-mini",
-    label: "Trợ lý AI OpenAI",
+    label: "OpenAI",
     provider: "openai",
     model: "gpt-4o-mini",
   },
@@ -68,16 +75,16 @@ function getModelOption(key: string) {
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
-  "Những SKU nào đang gần hết hàng?",
+  "Những mã hàng nào đang gần hết hàng?",
   "Đơn xuất nào cần ưu tiên xử lý?",
-  "Kiểm tra các đơn nhập đang chờ putaway",
+  "Kiểm tra các đơn nhập đang chờ xếp hàng lên kệ",
 ];
 
 const INITIAL_MESSAGE: Message = {
   id: "initial-assistant-message",
   role: "assistant",
   content:
-    "Xin chào, tôi là trợ lý AI vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
+    "Xin chào, tôi là trợ lý thông minh vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
 };
 
 function createMessageId() {
@@ -99,6 +106,7 @@ function getInitialSessionId() {
 function getInitialModelKey() {
   if (typeof window === "undefined") return AI_MODEL_OPTIONS[0].key;
   const stored = window.localStorage.getItem(AI_MODEL_STORAGE_KEY);
+  if (stored === "gemini:gemini-flash-lite-latest") return "gemini:gemini-2.5-flash";
   return stored && AI_MODEL_OPTIONS.some((option) => option.key === stored)
     ? stored
     : AI_MODEL_OPTIONS[0].key;
@@ -137,10 +145,55 @@ export default function AiAssistantPage() {
     if (!msgId) return;
 
     setMessages((prev) =>
-      prev.map((msg) => (msg.id === msgId ? { ...msg, content: streamResult.text } : msg))
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              targetContent: streamResult.text,
+              provider: streamResult.provider || msg.provider,
+              model: streamResult.model || msg.model,
+              modelConfirmed: Boolean(streamResult.modelConfirmed) || msg.modelConfirmed,
+            }
+          : msg
+      )
     );
     scrollMessagesToEnd();
   }, [scrollMessagesToEnd, streamResult]);
+
+  useEffect(() => {
+    if (!streamingMessageId) return;
+    const message = messages.find((msg) => msg.id === streamingMessageId);
+    if (!message) return;
+
+    const targetContent = message.targetContent ?? "";
+    if (!targetContent) return;
+
+    if (message.content === targetContent) {
+      if (!isStreaming) {
+        activeStreamMsgId.current = null;
+        setStreamingMessageId(null);
+      }
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id !== streamingMessageId) return msg;
+          const target = msg.targetContent ?? "";
+          if (!target || msg.content === target) return msg;
+          const nextLength = Math.min(
+            msg.content.length + TYPEWRITER_CHARS_PER_TICK,
+            target.length,
+          );
+          return { ...msg, content: target.slice(0, nextLength) };
+        })
+      );
+      scrollMessagesToEnd();
+    }, TYPEWRITER_INTERVAL_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isStreaming, messages, scrollMessagesToEnd, streamingMessageId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -175,7 +228,7 @@ export default function AiAssistantPage() {
     setMessages((prev) => [
       ...prev,
       userMsg,
-      { id: assistantMsgId, role: "assistant", content: "" },
+      { id: assistantMsgId, role: "assistant", content: "", targetContent: "" },
     ]);
     scrollMessagesToEnd();
     setInput("");
@@ -183,6 +236,18 @@ export default function AiAssistantPage() {
     try {
       setIsStreaming(true);
       const selectedModel = getModelOption(selectedModelKey);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId
+            ? {
+                ...msg,
+                modelLabel: selectedModel.label,
+                provider: selectedModel.provider,
+                model: selectedModel.model,
+              }
+            : msg
+        )
+      );
       const streamPromise = triggerStream({
         question: trimmed,
         sessionId: sessionIdRef.current,
@@ -197,7 +262,11 @@ export default function AiAssistantPage() {
         if (activeRequestId.current === requestId) {
           if (result.text) {
             setMessages((prev) =>
-              prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, content: result.text } : msg))
+              prev.map((msg) =>
+                msg.id === assistantMsgId
+                  ? { ...msg, targetContent: result.text }
+                  : msg
+              )
             );
           }
           activeStreamMsgId.current = null;
@@ -215,18 +284,19 @@ export default function AiAssistantPage() {
             msg.id === assistantMsgId
               ? {
                   ...msg,
-                  content:
+                  targetContent:
                     result.text ||
                     "Tôi chưa nhận được nội dung trả lời. Bạn vui lòng thử lại.",
+                  provider: result.provider || msg.provider,
+                  model: result.model || msg.model,
+                  modelConfirmed: Boolean(result.modelConfirmed) || msg.modelConfirmed,
                 }
               : msg
           )
         );
         scrollMessagesToEnd();
-        activeStreamMsgId.current = null;
         activeRequestId.current = null;
         activeTriggerRef.current = null;
-        setStreamingMessageId(null);
         setIsStreaming(false);
       }
     } catch {
@@ -237,7 +307,7 @@ export default function AiAssistantPage() {
               ? {
                   ...msg,
                   content:
-                    "Không thể kết nối trợ lý AI lúc này. Vui lòng kiểm tra hoặc thử lại sau.",
+                    "Không thể kết nối trợ lý lúc này. Vui lòng kiểm tra hoặc thử lại sau.",
                 }
               : msg
           )
@@ -350,7 +420,7 @@ function AiAssistantHeader({
         </div>
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold text-foreground">
-            Trợ lý AI vận hành kho
+            Trợ lý thông minh vận hành kho
           </h1>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <span className={cn("size-2 rounded-full", busy ? "bg-amber-500" : "bg-emerald-500")} />
@@ -396,7 +466,7 @@ function AiAssistantSidebar({ onAsk }: { onAsk: (question: string) => void }) {
         </div>
 
         <AiInfoBlock icon={Boxes} title="Phạm vi hỗ trợ">
-          Tồn kho, đơn hàng, nhập kho, putaway, kiểm kê, cảnh báo và báo cáo vận hành.
+          Tồn kho, đơn hàng, nhập kho, xếp hàng lên kệ, kiểm kê, cảnh báo và báo cáo vận hành.
         </AiInfoBlock>
         <AiInfoBlock icon={ClipboardList} title="Lưu ý">
           Với số liệu quan trọng, hãy đối chiếu lại trong màn hình nghiệp vụ trước khi ra quyết định.
@@ -489,7 +559,7 @@ function AiMessageBubble({
 
 function TypingDots() {
   return (
-    <div className="flex h-6 items-center gap-1" aria-label="AI đang trả lời">
+    <div className="flex h-6 items-center gap-1" aria-label="Trợ lý đang trả lời">
       {[0, 1, 2].map((dot) => (
         <span
           key={dot}
@@ -532,7 +602,7 @@ function AiComposer({
               void onSend(input);
             }
           }}
-          placeholder="Hỏi AI về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành…"
+          placeholder="Hỏi trợ lý về tồn kho, đơn hàng, cảnh báo hoặc quy trình vận hành…"
           className="max-h-36 min-h-12 resize-none rounded-lg bg-background text-sm"
         />
         {busy ? (
@@ -565,18 +635,18 @@ function AiComposer({
           disabled={busy}
         >
           <SelectTrigger
-            aria-label="Chọn trợ lý AI"
+            aria-label="Chọn mô hình trợ lý"
             className="h-9 w-full rounded-lg bg-background sm:w-56"
           >
             <Cpu className="size-4 text-muted-foreground" />
             <span className="truncate text-sm">
-              {getModelOption(selectedModelKey).label}
+              {getModelOption(selectedModelKey).label} / {getModelOption(selectedModelKey).model}
             </span>
           </SelectTrigger>
           <SelectContent className="rounded-lg">
             {AI_MODEL_OPTIONS.map((option) => (
               <SelectItem key={option.key} value={option.key} className="rounded-lg">
-                {option.label}
+                {option.label} / {option.model}
               </SelectItem>
             ))}
           </SelectContent>

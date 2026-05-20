@@ -267,7 +267,7 @@ export default function InboundPage() {
       <div className="ui-surface flex flex-col overflow-hidden">
         <SearchToolbar
           noContainer
-          placeholder="Tìm theo mã phiếu GRN, mã PO..."
+          placeholder="Tìm theo mã phiếu nhập, mã đơn nhập..."
           value={keyword}
           onValueChange={(v) => {
             setKeyword(v || "");
@@ -412,7 +412,7 @@ export default function InboundPage() {
                   Mã phiếu GRN
                 </TableHead>
                 <TableHead className="ui-label px-3 py-3.5">
-                  PO liên quan
+                  Đơn nhập liên quan
                 </TableHead>
                 <TableHead className="ui-label px-3 py-3.5">
                   <span className="inline-flex items-center gap-1.5">
