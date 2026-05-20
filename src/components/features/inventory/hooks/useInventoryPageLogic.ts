@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiErrMessage } from "@/types/api";
+import { useHasPermissions } from "@/components/permission-control";
 import {
   useGetStockListQuery,
   useGetStockSummaryQuery,
@@ -29,6 +30,9 @@ import type { Product } from "@/types/product";
 export type InventoryTab = "stock" | "low-stock" | "near-expiry";
 
 export function useInventoryPageLogic() {
+  const hasWarehouseManagerRole = useHasPermissions(["WAREHOUSE_MANAGER"]);
+  const hasAdminRole = useHasPermissions(["ADMIN"]);
+  const isWarehouseManagerOnly = hasWarehouseManagerRole && !hasAdminRole;
   // ── Tab mode ──
   const [activeTab, setActiveTab] = useState<InventoryTab>("stock");
 
@@ -120,7 +124,10 @@ export function useInventoryPageLogic() {
     isLoading: isLowStockLoading,
     error: lowStockError,
     refetch: refetchLowStock,
-  } = useGetLowStockAlertsQuery(undefined, { skip: activeTab !== "low-stock" });
+  } = useGetLowStockAlertsQuery(
+    { warehouseId: warehouseId || undefined, locationId: locationId || undefined },
+    { skip: activeTab !== "low-stock" },
+  );
   const lowStockItems = useMemo(() => lowStockRes?.data ?? [], [lowStockRes]);
 
   // ── Near expiry alerts ──
@@ -298,6 +305,10 @@ export function useInventoryPageLogic() {
   };
 
   const handleExportStock = async () => {
+    if (isWarehouseManagerOnly && warehouses.length > 1 && !warehouseId) {
+      toast.error("Vui lòng chọn kho trước khi xuất báo cáo.");
+      return;
+    }
     try {
       const result = await triggerExportStock({
         warehouseId: warehouseId || undefined,
@@ -311,6 +322,10 @@ export function useInventoryPageLogic() {
   };
 
   const handleExportNearExpiry = async () => {
+    if (isWarehouseManagerOnly && warehouses.length > 1 && !warehouseId) {
+      toast.error("Vui lòng chọn kho trước khi xuất báo cáo.");
+      return;
+    }
     try {
       const result = await triggerExportNearExpiry({
         days: NEAR_EXPIRY_DAYS_DEFAULT,
@@ -325,6 +340,10 @@ export function useInventoryPageLogic() {
   };
 
   const handleExportLowStock = async () => {
+    if (isWarehouseManagerOnly && warehouses.length > 1 && !warehouseId) {
+      toast.error("Vui lòng chọn kho trước khi xuất báo cáo.");
+      return;
+    }
     try {
       const result = await triggerExportLowStock({
         warehouseId: warehouseId || undefined,

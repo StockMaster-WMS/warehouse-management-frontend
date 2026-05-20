@@ -1,0 +1,55 @@
+name: Deploy Frontend to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout frontend source
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/do_warehouse_key
+          chmod 600 ~/.ssh/do_warehouse_key
+          ssh-keyscan -H "${{ secrets.DO_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync source code to DigitalOcean
+        run: |
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude "node_modules" \
+            --exclude ".next" \
+            --exclude ".env" \
+            --exclude ".env.local" \
+            --exclude ".env.production" \
+            -e "ssh -i ~/.ssh/do_warehouse_key" \
+            ./ ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/opt/warehouse-management-frontend/
+
+      - name: Build and restart frontend
+        run: |
+          ssh -i ~/.ssh/do_warehouse_key ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
+            set -e
+
+            echo "📁 Go to frontend project"
+            cd /opt/warehouse-management-frontend
+
+            echo "🧹 Remove local env override"
+            rm -f .env.local
+
+            echo "🐳 Rebuild frontend Docker"
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "🧼 Clean safe Docker cache"
+            docker builder prune -f
+
+            echo "✅ Check running containers"
+            docker ps
+          EOF
