@@ -44,23 +44,24 @@ function toTitle(segment: string): string {
     notifications: "Thông báo",
     dashboard: "Tổng quan kho",
     inventory: "Theo dõi tồn kho",
-    warehouses: "Danh sách kho",
-    products: "Sản phẩm",
-    categories: "Nhóm / loại hàng",
-    orders: "Xuất kho & giao hàng",
+    warehouses: "Kho hàng",
+    products: "Sản phẩm & mã hàng",
+    categories: "Nhóm hàng",
+    orders: "Đơn xuất",
     returns: "Hàng trả",
-    inbound: "Nhập hàng",
+    inbound: "Phiếu nhập kho",
     "purchase-orders": "Đơn nhập hàng",
-    putaway: "Sắp xếp vào kho",
+    putaway: "Xếp hàng lên kệ",
+    picking: "Lấy hàng",
     customers: "Khách hàng",
     suppliers: "Nhà cung cấp",
     locations: "Vị trí lưu trữ",
     "cycle-counts": "Kiểm kê kho",
     history: "Nhật ký hoạt động",
-    reports: "Báo cáo",
-    settings: "Cài đặt hệ thống",
-    security: "Bảo mật & Phân quyền",
-    profile: "Trang cá nhân",
+    reports: "Báo cáo vận hành",
+    settings: "Cấu hình hệ thống",
+    security: "Bảo mật & phân quyền",
+    profile: "Hồ sơ người dùng",
     new: "Tạo mới",
   };
 
@@ -279,12 +280,12 @@ export function Navbar() {
               <DropdownMenuSeparator />
               <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/profile" />}>
                 <UserCog className="mr-2 size-4 shrink-0 text-zinc-500" />
-                <span className="truncate">Trang cá nhân</span>
+                <span className="truncate">Hồ sơ người dùng</span>
               </DropdownMenuItem>
               <PermissionControl allowedRoles="ADMIN">
                 <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/settings" />}>
                   <Settings className="mr-2 size-4 shrink-0 text-zinc-500" />
-                  <span className="truncate">Cài đặt hệ thống</span>
+                  <span className="truncate">Cấu hình hệ thống</span>
                 </DropdownMenuItem>
               </PermissionControl>
               <DropdownMenuItem className="rounded-lg py-2">

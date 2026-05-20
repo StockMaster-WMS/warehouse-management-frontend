@@ -161,7 +161,7 @@ function PurchaseHistoryDialog({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Mã PO</TableHead>
+                <TableHead>Mã đơn nhập</TableHead>
                 <TableHead>Ngày đặt</TableHead>
                 <TableHead>Ngày dự kiến</TableHead>
                 <TableHead className="text-right">Tổng tiền</TableHead>

@@ -119,7 +119,7 @@ export function ProductTable({
                                 STT
                             </TableHead>
                             <TableHead className="w-24 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                Mã SKU
+                                Mã hàng
                             </TableHead>
                             <TableHead className="min-w-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Tên sản phẩm

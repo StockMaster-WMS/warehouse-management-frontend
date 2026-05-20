@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   AlertCircle,
   Building2,
@@ -33,6 +32,14 @@ function formatDate(value?: string | null) {
   return value ? viDateFormatter.format(new Date(value)) : "—";
 }
 
+function managerDisplay(warehouse: Warehouse) {
+  const managerNames = warehouse.managers
+    ?.map((manager) => manager.fullName?.trim() || manager.name?.trim() || manager.username)
+    .filter(Boolean);
+  if (managerNames?.length) return managerNames.join(", ");
+  return warehouse.managerName?.trim() || "Chưa phân công";
+}
+
 type WarehousesGridProps = {
   warehouses: Warehouse[];
   error: unknown;
@@ -51,6 +58,7 @@ type WarehousesGridProps = {
   onRequestDelete: (warehouse: Warehouse) => void;
   onRequestEdit: (warehouse: Warehouse) => void;
   onRequestCreate: () => void;
+  canManageWarehouses?: boolean;
   noContainer?: boolean;
 };
 
@@ -72,6 +80,7 @@ export function WarehousesGrid({
   onRequestDelete,
   onRequestEdit,
   onRequestCreate,
+  canManageWarehouses = false,
   noContainer = false,
 }: WarehousesGridProps) {
   const content = (
@@ -115,7 +124,9 @@ export function WarehousesGrid({
           description={
             hasAnyFilter
               ? "Hãy thử đổi từ khóa, trạng thái hoặc cách sắp xếp."
-              : "Bắt đầu bằng cách thêm kho đầu tiên vào hệ thống."
+              : canManageWarehouses
+                ? "Bắt đầu bằng cách thêm kho đầu tiên vào hệ thống."
+                : "Bạn chưa được phân công quản lý kho nào."
           }
           action={
             hasAnyFilter ? (
@@ -123,7 +134,7 @@ export function WarehousesGrid({
                 <X className="mr-2 h-4 w-4" />
                 Xóa bộ lọc
               </Button>
-            ) : (
+            ) : canManageWarehouses ? (
               <Button
                 size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700"
@@ -132,7 +143,7 @@ export function WarehousesGrid({
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm kho mới
               </Button>
-            )
+            ) : null
           }
           className="py-12"
         />
@@ -163,34 +174,36 @@ export function WarehousesGrid({
                         >
                           {warehouse.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                         </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            }
-                          />
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                            <DropdownMenuGroup>
-                              <DropdownMenuLabel>Quản lý kho</DropdownMenuLabel>
-                            </DropdownMenuGroup>
-                            <DropdownMenuItem
-                              className="rounded-lg"
-                              onClick={() => onRequestEdit(warehouse)}
-                            >
-                              <Edit2 className="mr-2 h-4 w-4" />
-                              Sửa thông tin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="rounded-lg text-rose-600 focus:text-rose-600"
-                              onClick={() => onRequestDelete(warehouse)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Xóa kho
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {canManageWarehouses ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                              <DropdownMenuGroup>
+                                <DropdownMenuLabel>Quản lý kho</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  className="rounded-lg"
+                                  onClick={() => onRequestEdit(warehouse)}
+                                >
+                                  <Edit2 className="mr-2 h-4 w-4" />
+                                  Sửa thông tin
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="rounded-lg text-rose-600 focus:text-rose-600"
+                                  onClick={() => onRequestDelete(warehouse)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Xóa kho
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : null}
                       </div>
                     </div>
 
@@ -216,10 +229,10 @@ export function WarehousesGrid({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] leading-none font-bold text-slate-400">Quản lý</span>
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{warehouse.managerName ?? "—"}</span>
+                          <span className="line-clamp-2 text-[11px] font-bold text-slate-700 dark:text-slate-300">{managerDisplay(warehouse)}</span>
                         </div>
                       </div>
-                      <Button
+                      {canManageWarehouses ? <Button
                         variant="ghost"
                         size="sm"
                         className="h-8 gap-1.5 text-xs text-indigo-600 transition-all hover:bg-indigo-50 dark:text-indigo-400"
@@ -227,14 +240,14 @@ export function WarehousesGrid({
                       >
                         Chi tiết
                         <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
+                      </Button> : null}
                     </div>
                   </div>
                 </div>
               );
             })}
 
-            <Button
+            {canManageWarehouses ? <Button
               className="flex min-h-75 h-full w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-transparent text-slate-500 transition-all hover:border-indigo-400 hover:bg-indigo-50/30 hover:text-indigo-600 dark:border-slate-800"
               onClick={onRequestCreate}
             >
@@ -242,7 +255,7 @@ export function WarehousesGrid({
                 <Plus className="h-6 w-6" />
               </div>
               <span className="mt-3 text-sm font-bold">Tạo khu vực kho mới</span>
-            </Button>
+            </Button> : null}
           </div>
 
           <PaginationFooter

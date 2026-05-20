@@ -220,7 +220,7 @@ export default function PutawayPage() {
         toast.error((res as { message?: string }).message || "Hoàn tất thất bại");
         return;
       }
-      toast.success((res as { message?: string }).message || "Đã hoàn tất putaway");
+      toast.success((res as { message?: string }).message || "Đã hoàn tất xếp hàng lên kệ");
       setCompleteOpen(false);
       refetch();
     } catch (err) {
@@ -250,7 +250,7 @@ export default function PutawayPage() {
         toast.error(res.message || "Cập nhật thất bại");
         return;
       }
-      toast.success(res.message || "Đã cập nhật task");
+      toast.success(res.message || "Đã cập nhật nhiệm vụ");
       setEditOpen(false);
       refetch();
     } catch (err) {
@@ -271,7 +271,7 @@ export default function PutawayPage() {
 
     return [
       {
-        label: "Tổng task",
+        label: "Tổng nhiệm vụ",
         value: stats.total,
         icon: FileText,
         color: "text-indigo-500",
@@ -301,7 +301,7 @@ export default function PutawayPage() {
     <div className="space-y-5 pb-16">
       <PageHeader
         title="Sắp xếp vào kho"
-        description="Quản lý tác vụ đặt hàng vào vị trí lưu kho (Putaway tasks)."
+        description="Quản lý nhiệm vụ xếp hàng vào vị trí lưu kho."
         actions={
           <Button
             variant="outline"
@@ -321,7 +321,7 @@ export default function PutawayPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <SearchToolbar
           noContainer
-          placeholder="Tìm theo mã PO Item ID..."
+          placeholder="Tìm theo mã dòng đơn nhập..."
           value={keyword}
           onValueChange={(value) => {
             setKeyword(value);
@@ -380,8 +380,8 @@ export default function PutawayPage() {
           <Table className="min-w-[800px] text-left">
             <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
               <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                <TableHead className="py-3.5 pl-6 pr-3 w-36 text-[11px] font-bold uppercase tracking-wider text-slate-400">Task ID</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm (SKU)</TableHead>
+                <TableHead className="py-3.5 pl-6 pr-3 w-36 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã nhiệm vụ</TableHead>
+                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm / mã hàng</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
@@ -410,7 +410,7 @@ export default function PutawayPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={AlertCircle}
-                      title="Không tải được danh sách putaway"
+                      title="Không tải được danh sách xếp hàng"
                       description={apiErrMessage(error)}
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Thử lại</Button>}
                     />
@@ -421,11 +421,11 @@ export default function PutawayPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={PackageOpen}
-                      title={canCoordinatePutaway ? "Không có task putaway" : "Bạn chưa có nhiệm vụ được phân công."}
+                      title={canCoordinatePutaway ? "Không có nhiệm vụ xếp hàng" : "Bạn chưa có nhiệm vụ được phân công."}
                       description={
                         canCoordinatePutaway
-                          ? "Thử bỏ bộ lọc hoặc tạo phiếu nhập hàng từ đơn PO trước."
-                          : "Các nhiệm vụ putaway được giao cho bạn sẽ xuất hiện tại đây."
+                          ? "Thử bỏ bộ lọc hoặc tạo phiếu nhập hàng từ đơn nhập trước."
+                          : "Các nhiệm vụ xếp hàng được giao cho bạn sẽ xuất hiện tại đây."
                       }
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Làm mới</Button>}
                     />
@@ -516,7 +516,7 @@ export default function PutawayPage() {
         </div>
 
         <PaginationFooter
-          itemLabel="putaway task"
+          itemLabel="nhiệm vụ xếp hàng"
           rowsCount={tasks.length}
           page={page}
           totalElements={totalElements}
@@ -541,11 +541,11 @@ export default function PutawayPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <PackageCheck className="h-5 w-5 text-indigo-600" />
-                Hoàn tất Putaway
+                Hoàn tất xếp hàng lên kệ
               </DialogTitle>
               {activeTask && (
                 <DialogDescription>
-                  Task <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span> — xác nhận vị trí đặt hàng thực tế
+                  Nhiệm vụ <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span> - xác nhận vị trí đặt hàng thực tế
                 </DialogDescription>
               )}
             </DialogHeader>
@@ -598,10 +598,10 @@ export default function PutawayPage() {
           <DialogContent className="sm:max-w-md rounded-2xl">
             <form onSubmit={submitEdit}>
               <DialogHeader>
-                <DialogTitle>Cập nhật task putaway</DialogTitle>
+                <DialogTitle>Cập nhật nhiệm vụ xếp hàng</DialogTitle>
                 {activeTask && (
                   <DialogDescription>
-                    Task <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span>
+                    Nhiệm vụ <span className="font-mono font-semibold">PUT-{activeTask.id.slice(0, 8).toUpperCase()}</span>
                   </DialogDescription>
                 )}
               </DialogHeader>

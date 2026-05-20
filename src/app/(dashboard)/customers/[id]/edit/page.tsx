@@ -1,8 +1,7 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,12 +17,8 @@ import {
 import { apiErrMessage } from "@/types/api";
 import type { UpdateCustomerRequest } from "@/types/customer";
 
-export default function EditCustomerPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(paramsPromise);
+export default function EditCustomerPage() {
+  const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
 
   const {

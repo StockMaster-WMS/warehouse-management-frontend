@@ -9,10 +9,19 @@ export interface Warehouse {
   name: string;
   address: string | null;
   managerName: string | null;
+  managers?: WarehouseManager[] | null;
   timezone: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WarehouseManager {
+  id: string;
+  username: string;
+  email?: string | null;
+  fullName?: string | null;
+  name?: string | null;
 }
 
 export interface WarehouseSummary {
@@ -26,7 +35,7 @@ export interface CreateWarehouseRequest {
   code: string;
   name: string;
   address?: string;
-  managerName?: string;
+  managerIds?: string[];
   timezone?: string;
   isActive?: boolean;
 }

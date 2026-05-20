@@ -89,7 +89,7 @@ export function PoLinesSection({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Dòng hàng (PO Lines)
+              Dòng hàng đơn nhập
             </h3>
             <p className="text-xs text-slate-400">
               {locked ? "Lưu đơn ở bước 1 để thêm dòng hàng" : `${lines.length} dòng`}
@@ -122,7 +122,7 @@ export function PoLinesSection({
             <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
               <TableHead className="w-14 py-3 pl-5 pr-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
               <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm</TableHead>
-              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">SKU</TableHead>
+              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng</TableHead>
               <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
               <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn giá</TableHead>
               <TableHead className="w-14 py-3 pl-3 pr-5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400"></TableHead>
@@ -206,7 +206,7 @@ export function PoLinesSection({
                   : productsLoading ? "Đang tải…"
                   : "Chọn sản phẩm"
               }
-              searchPlaceholder="Tên hoặc mã SKU…"
+              searchPlaceholder="Tên hoặc mã hàng…"
               emptyText="Không có sản phẩm — thử từ khóa khác"
               disabled={!purchaseOrderId || productsErr}
               loading={productsLoading}
@@ -222,9 +222,9 @@ export function PoLinesSection({
             )}
           </div>
 
-          {/* SKU (read-only preview) */}
+          {/* Mã hàng (read-only preview) */}
           <div className="md:col-span-2">
-            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">SKU</label>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Mã hàng</label>
             <Input
               readOnly
               value={selectedProduct?.sku ?? ""}

@@ -4,6 +4,7 @@ import { AppearanceSettingsComponent } from "./AppearanceSettings";
 import { WarehouseSettings } from "./WarehouseSettings";
 import { ProductsSettings } from "./ProductsSettings";
 import { WorkflowSettings } from "./WorkflowSettings";
+import { AiSettings } from "./AiSettings";
 import { SecuritySettings } from "./SecuritySettings";
 import { DataSettings } from "./DataSettings";
 import type {
@@ -11,7 +12,6 @@ import type {
   NotificationSetting,
   SettingsTab,
   NotificationSubTab,
-  AppearanceSubTab,
   WarehouseSubTab,
   ProductsSubTab,
   WorkflowSubTab,
@@ -20,7 +20,6 @@ import type {
 interface SettingsContentProps {
   activeTab: SettingsTab;
   activeSubTab: NotificationSubTab;
-  activeAppearanceSubTab: AppearanceSubTab;
   activeWarehouseSubTab: WarehouseSubTab;
   activeProductsSubTab: ProductsSubTab;
   activeWorkflowSubTab: WorkflowSubTab;
@@ -36,7 +35,6 @@ interface SettingsContentProps {
   setDailyReportTime: (value: string) => void;
   setWeeklyReportDay: (value: string) => void;
   setActiveSubTab: (tab: NotificationSubTab) => void;
-  setActiveAppearanceSubTab: (tab: AppearanceSubTab) => void;
   setActiveWarehouseSubTab: (tab: WarehouseSubTab) => void;
   setActiveProductsSubTab: (tab: ProductsSubTab) => void;
   setActiveWorkflowSubTab: (tab: WorkflowSubTab) => void;
@@ -45,7 +43,6 @@ interface SettingsContentProps {
 export function SettingsContent({
   activeTab,
   activeSubTab,
-  activeAppearanceSubTab,
   activeWarehouseSubTab,
   activeProductsSubTab,
   activeWorkflowSubTab,
@@ -61,7 +58,6 @@ export function SettingsContent({
   setDailyReportTime,
   setWeeklyReportDay,
   setActiveSubTab,
-  setActiveAppearanceSubTab,
   setActiveWarehouseSubTab,
   setActiveProductsSubTab,
   setActiveWorkflowSubTab,
@@ -108,6 +104,8 @@ export function SettingsContent({
             setActiveWorkflowSubTab={setActiveWorkflowSubTab}
           />
         );
+      case "ai":
+        return <AiSettings />;
       case "security":
         return <SecuritySettings />;
       case "data":

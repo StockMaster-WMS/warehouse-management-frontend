@@ -299,7 +299,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
             <div className="ui-surface flex flex-col overflow-hidden transition-all duration-300">
                 <SearchToolbar
                     noContainer
-                    placeholder="Tìm theo đơn hàng, SKU, vị trí…"
+                    placeholder="Tìm theo đơn hàng, mã hàng, vị trí..."
                     value={searchTerm}
                     onValueChange={(searchTerm) => dispatch({ searchTerm, page: 0 })}
                     right={
@@ -519,7 +519,7 @@ function PickingEmptyRow() {
             <TableCell colSpan={6} className="p-0">
                 <EmptyState
                     icon={Package2}
-                    title="Không tìm thấy dữ liệu picking"
+                    title="Không tìm thấy dữ liệu lấy hàng"
                     description="Thử đổi từ khóa tìm kiếm hoặc kiểm tra danh sách lệnh lấy hàng."
                     className="py-12"
                 />
@@ -557,7 +557,7 @@ function PickingGroupRows({
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-black tabular-nums tracking-tight text-foreground">{group.soNumber}</span>
                             <StatusBadge dot={false} tone="neutral" className="h-4 px-1 text-[9px]">
-                                {group.items.length} SKU
+                                {group.items.length} mã hàng
                             </StatusBadge>
                         </div>
                     </div>
@@ -692,7 +692,7 @@ function PickingDetailDialog({
                         <div className="ui-icon-tile size-9 bg-primary text-primary-foreground">
                             <Package2 className="size-5" />
                         </div>
-                        <span className="truncate">{detailItem?.salesOrderNumber || "Chi tiết Picking"}</span>
+                        <span className="truncate">{detailItem?.salesOrderNumber || "Chi tiết lấy hàng"}</span>
                     </DialogTitle>
                 </DialogHeader>
                 {isDetailLoading ? (
@@ -743,7 +743,7 @@ function PickingDetailProduct({ detailItem }: { detailItem: PickingItem }) {
             <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-4">
                     <div className="space-y-1">
-                        <p className="ui-label">SKU / Mã sản phẩm</p>
+                        <p className="ui-label">Mã hàng / mã sản phẩm</p>
                         <p className="truncate text-base font-black uppercase text-foreground">{detailItem.productSku}</p>
                     </div>
                     <div className="space-y-1">

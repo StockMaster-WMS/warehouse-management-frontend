@@ -278,7 +278,7 @@ export default function PurchaseOrdersPage() {
         {/* Unified Search Section */}
         <SearchToolbar
           noContainer
-          placeholder="Tìm kiếm theo mã PO..."
+          placeholder="Tìm kiếm theo mã đơn nhập..."
           value={keyword}
           onValueChange={(v) => {
             setKeyword(v || "");
@@ -489,7 +489,7 @@ export default function PurchaseOrdersPage() {
             <Table className="min-w-px text-left border-collapse">
               <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
               <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                  <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã PO</TableHead>
+                  <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã đơn nhập</TableHead>
                   <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Ngày đặt</span>
                   </TableHead>

@@ -1,7 +1,7 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, Info, Ruler, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,8 @@ import { getProductCategoryDisplayName } from "@/lib/product-display";
 import { Controller } from "react-hook-form";
 import { Switch } from "@/components/ui/switch";
 
-export default function EditProductPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const params = use(paramsPromise);
-  const { id } = params;
+export default function EditProductPage() {
+  const { id } = useParams<{ id: string }>();
 
   const {
     register,
@@ -91,7 +86,7 @@ export default function EditProductPage({
     <div className="w-full space-y-4 sm:space-y-6 pb-20">
       <PageHeader
         title="Chỉnh sửa sản phẩm"
-        description={`SKU ${data.data.sku} · ${data.data.name}`}
+        description={`Mã hàng ${data.data.sku} · ${data.data.name}`}
         actions={
           <Button
             render={<Link href={`/products/${id}`} />}

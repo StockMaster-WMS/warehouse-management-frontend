@@ -22,6 +22,12 @@ import {
   useRefreshTokenMutation,
 } from "@/store/services/auth.service";
 
+function isRefreshDeniedError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const status = (error as { status?: unknown }).status;
+  return status === 401 || status === 403;
+}
+
 export function AuthGuard({ 
   children, 
   initialHasSession = false 
@@ -70,11 +76,6 @@ export function AuthGuard({
         return;
       }
 
-      if (!initialHasSession) {
-        replace("/login");
-        return;
-      }
-
       if (refreshAttempted.current) return;
 
       refreshAttempted.current = true;
@@ -92,10 +93,14 @@ export function AuthGuard({
             replace("/login");
           }
         })
-        .catch(() => {
+        .catch((error) => {
           if (cancelled) return;
           markExplicitLogout();
           clearAccessToken();
+          if (isRefreshDeniedError(error)) {
+            replace("/login");
+            return;
+          }
           setAuthError("Không kết nối được backend để làm mới phiên đăng nhập.");
         });
 

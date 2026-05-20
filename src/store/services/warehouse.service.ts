@@ -1,7 +1,7 @@
 
 import { baseApi } from "@/store/services/api";
 import { normalizeApiResponsePaged, type ApiResponse, type PagedResponse } from "@/types/api";
-import type { Warehouse, WarehouseSummary, CreateWarehouseRequest } from "@/types/warehouse";
+import type { Warehouse, WarehouseManager, WarehouseSummary, CreateWarehouseRequest } from "@/types/warehouse";
 
 export type GetWarehousesParams = {
   page?: number;
@@ -69,6 +69,10 @@ const warehouseApi = baseApi.injectEndpoints({
       query: () => ({ url: "/warehouses/summary", method: "GET" }),
       providesTags: () => [{ type: "Warehouse" as const, id: "SUMMARY" }],
     }),
+    getWarehouseManagers: builder.query<ApiResponse<WarehouseManager[]>, void>({
+      query: () => ({ url: "/warehouses/managers", method: "GET" }),
+      providesTags: () => [{ type: "Warehouse" as const, id: "MANAGERS" }],
+    }),
     createWarehouse: builder.mutation<ApiResponse<Warehouse>, CreateWarehouseRequest>({
       query: (body) => ({
         url: "/warehouses",
@@ -111,6 +115,7 @@ export const {
   useGetWarehouseByIdQuery,
   useLazyGetWarehouseByIdQuery,
   useGetWarehouseSummaryQuery,
+  useGetWarehouseManagersQuery,
   useCreateWarehouseMutation,
   useUpdateWarehouseMutation,
   useDeleteWarehouseMutation,

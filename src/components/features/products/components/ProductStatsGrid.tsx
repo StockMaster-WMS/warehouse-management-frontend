@@ -12,7 +12,7 @@ interface ProductStatsGridProps {
 }
 
 const STAT_ICONS: Record<string, { icon: typeof Hash; color: string }> = {
-    "Tổng SKU":                     { icon: Hash,        color: "text-blue-500" },
+    "Tổng mã hàng":                 { icon: Hash,        color: "text-blue-500" },
     "Trang (hiện tại / tổng)":      { icon: ListOrdered, color: "text-indigo-500" },
     "Vị trí lưu trữ":               { icon: MapPin,      color: "text-emerald-500" },
     "Giá trị hàng":                  { icon: Package,     color: "text-slate-400" },

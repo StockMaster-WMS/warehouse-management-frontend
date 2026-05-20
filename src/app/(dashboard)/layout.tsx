@@ -1,12 +1,9 @@
-import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-
-const AUTH_SESSION_COOKIE_NAMES = ["refreshToken", "accessToken"] as const;
 
 export const metadata: Metadata = {
   title: {
@@ -20,18 +17,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const hasSession = AUTH_SESSION_COOKIE_NAMES.some((name) =>
-    cookieStore.has(name)
-  );
-
   return (
-    <AuthGuard initialHasSession={hasSession}>
+    <AuthGuard>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="min-h-svh bg-muted">

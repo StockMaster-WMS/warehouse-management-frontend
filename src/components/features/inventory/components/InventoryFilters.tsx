@@ -40,7 +40,7 @@ export function InventoryFilters({
 
   return (
     <SearchToolbar
-      placeholder="Tìm theo SKU, tên sản phẩm, vị trí..."
+      placeholder="Tìm theo mã hàng, tên sản phẩm, vị trí..."
       value={searchInput}
       onValueChange={onSearchChange}
       right={

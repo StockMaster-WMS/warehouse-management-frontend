@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { ImageResponse } from "next/og";
 
-export const alt = "StockMaster WMS - warehouse management dashboard";
+export const alt = "StockMaster WMS - hệ thống quản lý kho";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -111,9 +111,9 @@ const metricBarStyle: CSSProperties = {
 };
 
 const metrics = [
-  ["Inbound receipts", "124", "#2563eb"],
-  ["Picking tasks", "318", "#7c3aed"],
-  ["Cycle count lines", "1,842", "#0891b2"],
+  ["Phiếu nhập", "124", "#2563eb"],
+  ["Nhiệm vụ lấy hàng", "318", "#7c3aed"],
+  ["Dòng kiểm kê", "1,842", "#0891b2"],
 ] as const;
 
 export default function OpenGraphImage() {
@@ -128,7 +128,7 @@ export default function OpenGraphImage() {
               StockMaster WMS
             </div>
             <div style={{ marginTop: 26, fontSize: 30, color: "#cbd5e1", lineHeight: 1.28 }}>
-              Inventory, inbound, outbound, picking and reporting in one workspace.
+              Quản lý tồn kho, nhập xuất, lấy hàng và báo cáo trong một không gian làm việc.
             </div>
           </div>
 

@@ -72,6 +72,7 @@ export const baseApi = createApi({
     "Dashboard",
     "Report",
     "Notification",
+    "AiConfig",
   ],
   endpoints: () => ({}),
 });

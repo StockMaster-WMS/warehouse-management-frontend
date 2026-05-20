@@ -140,8 +140,8 @@ export function ProductBarcodeModal({
           </div>
           
           <p className="mt-4 text-[10px] text-slate-400 font-medium text-center">
-            * Tem bao gồm tên sản phẩm và mã vạch Barcode-128
-            <br />(Ưu tiên dùng EAN13 nếu có, không thì lấy SKU)
+            * Tem bao gồm tên sản phẩm và mã vạch Code 128
+            <br />(Ưu tiên dùng EAN13 nếu có, không thì lấy mã hàng)
           </p>
         </div>
 
