@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -185,12 +185,8 @@ function ChangeStatusDialog({
 /* ══════════════════════════════════════════
    Main Page
    ══════════════════════════════════════════ */
-export default function SupplierDetailPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(paramsPromise);
+export default function SupplierDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
 
   const {

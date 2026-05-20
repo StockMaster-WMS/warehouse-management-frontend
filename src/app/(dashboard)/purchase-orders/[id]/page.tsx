@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState } from "react";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -162,12 +163,8 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
-export default function PurchaseOrderDetailPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(paramsPromise);
+export default function PurchaseOrderDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const canManagePurchaseOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   const {

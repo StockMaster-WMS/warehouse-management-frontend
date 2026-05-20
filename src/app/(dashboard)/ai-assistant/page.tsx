@@ -170,8 +170,12 @@ export default function AiAssistantPage() {
 
     if (message.content === targetContent) {
       if (!isStreaming) {
-        activeStreamMsgId.current = null;
-        setStreamingMessageId(null);
+        const clearTimer = window.setTimeout(() => {
+          activeStreamMsgId.current = null;
+          setStreamingMessageId(null);
+        }, 0);
+
+        return () => window.clearTimeout(clearTimer);
       }
       return;
     }

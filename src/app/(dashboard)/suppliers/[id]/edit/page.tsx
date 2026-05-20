@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -43,12 +43,8 @@ function FieldError({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-rose-600">{msg}</p>;
 }
 
-export default function EditSupplierPage({
-  params: paramsPromise,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(paramsPromise);
+export default function EditSupplierPage() {
+  const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
 
   const {
