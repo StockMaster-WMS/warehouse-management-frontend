@@ -1,9 +1,7 @@
 name: Deploy Frontend to DigitalOcean
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
