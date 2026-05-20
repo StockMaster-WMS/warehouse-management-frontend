@@ -29,6 +29,8 @@ jobs:
             --exclude ".env" \
             --exclude ".env.local" \
             --exclude ".env.production" \
+            --exclude "Dockerfile" \
+            --exclude "docker-compose.prod.yml" \
             -e "ssh -i ~/.ssh/do_warehouse_key" \
             ./ ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/opt/warehouse-management-frontend/
 
