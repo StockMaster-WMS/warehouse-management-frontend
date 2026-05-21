@@ -1,11 +1,12 @@
 "use client";
 
 import { ClipboardList, Loader2, Package, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import {
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage } from "@/types/api";
+import type { Customer } from "@/types/customer";
 import type { CreateReturnRequestPayload, ReturnType } from "@/types/returns";
 
 interface CreateRMAModalProps {
@@ -70,8 +72,18 @@ function formatNumber(value: number | null | undefined) {
 
 export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   const [createRMA, { isLoading: isCreating }] = useCreateReturnRequestMutation();
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const debouncedCustomerKeyword = useDebouncedValue(customerSearch.trim());
 
-  const { data: customersRes, isLoading: isLoadingCustomers } = useGetCustomersQuery({ page: 0, size: 200, isActive: true });
+  const { data: customersRes, isLoading: isLoadingCustomers, isFetching: isFetchingCustomers } = useGetCustomersQuery({
+    page: 0,
+    size: 20,
+    sort: "name",
+    sortDir: "asc",
+    keyword: debouncedCustomerKeyword || undefined,
+    isActive: true,
+  });
   const { data: warehousesRes, isLoading: isLoadingWarehouses } = useGetWarehousesQuery({ page: 0, size: 100 });
   const { data: productsRes, isLoading: isLoadingProducts } = useGetProductsQuery({ page: 0, size: 200 });
   const { data: suppliersRes, isLoading: isLoadingSuppliers } = useGetSuppliersQuery({ page: 0, size: 200 });
@@ -84,7 +96,9 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   const supplierId = useWatch({ control: form.control, name: "supplierId" });
   const lines = useWatch({ control: form.control, name: "lines" }) ?? [];
 
-  const selectedCustomer = customersRes?.data?.content?.find((customer) => customer.id === customerId);
+  const currentCustomer =
+    customersRes?.data?.content?.find((customer) => customer.id === customerId) ??
+    (selectedCustomer?.id === customerId ? selectedCustomer : null);
   const selectedWarehouse = warehousesRes?.data?.content?.find((warehouse) => warehouse.id === warehouseId);
   const selectedSupplier = suppliersRes?.data?.content?.find((supplier) => supplier.id === supplierId);
 
@@ -107,13 +121,20 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   });
 
   const customerOptions = useMemo(
-    () =>
-      (customersRes?.data?.content ?? []).map((customer) => ({
+    () => {
+      const customers = customersRes?.data?.content ?? [];
+      const optionCustomers =
+        selectedCustomer && !customers.some((customer) => customer.id === selectedCustomer.id)
+          ? [selectedCustomer, ...customers]
+          : customers;
+
+      return optionCustomers.map((customer) => ({
         value: customer.id,
         label: customer.name,
         hint: [customer.code, customer.phone, customer.email].filter(Boolean).join(" · "),
-      })),
-    [customersRes],
+      }));
+    },
+    [customersRes, selectedCustomer],
   );
 
   const receiptOptions = useMemo(
@@ -149,16 +170,16 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   );
 
   useEffect(() => {
-    if (returnType !== "CUSTOMER" || !selectedCustomer) return;
-    form.setValue("customerName", selectedCustomer.name);
-  }, [form, returnType, selectedCustomer]);
+    if (returnType !== "CUSTOMER" || !currentCustomer) return;
+    form.setValue("customerName", currentCustomer.name);
+  }, [currentCustomer, form, returnType]);
 
   useEffect(() => {
     if (returnType !== "CUSTOMER" || !receiptDetailsRes?.data) return;
     const detail = receiptDetailsRes.data;
     form.setValue("warehouseId", detail.warehouseId);
     form.setValue("customerId", customerId || detail.customerId || "");
-    form.setValue("customerName", detail.customerName || selectedCustomer?.name || "");
+    form.setValue("customerName", detail.customerName || currentCustomer?.name || "");
     replace(
       detail.items
         .filter((item) => Number(item.returnableQty ?? 0) > 0)
@@ -172,14 +193,20 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
           returnableQty: Number(item.returnableQty ?? 0),
         })),
     );
-  }, [customerId, form, receiptDetailsRes, replace, returnType, selectedCustomer]);
+  }, [currentCustomer, customerId, form, receiptDetailsRes, replace, returnType]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) form.reset(DEFAULT_VALUES);
+    if (!nextOpen) {
+      setCustomerSearch("");
+      setSelectedCustomer(null);
+    }
     onOpenChange(nextOpen);
   };
 
   const setReturnType = (nextType: ReturnType) => {
+    setCustomerSearch("");
+    setSelectedCustomer(null);
     form.reset({
       ...DEFAULT_VALUES,
       returnType: nextType,
@@ -192,7 +219,11 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     form.setValue("customerId", nextCustomerId);
     form.setValue("salesOrderId", "");
     form.setValue("warehouseId", "");
-    form.setValue("customerName", customersRes?.data?.content?.find((customer) => customer.id === nextCustomerId)?.name ?? "");
+    const nextCustomer =
+      customersRes?.data?.content?.find((customer) => customer.id === nextCustomerId) ??
+      (selectedCustomer?.id === nextCustomerId ? selectedCustomer : null);
+    setSelectedCustomer(nextCustomer);
+    form.setValue("customerName", nextCustomer?.name ?? "");
     replace([]);
   };
 
@@ -321,11 +352,14 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                               value={field.value ?? ""}
                               onValueChange={handleCustomerChange}
                               options={customerOptions}
-                              loading={isLoadingCustomers}
+                              loading={isLoadingCustomers || isFetchingCustomers}
                               placeholder="Chọn khách hàng"
                               searchPlaceholder="Tìm theo tên, mã, SĐT..."
                               emptyText="Không tìm thấy khách hàng"
                               dialogTitle="Chọn khách hàng trả hàng"
+                              serverSearch
+                              searchQuery={customerSearch}
+                              onSearchChange={setCustomerSearch}
                             />
                           )}
                         />

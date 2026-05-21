@@ -1,4 +1,5 @@
 export type NotificationType =
+  | "PUTAWAY_ASSIGNED"
   | "PICKING_ASSIGNED"
   | "PICKING_EXCEPTION"
   | "LOW_STOCK"
@@ -12,6 +13,7 @@ export type NotificationType =
 export type NotificationSeverity = "INFO" | "WARNING" | "CRITICAL";
 
 export type NotificationTargetType =
+  | "PUTAWAY_TASK"
   | "PICKING_ITEM"
   | "SALES_ORDER"
   | "PURCHASE_ORDER"

@@ -173,6 +173,7 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
 
     try {
       const res = await createSalesOrder({
+        customerId,
         customerName: customerName.trim(),
         shippingAddress: {
           line1: address.street.trim(),

@@ -22,6 +22,7 @@ export type ShippingAddress = {
 export interface SalesOrder {
   id: string;
   soNumber?: string | null;
+  customerId?: string | null;
   customerName: string;
   shippingAddress: ShippingAddress;
   warehouseId: string;
@@ -34,6 +35,7 @@ export interface SalesOrder {
 
 export type UpdateSalesOrderPayload = {
   soNumber: string;
+  customerId?: string | null;
   customerName: string;
   shippingAddress: ShippingAddress;
   warehouseId: string;

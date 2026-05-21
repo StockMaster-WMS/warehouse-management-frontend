@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { REPORT_ROLES } from "@/lib/access-control";
 import {
   DEFAULT_OPERATION_DATE_PRESET,
   getOperationDateRange,
@@ -123,6 +124,7 @@ export default function ReturnsPage() {
   const [state, dispatch] = useReducer(reducer, INITIAL_RETURNS_PAGE_STATE);
   const { page, pageSize, keyword, returnType, status, warehouseId, datePreset, isCreateModalOpen } = state;
   const canCreate = useHasPermissions(["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF"]);
+  const canViewReport = useHasPermissions(REPORT_ROLES);
   const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
 
   const { data, isLoading, isFetching, error, refetch } = useGetReturnRequestsQuery({
@@ -134,7 +136,10 @@ export default function ReturnsPage() {
     warehouseId,
     ...dateRange,
   });
-  const { data: reportRes } = useGetReturnReportQuery({ warehouseId, returnType, ...dateRange });
+  const { data: reportRes } = useGetReturnReportQuery(
+    { warehouseId, returnType, ...dateRange },
+    { skip: !canViewReport },
+  );
   const { data: warehousesRes } = useGetWarehousesQuery({ page: 0, size: 200 });
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
