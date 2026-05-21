@@ -17,10 +17,14 @@ import { apiErrMessage } from "@/types/api";
 import { useState } from "react";
 import type { Location } from "@/types/location";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import { ImportExportXlsxMenu } from "@/components/features/ImportExportXlsxMenu";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+    const canManageLocations = useHasPermissions(ADMIN_MANAGER_ROLES);
         const {
         searchInput,
         setSearchInput,
@@ -66,6 +70,7 @@ export default function LocationsPage() {
         deleteTarget,
         openDeleteDialog,
         handleDeleteLocation,
+        handleBulkDeleteLocations,
 
         warehouseNameMap,
     } = useLocationsPageLogic();
@@ -77,25 +82,69 @@ export default function LocationsPage() {
                 description="Quản lý vị trí theo kho và tra cứu nhanh zone/aisle/rack/bin để vận hành nhập - xuất chính xác."
                 actions={
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
-                            onClick={() => setIsBulkDialogOpen(true)}
-                        >
-                            <Sparkles className="mr-1 h-3.5 w-3.5" />
-                            Tạo hàng loạt
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700"
-                            onClick={openCreateDialog}
-                        >
-                            <Plus className="mr-1 h-4 w-4" />
-                            Thêm vị trí
-                        </Button>
+                        <ImportExportXlsxMenu
+                            triggerClassName="border-slate-200"
+                            menuGroupLabel="Vị trí lưu trữ"
+                            exportItemLabel="Xuất mẫu hiện tại"
+                            templateItemLabel="Tải mẫu vị trí"
+                            importItemLabel="Import Excel"
+                            templateBasename="location-import-template"
+                            getTemplateMatrix={() => [
+                                ["warehouseCode", "zone", "aisle", "rack", "level", "bin", "locationType", "isActive"],
+                                ["WH-A", "MAIN", "A01", "R01", "1", "B01", "PICKING", "TRUE"],
+                            ]}
+                            getExportFilename={() => `locations-${new Date().toISOString().slice(0, 10)}.xlsx`}
+                            getExportMatrix={() => [
+                                ["code", "warehouse", "zone", "aisle", "rack", "level", "bin", "locationType", "status"],
+                                ...locations.map((location) => [
+                                    location.code,
+                                    warehouseNameMap[location.warehouseId] || location.warehouseId,
+                                    location.zone,
+                                    location.aisle,
+                                    location.rack,
+                                    String(location.level ?? ""),
+                                    location.bin,
+                                    location.locationType,
+                                    location.isActive === false ? "INACTIVE" : "ACTIVE",
+                                ]),
+                            ]}
+                            canImport={canManageLocations}
+                            importConfig={{
+                                expectedHeaders: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
+                                requiredRowFields: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
+                                fieldLabels: {
+                                    warehouseCode: "Mã kho",
+                                    zone: "Khu vực",
+                                    aisle: "Dãy",
+                                    rack: "Kệ",
+                                    level: "Tầng",
+                                    bin: "Ngăn",
+                                },
+                            }}
+                            dialogTitle="Kiểm tra file import vị trí"
+                            importPreviewCountLabel="dòng vị trí"
+                        />
+                        <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                                onClick={() => setIsBulkDialogOpen(true)}
+                            >
+                                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                                Tạo hàng loạt
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                                onClick={openCreateDialog}
+                            >
+                                <Plus className="mr-1 h-4 w-4" />
+                                Thêm vị trí
+                            </Button>
+                        </PermissionControl>
                     </div>
                 }
             />
@@ -163,7 +212,9 @@ export default function LocationsPage() {
                     onRetry={() => refetchLocations()}
                     onEdit={openEditDialog}
                     onDelete={openDeleteDialog}
+                    onBulkDelete={handleBulkDeleteLocations}
                     onPrintBarcode={setBarcodeLocation}
+                    canManageLocations={canManageLocations}
                 />
             )}
             

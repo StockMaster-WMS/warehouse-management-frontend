@@ -24,8 +24,19 @@ export interface DashboardNotice {
   time: string;
 }
 
+export interface DashboardActivity {
+  id: string;
+  module: string | null;
+  actionType: string | null;
+  action: string | null;
+  entityName: string | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   metrics: DashboardMetric[];
   flow: DashboardFlowPoint[];
   notices: DashboardNotice[];
+  recentActivities?: DashboardActivity[];
 }

@@ -81,6 +81,8 @@ import {
   supplierStatusLabel,
   supplierStatusClass,
 } from "@/types/supplier";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 /* ── Status filter labels ── */
 const STATUS_FILTER_LABEL: Record<string, string> = {
@@ -369,6 +371,7 @@ function ChangeStatusDialog({
    Main Page
    ══════════════════════════════════════════ */
 export default function SuppliersPage() {
+  const canManageSuppliers = useHasPermissions(ADMIN_MANAGER_ROLES);
   const [searchInput, setSearchInput] = useState("");
   const debouncedKeyword = useDebouncedValue(searchInput.trim());
   const [page, setPage] = useState(0);
@@ -476,15 +479,17 @@ export default function SuppliersPage() {
               )}
               Xuất Excel
             </Button>
-            <Button
-              render={<Link href="/suppliers/new" />}
-              nativeButton={false}
-              size="sm"
-              className="bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm đối tác mới
-            </Button>
+            <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              <Button
+                render={<Link href="/suppliers/new" />}
+                nativeButton={false}
+                size="sm"
+                className="bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Thêm đối tác mới
+              </Button>
+            </PermissionControl>
           </div>
         }
       />
@@ -767,20 +772,24 @@ export default function SuppliersPage() {
                             <Eye className="mr-2 h-4 w-4" />
                             Xem chi tiết
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="rounded-lg"
-                            render={<Link href={`/suppliers/${sup.id}/edit`} />}
-                          >
-                            <Edit2 className="mr-2 h-4 w-4" />
-                            Sửa thông tin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="rounded-lg"
-                            onClick={() => setStatusTarget(sup)}
-                          >
-                            <ShieldAlert className="mr-2 h-4 w-4" />
-                            Đổi trạng thái
-                          </DropdownMenuItem>
+                          {canManageSuppliers ? (
+                            <>
+                              <DropdownMenuItem
+                                className="rounded-lg"
+                                render={<Link href={`/suppliers/${sup.id}/edit`} />}
+                              >
+                                <Edit2 className="mr-2 h-4 w-4" />
+                                Sửa thông tin
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="rounded-lg"
+                                onClick={() => setStatusTarget(sup)}
+                              >
+                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                Đổi trạng thái
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                           <DropdownMenuItem
                             className="rounded-lg"
                             onClick={() => setHistoryTarget(sup)}
@@ -788,14 +797,18 @@ export default function SuppliersPage() {
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Lịch sử nhập hàng
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="rounded-lg text-rose-600 focus:text-rose-600"
-                            onClick={() => setDeleteTarget(sup)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Xóa đối tác
-                          </DropdownMenuItem>
+                          {canManageSuppliers ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="rounded-lg text-rose-600 focus:text-rose-600"
+                                onClick={() => setDeleteTarget(sup)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Xóa đối tác
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

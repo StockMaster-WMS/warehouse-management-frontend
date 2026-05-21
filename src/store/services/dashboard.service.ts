@@ -8,6 +8,7 @@ export const dashboardApi = baseApi.injectEndpoints({
       query: () => ({
         url: "/dashboard/summary",
         method: "GET",
+        timeout: 60000,
       }),
       transformResponse: (response: ApiResponse<DashboardSummary>) => response.data,
       providesTags: ["Dashboard"],

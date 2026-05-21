@@ -16,6 +16,11 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  canAccessPath,
+  getDefaultPathForRoles,
+  getUserRoles,
+} from "@/lib/access-control";
 import { clearExplicitLogout, saveToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
@@ -83,18 +88,21 @@ function clearRememberedAccount() {
   window.localStorage.removeItem(REMEMBER_LOGIN_MODE_KEY);
 }
 
-function safeCallbackUrl(value: string | null) {
+function safeCallbackUrl(value: string | null, fallbackUrl: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/login")) {
-    return "/dashboard";
+    return fallbackUrl;
   }
 
   return value;
 }
 
-function getCallbackUrl() {
-  if (typeof window === "undefined") return "/dashboard";
+function getCallbackUrl(fallbackUrl: string) {
+  if (typeof window === "undefined") return fallbackUrl;
 
-  return safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl"));
+  return safeCallbackUrl(
+    new URLSearchParams(window.location.search).get("callbackUrl"),
+    fallbackUrl,
+  );
 }
 
 function loginFormReducer(state: LoginFormState, patch: Partial<LoginFormState>) {
@@ -129,7 +137,10 @@ export function LoginForm() {
       }
 
       dispatch(baseApi.util.resetApiState());
-      replace(getCallbackUrl());
+      const userRoles = getUserRoles(result.user?.roles);
+      const defaultPath = getDefaultPathForRoles(userRoles) ?? "/dashboard";
+      const callbackUrl = getCallbackUrl(defaultPath);
+      replace(canAccessPath(callbackUrl, userRoles) ? callbackUrl : defaultPath);
     } catch {
       // Error handled by redux state.
     }

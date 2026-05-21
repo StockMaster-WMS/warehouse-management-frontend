@@ -42,6 +42,7 @@ type OrderSidebarProps = {
   onConfirmOrder: () => void;
   onCancelOrder: () => void;
   onOpenPrint: () => void;
+  canManageOrder?: boolean;
 };
 
 export function OrderSidebar({
@@ -56,6 +57,7 @@ export function OrderSidebar({
   onConfirmOrder,
   onCancelOrder,
   onOpenPrint,
+  canManageOrder = false,
 }: OrderSidebarProps) {
   return (
     <aside className="lg:sticky lg:top-5 lg:self-start">
@@ -72,7 +74,7 @@ export function OrderSidebar({
 
         <CardContent className="pb-4 pt-4">
           <div className="grid gap-2.5">
-            {status === "DRAFT" ? (
+            {canManageOrder && status === "DRAFT" ? (
               <Button 
                 type="button" 
                 onClick={onConfirmOrder} 
@@ -84,7 +86,7 @@ export function OrderSidebar({
               </Button>
             ) : null}
 
-            {status === "PENDING" ? (
+            {canManageOrder && status === "PENDING" ? (
               <Button 
                 type="button" 
                 onClick={onStartPicking} 
@@ -96,7 +98,7 @@ export function OrderSidebar({
               </Button>
             ) : null}
 
-            {status === "PICKING" ? (
+            {canManageOrder && status === "PICKING" ? (
               <Button
                 type="button"
                 onClick={onMarkPacked}
@@ -108,7 +110,7 @@ export function OrderSidebar({
               </Button>
             ) : null}
 
-            {status === "PACKED" ? (
+            {canManageOrder && status === "PACKED" ? (
               <Button 
                 type="button" 
                 onClick={onMarkShipped} 
@@ -134,7 +136,7 @@ export function OrderSidebar({
                 In phiếu
               </Button>
 
-              {status === "DRAFT" || status === "PENDING" ? (
+              {canManageOrder && (status === "DRAFT" || status === "PENDING") ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -146,7 +148,7 @@ export function OrderSidebar({
                   {deletingOrder ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1.5 h-3.5 w-3.5" />}
                   Xóa đơn
                 </Button>
-              ) : (
+              ) : canManageOrder ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -158,7 +160,7 @@ export function OrderSidebar({
                   {isExecuting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <XCircle className="mr-1.5 h-3.5 w-3.5" />}
                   Hủy đơn
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
           

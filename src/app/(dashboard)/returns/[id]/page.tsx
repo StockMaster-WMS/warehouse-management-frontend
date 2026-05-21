@@ -44,6 +44,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import type { ReturnStatus, ReturnType } from "@/types/returns";
 
 const RMA_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
@@ -127,8 +128,7 @@ function receiveFormReducer(state: ReceiveFormState, patch: Partial<ReceiveFormS
 export default function RMADetailPage() {
   const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
-  const canManage = useHasPermissions(["ADMIN", "WAREHOUSE_MANAGER"]);
-
+  const canManageReturn = useHasPermissions(ADMIN_MANAGER_ROLES);
   const { data: rmaRes, isLoading, refetch, isFetching } = useGetReturnRequestByIdQuery(id);
   const rma = rmaRes?.data;
   const { data: warehouseRes } = useGetWarehouseByIdQuery(rma?.warehouseId ?? "", {
@@ -163,13 +163,19 @@ export default function RMADetailPage() {
   const selectedLine = lines.find((line) => line.id === receiveForm.selectedLineId) ?? lines[0];
   const selectedLocationId = receiveForm.locationId || selectedLine?.receivedLocationId || "";
   const quantityInputValue = receiveForm.actualQty || (selectedLine ? String(selectedLine.receivedQty ?? 0) : "");
+  const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
   const totalExpected = Number(rma?.totalExpectedQty ?? lines.reduce((sum, line) => sum + Number(line.expectedQty ?? 0), 0));
   const totalReceived = Number(rma?.totalReceivedQty ?? lines.reduce((sum, line) => sum + Number(line.receivedQty ?? 0), 0));
+  const allLinesReceived =
+    lines.length > 0 &&
+    lines.every(
+      (line) => Number(line.receivedQty ?? 0) >= Number(line.expectedQty ?? 0),
+    );
   const canReceive = rma?.returnType === "CUSTOMER" && rma.status === "APPROVED";
-  const canApprove = canManage && rma?.status === "REQUESTED";
-  const canComplete = canManage && rma?.status === "APPROVED";
-  const canReject = canManage && rma && !["APPROVED", "COMPLETED", "CANCELLED"].includes(rma.status);
-  const canCancel = canManage && rma && rma.status !== "COMPLETED";
+  const canApprove = canManageReturn && rma?.status === "REQUESTED";
+  const canComplete = canManageReturn && rma?.status === "APPROVED" && !isCompleted && allLinesReceived;
+  const canReject = canManageReturn && rma && !["APPROVED", "COMPLETED", "CANCELLED", "CLOSED"].includes(rma.status);
+  const canCancel = canManageReturn && rma && !["COMPLETED", "CLOSED"].includes(rma.status);
   const lineOptions = useMemo(
     () =>
       lines.map((line) => ({

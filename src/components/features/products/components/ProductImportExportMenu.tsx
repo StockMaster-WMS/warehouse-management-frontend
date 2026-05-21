@@ -20,9 +20,10 @@ export type ProductImportExportMenuProps = {
   products: Product[];
   pageIndex: number;
   listParams?: GetProductsParams;
+  canImport?: boolean;
 };
 
-export function ProductImportExportMenu({ products, listParams }: ProductImportExportMenuProps) {
+export function ProductImportExportMenu({ products, listParams, canImport = true }: ProductImportExportMenuProps) {
   const [importProductsXlsx, { isLoading: importUploading }] = useImportProductsXlsxMutation();
   const [exportProductsXlsx] = useExportProductsXlsxMutation();
 
@@ -104,6 +105,7 @@ export function ProductImportExportMenu({ products, listParams }: ProductImportE
       successHint="Tên sản phẩm, nhóm hàng và đơn vị tính đã có trên các dòng."
       onUploadToServer={handleUpload}
       serverUploadPending={importUploading}
+      canImport={canImport}
     />
   );
 }

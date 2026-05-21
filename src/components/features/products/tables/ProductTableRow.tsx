@@ -25,6 +25,7 @@ type ProductTableRowProps = {
   product: Product;
   rowNumber: number;
   onRequestDelete: (target: { id: string; name: string }) => void;
+  canManageProducts?: boolean;
 };
 
 function formatDate(value?: string) {
@@ -32,16 +33,27 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleDateString("vi-VN");
 }
 
+function formatStockValue(value?: number | null) {
+  return typeof value === "number" ? value.toLocaleString("vi-VN") : "—";
+}
+
 export const ProductTableRow = memo(function ProductTableRow({
   product,
   rowNumber,
   onRequestDelete,
+  canManageProducts = false,
 }: ProductTableRowProps) {
   const categoryName = getProductCategoryDisplayName(product);
   const categoryLabel =
     categoryName || (product.categoryId ? "—" : "Chưa gán danh mục");
   const categorySubline =
     !categoryName && product.categoryId ? "Danh mục chưa xác định" : "";
+  const qtyOnHand = product.qtyOnHand ?? product.currentStock;
+  const qtyAvailable = product.qtyAvailable ?? product.availableStock;
+  const isLowStock =
+    typeof qtyAvailable === "number" &&
+    product.minStockQty != null &&
+    qtyAvailable < product.minStockQty;
 
   return (
     <>
@@ -96,6 +108,16 @@ export const ProductTableRow = memo(function ProductTableRow({
           )}
         </TableCell>
         <TableCell className="px-3 py-3 text-center align-middle">
+          <span className="tabular-nums text-sm font-semibold text-foreground">
+            {formatStockValue(qtyOnHand)}
+          </span>
+        </TableCell>
+        <TableCell className="px-3 py-3 text-center align-middle">
+          <span className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600 dark:text-rose-400" : "tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400"}>
+            {formatStockValue(qtyAvailable)}
+          </span>
+        </TableCell>
+        <TableCell className="px-3 py-3 text-center align-middle">
           <StatusBadge tone={statusTone(product.status)}>
             {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
           </StatusBadge>
@@ -130,20 +152,24 @@ export const ProductTableRow = memo(function ProductTableRow({
                 <ChevronRight className="mr-2 h-4 w-4" />
                 Xem chi tiết
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-lg"
-                render={<Link href={`/products/${product.id}/edit`} />}
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                Chỉnh sửa
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-lg text-destructive focus:text-destructive"
-                onClick={() => onRequestDelete({ id: product.id, name: product.name })}
-              >
-                <CircleOff className="mr-2 h-4 w-4" />
-                Ngừng dùng
-              </DropdownMenuItem>
+              {canManageProducts ? (
+                <>
+                  <DropdownMenuItem
+                    className="rounded-lg"
+                    render={<Link href={`/products/${product.id}/edit`} />}
+                  >
+                    <Edit2 className="mr-2 h-4 w-4" />
+                    Chỉnh sửa
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="rounded-lg text-destructive focus:text-destructive"
+                    onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+                  >
+                    <CircleOff className="mr-2 h-4 w-4" />
+                    Ngừng dùng
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </TableCell>
@@ -211,6 +237,19 @@ export const ProductTableRow = memo(function ProductTableRow({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="ui-label">Tồn hiện tại</p>
+              <p className="tabular-nums text-sm font-semibold">{formatStockValue(qtyOnHand)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="ui-label">Khả dụng</p>
+              <p className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600" : "tabular-nums text-sm font-semibold text-emerald-600"}>
+                {formatStockValue(qtyAvailable)}
+              </p>
+            </div>
+          </div>
+
           <div className="border-t border-border pt-3">
             <p className="ui-label">Cập nhật</p>
             <p className="text-xs text-muted-foreground">
@@ -229,38 +268,42 @@ export const ProductTableRow = memo(function ProductTableRow({
               <ChevronRight className="h-4 w-4 mr-1" />
               Xem
             </Button>
-            <Button
-              render={<Link href={`/products/${product.id}/edit`} />}
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              className="flex-1 rounded-lg"
-            >
-              <Edit2 className="h-4 w-4 mr-1" />
-              Sửa
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg px-3"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+            {canManageProducts ? (
+              <>
+                <Button
+                  render={<Link href={`/products/${product.id}/edit`} />}
+                  nativeButton={false}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-lg"
                 >
-                  <CircleOff className="mr-2 h-4 w-4" />
-                  Ngừng dùng
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Sửa
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg px-3"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+                    >
+                      <CircleOff className="mr-2 h-4 w-4" />
+                      Ngừng dùng
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : null}
           </div>
             </div>
           </div>

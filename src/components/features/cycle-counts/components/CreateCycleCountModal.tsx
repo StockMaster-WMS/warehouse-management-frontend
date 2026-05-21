@@ -23,7 +23,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -138,6 +137,7 @@ export function CreateCycleCountModal({
   const scope = useWatch({ control, name: "scope" });
   const scopeValue = useWatch({ control, name: "scopeValue" });
   const warehouseId = useWatch({ control, name: "warehouseId" });
+  const manualItems = useWatch({ control, name: "items" }) ?? [];
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -165,6 +165,15 @@ export function CreateCycleCountModal({
     label: `${l.zone} - ${l.aisle}-${l.rack}-${l.level}-${l.bin}`,
     hint: l.id.substring(0, 8)
   }));
+  const plannedCountText = mode === "MANUAL"
+    ? `${manualItems.length.toLocaleString("vi-VN")} dòng sản phẩm/vị trí`
+    : scope === "WAREHOUSE"
+      ? "Toàn bộ vị trí và sản phẩm trong kho"
+      : scope === "LOCATION"
+        ? scopeValue ? "1 vị trí đã chọn" : "Chưa chọn vị trí"
+        : scope === "PRODUCT"
+          ? scopeValue ? "1 sản phẩm đã chọn" : "Chưa chọn sản phẩm"
+          : scopeValue ? `Khu vực ${scopeValue}` : "Chưa nhập khu vực";
 
   // Reset form when modal opens
   useEffect(() => {
@@ -224,24 +233,32 @@ export function CreateCycleCountModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[650px] rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-slate-50/50 backdrop-blur-xl dark:bg-slate-950/50">
-        <div className="bg-white dark:bg-slate-900 p-6 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <DialogHeader>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 mb-4 dark:bg-indigo-950/30">
-              <ClipboardList className="h-6 w-6" />
+      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-3xl">
+        <div className="border-b border-slate-200 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+          <DialogHeader className="gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight">Tạo đợt kiểm kê</DialogTitle>
+                <DialogDescription className="mt-1 text-sm text-slate-500">
+                  Chọn kho, phạm vi hoặc danh sách sản phẩm cần kiểm kê.
+                </DialogDescription>
+              </div>
             </div>
-            <DialogTitle className="text-2xl font-bold tracking-tight">Tạo đợt kiểm kê mới</DialogTitle>
-            <DialogDescription className="text-slate-500 text-base">
-              Khởi tạo đợt kiểm tra hàng hoá thực tế tại kho để đối soát tồn kho.
-            </DialogDescription>
           </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[70vh]">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex max-h-[calc(92vh-5rem)] flex-col">
+          <div className="flex-1 space-y-5 overflow-y-auto bg-slate-50/60 p-6 dark:bg-slate-950/30">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Thông tin chung</p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+                <Label className="text-xs font-bold uppercase text-slate-500">
                   Kho kiểm kê <span className="text-rose-500">*</span>
                 </Label>
                 <Controller
@@ -262,9 +279,9 @@ export function CreateCycleCountModal({
                               : "Chọn kho hàng"}
                         </span>
                       </SelectTrigger>
-                      <SelectContent className="rounded-2xl shadow-xl border-slate-200 dark:border-slate-800">
+                      <SelectContent className="rounded-lg border-slate-200 shadow-lg dark:border-slate-800">
                         {warehouses.map((wh) => (
-                          <SelectItem key={wh.id} value={wh.id} className="rounded-xl">
+                          <SelectItem key={wh.id} value={wh.id}>
                             {wh.name} ({wh.code})
                           </SelectItem>
                         ))}
@@ -278,17 +295,18 @@ export function CreateCycleCountModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+                <Label className="text-xs font-bold uppercase text-slate-500">
                   Tên đợt kiểm kê <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   {...register("description")}
                   placeholder="VD: Kiểm kê cuối tháng 5..."
-                  className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20"
+                  className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                 />
                 {errors.description && (
                   <p className="text-[11px] font-medium text-rose-500 ml-2">{errors.description.message}</p>
                 )}
+              </div>
               </div>
             </div>
 
@@ -338,28 +356,37 @@ export function CreateCycleCountModal({
               </div>
             </div>
 
-            <div className="space-y-4">
-              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
-                Phương thức chọn hàng <span className="text-rose-500">*</span>
-              </Label>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <Label className="text-xs font-bold uppercase text-slate-500">
+                    Phương thức chọn hàng <span className="text-rose-500">*</span>
+                  </Label>
+                  <p className="mt-1 text-xs text-slate-500">Chọn theo phạm vi lớn hoặc nhập danh sách thủ công.</p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+                  <span className="font-semibold">Dự kiến: </span>
+                  {plannedCountText}
+                </div>
+              </div>
               <Tabs
                 value={mode}
                 onValueChange={(v) => setValue("mode", v as FormValues["mode"])}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-                  <TabsTrigger value="SCOPE" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-950 transition-all">
+                <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
+                  <TabsTrigger value="SCOPE" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600 data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200">
                     <Layers className="h-4 w-4 mr-2" />
                     Theo phạm vi
                   </TabsTrigger>
-                  <TabsTrigger value="MANUAL" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-950 transition-all">
+                  <TabsTrigger value="MANUAL" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600 data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200">
                     <Plus className="h-4 w-4 mr-2" />
                     Chọn thủ công
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="SCOPE" className="pt-4 space-y-4 animate-in fade-in-50 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/30">
                     <div className="space-y-2">
                       <Label className="text-[11px] font-semibold text-slate-500 ml-1">Phạm vi kiểm kê</Label>
                       <Controller
@@ -367,10 +394,10 @@ export function CreateCycleCountModal({
                         name="scope"
                         render={({ field }) => (
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger className="h-11 rounded-xl border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50">
+                            <SelectTrigger className="min-h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                               <SelectValue placeholder="Chọn phạm vi" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl">
+                            <SelectContent className="rounded-lg">
                               <SelectItem value="WAREHOUSE">Toàn bộ kho</SelectItem>
                               <SelectItem value="ZONE">Theo khu vực (Zone)</SelectItem>
                               <SelectItem value="LOCATION">Theo vị trí (Location)</SelectItem>
@@ -391,7 +418,7 @@ export function CreateCycleCountModal({
                           <Input
                             {...register("scopeValue")}
                             placeholder="VD: ZONE-A..."
-                            className="h-11 rounded-xl border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50"
+                            className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                           />
                         ) : scope === "LOCATION" ? (
                           <Controller
@@ -404,7 +431,7 @@ export function CreateCycleCountModal({
                                 value={field.value || ""}
                                 onValueChange={field.onChange}
                                 placeholder="Tìm vị trí..."
-                                className="h-11 rounded-xl border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50"
+                                className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                                 loading={locationsLoading}
                                 disabled={!warehouseId}
                               />
@@ -421,7 +448,7 @@ export function CreateCycleCountModal({
                                 value={field.value || ""}
                                 onValueChange={field.onChange}
                                 placeholder="Tìm sản phẩm..."
-                                className="h-11 rounded-xl border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50"
+                                className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                                 loading={productsLoading}
                                 disabled={!warehouseId}
                               />
@@ -434,8 +461,8 @@ export function CreateCycleCountModal({
                       </div>
                     )}
                   </div>
-                  <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex gap-3">
-                    <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
+                  <div className="flex gap-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20">
+                    <div className="h-6 w-6 rounded-md bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
                       <Layers className="h-3.5 w-3.5 text-indigo-600" />
                     </div>
                     <div className="space-y-1">
@@ -453,10 +480,21 @@ export function CreateCycleCountModal({
 
                 <TabsContent value="MANUAL" className="pt-4 space-y-4 animate-in fade-in-50 duration-300">
                   <div className="space-y-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => append({ productId: "", locationId: "", lotNumber: "" })}
+                      disabled={!warehouseId}
+                      className="h-11 w-full rounded-lg border-dashed border-indigo-200 bg-indigo-50/50 font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-300"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Thêm sản phẩm kiểm kê
+                    </Button>
+
                     {fields.map((field, index) => (
                       <div
                         key={field.id}
-                        className="group relative grid grid-cols-1 md:grid-cols-12 gap-3 bg-white dark:bg-slate-900 p-4 pt-6 md:pt-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm animate-in zoom-in-95 duration-200"
+                        className="group relative grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-4 pt-6 md:grid-cols-12 md:pt-4 dark:border-slate-800 dark:bg-slate-950/30"
                       >
                         <Button
                           type="button"
@@ -482,7 +520,7 @@ export function CreateCycleCountModal({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 placeholder="Chọn..."
-                                className="h-10 rounded-xl bg-slate-50/50 border-none hover:bg-slate-100/50 dark:bg-slate-950/50"
+                                className="h-10 rounded-lg bg-white dark:bg-slate-900"
                                 loading={productsLoading}
                                 disabled={!warehouseId}
                               />
@@ -504,7 +542,7 @@ export function CreateCycleCountModal({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 placeholder="Chọn..."
-                                className="h-10 rounded-xl bg-slate-50/50 border-none hover:bg-slate-100/50 dark:bg-slate-950/50"
+                                className="h-10 rounded-lg bg-white dark:bg-slate-900"
                                 loading={locationsLoading}
                                 disabled={!warehouseId}
                               />
@@ -519,22 +557,11 @@ export function CreateCycleCountModal({
                           <Input
                             {...register(`items.${index}.lotNumber`)}
                             placeholder="Không bắt buộc"
-                            className="h-10 rounded-xl bg-slate-50/50 border-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-950/50"
+                            className="h-10 rounded-lg bg-white dark:bg-slate-900"
                           />
                         </div>
                       </div>
                     ))}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => append({ productId: "", locationId: "", lotNumber: "" })}
-                      disabled={!warehouseId}
-                      className="w-full h-12 rounded-2xl border-dashed border-2 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all font-medium"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Thêm sản phẩm kiểm kê
-                    </Button>
 
                     {errors.items && (
                       <p className="text-xs text-rose-500 text-center font-medium">{errors.items.message}</p>
@@ -545,23 +572,23 @@ export function CreateCycleCountModal({
             </div>
           </div>
 
-          <DialogFooter className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-slate-400 text-[11px] font-medium italic">
-              {!warehouseId ? "⚠️ Chọn kho trước khi thêm sản phẩm" : "💡 Điền đầy đủ thông tin trước khi tạo"}
+          <DialogFooter className="flex items-center justify-between gap-4 border-t border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-[11px] font-medium text-slate-500">
+              {!warehouseId ? "Chọn kho trước khi thêm sản phẩm." : "Điền đầy đủ thông tin trước khi tạo."}
             </div>
             <div className="flex gap-3">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="rounded-xl h-11 px-6 hover:bg-slate-50"
+                className="h-10 rounded-lg px-5 hover:bg-slate-50"
               >
                 Hủy bỏ
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-xl h-11 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none min-w-[160px] font-semibold text-white transition-all active:scale-95"
+                className="h-10 min-w-[150px] rounded-lg bg-indigo-600 font-semibold text-white hover:bg-indigo-700"
               >
                 {isSubmitting ? (
                   <>

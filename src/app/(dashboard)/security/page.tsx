@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Unlock,
   Upload,
+  Warehouse as WarehouseIcon,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ import { ALL_ROLES, getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import { useGetCurrentUserQuery } from "@/store/services/auth.service";
 import type { UserRole } from "@/store/services/auth.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import {
   useCreateUserMutation,
   useGetUserDetailQuery,
@@ -73,6 +75,7 @@ type UserFormState = {
   password: string;
   roles: UserRole[];
   isActive: boolean;
+  warehouseIds: string[];
 };
 
 const EMPTY_FORM: UserFormState = {
@@ -82,6 +85,7 @@ const EMPTY_FORM: UserFormState = {
   password: "",
   roles: [],
   isActive: true,
+  warehouseIds: [],
 };
 
 function displayName(user: ManagedUser) {
@@ -119,6 +123,9 @@ function validateUserForm(form: UserFormState, mode: "create" | "edit") {
   if (!form.fullName.trim()) return "Họ tên là bắt buộc.";
   if (mode === "create" && form.password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự.";
   if (form.roles.length === 0) return "Vui lòng chọn ít nhất 1 vai trò.";
+  if (form.roles.includes("WAREHOUSE_STAFF") && form.warehouseIds.length === 0) {
+    return "Nhân viên kho phải được gán ít nhất một kho.";
+  }
   return null;
 }
 
@@ -130,7 +137,15 @@ function toForm(user: ManagedUser): UserFormState {
     password: "",
     roles: getUserRoles(user.roles),
     isActive: isActiveUser(user),
+    warehouseIds: user.warehouseIds ?? [],
   };
+}
+
+function warehouseLabelFromUser(user: ManagedUser) {
+  const names = user.warehouseNames ?? [];
+  if (names.length) return names.join(", ");
+  const ids = user.warehouseIds ?? [];
+  return ids.length ? `${ids.length} kho` : "Chưa gán kho";
 }
 
 export default function SecurityPage() {
@@ -161,6 +176,7 @@ export default function SecurityPage() {
   });
   const { data: statisticsData, isFetching: isStatsFetching, refetch: refetchStats } = useGetUserStatisticsQuery();
   const { data: rolesData } = useGetUserRolesQuery();
+  const { data: warehousesData, isFetching: isWarehousesFetching } = useGetWarehousesQuery({ page: 0, size: 200, isActive: true });
   const { data: detailData, isFetching: isDetailLoading } = useGetUserDetailQuery(detailUserId ?? "", {
     skip: !detailUserId,
   });
@@ -177,6 +193,7 @@ export default function SecurityPage() {
   const totalPages = data?.data?.total_pages ?? 0;
   const statistics = statisticsData?.data;
   const roleOptions = useMemo(() => roleCodesFromOptions(rolesData?.data), [rolesData]);
+  const warehouseOptions = warehousesData?.data?.content ?? [];
   const detail = detailData?.data;
   const detailUser = detail?.user;
 
@@ -209,6 +226,18 @@ export default function SecurityPage() {
     });
   }
 
+  function toggleWarehouse(warehouseId: string) {
+    setForm((current) => {
+      const exists = current.warehouseIds.includes(warehouseId);
+      return {
+        ...current,
+        warehouseIds: exists
+          ? current.warehouseIds.filter((item) => item !== warehouseId)
+          : [...current.warehouseIds, warehouseId],
+      };
+    });
+  }
+
   async function submitForm(event: React.FormEvent) {
     event.preventDefault();
     const message = validateUserForm(form, formMode);
@@ -235,6 +264,7 @@ export default function SecurityPage() {
           fullName: form.fullName.trim(),
           password: form.password,
           roles: form.roles,
+          warehouseIds: form.warehouseIds,
         }).unwrap();
         toast.success(res.message || "Đã tạo người dùng.");
       } else if (editingUser) {
@@ -245,6 +275,7 @@ export default function SecurityPage() {
           fullName: form.fullName.trim(),
           roles: form.roles,
           isActive: form.isActive,
+          warehouseIds: form.warehouseIds,
         }).unwrap();
         toast.success(res.message || "Đã cập nhật người dùng.");
       }
@@ -421,6 +452,7 @@ export default function SecurityPage() {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tài khoản</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Vai trò</TableHead>
+                <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Kho thao tác</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trạng thái</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ngày tạo</TableHead>
                 <TableHead className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Thao tác</TableHead>
@@ -430,7 +462,7 @@ export default function SecurityPage() {
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, row) => (
                   <TableRow key={`user-skeleton-${row}`}>
-                    {Array.from({ length: 5 }).map((__, col) => (
+                    {Array.from({ length: 6 }).map((__, col) => (
                       <TableCell key={`${row}-${col}`} className="px-4 py-3">
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
@@ -439,7 +471,7 @@ export default function SecurityPage() {
                 ))
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="p-0">
+                  <TableCell colSpan={6} className="p-0">
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách người dùng"
@@ -451,7 +483,7 @@ export default function SecurityPage() {
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="p-0">
+                  <TableCell colSpan={6} className="p-0">
                     <EmptyState
                       icon={Users}
                       title="Chưa có người dùng"
@@ -480,6 +512,12 @@ export default function SecurityPage() {
                           )) : (
                             <Badge variant="destructive" className="rounded-lg">Chưa phân quyền</Badge>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[260px] px-4 py-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <WarehouseIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{warehouseLabelFromUser(user)}</span>
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3">
@@ -605,6 +643,46 @@ export default function SecurityPage() {
                   })}
                 </div>
               </div>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs font-semibold text-muted-foreground">Kho được phép thao tác</label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {form.warehouseIds.length ? `${form.warehouseIds.length} kho đã chọn` : "Chưa chọn kho"}
+                  </span>
+                </div>
+                <div className="max-h-44 overflow-auto rounded-xl border border-border p-2">
+                  {isWarehousesFetching ? (
+                    <div className="p-3 text-sm text-muted-foreground">Đang tải danh sách kho...</div>
+                  ) : warehouseOptions.length ? (
+                    <div className="grid gap-2">
+                      {warehouseOptions.map((warehouse) => {
+                        const selected = form.warehouseIds.includes(warehouse.id);
+                        return (
+                          <button
+                            key={warehouse.id}
+                            type="button"
+                            onClick={() => toggleWarehouse(warehouse.id)}
+                            className={cn(
+                              "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                              selected
+                                ? "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-200"
+                                : "border-transparent hover:bg-muted",
+                            )}
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold">{warehouse.name}</span>
+                              <span className="block truncate text-xs text-muted-foreground">{warehouse.code}</span>
+                            </span>
+                            <input type="checkbox" readOnly checked={selected} className="h-4 w-4" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-3 text-sm text-muted-foreground">Chưa có kho đang hoạt động.</div>
+                  )}
+                </div>
+              </div>
               {formMode === "edit" ? (
                 <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
                   <input
@@ -674,6 +752,10 @@ export default function SecurityPage() {
                   <Badge variant={isActiveUser(detailUser) ? "default" : "destructive"}>
                     {isActiveUser(detailUser) ? "Hoạt động" : "Đã khóa / vô hiệu"}
                   </Badge>
+                </div>
+                <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                  <WarehouseIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>Kho thao tác: {warehouseLabelFromUser(detailUser)}</span>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">

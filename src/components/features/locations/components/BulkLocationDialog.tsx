@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -54,6 +54,31 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
     });
 
     const totalCalculated = form.aisleCount * form.rackCount * form.levelCount * form.binCount;
+    const previewCodes = useMemo(() => {
+        const codes: string[] = [];
+        const maxPreview = 36;
+
+        for (let aisle = form.aisleStart; aisle < form.aisleStart + form.aisleCount; aisle += 1) {
+            for (let rack = form.rackStart; rack < form.rackStart + form.rackCount; rack += 1) {
+                for (let level = form.levelStart; level < form.levelStart + form.levelCount; level += 1) {
+                    for (let bin = form.binStart; bin < form.binStart + form.binCount; bin += 1) {
+                        codes.push(
+                            [
+                                form.zone,
+                                `${form.aislePrefix}${String(aisle).padStart(2, "0")}`,
+                                `${form.rackPrefix}${String(rack).padStart(2, "0")}`,
+                                `L${String(level).padStart(2, "0")}`,
+                                `${form.binPrefix}${String(bin).padStart(2, "0")}`,
+                            ].filter(Boolean).join("-"),
+                        );
+                        if (codes.length >= maxPreview) return codes;
+                    }
+                }
+            }
+        }
+
+        return codes;
+    }, [form]);
 
     const handleGenerate = async () => {
         if (!form.warehouseId) {
@@ -98,7 +123,7 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 text-indigo-600">
                             <Wand2 className="h-5 w-5" />
-                            <DialogTitle className="text-lg font-bold">Tạo vị trí hàng loạt</DialogTitle>
+                            <DialogTitle className="text-lg font-bold">Tạo nhiều vị trí</DialogTitle>
                         </div>
                     </div>
                 </DialogHeader>
@@ -213,6 +238,33 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                     </div>
                 </div>
 
+                <div className="rounded-md border border-indigo-100 bg-indigo-50/40 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                                Preview mã vị trí
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                Sẽ tạo {totalCalculated.toLocaleString("vi-VN")} vị trí. Hiển thị trước {previewCodes.length.toLocaleString("vi-VN")} mã đầu tiên.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-3 grid max-h-40 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                        {previewCodes.length > 0 ? (
+                            previewCodes.map((code) => (
+                                <span
+                                    key={code}
+                                    className="rounded border border-white/70 bg-white/80 px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200"
+                                >
+                                    {code}
+                                </span>
+                            ))
+                        ) : (
+                            <span className="text-xs text-slate-500">Nhập dải vị trí để xem preview.</span>
+                        )}
+                    </div>
+                </div>
+
                 <DialogFooter className="mt-2 pt-4 border-t border-slate-100 gap-2">
                     <Button
                         variant="ghost"
@@ -236,7 +288,7 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                             </>
                         ) : (
                             <>
-                                Tạo {totalCalculated.toLocaleString()} vị trí
+                                Tạo nhiều vị trí
                             </> 
                         )}
                     </Button>

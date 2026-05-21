@@ -76,6 +76,7 @@ type OrdersTableProps = {
   pageSize: number;
   onPageSizeChange?: (size: number) => void;
   noContainer?: boolean;
+  canManageOrders?: boolean;
 };
 
 export function OrdersTable({
@@ -97,6 +98,7 @@ export function OrdersTable({
   pageSize,
   onPageSizeChange,
   noContainer = false,
+  canManageOrders = false,
 }: OrdersTableProps) {
   const content = (
     <>
@@ -153,7 +155,7 @@ export function OrdersTable({
                         <Button variant="outline" size="sm" onClick={onClearFilters}>
                           Xóa bộ lọc
                         </Button>
-                      ) : (
+                      ) : canManageOrders ? (
                       <Button
                         render={<Link href="/orders/new" />}
                         nativeButton={false}
@@ -161,7 +163,7 @@ export function OrdersTable({
                       >
                           Tạo đơn xuất
                         </Button>
-                      )
+                      ) : null
                     }
                     className="py-10"
                   />
@@ -233,21 +235,25 @@ export function OrdersTable({
                             <Eye className="mr-2 h-4 w-4" />
                             Xem chi tiết
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="rounded-lg text-muted-foreground"
-                            disabled
-                          >
-                            <Edit2 className="mr-2 h-4 w-4" />
-                            Sửa thông tin
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="rounded-lg text-destructive focus:text-destructive"
-                            disabled={item.status !== "DRAFT" && item.status !== "PENDING"}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Hủy đơn hàng
-                          </DropdownMenuItem>
+                          {canManageOrders ? (
+                            <>
+                              <DropdownMenuItem
+                                className="rounded-lg text-muted-foreground"
+                                disabled
+                              >
+                                <Edit2 className="mr-2 h-4 w-4" />
+                                Sửa thông tin
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="rounded-lg text-destructive focus:text-destructive"
+                                disabled={item.status !== "DRAFT" && item.status !== "PENDING"}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Hủy đơn hàng
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

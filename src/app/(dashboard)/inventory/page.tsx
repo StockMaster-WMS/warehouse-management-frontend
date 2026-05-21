@@ -23,6 +23,8 @@ import {
   useStockMovementsPageLogic,
 } from "@/components/features/inventory";
 import { cn } from "@/lib/utils";
+import { PermissionControl } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 function HistoryModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const logic = useStockMovementsPageLogic();
@@ -133,24 +135,26 @@ export default function InventoryPage() {
                   ? "Xuất tồn thấp"
                   : "Xuất Excel"}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => logic.openAdjustDialog("qty")}
-            >
-              <Wrench className="mr-1.5 h-4 w-4" />
-              Điều chỉnh tồn
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => logic.openAdjustDialog("reserved")}
-            >
-              <Wrench className="mr-1.5 h-4 w-4" />
-              Điều chỉnh giữ chỗ
-            </Button>
+            <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => logic.openAdjustDialog("qty")}
+              >
+                <Wrench className="mr-1.5 h-4 w-4" />
+                Điều chỉnh tồn
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => logic.openAdjustDialog("reserved")}
+              >
+                <Wrench className="mr-1.5 h-4 w-4" />
+                Điều chỉnh giữ chỗ
+              </Button>
+            </PermissionControl>
           </div>
         }
       />

@@ -3,6 +3,8 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import {
   CategoriesSearchSection,
   CategoryStatsGrid,
@@ -14,6 +16,7 @@ import {
 
 export default function CategoriesPage() {
   const logic = useCategoriesPageLogic();
+  const canManageCategories = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -21,14 +24,16 @@ export default function CategoriesPage() {
         title="Nhóm / loại hàng"
         description="Cây phân loại: nhóm gốc và loại con — dùng khi gán sản phẩm và báo cáo."
         actions={
-          <Button
-            onClick={logic.openCreateDialog}
-            size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm phân loại mới
-          </Button>
+          <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+            <Button
+              onClick={logic.openCreateDialog}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm phân loại mới
+            </Button>
+          </PermissionControl>
         }
       />
 
@@ -52,6 +57,7 @@ export default function CategoriesPage() {
           onToggleExpanded={logic.toggleExpanded}
           onEditCategory={logic.openEditDialog}
           onDeleteCategory={logic.prepareDelete}
+          canManageCategories={canManageCategories}
         />
       </div>
 

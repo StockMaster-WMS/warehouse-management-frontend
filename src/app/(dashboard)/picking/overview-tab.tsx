@@ -43,7 +43,7 @@ import {
     useGetPickingItemByIdQuery,
     useGetPickingItemsQuery,
 } from "@/store/services/picking-item.service";
-import { useGetUsersQuery } from "@/store/services/user-management.service";
+import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
 import type { ManagedUser } from "@/types/user-management";
 
 interface GroupedPicking {
@@ -97,7 +97,9 @@ function displayPickingLocation(item: PickingItem) {
 function userDisplayName(user: ManagedUser) {
     const primary = user.name?.trim() || user.username || user.email || user.id;
     const email = user.email?.trim();
-    return email && email !== primary ? `${primary} (${email})` : primary;
+    const name = email && email !== primary ? `${primary} (${email})` : primary;
+    const warehouses = user.warehouseNames?.length ? ` - ${user.warehouseNames.join(", ")}` : "";
+    return `${name}${warehouses}`;
 }
 
 export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string | null }) {
@@ -106,12 +108,11 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
     const canAssignPicking = useHasPermissions(PICKING_ASSIGN_ROLES);
-    const { data: staffData, isLoading: isStaffLoading, isError: isStaffError } = useGetUsersQuery(
-        { page: 0, size: 100, role: "WAREHOUSE_STAFF", status: "ACTIVE", sort: "name", sortDir: "asc" },
-        { skip: !canAssignPicking },
-    );
+    const { data: staffData, isLoading: isStaffLoading, isError: isStaffError } = useGetWarehouseStaffQuery(undefined, {
+        skip: !canAssignPicking,
+    });
 
-    const staffUsers = useMemo(() => staffData?.data?.content ?? [], [staffData]);
+    const staffUsers = useMemo(() => staffData?.data ?? [], [staffData]);
     const selectedAssignee = useMemo(
         () => staffUsers.find((user) => user.id === assigneeId),
         [assigneeId, staffUsers],
