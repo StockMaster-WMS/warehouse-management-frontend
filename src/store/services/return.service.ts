@@ -7,11 +7,13 @@ import {
 import type {
   CreateReturnRequestPayload,
   ReceiveReturnPayload,
-  ReturnReason,
   ReturnLine,
+  ReturnReason,
+  ReturnReport,
   ReturnRequest,
   ReturnSourceType,
   ReturnStatus,
+  ReturnType,
 } from "@/types/returns";
 
 export type GetReturnRequestsParams = {
@@ -22,8 +24,16 @@ export type GetReturnRequestsParams = {
   keyword?: string;
   status?: ReturnStatus | "";
   reason?: ReturnReason | "";
+  returnType?: ReturnType | "";
   sourceType?: ReturnSourceType | "";
   warehouseId?: string;
+  createdFrom?: string;
+  createdTo?: string;
+};
+
+export type GetReturnReportParams = {
+  warehouseId?: string;
+  returnType?: ReturnType | "";
   createdFrom?: string;
   createdTo?: string;
 };
@@ -37,6 +47,7 @@ function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
     keyword,
     status,
     reason,
+    returnType,
     sourceType,
     warehouseId,
     createdFrom,
@@ -47,37 +58,65 @@ function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
   if (keyword?.trim()) query.keyword = keyword.trim();
   if (status) query.status = status;
   if (reason) query.reason = reason;
-  if (sourceType) query.sourceType = sourceType;
+  if (returnType) query.returnType = returnType;
+  else if (sourceType && sourceType !== "INTERNAL") query.returnType = sourceType;
   if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
   if (createdFrom) query.createdFrom = createdFrom;
   if (createdTo) query.createdTo = createdTo;
   return query;
 }
 
-type BackendRmaItem = {
+function buildReportQueryParams(params: GetReturnReportParams = {}) {
+  const query: Record<string, string> = {};
+  if (params.warehouseId?.trim()) query.warehouseId = params.warehouseId.trim();
+  if (params.returnType) query.returnType = params.returnType;
+  if (params.createdFrom) query.createdFrom = params.createdFrom;
+  if (params.createdTo) query.createdTo = params.createdTo;
+  return query;
+}
+
+type BackendRmaItem = Partial<ReturnLine> & {
   id: string;
   productId: string;
+  salesOrderItemId?: string | null;
   expectedQty: number;
   receivedQty?: number | null;
-  receivedLocationId?: string | null;
-  lotNumber?: string | null;
-  condition?: string | null;
+  remainingQty?: number | null;
   notes?: string | null;
 };
 
+export type CustomerReturnReceiptSummary = {
+  id: string;
+  soNumber: string;
+  customerId: string;
+  customerName: string;
+  warehouseId: string;
+  status: string;
+  createdAt?: string | null;
+  totalShippedQty: number;
+  totalReturnableQty: number;
+};
+
+export type CustomerReturnReceiptItem = {
+  salesOrderItemId: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  shippedQty: number;
+  alreadyReturnedQty: number;
+  returnableQty: number;
+};
+
+export type CustomerReturnReceiptDetails = CustomerReturnReceiptSummary & {
+  items: CustomerReturnReceiptItem[];
+};
+
 type BackendRmaResponse = Omit<Partial<ReturnRequest>, "lines"> & {
+  returnType?: ReturnType | null;
+  sourceType?: ReturnSourceType | null;
   salesOrderId?: string | null;
   items?: BackendRmaItem[];
 };
-
-function isUuid(value: string | null | undefined) {
-  return Boolean(
-    value &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        value,
-      ),
-  );
-}
 
 function normalizeReturnLine(
   item: BackendRmaItem | ReturnLine,
@@ -86,19 +125,27 @@ function normalizeReturnLine(
   return {
     id: item.id,
     productId: item.productId,
-    productSku: "productSku" in item ? item.productSku : null,
-    productName: "productName" in item ? item.productName : null,
+    salesOrderItemId: item.salesOrderItemId ?? null,
+    productSku: item.productSku ?? null,
+    productName: item.productName ?? null,
     expectedQty: Number(item.expectedQty ?? 0),
     receivedQty: Number(item.receivedQty ?? 0),
-    receivedLocationId:
-      "receivedLocationId" in item ? item.receivedLocationId ?? null : null,
-    acceptedQty: "acceptedQty" in item ? item.acceptedQty : undefined,
-    rejectedQty: "rejectedQty" in item ? item.rejectedQty : undefined,
-    reason: "reason" in item ? item.reason : defaultReason,
-    disposition: "disposition" in item ? item.disposition : null,
-    note: "note" in item ? item.note : "notes" in item ? item.notes : null,
+    remainingQty:
+      item.remainingQty != null
+        ? Number(item.remainingQty)
+        : Math.max(0, Number(item.expectedQty ?? 0) - Number(item.receivedQty ?? 0)),
+    receivedLocationId: item.receivedLocationId ?? null,
+    receivedLocationCode: item.receivedLocationCode ?? null,
+    returnLocationId: item.returnLocationId ?? null,
+    returnLocationCode: item.returnLocationCode ?? null,
+    acceptedQty: item.acceptedQty,
+    rejectedQty: item.rejectedQty,
+    reason: item.reason ?? defaultReason,
+    disposition: item.disposition ?? null,
+    note: item.note ?? item.notes ?? null,
+    notes: item.notes ?? item.note ?? null,
     lotNumber: item.lotNumber ?? null,
-    condition: "condition" in item ? item.condition : null,
+    condition: item.condition ?? null,
   };
 }
 
@@ -106,20 +153,29 @@ function normalizeReturnRequest(raw: BackendRmaResponse | ReturnRequest): Return
   const reason = (raw.reason ?? "CUSTOMER_RETURN") as ReturnReason;
   const backendItems = "items" in raw ? raw.items : undefined;
   const frontendLines = "lines" in raw ? raw.lines : undefined;
-  const salesOrderId = "salesOrderId" in raw ? raw.salesOrderId : undefined;
+  const returnType = (raw.returnType ?? raw.sourceType ?? "CUSTOMER") as ReturnType;
+  const lines = (frontendLines ?? backendItems ?? []).map((line) =>
+    normalizeReturnLine(line, reason),
+  );
 
   return {
     ...raw,
     id: raw.id ?? "",
     rmaNumber: raw.rmaNumber ?? raw.id ?? "",
-    sourceType: raw.sourceType ?? "CUSTOMER",
+    returnType,
+    sourceType: raw.sourceType ?? returnType,
     status: (raw.status ?? "REQUESTED") as ReturnStatus,
     reason,
-    orderId: raw.orderId ?? salesOrderId ?? null,
+    salesOrderId: raw.salesOrderId ?? raw.orderId ?? null,
+    orderId: raw.orderId ?? raw.salesOrderId ?? null,
     orderNumber: raw.orderNumber ?? null,
-    lines: (frontendLines ?? backendItems ?? []).map((line) =>
-      normalizeReturnLine(line, reason),
-    ),
+    totalExpectedQty:
+      raw.totalExpectedQty ?? lines.reduce((sum, line) => sum + Number(line.expectedQty ?? 0), 0),
+    totalReceivedQty:
+      raw.totalReceivedQty ?? lines.reduce((sum, line) => sum + Number(line.receivedQty ?? 0), 0),
+    totalRemainingQty:
+      raw.totalRemainingQty ?? lines.reduce((sum, line) => sum + Number(line.remainingQty ?? 0), 0),
+    lines,
   };
 }
 
@@ -148,6 +204,7 @@ function normalizeReturnPagedResponse(
 }
 
 const returnApi = baseApi.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getReturnRequests: builder.query<
       ApiResponse<PagedResponse<ReturnRequest>>,
@@ -183,22 +240,67 @@ const returnApi = baseApi.injectEndpoints({
       ApiResponse<ReturnRequest>,
       CreateReturnRequestPayload
     >({
-      query: (body) => ({
-        url: "/rma",
-        method: "POST",
-        data: {
-          salesOrderId: isUuid(body.orderId) ? body.orderId : undefined,
-          customerName: body.customerId || undefined,
-          warehouseId: body.warehouseId,
-          reason: body.reason,
-          items: body.lines.map((line) => ({
-            productId: line.productId,
-            expectedQty: line.expectedQty,
-          })),
-        },
-      }),
+      query: (body) => {
+        if (body.returnType === "SUPPLIER") {
+          return {
+            url: "/rma/supplier",
+            method: "POST",
+            data: {
+              returnType: "SUPPLIER",
+              supplierId: body.supplierId,
+              warehouseId: body.warehouseId,
+              reason: body.reason,
+              items: body.lines.map((line) => ({
+                productId: line.productId,
+                expectedQty: line.expectedQty,
+                lotNumber: line.lotNumber?.trim() || "",
+                locationId: line.locationId,
+              })),
+            },
+          };
+        }
+
+        return {
+          url: "/rma/customer",
+          method: "POST",
+          data: {
+            returnType: "CUSTOMER",
+            customerId: body.customerId,
+            salesOrderId: body.salesOrderId || body.orderId,
+            customerName: body.customerName,
+            warehouseId: body.warehouseId,
+            reason: body.reason,
+            items: body.lines.map((line) => ({
+              productId: line.productId,
+              salesOrderItemId: line.salesOrderItemId || undefined,
+              expectedQty: line.expectedQty,
+              lotNumber: line.lotNumber?.trim() || "",
+            })),
+          },
+        };
+      },
       transformResponse: normalizeReturnResponse,
       invalidatesTags: [{ type: "ReturnRequest", id: "LIST" }],
+    }),
+
+    getReturnableReceiptsByCustomer: builder.query<
+      ApiResponse<CustomerReturnReceiptSummary[]>,
+      string
+    >({
+      query: (customerId) => ({
+        url: `/v1/receipts/out/by-customer/${customerId}`,
+        method: "GET",
+      }),
+    }),
+
+    getReturnableReceiptDetails: builder.query<
+      ApiResponse<CustomerReturnReceiptDetails>,
+      string
+    >({
+      query: (id) => ({
+        url: `/v1/receipts/out/${id}/details`,
+        method: "GET",
+      }),
     }),
 
     receiveReturn: builder.mutation<
@@ -219,6 +321,29 @@ const returnApi = baseApi.injectEndpoints({
       ],
     }),
 
+    approveReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, string>({
+      query: (id) => ({ url: `/rma/${id}/approve`, method: "POST" }),
+      transformResponse: normalizeReturnResponse,
+      invalidatesTags: (_r, _e, id) => [
+        { type: "ReturnRequest", id },
+        { type: "ReturnRequest", id: "LIST" },
+        { type: "Stock", id: "LIST" },
+      ],
+    }),
+
+    rejectReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, { id: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/rma/${id}/reject`,
+        method: "POST",
+        data: { reason },
+      }),
+      transformResponse: normalizeReturnResponse,
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "ReturnRequest", id: arg.id },
+        { type: "ReturnRequest", id: "LIST" },
+      ],
+    }),
+
     closeReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, string>({
       query: (id) => ({ url: `/rma/${id}/complete`, method: "POST" }),
       transformResponse: normalizeReturnResponse,
@@ -227,6 +352,28 @@ const returnApi = baseApi.injectEndpoints({
         { type: "ReturnRequest", id: "LIST" },
       ],
     }),
+
+    cancelReturnRequest: builder.mutation<ApiResponse<ReturnRequest>, { id: string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/rma/${id}/cancel`,
+        method: "POST",
+        data: reason?.trim() ? { reason: reason.trim() } : undefined,
+      }),
+      transformResponse: normalizeReturnResponse,
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "ReturnRequest", id: arg.id },
+        { type: "ReturnRequest", id: "LIST" },
+      ],
+    }),
+
+    getReturnReport: builder.query<ApiResponse<ReturnReport>, GetReturnReportParams | void>({
+      query: (params) => ({
+        url: "/rma/report",
+        method: "GET",
+        params: buildReportQueryParams(params ?? {}),
+      }),
+      providesTags: [{ type: "ReturnRequest" as const, id: "REPORT" }],
+    }),
   }),
 });
 
@@ -234,6 +381,12 @@ export const {
   useGetReturnRequestsQuery,
   useGetReturnRequestByIdQuery,
   useCreateReturnRequestMutation,
+  useGetReturnableReceiptsByCustomerQuery,
+  useGetReturnableReceiptDetailsQuery,
   useReceiveReturnMutation,
+  useApproveReturnRequestMutation,
+  useRejectReturnRequestMutation,
   useCloseReturnRequestMutation,
+  useCancelReturnRequestMutation,
+  useGetReturnReportQuery,
 } = returnApi;

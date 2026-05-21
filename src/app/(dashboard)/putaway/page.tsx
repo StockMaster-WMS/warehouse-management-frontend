@@ -52,15 +52,19 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { apiErrMessage, taskScopeErrMessage } from "@/types/api";
+import { apiErrMessage } from "@/types/api";
 import {
   useCompletePutawayTaskMutation,
   useGetLocationsQuery,
+  useGetPoItemByIdQuery,
   useGetPoItemsQuery,
+  useGetPurchaseOrderDetailQuery,
   useGetPutawayTasksQuery,
   usePatchPutawayTaskMutation,
 } from "@/store/services/purchase-order.service";
+import { useGetLocationsByIdsQuery } from "@/store/services/location.service";
 import type { PoItem, PutawayTask } from "@/types/purchase-order";
+import type { Location, LocationOption } from "@/types/location";
 
 const completeSchema = z.object({
   actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
@@ -102,6 +106,219 @@ function StatusPill({ status }: { status: string }) {
 
 const EMPTY_PUTAWAY_TASKS: PutawayTask[] = [];
 
+function putawayErrorMessage(error: unknown) {
+  const message = apiErrMessage(error);
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes("không thuộc kho") ||
+    normalized.includes("not belong") ||
+    normalized.includes("same warehouse") ||
+    normalized.includes("warehouse")
+  ) {
+    return "Vị trí lưu kho không thuộc kho của phiếu nhập. Vui lòng chọn vị trí trong đúng kho.";
+  }
+  return message;
+}
+
+function shortId(value?: string | null) {
+  return value ? value.slice(-8).toUpperCase() : "—";
+}
+
+function putawayTaskCode(task: PutawayTask) {
+  return task.taskNumber || task.code || `PUT-${shortId(task.id)}`;
+}
+
+function putawaySourceLabel(task: PutawayTask) {
+  return (
+    task.receiptNumber ||
+    task.inboundReceiptNumber ||
+    task.poNumber ||
+    task.purchaseOrderNumber ||
+    null
+  );
+}
+
+function putawayQuantity(task: PutawayTask, poItem?: PoItem) {
+  const value =
+    task.quantity ??
+    task.putawayQty ??
+    task.qty ??
+    task.receivedQty ??
+    task.poItem?.receivedQty ??
+    poItem?.receivedQty;
+  return value == null ? null : Number(value);
+}
+
+function locationLabel(loc: Location | LocationOption) {
+  const optionalName = "name" in loc ? loc.name : undefined;
+  return (
+    loc.code ||
+    optionalName ||
+    `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`
+  );
+}
+
+function putawayProductInfo(task: PutawayTask, poItem?: PoItem) {
+  const productSku =
+    task.productSku ??
+    task.productCode ??
+    task.sku ??
+    task.poItem?.productSku ??
+    task.poItem?.sku ??
+    task.poItem?.product?.productSku ??
+    task.poItem?.product?.sku ??
+    task.poItem?.product?.code ??
+    poItem?.productSku ??
+    "";
+  const productName =
+    task.productName ??
+    task.poItem?.productName ??
+    task.poItem?.product?.productName ??
+    task.poItem?.product?.name ??
+    poItem?.productName ??
+    "";
+  return {
+    productSku,
+    productName,
+    quantity: putawayQuantity(task, poItem),
+  };
+}
+
+function hasTaskProductInfo(task: PutawayTask) {
+  const info = putawayProductInfo(task);
+  return Boolean(info.productSku || info.productName);
+}
+
+function PutawayTaskRow({
+  task,
+  cachedPoItem,
+  canCoordinatePutaway,
+  patching,
+  locationMap,
+  onEdit,
+  onComplete,
+}: {
+  task: PutawayTask;
+  cachedPoItem?: PoItem;
+  canCoordinatePutaway: boolean;
+  patching: boolean;
+  locationMap: Map<string, string>;
+  onEdit: (task: PutawayTask) => void;
+  onComplete: (task: PutawayTask) => void;
+}) {
+  const shouldLoadPoItem = Boolean(task.poItemId && !cachedPoItem && !hasTaskProductInfo(task));
+  const { data: poItemDetailRes, isFetching: poItemFetching } = useGetPoItemByIdQuery(
+    task.poItemId ?? "",
+    { skip: !shouldLoadPoItem },
+  );
+  const poItem = cachedPoItem ?? poItemDetailRes?.data;
+  const { productSku, productName, quantity } = putawayProductInfo(task, poItem);
+  const sourceLabel = putawaySourceLabel(task);
+  const canComplete = task.status === "PENDING" || task.status === "IN_PROGRESS";
+
+  return (
+    <TableRow
+      className={cn(
+        "group border-b border-slate-50 last:border-0 transition-colors dark:border-slate-800/60",
+        task.status === "COMPLETED" && "opacity-60",
+        task.status !== "COMPLETED" && "hover:bg-slate-50/80 dark:hover:bg-slate-800/40",
+      )}
+    >
+      <TableCell className="py-4 pl-6 pr-3">
+        <div className="space-y-1">
+          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {putawayTaskCode(task)}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+            {sourceLabel ? (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {sourceLabel}
+              </span>
+            ) : null}
+            <span>ID …{task.id.slice(-6)}</span>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="px-3 py-4">
+        {productSku || productName ? (
+          <div className="min-w-0 space-y-1">
+            <div className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {productName || productSku}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              {productSku && productName ? (
+                <span className="font-mono font-semibold text-indigo-700 dark:text-indigo-400">{productSku}</span>
+              ) : null}
+              {quantity != null && Number.isFinite(quantity) ? (
+                <span>SL: {quantity}</span>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              {poItemFetching ? "Đang tải sản phẩm..." : "Dòng nhập"}
+            </span>
+            <div className="font-mono text-xs text-slate-400">
+              {task.poItemId ? `PO item …${task.poItemId.slice(-8)}` : "Chưa có mã dòng nhập"}
+            </div>
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="px-3 py-4">
+        <StatusPill status={task.status} />
+      </TableCell>
+      <TableCell className="px-3 py-4">
+        {task.suggestedLocationId ? (
+          <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+            <MapPin className="h-3 w-3 text-slate-400" />
+            {locationMap.get(task.suggestedLocationId) ?? `…${task.suggestedLocationId.slice(-6)}`}
+          </span>
+        ) : <span className="text-slate-400 text-xs">—</span>}
+      </TableCell>
+      <TableCell className="px-3 py-4">
+        {task.actualLocationId ? (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3 w-3" />
+            {locationMap.get(task.actualLocationId) ?? `…${task.actualLocationId.slice(-6)}`}
+          </span>
+        ) : <span className="text-slate-400 text-xs">—</span>}
+      </TableCell>
+      <TableCell className="py-4 pl-3 pr-6 text-right">
+        <div className="flex items-center justify-end gap-1.5">
+          {canCoordinatePutaway ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 text-xs rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700"
+              onClick={() => onEdit(task)}
+              disabled={patching}
+            >
+              Sửa
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            className={cn(
+              "h-8 px-2.5 text-xs rounded-lg gap-1",
+              canComplete
+                ? "bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                : "opacity-40 cursor-not-allowed bg-slate-300 dark:bg-slate-700",
+            )}
+            onClick={() => canComplete && onComplete(task)}
+            disabled={!canComplete}
+          >
+            <PackageCheck className="h-3.5 w-3.5" />
+            Hoàn tất
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function PutawayPage() {
   const canCoordinatePutaway = useHasPermissions(ADMIN_MANAGER_ROLES);
   const [page, setPage] = useState(0);
@@ -120,41 +337,28 @@ export default function PutawayPage() {
   const tasks = data?.data?.content ?? EMPTY_PUTAWAY_TASKS;
   const totalElements = data?.data?.total_elements ?? tasks.length;
   const totalPages = data?.data?.total_pages ?? 0;
+  const visibleLocationIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const task of tasks) {
+      if (task.suggestedLocationId?.trim()) ids.add(task.suggestedLocationId.trim());
+      if (task.actualLocationId?.trim()) ids.add(task.actualLocationId.trim());
+    }
+    return Array.from(ids);
+  }, [tasks]);
 
   /* ── Locations lookup ── */
-  const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsQuery({});
+  const { data: locationsRes } = useGetLocationsQuery({});
+  const { data: visibleLocationsRes } = useGetLocationsByIdsQuery(visibleLocationIds, {
+    skip: visibleLocationIds.length === 0,
+  });
   const locationMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const loc of locationsRes?.data ?? []) {
-      const label =
-        loc.code ||
-        loc.name ||
-        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
-      map.set(loc.id, label);
+    const locations = [...(locationsRes?.data ?? []), ...(visibleLocationsRes?.data ?? [])];
+    for (const loc of locations) {
+      map.set(loc.id, locationLabel(loc));
     }
     return map;
-  }, [locationsRes]);
-  const locationOptions = useMemo<SearchableSelectOption[]>(() => {
-    return (locationsRes?.data ?? []).map((loc) => {
-      const label =
-        loc.code ||
-        loc.name ||
-        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
-      const hintParts = [
-        loc.zone ? `Zone ${loc.zone}` : null,
-        loc.aisle ? `Aisle ${loc.aisle}` : null,
-        loc.rack ? `Rack ${loc.rack}` : null,
-        loc.bin ? `Bin ${loc.bin}` : null,
-      ].filter(Boolean);
-
-      return {
-        value: loc.id,
-        label,
-        hint: hintParts.length ? hintParts.join(" · ") : loc.id,
-      };
-    });
-  }, [locationsRes]);
-
+  }, [locationsRes, visibleLocationsRes]);
   /* ── PO Items lookup ── */
   const { data: poItemsRes } = useGetPoItemsQuery(
     { size: 200 },
@@ -181,6 +385,46 @@ export default function PutawayPage() {
 
   const [completeTask, { isLoading: completing }] = useCompletePutawayTaskMutation();
   const [patchTask, { isLoading: patching }] = usePatchPutawayTaskMutation();
+
+  const activeTaskPurchaseOrderId =
+    activeTask?.purchaseOrderId ??
+    (activeTask?.poItemId ? poItemMap.get(activeTask.poItemId)?.purchaseOrderId : undefined);
+  const { data: activePoDetailRes, isLoading: activePoLoading } = useGetPurchaseOrderDetailQuery(
+    activeTaskPurchaseOrderId ?? "",
+    { skip: !activeTaskPurchaseOrderId || Boolean(activeTask?.warehouseId) },
+  );
+  const activeWarehouseId =
+    activeTask?.warehouseId ??
+    activePoDetailRes?.data?.purchaseOrder?.warehouseId ??
+    "";
+  const {
+    data: activeLocationsRes,
+    isLoading: activeLocationsLoading,
+    isFetching: activeLocationsFetching,
+  } = useGetLocationsQuery(
+    { warehouseId: activeWarehouseId },
+    { skip: !activeWarehouseId },
+  );
+  const activeLocationOptions = useMemo<SearchableSelectOption[]>(() => {
+    return (activeLocationsRes?.data ?? []).map((loc) => {
+      const label =
+        loc.code ||
+        loc.name ||
+        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
+      const hintParts = [
+        loc.zone ? `Zone ${loc.zone}` : null,
+        loc.aisle ? `Aisle ${loc.aisle}` : null,
+        loc.rack ? `Rack ${loc.rack}` : null,
+        loc.bin ? `Bin ${loc.bin}` : null,
+      ].filter(Boolean);
+
+      return {
+        value: loc.id,
+        label,
+        hint: hintParts.length ? hintParts.join(" · ") : loc.id,
+      };
+    });
+  }, [activeLocationsRes]);
 
   function openComplete(t: PutawayTask) {
     setActiveTask(t);
@@ -224,7 +468,7 @@ export default function PutawayPage() {
       setCompleteOpen(false);
       refetch();
     } catch (err) {
-      toast.error(taskScopeErrMessage(err));
+      toast.error(putawayErrorMessage(err));
     }
   }
 
@@ -254,7 +498,7 @@ export default function PutawayPage() {
       setEditOpen(false);
       refetch();
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      toast.error(putawayErrorMessage(err));
     }
   }
 
@@ -321,7 +565,7 @@ export default function PutawayPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <SearchToolbar
           noContainer
-          placeholder="Tìm theo mã dòng đơn nhập..."
+          placeholder="Lọc theo mã dòng nhập (poItemId)..."
           value={keyword}
           onValueChange={(value) => {
             setKeyword(value);
@@ -377,11 +621,11 @@ export default function PutawayPage() {
         )}
 
         <div className="overflow-x-auto">
-          <Table className="min-w-[800px] text-left">
+          <Table className="min-w-[960px] text-left">
             <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
               <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                <TableHead className="py-3.5 pl-6 pr-3 w-36 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã nhiệm vụ</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm / mã hàng</TableHead>
+                <TableHead className="py-3.5 pl-6 pr-3 w-44 text-[11px] font-bold uppercase tracking-wider text-slate-400">Nhiệm vụ</TableHead>
+                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
@@ -421,95 +665,29 @@ export default function PutawayPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={PackageOpen}
-                      title={canCoordinatePutaway ? "Không có nhiệm vụ xếp hàng" : "Bạn chưa có nhiệm vụ được phân công."}
+                      title="Không có nhiệm vụ xếp hàng"
                       description={
                         canCoordinatePutaway
                           ? "Thử bỏ bộ lọc hoặc tạo phiếu nhập hàng từ đơn nhập trước."
-                          : "Các nhiệm vụ xếp hàng được giao cho bạn sẽ xuất hiện tại đây."
+                          : "Các nhiệm vụ xếp hàng theo luồng vận hành sẽ xuất hiện tại đây."
                       }
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Làm mới</Button>}
                     />
                   </TableCell>
                 </TableRow>
               ) : (
-                tasks.map((t: PutawayTask) => {
-                  const sku = t.poItemId && poItemMap.has(t.poItemId)
-                    ? poItemMap.get(t.poItemId)!.productSku
-                    : t.poItemId ? `…${t.poItemId.slice(-6)}` : "—";
-                  const canComplete = t.status === "PENDING" || t.status === "IN_PROGRESS";
-
-                  return (
-                    <TableRow
-                      key={t.id}
-                      className={cn(
-                        "group border-b border-slate-50 last:border-0 transition-colors dark:border-slate-800/60",
-                        t.status === "COMPLETED" && "opacity-60",
-                        t.status !== "COMPLETED" && "hover:bg-slate-50/80 dark:hover:bg-slate-800/40",
-                      )}
-                    >
-                      <TableCell className="py-4 pl-6 pr-3">
-                        <span className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
-                          PUT-{t.id.slice(0, 8).toUpperCase()}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-3 py-4">
-                        <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">
-                          {sku}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-3 py-4">
-                        <StatusPill status={t.status} />
-                      </TableCell>
-                      <TableCell className="px-3 py-4">
-                        {t.suggestedLocationId ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-                            <MapPin className="h-3 w-3 text-slate-400" />
-                            {locationMap.get(t.suggestedLocationId) ?? `…${t.suggestedLocationId.slice(-6)}`}
-                          </span>
-                        ) : <span className="text-slate-400 text-xs">—</span>}
-                      </TableCell>
-                      <TableCell className="px-3 py-4">
-                        {t.actualLocationId ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {locationMap.get(t.actualLocationId) ?? `…${t.actualLocationId.slice(-6)}`}
-                          </span>
-                        ) : <span className="text-slate-400 text-xs">—</span>}
-                      </TableCell>
-                      <TableCell className="py-4 pl-3 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {canCoordinatePutaway ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2.5 text-xs rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700"
-                              onClick={() => openEdit(t)}
-                              disabled={patching}
-                            >
-                              Sửa
-                            </Button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            size="sm"
-                            className={cn(
-                              "h-8 px-2.5 text-xs rounded-lg gap-1",
-                              canComplete
-                                ? "bg-indigo-600 hover:bg-indigo-700 shadow-sm"
-                                : "opacity-40 cursor-not-allowed bg-slate-300 dark:bg-slate-700",
-                            )}
-                            onClick={() => canComplete && openComplete(t)}
-                            disabled={!canComplete}
-                          >
-                            <PackageCheck className="h-3.5 w-3.5" />
-                            Hoàn tất
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                tasks.map((task: PutawayTask) => (
+                  <PutawayTaskRow
+                    key={task.id}
+                    task={task}
+                    cachedPoItem={task.poItemId ? poItemMap.get(task.poItemId) : undefined}
+                    canCoordinatePutaway={canCoordinatePutaway}
+                    patching={patching}
+                    locationMap={locationMap}
+                    onEdit={openEdit}
+                    onComplete={openComplete}
+                  />
+                ))
               )}
             </TableBody>
           </Table>
@@ -558,12 +736,13 @@ export default function PutawayPage() {
                 <SearchableSelect
                   value={actualLocationId}
                   onValueChange={setActualLocationId}
-                  options={locationOptions}
-                  loading={locationsLoading}
+                  options={activeLocationOptions}
+                  loading={activePoLoading || activeLocationsLoading || activeLocationsFetching}
+                  disabled={!activeWarehouseId}
                   error={Boolean(completeErrors.actualLocationId)}
                   placeholder="Chọn vị trí thực tế"
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
-                  emptyText="Không có vị trí phù hợp"
+                  emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
                   dialogTitle="Chọn vị trí đặt hàng thực tế"
                   icon={<MapPin className="h-4 w-4" />}
                 />
@@ -625,11 +804,12 @@ export default function PutawayPage() {
                 <SearchableSelect
                   value={editSuggested}
                   onValueChange={setEditSuggested}
-                  options={locationOptions}
-                  loading={locationsLoading}
+                  options={activeLocationOptions}
+                  loading={activePoLoading || activeLocationsLoading || activeLocationsFetching}
+                  disabled={!activeWarehouseId}
                   placeholder="Chọn vị trí gợi ý"
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
-                  emptyText="Không có vị trí phù hợp"
+                  emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
                   dialogTitle="Chọn vị trí gợi ý"
                   icon={<MapPin className="h-4 w-4" />}
                 />
