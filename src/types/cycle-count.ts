@@ -2,10 +2,12 @@
 export type CycleCountStatus =
   | "PENDING"       // Vừa tạo, chờ bắt đầu
   | "IN_PROGRESS"   // Đang kiểm kê (sau khi bấm Start)
-  | "COMPLETED"     // Đã ghi nhận xong, chờ duyệt
+  | "PENDING_REVIEW" // Staff đã gửi kết quả, chờ duyệt
   | "APPROVED"      // Đã duyệt, tồn kho đã được điều chỉnh
+  | "RECOUNT_REQUIRED" // Cần kiểm kê lại
   | "CANCELLED"     // Đã huỷ
   // Legacy statuses kept for backward compatibility
+  | "COMPLETED"
   | "DRAFT"
   | "OPEN"
   | "COUNTING"
@@ -14,6 +16,8 @@ export type CycleCountStatus =
 export type CycleCountScope = "WAREHOUSE" | "ZONE" | "LOCATION" | "PRODUCT";
 
 export type CycleCountLineStatus = "PENDING" | "COUNTED" | "VARIANCE" | "APPROVED" | "ADJUSTED";
+
+export type VarianceSeverity = "NONE" | "LOW" | "MEDIUM" | "HIGH";
 
 export type CycleCountLine = {
   id: string;
@@ -28,6 +32,8 @@ export type CycleCountLine = {
   countedQty?: number | null;
   receivedQty?: number | null;   // some backends use receivedQty
   varianceQty?: number | null;
+  discrepancy?: number | null;
+  varianceSeverity?: VarianceSeverity | null;
   status: CycleCountLineStatus;
   lotNumber?: string | null;
   countedBy?: string | null;
@@ -51,9 +57,17 @@ export type CycleCount = {
   assignedTo?: string | null;
   createdBy?: string | null;
   approvedBy?: string | null;
+  rejectedBy?: string | null;
   scheduledAt?: string | null;
   startedAt?: string | null;
+  submittedAt?: string | null;
   completedAt?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
+  totalLines?: number | null;
+  countedLines?: number | null;
+  discrepancyLines?: number | null;
+  totalAbsDiscrepancy?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   lines?: CycleCountLine[];
@@ -70,22 +84,26 @@ export type ScopeBasedCycleCountPayload = {
   warehouseId: string;
   description: string;
   scheduledAt?: string;
+  assignedTo: string;
   scope: CycleCountScope;
   scopeValue?: string | null;
+  items?: null;
 };
 
 export type ManualCycleCountPayload = {
   warehouseId: string;
   description: string;
   scheduledAt?: string;
+  assignedTo: string;
+  scope?: null;
+  scopeValue?: null;
   items: CycleCountItem[];
 };
 
 export type CreateCycleCountPayload = ScopeBasedCycleCountPayload | ManualCycleCountPayload;
 
 export type RecordCycleCountResult = {
-  productId: string;
-  locationId: string;
+  itemId: string;
   actualQty: number;
   notes?: string;
 };

@@ -23,7 +23,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -31,7 +30,9 @@ import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateCycleCountMutation } from "@/store/services/cycle-count.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
+import { useGetUsersQuery } from "@/store/services/user-management.service";
 import { apiErrMessage } from "@/types/api";
+import { cn } from "@/lib/utils";
 import type { CreateCycleCountPayload } from "@/types/cycle-count";
 
 const cycleCountItemSchema = z.object({
@@ -43,6 +44,8 @@ const cycleCountItemSchema = z.object({
 const formSchema = z.object({
   warehouseId: z.string().min(1, "Vui lòng chọn kho hàng"),
   description: z.string().min(1, "Tên đợt kiểm kê là bắt buộc"),
+  assignedTo: z.string().min(1, "Vui lòng chọn nhân viên kiểm kê"),
+  scheduledAt: z.string().optional(),
   mode: z.enum(["SCOPE", "MANUAL"]),
   scope: z.enum(["WAREHOUSE", "ZONE", "LOCATION", "PRODUCT"]),
   scopeValue: z.string().optional(),
@@ -80,11 +83,24 @@ function createDefaultValues(): FormValues {
   return {
     warehouseId: "",
     description: `Kiểm kê định kỳ - ${new Date().toLocaleDateString("vi-VN")}`,
+    assignedTo: "",
+    scheduledAt: "",
     mode: "SCOPE",
     scope: "WAREHOUSE",
     scopeValue: "",
     items: [],
   };
+}
+
+function toIsoWithLocalTimezone(value?: string) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  const pad = (num: number) => String(num).padStart(2, "0");
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absOffset = Math.abs(offsetMinutes);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
 }
 
 export function CreateCycleCountModal({
@@ -96,6 +112,14 @@ export function CreateCycleCountModal({
     size: 100,
   });
   const [createCycleCount, { isLoading: isSubmitting }] = useCreateCycleCountMutation();
+  const { data: staffRes, isLoading: staffLoading } = useGetUsersQuery({
+    page: 0,
+    size: 200,
+    role: "WAREHOUSE_STAFF",
+    active: true,
+    sort: "fullName",
+    sortDir: "asc",
+  });
 
   const {
     register,
@@ -171,13 +195,20 @@ export function CreateCycleCountModal({
         payload = {
           warehouseId: values.warehouseId,
           description: values.description,
+          assignedTo: values.assignedTo,
+          scheduledAt: toIsoWithLocalTimezone(values.scheduledAt),
           scope: values.scope,
           scopeValue: values.scope !== "WAREHOUSE" ? values.scopeValue || null : null,
+          items: null,
         };
       } else {
         payload = {
           warehouseId: values.warehouseId,
           description: values.description,
+          assignedTo: values.assignedTo,
+          scheduledAt: toIsoWithLocalTimezone(values.scheduledAt),
+          scope: null,
+          scopeValue: null,
           items: values.items.map((item) => ({
             productId: item.productId,
             locationId: item.locationId,
@@ -195,6 +226,10 @@ export function CreateCycleCountModal({
   };
 
   const warehouses = warehousesRes?.data?.content ?? [];
+  const staffUsers = staffRes?.data?.content ?? [];
+  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
+  const selectedStaffId = useWatch({ control, name: "assignedTo" });
+  const selectedStaff = staffUsers.find((user) => user.id === selectedStaffId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -235,8 +270,14 @@ export function CreateCycleCountModal({
                       value={field.value}
                       disabled={warehousesLoading}
                     >
-                      <SelectTrigger className="min-h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                        <SelectValue placeholder={warehousesLoading ? "Đang tải..." : "Chọn kho hàng"} />
+                      <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20">
+                        <span className={cn("truncate text-sm", !selectedWarehouse && "text-muted-foreground")}>
+                          {warehousesLoading
+                            ? "Đang tải kho..."
+                            : selectedWarehouse
+                              ? `${selectedWarehouse.name}${selectedWarehouse.code ? ` (${selectedWarehouse.code})` : ""}`
+                              : "Chọn kho hàng"}
+                        </span>
                       </SelectTrigger>
                       <SelectContent className="rounded-lg border-slate-200 shadow-lg dark:border-slate-800">
                         {warehouses.map((wh) => (
@@ -266,6 +307,52 @@ export function CreateCycleCountModal({
                   <p className="text-[11px] font-medium text-rose-500 ml-2">{errors.description.message}</p>
                 )}
               </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+                  Nhân viên kiểm kê <span className="text-rose-500">*</span>
+                </Label>
+                <Controller
+                  control={control}
+                  name="assignedTo"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value} disabled={staffLoading}>
+                      <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20">
+                        <span className={cn("truncate text-sm", !selectedStaff && "text-muted-foreground")}>
+                          {staffLoading
+                            ? "Đang tải nhân viên..."
+                            : selectedStaff
+                              ? `${selectedStaff.fullName || selectedStaff.username}${selectedStaff.email ? ` (${selectedStaff.email})` : ""}`
+                              : "Chọn nhân viên kho"}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl shadow-xl border-slate-200 dark:border-slate-800">
+                        {staffUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id} className="rounded-xl">
+                            {user.fullName || user.username} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.assignedTo && (
+                  <p className="text-[11px] font-medium text-rose-500 ml-2">{errors.assignedTo.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+                  Lịch kiểm kê
+                </Label>
+                <Input
+                  {...register("scheduledAt")}
+                  type="datetime-local"
+                  className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20"
+                />
               </div>
             </div>
 

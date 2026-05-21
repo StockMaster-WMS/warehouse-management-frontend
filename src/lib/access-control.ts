@@ -144,8 +144,8 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/warehouses/:id/edit", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/warehouses", roles: MANAGEMENT_READ_ROLES },
   { pattern: "/locations", roles: WAREHOUSE_OPERATION_ROLES },
-  { pattern: "/cycle-counts/:id", roles: WAREHOUSE_OPERATION_ROLES },
-  { pattern: "/cycle-counts", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/cycle-counts/:id", roles: INVENTORY_READ_ROLES },
+  { pattern: "/cycle-counts", roles: INVENTORY_READ_ROLES },
 
   { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },

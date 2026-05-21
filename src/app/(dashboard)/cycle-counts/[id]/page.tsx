@@ -37,22 +37,26 @@ import {
   useRecordCycleCountMutation,
   useSubmitCycleCountMutation,
   useCompleteCycleCountMutation,
+  useRejectCycleCountMutation,
   useCancelCycleCountMutation,
 } from "@/store/services/cycle-count.service";
 import { apiErrMessage } from "@/types/api";
 import type { CycleCountLine, CycleCountStatus } from "@/types/cycle-count";
 import { cn } from "@/lib/utils";
-import { useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
+import { useHasPermissions } from "@/components/permission-control";
+import { Textarea } from "@/components/ui/textarea";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
 
 const STATUS_LABEL: Partial<Record<CycleCountStatus, string>> = {
   PENDING: "Chờ bắt đầu",
   IN_PROGRESS: "Đang kiểm kê",
-  COMPLETED: "Chờ duyệt",
+  PENDING_REVIEW: "Chờ duyệt",
   APPROVED: "Đã duyệt",
+  RECOUNT_REQUIRED: "Cần kiểm lại",
   CANCELLED: "Đã huỷ",
+  COMPLETED: "Chờ duyệt",
   // legacy
   DRAFT: "Nháp",
   OPEN: "Đã mở",
@@ -69,6 +73,8 @@ function getStatusBadgeClass(status: CycleCountStatus) {
     case "OPEN":
       return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300";
     case "COMPLETED":
+    case "PENDING_REVIEW":
+    case "RECOUNT_REQUIRED":
     case "REVIEW":
       return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
     case "CANCELLED":
@@ -85,17 +91,17 @@ function isCountingPhase(status: CycleCountStatus) {
 
 /** Show "Start" button */
 function canStart(status: CycleCountStatus) {
-  return status === "PENDING" || status === "OPEN" || status === "DRAFT";
+  return status === "PENDING" || status === "RECOUNT_REQUIRED" || status === "OPEN" || status === "DRAFT";
 }
 
 /** Show "Approve" button */
 function canApprove(status: CycleCountStatus) {
-  return status === "COMPLETED" || status === "REVIEW";
+  return status === "PENDING_REVIEW" || status === "COMPLETED" || status === "REVIEW";
 }
 
 /** Can cancel */
 function canCancel(status: CycleCountStatus) {
-  return status === "PENDING" || status === "OPEN" || status === "IN_PROGRESS" || status === "COUNTING";
+  return status === "PENDING" || status === "RECOUNT_REQUIRED" || status === "OPEN" || status === "IN_PROGRESS" || status === "COUNTING";
 }
 
 function formatDate(value?: string | null) {
@@ -107,15 +113,16 @@ function formatDate(value?: string | null) {
 function buildCycleCountResults(
   lines: readonly CycleCountLine[],
   actualCounts: Record<string, number>,
+  notesByLine: Record<string, string> = {},
 ) {
   const results = [];
   for (const line of lines ?? []) {
-    if (!line.productId) continue;
+    if (!line.id) continue;
     const prevCounted = line.countedQty ?? line.receivedQty;
     results.push({
-      productId: line.productId,
-      locationId: line.locationId ?? "",
+      itemId: line.id,
       actualQty: actualCounts[line.id] !== undefined ? actualCounts[line.id] : (prevCounted ?? 0),
+      notes: notesByLine[line.id]?.trim() || line.notes || line.note || undefined,
     });
   }
   return results;
@@ -135,10 +142,12 @@ export default function CycleCountDetailPage() {
   const [recordResults, { isLoading: isRecording }] = useRecordCycleCountMutation();
   const [submitCount, { isLoading: isSubmitting }] = useSubmitCycleCountMutation();
   const [completeCount, { isLoading: isCompleting }] = useCompleteCycleCountMutation();
+  const [rejectCount, { isLoading: isRejecting }] = useRejectCycleCountMutation();
   const [cancelCount, { isLoading: isCancelling }] = useCancelCycleCountMutation();
 
   // Local state: map lineId -> actual count entered by user
   const [actualCounts, setActualCounts] = useState<Record<string, number>>({});
+  const [notesByLine, setNotesByLine] = useState<Record<string, string>>({});
   const handleRecordChange = (lineId: string, value: string) => {
     if (value.trim() === "") {
       setActualCounts((prev) => {
@@ -157,6 +166,13 @@ export default function CycleCountDetailPage() {
     setActualCounts(prev => ({
       ...prev,
       [lineId]: numericValue
+    }));
+  };
+
+  const handleNoteChange = (lineId: string, value: string) => {
+    setNotesByLine((prev) => ({
+      ...prev,
+      [lineId]: value,
     }));
   };
 
@@ -188,7 +204,7 @@ export default function CycleCountDetailPage() {
       return;
     }
 
-    const results = buildCycleCountResults(lines, actualCounts);
+    const results = buildCycleCountResults(lines, actualCounts, notesByLine);
 
     if (results.length === 0) {
       toast.error("Không có dòng hợp lệ để ghi nhận vì thiếu sản phẩm.");
@@ -199,6 +215,7 @@ export default function CycleCountDetailPage() {
       await recordResults({ id, results }).unwrap();
       toast.success("Đã ghi nhận kết quả kiểm đếm thành công!");
       setActualCounts({});
+      setNotesByLine({});
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể ghi nhận kết quả"));
@@ -211,12 +228,13 @@ export default function CycleCountDetailPage() {
     const hasUnsavedOrPending = Object.keys(actualCounts).length > 0 || lines.some(l => l.status === "PENDING");
 
     if (hasUnsavedOrPending) {
-      const results = buildCycleCountResults(lines, actualCounts);
+      const results = buildCycleCountResults(lines, actualCounts, notesByLine);
 
       if (results.length > 0) {
         try {
           await recordResults({ id, results }).unwrap();
           setActualCounts({});
+          setNotesByLine({});
         } catch (err) {
           toast.error(apiErrMessage(err, "Không thể ghi nhận kết quả trước khi nộp"));
           return; // Stop if saving fails
@@ -248,6 +266,25 @@ export default function CycleCountDetailPage() {
       push("/cycle-counts");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể hoàn tất kiểm kê"));
+    }
+  };
+
+  const handleReject = async () => {
+    if (!count || !canApprove(count.status)) {
+      toast.error("Chỉ từ chối khi phiếu đang chờ duyệt");
+      return;
+    }
+    const reason = window.prompt("Nhập lý do yêu cầu kiểm kê lại:");
+    if (!reason?.trim()) {
+      toast.error("Vui lòng nhập lý do yêu cầu kiểm kê lại");
+      return;
+    }
+    try {
+      await rejectCount({ id, reason: reason.trim() }).unwrap();
+      toast.success("Đã yêu cầu kiểm kê lại");
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể yêu cầu kiểm kê lại"));
     }
   };
 
@@ -295,6 +332,9 @@ export default function CycleCountDetailPage() {
   const status = count.status;
   const counting = isCountingPhase(status);
   const hasLines = lines.length > 0;
+  const displayLines = canApprove(status)
+    ? [...lines].sort((a, b) => Math.abs(Number(b.discrepancy ?? b.varianceQty ?? 0)) - Math.abs(Number(a.discrepancy ?? a.varianceQty ?? 0)))
+    : lines;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -413,6 +453,18 @@ export default function CycleCountDetailPage() {
                 Duyệt & Hoàn tất
               </Button>
             )}
+            {canManageCycleCount && canApprove(status) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                onClick={handleReject}
+                disabled={isRejecting}
+              >
+                {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+                Yêu cầu kiểm lại
+              </Button>
+            )}
           </div>
         }
       />
@@ -483,20 +535,22 @@ export default function CycleCountDetailPage() {
                 <TableHead>Vị trí</TableHead>
                 <TableHead className="text-center">Tồn hệ thống</TableHead>
                 <TableHead className="w-40 text-center">Số thực tế</TableHead>
+                <TableHead>Ghi chú</TableHead>
                 <TableHead className="text-center">Chênh lệch</TableHead>
-                <TableHead className="pr-6 text-right">Trạng thái</TableHead>
+                <TableHead className="pr-6 text-right">Mức lệch</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {hasLines ? (
-                lines.map((line) => {
+                displayLines.map((line) => {
                   const systemQty = line.systemQty ?? line.expectedQty ?? 0;
                   const prevCounted = line.countedQty ?? line.receivedQty;
                   const actual =
                     actualCounts[line.id] !== undefined
                       ? actualCounts[line.id]
                       : (prevCounted ?? 0);
-                  const variance = actual - systemQty;
+                  const variance = line.discrepancy ?? line.varianceQty ?? (actual - systemQty);
+                  const severity = line.varianceSeverity ?? (variance === 0 ? "NONE" : Math.abs(variance) >= 10 ? "HIGH" : Math.abs(variance) >= 3 ? "MEDIUM" : "LOW");
 
                   return (
                     <TableRow key={line.id} className="hover:bg-muted/50">
@@ -538,6 +592,16 @@ export default function CycleCountDetailPage() {
                           disabled={!counting}
                         />
                       </TableCell>
+                      <TableCell>
+                        <Textarea
+                          value={notesByLine[line.id] ?? line.notes ?? line.note ?? ""}
+                          onChange={(e) => handleNoteChange(line.id, e.target.value)}
+                          disabled={!counting}
+                          rows={1}
+                          placeholder="Ghi chú kiểm kê"
+                          className="min-h-9 resize-none text-xs"
+                        />
+                      </TableCell>
                       <TableCell className="text-center">
                         <span
                           className={cn(
@@ -556,9 +620,15 @@ export default function CycleCountDetailPage() {
                       <TableCell className="pr-6 text-right">
                         <Badge
                           variant="outline"
-                          className="text-[10px] font-bold uppercase tracking-wide"
+                          className={cn(
+                            "text-[10px] font-bold uppercase tracking-wide",
+                            severity === "HIGH" && "border-rose-200 bg-rose-50 text-rose-700",
+                            severity === "MEDIUM" && "border-amber-200 bg-amber-50 text-amber-700",
+                            severity === "LOW" && "border-blue-200 bg-blue-50 text-blue-700",
+                            severity === "NONE" && "border-slate-200 bg-slate-50 text-slate-500",
+                          )}
                         >
-                          {line.status}
+                          {severity}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -566,7 +636,7 @@ export default function CycleCountDetailPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center">
+                  <TableCell colSpan={7} className="h-40 text-center">
                     <EmptyState
                       icon={canStart(status) ? Info : AlertTriangle}
                       title={
@@ -658,6 +728,15 @@ export default function CycleCountDetailPage() {
               <CheckCircle2 className="mr-2 h-4 w-4" />
             )}
             Duyệt & Hoàn tất
+          </Button>
+          <Button
+            variant="outline"
+            className="whitespace-nowrap border-amber-200 text-amber-700 hover:bg-amber-50"
+            onClick={handleReject}
+            disabled={isRejecting}
+          >
+            {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+            Yêu cầu kiểm lại
           </Button>
         </div>
       )}
