@@ -320,7 +320,7 @@ export default function NewPurchaseOrderPage() {
             size="sm"
             className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="size-3.5" />
             Danh sách
           </Button>
         }
@@ -389,7 +389,7 @@ export default function NewPurchaseOrderPage() {
             className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5 shrink-0"
           >
             Xem chi tiết & nhận hàng
-            <ExternalLink className="h-3.5 w-3.5" />
+            <ExternalLink className="size-3.5" />
           </Button>
         </div>
       )}

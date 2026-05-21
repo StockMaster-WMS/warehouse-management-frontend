@@ -69,7 +69,7 @@ export const SidebarNavigationItem = memo(function SidebarNavigationItem({
       >
         <Icon
           className={cn(
-            "h-5 w-5 transition-colors group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-6",
+            "size-5 transition-colors group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-6",
             active
               ? "text-indigo-600 dark:text-indigo-400"
               : "text-slate-500 group-hover:text-slate-900",
@@ -96,11 +96,11 @@ export const SidebarNavigationItem = memo(function SidebarNavigationItem({
                 handleToggleChildren(event);
               }
             }}
-            className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 group-data-[collapsible=icon]:hidden dark:hover:bg-slate-900 dark:hover:text-slate-200"
+            className="absolute right-2 top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 group-data-[collapsible=icon]:hidden dark:hover:bg-slate-900 dark:hover:text-slate-200"
           >
             <ChevronRight
               className={cn(
-                "h-4 w-4 transition-transform",
+                "size-4 transition-transform",
                 showChildren ? "rotate-90 text-indigo-500" : "rotate-0",
               )}
             />
@@ -134,17 +134,17 @@ export const SidebarNavigationItem = memo(function SidebarNavigationItem({
               >
                 <span
                   className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all",
+                    "flex size-6 shrink-0 items-center justify-center rounded-lg transition-all",
                     childActive
                       ? iconClass
                       : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500",
                   )}
                 >
-                  <ChildIcon className="h-3.5 w-3.5" />
+                  <ChildIcon className="size-3.5" />
                 </span>
                 <span className="truncate">{child.label}</span>
                 {childActive ? (
-                  <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
+                  <span className="ml-auto size-1.5 shrink-0 rounded-full bg-indigo-500" />
                 ) : null}
               </Link>
             );

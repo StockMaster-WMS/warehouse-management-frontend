@@ -30,7 +30,7 @@ export default function CategoriesPage() {
               size="sm"
               className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 size-4" />
               Thêm phân loại mới
             </Button>
           </PermissionControl>

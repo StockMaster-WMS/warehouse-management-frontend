@@ -40,12 +40,12 @@ export function ThemeToggle() {
     >
       {mounted ? (
         isDark ? (
-          <Sun className="h-5 w-5" aria-hidden />
+          <Sun className="size-5" aria-hidden />
         ) : (
-          <Moon className="h-5 w-5" aria-hidden />
+          <Moon className="size-5" aria-hidden />
         )
       ) : (
-        <Sun className="h-5 w-5 opacity-0" aria-hidden />
+        <Sun className="size-5 opacity-0" aria-hidden />
       )}
     </Button>
   );

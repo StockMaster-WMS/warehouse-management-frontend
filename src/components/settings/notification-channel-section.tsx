@@ -43,7 +43,7 @@ export function NotificationChannelSection({
       {showWarning && warningText && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
+            <AlertTriangle className="mt-0.5 size-4 text-amber-600" />
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-200">{warningText}</p>
             </div>
@@ -64,7 +64,7 @@ export function NotificationChannelSection({
                 </span>
                 {item.isUrgent && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm dark:bg-red-950/40 dark:text-red-300">
-                    <AlertTriangle className="h-3 w-3" />
+                    <AlertTriangle className="size-3" />
                     Khẩn cấp
                   </span>
                 )}

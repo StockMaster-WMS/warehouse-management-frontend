@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -17,11 +17,8 @@ import {
   ORDER_STATUS_LABEL_TO_API,
 } from "@/components/features/orders/constants";
 
-export function useOrdersPageLogic() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const createdId = searchParams.get("created") || "";
+export function useOrdersPageLogic(createdId = "") {
+  const { push } = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const [soNumberLookup, setSoNumberLookup] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Tất cả trạng thái");
@@ -85,7 +82,7 @@ export function useOrdersPageLogic() {
         toast.error(res.message || "Khong tim thay don");
         return;
       }
-      router.push(`/orders/${res.data.id}`);
+      push(`/orders/${res.data.id}`);
     } catch (err) {
       toast.error(apiErrMessage(err, "Khong tim thay don theo ma."));
     }

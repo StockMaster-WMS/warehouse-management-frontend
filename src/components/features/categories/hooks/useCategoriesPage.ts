@@ -61,7 +61,7 @@ export function useCategoriesPageLogic() {
       for (const category of categories) {
         const name = category.name?.toLowerCase() ?? "";
         const code = category.code?.toLowerCase() ?? "";
-        if (name.indexOf(normalizedQuery) !== -1 || code.indexOf(normalizedQuery) !== -1) {
+        if (name.includes(normalizedQuery) || code.includes(normalizedQuery)) {
           matchedIds.add(category.id);
         }
       }

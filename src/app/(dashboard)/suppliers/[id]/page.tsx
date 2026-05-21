@@ -87,7 +87,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-3 py-2.5">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+      <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
           {label}
@@ -175,7 +175,7 @@ function ChangeStatusDialog({
             disabled={isLoading || newStatus === normalized}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Xác nhận
           </Button>
         </DialogFooter>
@@ -243,7 +243,7 @@ export default function SupplierDetailPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
@@ -286,12 +286,12 @@ export default function SupplierDetailPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
         <div className="flex flex-col items-center gap-4 py-20 text-slate-500">
-          <AlertCircle className="h-10 w-10 text-rose-400" />
+          <AlertCircle className="size-10 text-rose-400" />
           <p className="text-sm">
             {apiErrMessage(error, "Không tìm thấy nhà cung cấp.")}
           </p>
@@ -321,7 +321,7 @@ export default function SupplierDetailPage() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />
@@ -332,8 +332,8 @@ export default function SupplierDetailPage() {
           {/* Business info */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Building2 className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Building2 className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Thông tin doanh nghiệp
               </h3>
             </div>
@@ -351,7 +351,7 @@ export default function SupplierDetailPage() {
                 mono
               />
               <div className="flex items-start gap-3 py-2.5">
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-slate-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Trạng thái
@@ -372,8 +372,8 @@ export default function SupplierDetailPage() {
           {/* Contact info */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Phone className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Phone className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Thông tin liên hệ
               </h3>
             </div>
@@ -400,8 +400,8 @@ export default function SupplierDetailPage() {
           {/* Terms */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Clock className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Clock className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Điều khoản
               </h3>
             </div>
@@ -433,8 +433,8 @@ export default function SupplierDetailPage() {
           {/* Timestamps */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <CalendarDays className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <CalendarDays className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Lịch sử
               </h3>
             </div>
@@ -461,7 +461,7 @@ export default function SupplierDetailPage() {
           {/* Actions */}
           {canManageSupplier ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <h3 className="mb-4 border-b pb-4 text-sm font-bold uppercase tracking-wider text-slate-900 dark:border-slate-800 dark:text-white">
+              <h3 className="mb-4 border-b pb-4 text-sm font-semibold uppercase tracking-wider text-slate-900 dark:border-slate-800 dark:text-white">
                 Hành động
               </h3>
               <div className="flex flex-col gap-3">
@@ -470,7 +470,7 @@ export default function SupplierDetailPage() {
                   nativeButton={false}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
-                  <Edit2 className="mr-2 h-4 w-4" />
+                  <Edit2 className="mr-2 size-4" />
                   Sửa thông tin
                 </Button>
                 <Button
@@ -478,7 +478,7 @@ export default function SupplierDetailPage() {
                   className="w-full"
                   onClick={() => setStatusOpen(true)}
                 >
-                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  <ShieldAlert className="mr-2 size-4" />
                   Đổi trạng thái
                 </Button>
                 <Button
@@ -492,12 +492,12 @@ export default function SupplierDetailPage() {
                       : "Xóa nhà cung cấp"
                   }
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 size-4" />
                   Xóa nhà cung cấp
                 </Button>
                 {hasPo && (
                   <p className="text-center text-[11px] text-amber-600">
-                    Không thể xóa — nhà cung cấp đang có đơn nhập hàng.
+                    Không thể xóa, nhà cung cấp đang có đơn nhập hàng.
                   </p>
                 )}
               </div>

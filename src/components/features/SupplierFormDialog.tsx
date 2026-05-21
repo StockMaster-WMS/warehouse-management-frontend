@@ -352,7 +352,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
               disabled={saving}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
               {isEdit ? "Cập nhật" : "Thêm mới"}
             </Button>
           </DialogFooter>

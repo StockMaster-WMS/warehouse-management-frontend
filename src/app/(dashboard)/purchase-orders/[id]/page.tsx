@@ -151,14 +151,14 @@ const completeSchema = z.object({
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3.5 py-3.5 border-b border-slate-50 last:border-0 dark:border-slate-800/60 group">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 text-slate-500 shadow-sm dark:from-slate-800 dark:to-slate-800/60 dark:text-slate-400 group-hover:from-indigo-50 group-hover:to-slate-50 group-hover:text-indigo-600 transition-all dark:group-hover:from-indigo-950/40 dark:group-hover:text-indigo-400">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 text-slate-500 shadow-sm dark:from-slate-800 dark:to-slate-800/60 dark:text-slate-400 group-hover:from-indigo-50 group-hover:to-slate-50 group-hover:text-indigo-600 transition-all dark:group-hover:from-indigo-950/40 dark:group-hover:text-indigo-400">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
         <div className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{value}</div>
       </div>
-      <ChevronRight className="h-3.5 w-3.5 text-slate-200 dark:text-slate-700 shrink-0" />
+      <ChevronRight className="size-3.5 text-slate-200 dark:text-slate-700 shrink-0" />
     </div>
   );
 }
@@ -383,7 +383,7 @@ export default function PurchaseOrderDetailPage() {
               size="sm"
               className="rounded-xl gap-1.5 text-xs border-slate-200"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="size-3.5" />
               Danh sách
             </Button>
 
@@ -393,7 +393,7 @@ export default function PurchaseOrderDetailPage() {
                 size="sm"
                 className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm gap-1.5"
               >
-                <PackagePlus className="h-4 w-4" />
+                <PackagePlus className="size-4" />
                 Nhập hàng
               </Button>
             )}
@@ -405,7 +405,7 @@ export default function PurchaseOrderDetailPage() {
                 size="sm"
                 className="rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-sm gap-1.5"
               >
-                {approvingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
+                {approvingPo ? <Loader2 className="size-4 animate-spin" /> : <ClipboardCheck className="size-4" />}
                 Duyệt đơn nhập
               </Button>
             )}
@@ -418,7 +418,7 @@ export default function PurchaseOrderDetailPage() {
                 disabled={cancellingPo}
                 className="rounded-xl gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-950/20"
               >
-                {cancellingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                {cancellingPo ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
                 Hủy đơn nhập
               </Button>
             )}
@@ -432,7 +432,7 @@ export default function PurchaseOrderDetailPage() {
                   disabled={deletingPo}
                   className="rounded-xl gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
                 >
-                  {deletingPo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {deletingPo ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                   Xóa đơn nhập
                 </Button>
               )}
@@ -456,7 +456,7 @@ export default function PurchaseOrderDetailPage() {
         </div>
       ) : detailError || !po || !detail ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <AlertCircle className="h-8 w-8 text-rose-400" />
+          <AlertCircle className="size-8 text-rose-400" />
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Không tải được đơn nhập hàng</p>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="rounded-xl">Thử lại</Button>
         </div>
@@ -467,13 +467,13 @@ export default function PurchaseOrderDetailPage() {
             {/* Status card */}
             <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900/80">
               <div className="absolute right-3 top-3 opacity-[0.07]">
-                <ShoppingCart className="h-14 w-14 text-slate-600 dark:text-slate-300" />
+                <ShoppingCart className="size-14 text-slate-600 dark:text-slate-300" />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Trạng thái đơn</p>
               {poStatusCfg ? (
                 <>
                   <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-sm", poStatusCfg.cls)}>
-                    <span className={cn("h-2 w-2 rounded-full animate-pulse", poStatusCfg.dotCls)} />
+                    <span className={cn("size-2 rounded-full animate-pulse", poStatusCfg.dotCls)} />
                     {poStatusCfg.label}
                   </span>
                   <p className="mt-2.5 text-xs text-slate-400 font-mono truncate">{po.poNumber}</p>
@@ -484,7 +484,7 @@ export default function PurchaseOrderDetailPage() {
             {/* Order Date */}
             <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-5 shadow-sm dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-slate-900">
               <div className="absolute right-3 top-3 opacity-10">
-                <CalendarDays className="h-14 w-14 text-indigo-600" />
+                <CalendarDays className="size-14 text-indigo-600" />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 dark:text-indigo-500 mb-1">Ngày đặt hàng</p>
               <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-200 tabular-nums leading-tight">
@@ -493,7 +493,7 @@ export default function PurchaseOrderDetailPage() {
               <p className="text-xs text-indigo-400 font-semibold">{po.orderDate?.split("-")[0]}</p>
               {po.expectedDate && (
                 <div className="mt-2 inline-flex items-center gap-1 rounded-lg bg-indigo-100/70 px-2 py-1 text-xs text-indigo-600 font-semibold dark:bg-indigo-900/30 dark:text-indigo-400">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="size-3" />
                   Dự kiến: {po.expectedDate}
                 </div>
               )}
@@ -502,7 +502,7 @@ export default function PurchaseOrderDetailPage() {
             {/* Progress */}
             <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/40 p-5 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-slate-900">
               <div className="absolute right-3 top-3 opacity-10">
-                <Activity className="h-14 w-14 text-emerald-600" />
+                <Activity className="size-14 text-emerald-600" />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 dark:text-emerald-600 mb-1">Tiến độ nhập</p>
               <div className="flex items-baseline gap-1.5">
@@ -526,7 +526,7 @@ export default function PurchaseOrderDetailPage() {
             {/* Total */}
             <div className="relative overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50/40 p-5 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:to-slate-900">
               <div className="absolute right-3 top-3 opacity-10">
-                <DollarSign className="h-14 w-14 text-violet-600" />
+                <DollarSign className="size-14 text-violet-600" />
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-violet-500 dark:text-violet-600 mb-1">Tổng tiền đơn</p>
               {displayTotal != null ? (
@@ -537,7 +537,7 @@ export default function PurchaseOrderDetailPage() {
                   <p className="text-sm text-violet-400 font-bold">VNĐ</p>
                 </>
               ) : (
-                <p className="text-2xl font-black text-violet-300 dark:text-violet-700">—</p>
+                <p className="text-2xl font-black text-violet-300 dark:text-violet-700">,</p>
               )}
             </div>
           </div>
@@ -547,34 +547,34 @@ export default function PurchaseOrderDetailPage() {
             <TabsList className="flex h-auto w-full rounded-t-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-0">
               <TabsTrigger
                 value="info"
-                className="relative flex-1 rounded-none first:rounded-tl-2xl px-5 py-3.5 text-xs font-semibold text-slate-500 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-slate-400 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none first:rounded-tl-2xl px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
               >
-                <FileText className="h-3.5 w-3.5 mr-1.5 inline-block" />
+                <FileText className="size-3.5 mr-1.5 inline-block" />
                 Thông tin đơn nhập
               </TabsTrigger>
               <TabsTrigger
                 value="items"
-                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-slate-500 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-slate-400 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
               >
-                <ShoppingCart className="h-3.5 w-3.5 mr-1.5 inline-block" />
+                <ShoppingCart className="size-3.5 mr-1.5 inline-block" />
                 Dòng hàng
                 <span className="ml-1.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-700 font-bold dark:bg-indigo-900/40 dark:text-indigo-400">{items.length}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="receipts"
-                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-slate-500 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-slate-400 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
               >
-                <ReceiptText className="h-3.5 w-3.5 mr-1.5 inline-block" />
+                <ReceiptText className="size-3.5 mr-1.5 inline-block" />
                 Phiếu nhập
-                <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 font-bold dark:bg-slate-700 dark:text-slate-400">{receipts.length}</span>
+                <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-indigo-700 font-bold dark:bg-slate-700 dark:text-indigo-700">{receipts.length}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="putaway"
-                className="relative flex-1 rounded-none last:rounded-tr-2xl px-5 py-3.5 text-xs font-semibold text-slate-500 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-slate-400 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none last:rounded-tr-2xl px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
               >
-                <TrendingUp className="h-3.5 w-3.5 mr-1.5 inline-block" />
+                <TrendingUp className="size-3.5 mr-1.5 inline-block" />
                 Sắp xếp kho
-                <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 font-bold dark:bg-slate-700 dark:text-slate-400">{tasks.length}</span>
+                <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-indigo-700 font-bold dark:bg-slate-700 dark:text-indigo-700">{tasks.length}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -584,36 +584,36 @@ export default function PurchaseOrderDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-50 dark:divide-slate-800/60">
                   <div className="px-6 py-3">
                     <InfoRow
-                      icon={<FileText className="h-3.5 w-3.5" />}
+                      icon={<FileText className="size-3.5" />}
                       label="Mã đơn nhập hàng"
                       value={<span className="font-mono font-bold text-indigo-700 dark:text-indigo-400">{po.poNumber}</span>}
                     />
                     <InfoRow
-                      icon={<Building2 className="h-3.5 w-3.5" />}
+                      icon={<Building2 className="size-3.5" />}
                       label="Nhà cung cấp"
                       value={supplierName}
                     />
                     <InfoRow
-                      icon={<Warehouse className="h-3.5 w-3.5" />}
+                      icon={<Warehouse className="size-3.5" />}
                       label="Kho nhận hàng"
                       value={warehouseName}
                     />
                   </div>
                   <div className="px-6 py-3">
                     <InfoRow
-                      icon={<CalendarDays className="h-3.5 w-3.5" />}
+                      icon={<CalendarDays className="size-3.5" />}
                       label="Ngày dự kiến nhận"
                       value={po.expectedDate
                         ? <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2 py-0.5 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 font-semibold text-xs">{po.expectedDate}</span>
                         : <span className="text-slate-400">Chưa xác định</span>}
                     />
                     <InfoRow
-                      icon={<Clock className="h-3.5 w-3.5" />}
+                      icon={<Clock className="size-3.5" />}
                       label="Ngày tạo đơn"
                       value={formatDateTime(po.createdAt)}
                     />
                     <InfoRow
-                      icon={<Activity className="h-3.5 w-3.5" />}
+                      icon={<Activity className="size-3.5" />}
                       label="Cập nhật lần cuối"
                       value={formatDateTime(po.updatedAt)}
                     />
@@ -697,11 +697,11 @@ export default function PurchaseOrderDetailPage() {
               <div className="overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {receipts.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
-                    <FileText className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <FileText className="size-8 text-slate-300 dark:text-slate-600" />
                     <p className="text-sm text-slate-500">Chưa có phiếu nhập kho nào cho đơn nhập này.</p>
                     {canReceive && (
                       <Button size="sm" onClick={openGrn} className="rounded-xl gap-1.5 bg-indigo-600 hover:bg-indigo-700">
-                        <PackagePlus className="h-4 w-4" />
+                        <PackagePlus className="size-4" />
                         Tạo phiếu nhập
                       </Button>
                     )}
@@ -746,7 +746,7 @@ export default function PurchaseOrderDetailPage() {
               <div className="overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 {tasks.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
-                    <MapPin className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <MapPin className="size-8 text-slate-300 dark:text-slate-600" />
                     <p className="text-sm text-slate-500">Chưa có tác vụ sắp xếp kho nào.</p>
                     <p className="text-xs text-slate-400">Tạo phiếu nhập hàng để hệ thống tự động sinh nhiệm vụ xếp hàng lên kệ.</p>
                   </div>
@@ -786,18 +786,18 @@ export default function PurchaseOrderDetailPage() {
                               <TableCell className="px-3 py-3.5">
                                 {task.suggestedLocationId ? (
                                   <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-                                    <MapPin className="h-3 w-3 text-slate-400" />
+                                    <MapPin className="size-3 text-slate-400" />
                                     {getSuggested?.code ?? task.suggestedLocationId.slice(0, 8)}
                                   </span>
-                                ) : <span className="text-slate-400 text-xs">—</span>}
+                                ) : <span className="text-slate-400 text-xs">,</span>}
                               </TableCell>
                               <TableCell className="px-3 py-3.5">
                                 {task.actualLocationId ? (
                                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <CheckCircle2 className="h-3 w-3" />
+                                    <CheckCircle2 className="size-3" />
                                     {getActual?.code ?? task.actualLocationId.slice(0, 8)}
                                   </span>
-                                ) : <span className="text-slate-400 text-xs">—</span>}
+                                ) : <span className="text-slate-400 text-xs">,</span>}
                               </TableCell>
                               <TableCell className="py-3.5 pl-3 pr-5 text-right">
                                 <Button
@@ -810,7 +810,7 @@ export default function PurchaseOrderDetailPage() {
                                   onClick={() => canComplete && openPutaway(task)}
                                   disabled={!canComplete}
                                 >
-                                  <PackageCheck className="h-3.5 w-3.5" />
+                                  <PackageCheck className="size-3.5" />
                                   Hoàn tất
                                 </Button>
                               </TableCell>
@@ -833,7 +833,7 @@ export default function PurchaseOrderDetailPage() {
           <form onSubmit={handleSubmitGrn}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <PackagePlus className="h-5 w-5 text-indigo-600" />
+                <PackagePlus className="size-5 text-indigo-600" />
                 Tạo phiếu nhập kho (GRN)
               </DialogTitle>
               <DialogDescription>
@@ -848,11 +848,11 @@ export default function PurchaseOrderDetailPage() {
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                     <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
                       <TableHead className="py-3 pl-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng</TableHead>
-                      <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đặt</TableHead>
-                      <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
-                      <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
-                      <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 text-indigo-600 dark:text-indigo-400">Nhập lần này ★</TableHead>
-                      <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ghi chú</TableHead>
+                      <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đặt</TableHead>
+                      <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
+                      <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
+                      <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 text-indigo-600 dark:text-indigo-400">Nhập lần này ★</TableHead>
+                      <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ghi chú</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -869,10 +869,10 @@ export default function PurchaseOrderDetailPage() {
                           <TableCell className="py-3 pl-4">
                             <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">{item.productSku}</span>
                           </TableCell>
-                          <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{ordered}</TableCell>
-                          <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{received}</TableCell>
-                          <TableCell className="px-3 py-3 text-right text-sm font-bold tabular-nums text-slate-800 dark:text-slate-200">{remain}</TableCell>
-                          <TableCell className="px-3 py-3 text-right">
+                          <TableCell className="p-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{ordered}</TableCell>
+                          <TableCell className="p-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">{received}</TableCell>
+                          <TableCell className="p-3 text-right text-sm font-bold tabular-nums text-slate-800 dark:text-slate-200">{remain}</TableCell>
+                          <TableCell className="p-3 text-right">
                             <Input
                               value={line.receivedQty}
                               onChange={(e) => updateGrnLine(line.poItemId, "receivedQty", e.target.value)}
@@ -881,7 +881,7 @@ export default function PurchaseOrderDetailPage() {
                               className={cn("w-24 text-right h-8 rounded-lg text-sm font-semibold", isOver && "border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-600 dark:bg-rose-950/20")}
                             />
                           </TableCell>
-                          <TableCell className="px-3 py-3">
+                          <TableCell className="p-3">
                             <Input
                               value={line.note}
                               onChange={(e) => updateGrnLine(line.poItemId, "note", e.target.value)}
@@ -947,7 +947,7 @@ export default function PurchaseOrderDetailPage() {
             <DialogFooter className="gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setGrnOpen(false)} className="rounded-xl">Hủy</Button>
               <Button type="submit" size="sm" disabled={creatingGrn} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5">
-                {creatingGrn ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
+                {creatingGrn ? <Loader2 className="size-4 animate-spin" /> : <PackagePlus className="size-4" />}
                 Tạo phiếu nhập
               </Button>
             </DialogFooter>
@@ -961,7 +961,7 @@ export default function PurchaseOrderDetailPage() {
           <form onSubmit={submitCompletePutaway}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <PackageCheck className="h-5 w-5 text-indigo-600" />
+                <PackageCheck className="size-5 text-indigo-600" />
                 Hoàn tất xếp hàng lên kệ
               </DialogTitle>
               {activeTask && (
@@ -1005,7 +1005,7 @@ export default function PurchaseOrderDetailPage() {
             <DialogFooter className="gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setPutawayOpen(false)} className="rounded-xl">Hủy</Button>
               <Button type="submit" size="sm" disabled={completingPutaway} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5">
-                {completingPutaway ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {completingPutaway ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                 Xác nhận hoàn tất
               </Button>
             </DialogFooter>

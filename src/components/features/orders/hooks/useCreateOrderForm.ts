@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { apiErrMessage } from "@/types/api";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -46,10 +46,8 @@ function customerToAddressValue(customer: Customer): AddressValue {
   };
 }
 
-export function useCreateOrderForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const warehouseIdFromUrl = searchParams.get("warehouseId")?.trim() ?? "";
+export function useCreateOrderForm(warehouseIdFromUrl = "") {
+  const { push } = useRouter();
 
   const [customerName, setCustomerName] = useState("");
   const [customerId, setCustomerId] = useState("");
@@ -193,7 +191,7 @@ export function useCreateOrderForm() {
       }
 
       toast.success(res.message || "Đã tạo đơn xuất thành công");
-      router.push(`/orders/${res.data.id}`);
+      push(`/orders/${res.data.id}`);
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể tạo đơn xuất"));
     }

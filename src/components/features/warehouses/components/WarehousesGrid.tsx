@@ -34,8 +34,10 @@ function formatDate(value?: string | null) {
 
 function managerDisplay(warehouse: Warehouse) {
   const managerNames = warehouse.managers
-    ?.map((manager) => manager.fullName?.trim() || manager.name?.trim() || manager.username)
-    .filter(Boolean);
+    ?.flatMap((manager) => {
+      const label = manager.fullName?.trim() || manager.name?.trim() || manager.username;
+      return label ? [label] : [];
+    });
   if (managerNames?.length) return managerNames.join(", ");
   return warehouse.managerName?.trim() || "Chưa phân công";
 }
@@ -93,7 +95,7 @@ export function WarehousesGrid({
               className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
               <div className="space-y-3">
-                <Skeleton className="h-12 w-12 rounded-xl" />
+                <Skeleton className="size-12 rounded-xl" />
                 <Skeleton className="h-6 w-52" />
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-2 w-full rounded-full" />
@@ -131,7 +133,7 @@ export function WarehousesGrid({
           action={
             hasAnyFilter ? (
               <Button variant="outline" size="sm" onClick={onClearFilters}>
-                <X className="mr-2 h-4 w-4" />
+                <X className="mr-2 size-4" />
                 Xóa bộ lọc
               </Button>
             ) : canManageWarehouses ? (
@@ -140,7 +142,7 @@ export function WarehousesGrid({
                 className="bg-indigo-600 hover:bg-indigo-700"
                 onClick={onRequestCreate}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 size-4" />
                 Thêm kho mới
               </Button>
             ) : null
@@ -160,8 +162,8 @@ export function WarehousesGrid({
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40">
-                        <Building2 className="h-6 w-6" />
+                      <div className="flex size-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40">
+                        <Building2 className="size-6" />
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge
@@ -178,8 +180,8 @@ export function WarehousesGrid({
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               render={
-                                <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full">
-                                  <MoreVertical className="h-4 w-4" />
+                                <Button variant="ghost" size="icon-sm" className="size-8 rounded-full">
+                                  <MoreVertical className="size-4" />
                                 </Button>
                               }
                             />
@@ -190,14 +192,14 @@ export function WarehousesGrid({
                                   className="rounded-lg"
                                   onClick={() => onRequestEdit(warehouse)}
                                 >
-                                  <Edit2 className="mr-2 h-4 w-4" />
+                                  <Edit2 className="mr-2 size-4" />
                                   Sửa thông tin
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="rounded-lg text-rose-600 focus:text-rose-600"
                                   onClick={() => onRequestDelete(warehouse)}
                                 >
-                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <Trash2 className="mr-2 size-4" />
                                   Xóa kho
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>
@@ -208,9 +210,9 @@ export function WarehousesGrid({
                     </div>
 
                     <div className="mt-4 space-y-1">
-                      <h3 className="text-lg leading-tight font-bold text-slate-900 dark:text-white">{warehouse.name}</h3>
+                      <h3 className="text-lg leading-tight font-semibold text-slate-900 dark:text-white">{warehouse.name}</h3>
                       <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                        <MapPin className="h-3.5 w-3.5" />
+                        <MapPin className="size-3.5" />
                         {warehouse.address || "Chưa cập nhật địa chỉ"}
                       </div>
                       <div className="text-[11px] font-semibold text-slate-400">{warehouse.code || "—"}</div>
@@ -224,8 +226,8 @@ export function WarehousesGrid({
                   <div className="mt-auto border-t border-slate-100 p-4 dark:border-slate-800/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:ring-slate-900">
-                          <User className="h-4 w-4 text-slate-500" />
+                        <div className="flex size-7 items-center justify-center rounded-full bg-slate-200 ring-2 ring-white dark:ring-slate-900">
+                          <User className="size-4 text-slate-500" />
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] leading-none font-bold text-slate-400">Quản lý</span>
@@ -239,7 +241,7 @@ export function WarehousesGrid({
                         onClick={() => onRequestEdit(warehouse)}
                       >
                         Chi tiết
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="size-3.5" />
                       </Button> : null}
                     </div>
                   </div>
@@ -248,11 +250,11 @@ export function WarehousesGrid({
             })}
 
             {canManageWarehouses ? <Button
-              className="flex min-h-75 h-full w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-transparent text-slate-500 transition-all hover:border-indigo-400 hover:bg-indigo-50/30 hover:text-indigo-600 dark:border-slate-800"
+              className="flex min-h-75 size-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-transparent text-indigo-700 transition-all hover:border-indigo-400 hover:bg-indigo-50/30 hover:text-indigo-600 dark:border-slate-800"
               onClick={onRequestCreate}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
-                <Plus className="h-6 w-6" />
+              <div className="flex size-12 items-center justify-center rounded-full bg-slate-100 text-indigo-700 dark:bg-slate-800">
+                <Plus className="size-6" />
               </div>
               <span className="mt-3 text-sm font-bold">Tạo khu vực kho mới</span>
             </Button> : null}

@@ -116,7 +116,7 @@ function CreateCategoryForm({ onOpenChange }: { onOpenChange: (open: boolean) =>
           Hủy
         </Button>
         <Button type="submit" disabled={isSaveDisabled} className="bg-indigo-600 hover:bg-indigo-700">
-          {isCreating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {isCreating && <Loader2 className="size-4 mr-2 animate-spin" />}
           {isCreating ? "Đang lưu..." : "Thêm mới"}
         </Button>
       </DialogFooter>
@@ -157,7 +157,7 @@ function EditCategoryForm({
   if (isLoading) {
     return (
       <div className="flex justify-center p-6">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <Loader2 className="size-6 animate-spin text-slate-400" />
       </div>
     );
   }
@@ -235,7 +235,7 @@ function EditCategoryForm({
           Hủy
         </Button>
         <Button type="submit" disabled={isSaveDisabled} className="bg-indigo-600 hover:bg-indigo-700">
-          {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {isUpdating && <Loader2 className="size-4 mr-2 animate-spin" />}
           {isUpdating ? "Đang lưu..." : "Lưu thay đổi"}
         </Button>
       </DialogFooter>

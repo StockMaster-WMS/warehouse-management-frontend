@@ -55,8 +55,8 @@ import { statusTone } from "@/lib/design-system";
 /* ── Step Indicator ─────────────────────────────────────────────────── */
 function StepIndicator({ step }: { step: 1 | 2 }) {
   const steps = [
-    { label: "Chọn đơn nhập", icon: <ClipboardList className="h-4 w-4" /> },
-    { label: "Nhập số lượng", icon: <PackagePlus className="h-4 w-4" /> },
+    { label: "Chọn đơn nhập", icon: <ClipboardList className="size-4" /> },
+    { label: "Nhập số lượng", icon: <PackagePlus className="size-4" /> },
   ];
 
   return (
@@ -74,12 +74,12 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
               !done && !active && "text-muted-foreground/65",
             )}>
               <span className={cn(
-                "flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold",
+                "flex size-5 items-center justify-center rounded-full text-[11px] font-bold",
                 done && "bg-success-soft text-success-foreground",
                 active && "bg-primary-foreground/20 text-primary-foreground",
                 !done && !active && "bg-muted text-muted-foreground",
               )}>
-                {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : num}
+                {done ? <CheckCircle2 className="size-3.5" /> : num}
               </span>
               {s.label}
             </div>
@@ -131,7 +131,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
       {/* Filter bar */}
       <div className="ui-surface flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1 min-w-44">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={keyword}
             onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
@@ -146,7 +146,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
         >
           <SelectTrigger className="h-9 w-44 shrink-0 whitespace-nowrap rounded-lg">
             <div className="flex items-center gap-1.5 truncate text-sm">
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <SlidersHorizontal className="size-3.5 shrink-0 text-muted-foreground" />
               <span className="truncate">
                 {statusFilter === "ALL" ? "Tất cả trạng thái" : PO_STATUS[statusFilter] ?? statusFilter}
               </span>
@@ -175,7 +175,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
       <div className="ui-surface overflow-hidden">
         {isFetching && !isLoading && (
           <div className="ui-updating-banner flex items-center gap-2">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+            <div className="size-1.5 animate-pulse rounded-full bg-primary" />
             Đang cập nhật…
           </div>
         )}
@@ -246,7 +246,7 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
                         className="h-8 gap-1.5 px-3 text-xs font-semibold opacity-0 transition-all group-hover:opacity-100 focus:opacity-100"
                         onClick={(e) => { e.stopPropagation(); onSelect(po.id); }}
                       >
-                        <PackagePlus className="h-3.5 w-3.5" />
+                        <PackagePlus className="size-3.5" />
                         Chọn
                       </Button>
                     </TableCell>
@@ -394,8 +394,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   if (detailLoading)
     return (
       <div className="ui-surface flex flex-col items-center justify-center gap-3 p-16 text-muted-foreground">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        <p className="text-sm font-medium">Đang tải chi tiết đơn nhập...</p>
+        <Loader2 className="size-7 animate-spin text-primary" />
+        <p className="text-sm font-medium">Đang tải chi tiết đơn nhập…</p>
       </div>
     );
 
@@ -426,7 +426,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       {/* PO Info Banner */}
       <div className="ui-surface flex items-center gap-4 p-4">
         <Button type="button" variant="outline" size="icon-sm" onClick={onBack} className="shrink-0 rounded-lg">
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="size-4" />
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -462,7 +462,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
           <div className="ui-surface overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Building2 className="h-4 w-4 text-primary" />
+                <Building2 className="size-4 text-primary" />
                 Danh sách hàng hoá
                 <StatusBadge dot={false} tone="neutral" className="ml-1">
                   {receivableItems.length} dòng
@@ -476,12 +476,12 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                 <TableHeader className="ui-table-header">
                   <TableRow>
                     <TableHead className="ui-label w-10 py-3 pl-5 pr-3">#</TableHead>
-                    <TableHead className="ui-label px-3 py-3">Mã hàng / tên sản phẩm</TableHead>
-                    <TableHead className="ui-label px-3 py-3 text-right">SL đặt</TableHead>
-                    <TableHead className="ui-label px-3 py-3 text-right">Đã nhận</TableHead>
-                    <TableHead className="ui-label px-3 py-3 text-right">Còn lại</TableHead>
-                    <TableHead className="ui-label w-36 px-3 py-3 text-right">Nhập lần này ★</TableHead>
-                    <TableHead className="ui-label px-3 py-3">Ghi chú</TableHead>
+                    <TableHead className="ui-label p-3">Mã hàng / tên sản phẩm</TableHead>
+                    <TableHead className="ui-label p-3 text-right">SL đặt</TableHead>
+                    <TableHead className="ui-label p-3 text-right">Đã nhận</TableHead>
+                    <TableHead className="ui-label p-3 text-right">Còn lại</TableHead>
+                    <TableHead className="ui-label w-36 p-3 text-right">Nhập lần này ★</TableHead>
+                    <TableHead className="ui-label p-3">Ghi chú</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -504,7 +504,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                         )}
                       >
                         <TableCell className="py-3 pl-5 pr-3 text-xs font-bold text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="px-3 py-3">
+                        <TableCell className="p-3">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-mono text-xs font-semibold text-primary">{item.productSku}</span>
                             {item.productName && (
@@ -512,12 +512,12 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-muted-foreground">{ordered}</TableCell>
-                        <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-muted-foreground">{received}</TableCell>
-                        <TableCell className="px-3 py-3 text-right">
+                        <TableCell className="p-3 text-right text-sm tabular-nums text-muted-foreground">{ordered}</TableCell>
+                        <TableCell className="p-3 text-right text-sm tabular-nums text-muted-foreground">{received}</TableCell>
+                        <TableCell className="p-3 text-right">
                           <span className="text-sm font-semibold tabular-nums text-foreground">{remain}</span>
                         </TableCell>
-                        <TableCell className="px-3 py-3 text-right">
+                        <TableCell className="p-3 text-right">
                           <Input
                             ref={idx === 0 ? firstInputRef : undefined}
                             value={lineVal.qty}
@@ -534,7 +534,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                             <p className="mt-1 text-[10px] text-destructive">Vượt quá {remain}</p>
                           )}
                         </TableCell>
-                        <TableCell className="px-3 py-3">
+                        <TableCell className="p-3">
                           <Input
                             value={lineVal.note}
                             onChange={(e) => setLine(item.id, "note", e.target.value)}
@@ -617,7 +617,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                 size="sm"
                 className="gap-1.5 rounded-lg"
               >
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
+                {creating ? <Loader2 className="size-4 animate-spin" /> : <PackagePlus className="size-4" />}
                 Tạo phiếu nhập kho
               </Button>
             </div>
@@ -630,8 +630,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
 
 /* ── Main Page ────────────────────────────────────────────────────── */
 function NewInboundReceiptContent() {
-  const searchParams = useSearchParams();
-  const initialPoId = searchParams.get("poId") ?? "";
+  const { get } = useSearchParams();
+  const initialPoId = get("poId") ?? "";
   const [selectedPoId, setSelectedPoId] = useState(initialPoId);
 
   const step = selectedPoId ? 2 : 1;
@@ -655,7 +655,7 @@ function NewInboundReceiptContent() {
               size="sm"
               className="gap-1.5 rounded-lg text-xs"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="size-3.5" />
               Danh sách
             </Button>
           </div>

@@ -100,7 +100,7 @@ export function LocationBarcodeModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5 text-indigo-600" />
+            <Printer className="size-5 text-indigo-600" />
             In nhãn vị trí
           </DialogTitle>
           <DialogDescription>
@@ -148,10 +148,10 @@ export function LocationBarcodeModal({
                 link.click();
             }}
           >
-            <Download className="mr-2 h-4 w-4" /> Tải về
+            <Download className="mr-2 size-4" /> Tải về
           </Button>
           <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> In nhãn
+            <Printer className="mr-2 size-4" /> In nhãn
           </Button>
         </div>
       </DialogContent>

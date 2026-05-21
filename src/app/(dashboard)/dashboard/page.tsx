@@ -1,13 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
   ClipboardList,
-  Download,
-  FileSpreadsheet,
   History,
   PackageCheck,
   RefreshCw,
@@ -17,16 +16,38 @@ import {
   TriangleAlert,
   Users,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { InboundOutboundChartLazy } from "@/components/dashboard/inbound-outbound-chart-lazy";
 import { Button } from "@/components/ui/button";
 import { PageSection } from "@/components/ui/page-section";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { useGetDashboardSummaryQuery } from "@/store/services/dashboard.service";
-import { useLazyExportInventoryReportQuery } from "@/store/services/report.service";
 import { apiErrMessage } from "@/types/api";
-import type { DashboardNoticeType } from "@/types/dashboard";
+import type { DashboardNoticeType, DashboardPeriod } from "@/types/dashboard";
+
+const DASHBOARD_PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string; description: string }> = [
+  { value: "today", label: "Hôm nay", description: "Biến động trong ngày" },
+  { value: "7d", label: "7 ngày", description: "Tuần gần nhất" },
+  { value: "30d", label: "1 tháng", description: "30 ngày gần nhất" },
+  { value: "year", label: "Năm", description: "365 ngày gần nhất" },
+];
+
+const PERIOD_DAYS: Record<DashboardPeriod, number> = {
+  today: 1,
+  "7d": 7,
+  "30d": 30,
+  year: 365,
+};
+
+const currentYear = new Date().getFullYear();
+const DASHBOARD_YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => currentYear - index);
 
 const METRIC_META: Record<string, Pick<StatItem, "icon" | "color">> = {
   revenue: { icon: TrendingUp, color: "text-indigo-500" },
@@ -38,6 +59,12 @@ const METRIC_META: Record<string, Pick<StatItem, "icon" | "color">> = {
 };
 
 const viNumberFormatter = new Intl.NumberFormat("vi-VN");
+const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 function formatNumber(value: number) {
   return viNumberFormatter.format(value);
@@ -47,12 +74,7 @@ function formatDateTime(value?: string | null) {
   if (!value) return "Chưa rõ thời gian";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Chưa rõ thời gian";
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return viDateTimeFormatter.format(date);
 }
 
 function calcDelta(current: number, previous: number) {
@@ -62,7 +84,7 @@ function calcDelta(current: number, previous: number) {
 }
 
 function NoticeIcon({ type }: { type: DashboardNoticeType }) {
-  const cls = "mt-0.5 h-4 w-4 shrink-0";
+  const cls = "mt-0.5 size-4 shrink-0";
   if (type === "error") return <AlertCircle className={cls} aria-hidden />;
   if (type === "warning") return <TriangleAlert className={cls} aria-hidden />;
   return <CheckCircle2 className={cls} aria-hidden />;
@@ -79,10 +101,14 @@ function noticeClassName(type: DashboardNoticeType) {
 }
 
 export default function DashboardPage() {
+  const [period, setPeriod] = useState<DashboardPeriod>("7d");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const activePeriod = DASHBOARD_PERIOD_OPTIONS.find((item) => item.value === period) ?? DASHBOARD_PERIOD_OPTIONS[1];
   const { data: summary, error, isLoading, isFetching, refetch } =
-    useGetDashboardSummaryQuery();
-  const [exportInventoryReport, { isFetching: isExporting }] =
-    useLazyExportInventoryReportQuery();
+    useGetDashboardSummaryQuery({
+      period,
+      year: period === "year" ? selectedYear : undefined,
+    });
   const errorMessage = error
     ? apiErrMessage(error, "Không thể tải dữ liệu trang tổng quan")
     : null;
@@ -96,21 +122,25 @@ export default function DashboardPage() {
   const flow = summary?.flow ?? [];
   const todayFlow = flow[flow.length - 1];
   const yesterdayFlow = flow[flow.length - 2];
-  const sevenDayInbound = flow.reduce((total, item) => total + item.inbound, 0);
-  const sevenDayOutbound = flow.reduce((total, item) => total + item.outbound, 0);
+  const selectedDays = PERIOD_DAYS[period];
+  const periodSummaryText = period === "year"
+    ? `Dữ liệu năm ${selectedYear}, biểu đồ gom theo từng tháng.`
+    : `${activePeriod.description}. Biểu đồ đang lấy ${selectedDays} ngày gần nhất.`;
+  const totalInbound = flow.reduce((total, item) => total + item.inbound, 0);
+  const totalOutbound = flow.reduce((total, item) => total + item.outbound, 0);
   const todayTotal = (todayFlow?.inbound ?? 0) + (todayFlow?.outbound ?? 0);
   const yesterdayTotal = (yesterdayFlow?.inbound ?? 0) + (yesterdayFlow?.outbound ?? 0);
   const timeStats = [
     {
-      label: "Nhập 7 ngày",
-      value: formatNumber(sevenDayInbound),
+      label: `Nhập ${activePeriod.label}`,
+      value: formatNumber(totalInbound),
       description: todayFlow ? `Hôm nay: ${formatNumber(todayFlow.inbound)}` : "Chưa có dữ liệu hôm nay",
       icon: TrendingUp,
       tone: "text-emerald-600",
     },
     {
-      label: "Xuất 7 ngày",
-      value: formatNumber(sevenDayOutbound),
+      label: `Xuất ${activePeriod.label}`,
+      value: formatNumber(totalOutbound),
       description: todayFlow ? `Hôm nay: ${formatNumber(todayFlow.outbound)}` : "Chưa có dữ liệu hôm nay",
       icon: TrendingDown,
       tone: "text-sky-600",
@@ -124,25 +154,59 @@ export default function DashboardPage() {
     },
   ];
 
-  const handleExportInventory = async () => {
-    try {
-      const blob = await exportInventoryReport().unwrap();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `inventory-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success("Đã tải báo cáo tồn kho");
-    } catch (err) {
-      toast.error(apiErrMessage(err, "Không thể xuất báo cáo tồn kho"));
-    }
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
+            Khoảng thời gian dashboard
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            Tổng quan {activePeriod.label.toLowerCase()}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {periodSummaryText}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:shrink-0 sm:items-end">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            {DASHBOARD_PERIOD_OPTIONS.map((item) => (
+              <Button
+                key={item.value}
+                type="button"
+                variant={period === item.value ? "default" : "outline"}
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setPeriod(item.value)}
+                disabled={isFetching && period === item.value}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+
+          {period === "year" ? (
+            <Select
+              value={String(selectedYear)}
+              onValueChange={(value) => setSelectedYear(Number(value))}
+              disabled={isFetching}
+            >
+              <SelectTrigger className="h-9 w-full rounded-lg sm:w-36">
+                <SelectValue placeholder="Chọn năm" />
+              </SelectTrigger>
+              <SelectContent align="end" className="rounded-lg">
+                {DASHBOARD_YEAR_OPTIONS.map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    Năm {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
+      </div>
+
       {errorMessage ? (
         <div className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-100 sm:flex-row sm:items-center sm:justify-between">
           <span>{errorMessage}</span>
@@ -153,7 +217,7 @@ export default function DashboardPage() {
             className="w-full rounded-lg sm:w-auto"
             onClick={() => refetch()}
           >
-            <RefreshCw className="mr-1.5 h-4 w-4" />
+            <RefreshCw className="mr-1.5 size-4" />
             Thử lại
           </Button>
         </div>
@@ -161,10 +225,10 @@ export default function DashboardPage() {
 
       <StatsGrid stats={dashboardStats} cols={4} isLoading={isLoading && !summary} />
 
-      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6">
         <PageSection
           title="Thống kê theo thời gian"
-          description="Tổng hợp nhanh biến động nhập xuất trong 7 ngày gần nhất."
+          description={`Tổng hợp nhanh biến động nhập xuất trong ${activePeriod.label.toLowerCase()}.`}
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {timeStats.map((item) => (
@@ -173,7 +237,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-semibold uppercase text-muted-foreground">
                     {item.label}
                   </span>
-                  <item.icon className={`h-4 w-4 ${item.tone}`} aria-hidden />
+                  <item.icon className={`size-4 ${item.tone}`} aria-hidden />
                 </div>
                 <div className="text-2xl font-bold tabular-nums text-foreground">
                   {item.value}
@@ -185,33 +249,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </PageSection>
-
-        <PageSection title="Xuất báo cáo" description="Tải nhanh dữ liệu phục vụ chốt ca.">
-          <div className="space-y-3">
-            <Button
-              type="button"
-              className="w-full justify-start rounded-lg"
-              onClick={handleExportInventory}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-              )}
-              Báo cáo tồn kho Excel
-            </Button>
-            <Button
-              render={<Link href="/reports" />}
-              nativeButton={false}
-              variant="outline"
-              className="w-full justify-start rounded-lg"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Trung tâm báo cáo
-            </Button>
-          </div>
-        </PageSection>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2">
@@ -219,8 +256,8 @@ export default function DashboardPage() {
           title="Lưu lượng xuất/nhập"
           description={
             isFetching
-              ? "Đang cập nhật dữ liệu 7 ngày gần nhất."
-              : "Theo biến động tồn kho 7 ngày gần nhất."
+              ? `Đang cập nhật dữ liệu ${activePeriod.label.toLowerCase()}.`
+              : `Theo biến động tồn kho trong ${activePeriod.label.toLowerCase()}.`
           }
         >
           <InboundOutboundChartLazy data={summary?.flow} />

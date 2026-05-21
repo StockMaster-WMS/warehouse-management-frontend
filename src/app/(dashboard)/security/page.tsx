@@ -370,15 +370,15 @@ export default function SecurityPage() {
         actions={
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" size="sm" onClick={refreshAll} disabled={isFetching || isStatsFetching}>
-              <RefreshCw className={cn("mr-2 h-4 w-4", (isFetching || isStatsFetching) && "animate-spin")} />
+              <RefreshCw className={cn("mr-2 size-4", (isFetching || isStatsFetching) && "animate-spin")} />
               Làm mới
             </Button>
             <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              <FileSpreadsheet className="mr-2 size-4" />
               Import Excel
             </Button>
             <Button size="sm" onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 size-4" />
               Thêm người dùng
             </Button>
           </div>
@@ -516,7 +516,7 @@ export default function SecurityPage() {
                       </TableCell>
                       <TableCell className="max-w-[260px] px-4 py-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                          <WarehouseIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <WarehouseIcon className="size-4 shrink-0 text-muted-foreground" />
                           <span className="truncate">{warehouseLabelFromUser(user)}</span>
                         </div>
                       </TableCell>
@@ -538,15 +538,15 @@ export default function SecurityPage() {
                       <TableCell className="px-4 py-3 text-right">
                         <div className="flex flex-wrap justify-end gap-1.5">
                           <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => setDetailUserId(user.id)}>
-                            <Eye className="mr-1.5 h-3.5 w-3.5" />
+                            <Eye className="mr-1.5 size-3.5" />
                             Chi tiết
                           </Button>
                           <Button type="button" variant="outline" size="sm" className="h-8 px-2" onClick={() => openEdit(user)}>
-                            <Edit className="mr-1.5 h-3.5 w-3.5" />
+                            <Edit className="mr-1.5 size-3.5" />
                             Sửa
                           </Button>
                           <Button type="button" variant="outline" size="sm" className="h-8 px-2" onClick={() => setResetUser(user)}>
-                            <KeyRound className="mr-1.5 h-3.5 w-3.5" />
+                            <KeyRound className="mr-1.5 size-3.5" />
                             Reset
                           </Button>
                           <Button
@@ -560,7 +560,7 @@ export default function SecurityPage() {
                             disabled={togglingStatus || (isSelf && active)}
                             onClick={() => void toggleUserStatus(user)}
                           >
-                            {active ? <Lock className="mr-1.5 h-3.5 w-3.5" /> : <Unlock className="mr-1.5 h-3.5 w-3.5" />}
+                            {active ? <Lock className="mr-1.5 size-3.5" /> : <Unlock className="mr-1.5 size-3.5" />}
                             {active ? "Khóa" : "Mở khóa"}
                           </Button>
                         </div>
@@ -606,20 +606,20 @@ export default function SecurityPage() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Username</label>
-                <Input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} />
+                <Input value={form.username} onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))} />
               </div>
               <div className="grid gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Email</label>
-                <Input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+                <Input value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
               </div>
               <div className="grid gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Họ tên</label>
-                <Input value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} />
+                <Input value={form.fullName} onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))} />
               </div>
               {formMode === "create" ? (
                 <div className="grid gap-1.5">
                   <label className="text-xs font-semibold text-muted-foreground">Mật khẩu</label>
-                  <Input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+                  <Input type="password" value={form.password} onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))} />
                 </div>
               ) : null}
               <div className="grid gap-2">
@@ -652,7 +652,7 @@ export default function SecurityPage() {
                 </div>
                 <div className="max-h-44 overflow-auto rounded-xl border border-border p-2">
                   {isWarehousesFetching ? (
-                    <div className="p-3 text-sm text-muted-foreground">Đang tải danh sách kho...</div>
+                    <div className="p-3 text-sm text-muted-foreground">Đang tải danh sách kho…</div>
                   ) : warehouseOptions.length ? (
                     <div className="grid gap-2">
                       {warehouseOptions.map((warehouse) => {
@@ -673,7 +673,7 @@ export default function SecurityPage() {
                               <span className="block truncate font-semibold">{warehouse.name}</span>
                               <span className="block truncate text-xs text-muted-foreground">{warehouse.code}</span>
                             </span>
-                            <input type="checkbox" readOnly checked={selected} className="h-4 w-4" />
+                            <input type="checkbox" readOnly checked={selected} className="size-4" />
                           </button>
                         );
                       })}
@@ -689,7 +689,7 @@ export default function SecurityPage() {
                     type="checkbox"
                     checked={form.isActive}
                     disabled={Boolean(formIsSelf)}
-                    onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+                    onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
                   />
                   Tài khoản đang hoạt động
                 </label>
@@ -698,7 +698,7 @@ export default function SecurityPage() {
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>Hủy</Button>
               <Button type="submit" disabled={creating || updating}>
-                {(creating || updating) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {(creating || updating) ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 Lưu
               </Button>
             </DialogFooter>
@@ -720,7 +720,7 @@ export default function SecurityPage() {
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setResetUser(null)}>Hủy</Button>
               <Button type="submit" disabled={resettingPassword}>
-                {resettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {resettingPassword ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 Đặt lại
               </Button>
             </DialogFooter>
@@ -754,7 +754,7 @@ export default function SecurityPage() {
                   </Badge>
                 </div>
                 <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                  <WarehouseIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <WarehouseIcon className="mt-0.5 size-4 shrink-0" />
                   <span>Kho thao tác: {warehouseLabelFromUser(detailUser)}</span>
                 </div>
               </div>
@@ -813,11 +813,11 @@ export default function SecurityPage() {
             />
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={runPreview} disabled={previewing || !importFile}>
-                {previewing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                {previewing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}
                 Preview
               </Button>
               <Button type="button" onClick={runImport} disabled={importing || !importFile || !preview}>
-                {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {importing ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 Import
               </Button>
             </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { MapPin, CheckCircle2, ChevronRight, AlertTriangle, ScanLine, ArrowLeft, Package, Hash, ClipboardList, RefreshCw } from "lucide-react";
@@ -18,12 +18,12 @@ function StepDot({ step, current, done }: { step: number; current: number; done:
     const active = step === current;
     return (
         <div className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold transition-colors",
+            "flex size-7 items-center justify-center rounded-md text-xs font-semibold transition-colors",
             done ? "bg-emerald-600 text-white"
                 : active ? "bg-indigo-600 text-white"
                     : "bg-slate-100 text-slate-500"
         )}>
-            {done ? <CheckCircle2 className="h-4 w-4" /> : step}
+            {done ? <CheckCircle2 className="size-4" /> : step}
         </div>
     );
 }
@@ -133,8 +133,8 @@ export function OperationTab() {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center gap-4 py-24">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-                <p className="text-xs font-semibold text-slate-500">Đang tải nhiệm vụ lấy hàng...</p>
+                <div className="size-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+                <p className="text-xs font-semibold text-slate-500">Đang tải nhiệm vụ lấy hàng…</p>
             </div>
         );
     }
@@ -143,8 +143,8 @@ export function OperationTab() {
     if (tasks.length === 0 && !activeItem) {
         return (
             <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-6 rounded-lg border border-dashed border-slate-200 bg-white px-6 py-20 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/30">
-                    <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                <div className="flex size-16 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/30">
+                    <CheckCircle2 className="size-10 text-emerald-600" />
                 </div>
                 <div>
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Bạn chưa có nhiệm vụ được phân công.</h2>
@@ -153,7 +153,7 @@ export function OperationTab() {
                     </p>
                 </div>
                 <Button type="button" variant="outline" className="gap-2" onClick={() => refetch()}>
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="size-4" />
                     Tải lại danh sách
                 </Button>
             </div>
@@ -169,17 +169,17 @@ export function OperationTab() {
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Lệnh lấy hàng được giao</h1>
                         <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <span className="size-2 rounded-full bg-emerald-500" />
                             <p className="text-xs font-medium text-slate-500">{tasks.length} nhiệm vụ chờ xử lý, sắp xếp theo tuyến lấy hàng</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <Button type="button" variant="outline" size="sm" className="h-10 gap-2 rounded-lg" onClick={() => refetch()}>
-                            <RefreshCw className="h-4 w-4" />
+                            <RefreshCw className="size-4" />
                             Tải lại
                         </Button>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 text-white">
-                            <ClipboardList className="h-6 w-6" />
+                        <div className="flex size-11 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                            <ClipboardList className="size-6" />
                         </div>
                     </div>
                 </div>
@@ -213,7 +213,7 @@ export function OperationTab() {
                             className="group relative flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left border border-slate-100 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50/40 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-indigo-700"
                         >
                             {/* Sequence number */}
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 font-semibold text-sm text-slate-700 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 font-semibold text-sm text-slate-700 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                                 {idx + 1}
                             </div>
 
@@ -224,7 +224,7 @@ export function OperationTab() {
                                 </p>
                                 <div className="mt-0.5 flex items-center gap-2">
                                     <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                                        <Hash className="h-2.5 w-2.5" />{task.productSku}
+                                        <Hash className="size-2.5" />{task.productSku}
                                     </span>
                                     <span className="text-slate-200 dark:text-slate-700">·</span>
                                     <span className="text-[11px] text-slate-500 truncate max-w-[100px]">Đơn: {task.salesOrderNumber}</span>
@@ -234,13 +234,13 @@ export function OperationTab() {
                             {/* Right side: location + qty */}
                             <div className="flex shrink-0 flex-col items-end gap-1">
                                 <div className="flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
-                                    <MapPin className="h-2.5 w-2.5" />
+                                    <MapPin className="size-2.5" />
                                     {task.locationCode || "Chưa rõ"}
                                 </div>
                                 <span className="text-xs font-semibold text-slate-600">x{task.qtyToPick} {task.baseUnit}</span>
                             </div>
 
-                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                            <ChevronRight className="size-4 shrink-0 text-slate-300 group-hover:text-indigo-400 transition-colors" />
                         </button>
                     ))}
                     </div>
@@ -253,14 +253,14 @@ export function OperationTab() {
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
 
     return (
-        <div className="mx-auto max-w-3xl space-y-4 px-4 py-4">
+        <div className="mx-auto max-w-3xl space-y-4 p-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => { setSelectedTaskId(null); resetState(); }}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 shadow-sm transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800"
+                    className="flex size-10 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 shadow-sm transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800"
                 >
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="size-5" />
                 </button>
                 <div className="text-center">
                     <p className="text-xs font-medium text-slate-500">Đang thực hiện</p>
@@ -283,7 +283,7 @@ export function OperationTab() {
             {/* Product hero card */}
             <div className="relative overflow-hidden rounded-lg bg-white p-5 shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 <div className="absolute right-4 top-4 opacity-5">
-                    <Package className="h-24 w-24" />
+                    <Package className="size-24" />
                 </div>
                 <div className="relative space-y-4">
                     <div>
@@ -323,10 +323,10 @@ export function OperationTab() {
                     )}>
                         <div className="flex items-center gap-3 p-4">
                             <div className={cn(
-                                "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors",
+                                "flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors",
                                 currentStep === key ? "bg-indigo-600 text-white" : done ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"
                             )}>
-                                {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                                {done ? <CheckCircle2 className="size-5" /> : <Icon className="size-5" />}
                             </div>
                             <div className="flex-1">
                                 <p className={cn("text-xs font-semibold", currentStep === key ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-500")}>
@@ -364,10 +364,10 @@ export function OperationTab() {
                 )}>
                     <div className="flex items-center gap-3 p-4">
                         <div className={cn(
-                            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors",
+                            "flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors",
                             currentStep === "qty" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
                         )}>
-                            <CheckCircle2 className="h-5 w-5" />
+                            <CheckCircle2 className="size-5" />
                         </div>
                         <div className="flex-1">
                             <p className={cn("text-xs font-semibold", currentStep === "qty" ? "text-indigo-700" : "text-slate-500")}>
@@ -389,7 +389,7 @@ export function OperationTab() {
             <div className="flex gap-3 pt-2">
                 <Button
                     variant="outline"
-                    className="h-12 flex-1 rounded-lg border-slate-200 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600"
+                    className="h-12 flex-1 rounded-lg border-slate-200 text-xs font-semibold text-rose-700 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600"
                     onClick={() => setIsExceptionOpen(true)}
                 >
                     BÁO LỖI
@@ -412,8 +412,8 @@ export function OperationTab() {
             <Dialog open={isExceptionOpen} onOpenChange={setIsExceptionOpen}>
                 <DialogContent className="max-w-[calc(100%-2.5rem)] rounded-3xl p-7 shadow-2xl border-none">
                     <DialogHeader className="space-y-4 text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-100">
-                            <AlertTriangle className="h-8 w-8 text-amber-500" />
+                        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-100">
+                            <AlertTriangle className="size-8 text-amber-500" />
                         </div>
                         <div>
                             <DialogTitle className="text-xl font-black text-slate-900">Báo lỗi ngoại lệ</DialogTitle>
@@ -442,7 +442,7 @@ export function OperationTab() {
                                     } catch (err) { toast.error(taskScopeErrMessage(err)); }
                                 }}
                             >
-                                {label} <ChevronRight className="h-4 w-4 opacity-30" />
+                                {label} <ChevronRight className="size-4 opacity-30" />
                             </Button>
                         ))}
                     </div>

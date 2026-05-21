@@ -36,11 +36,11 @@ export function DeleteConfirmDialog({
   const getIcon = () => {
     switch (variant) {
       case "danger":
-        return <AlertTriangle className="h-6 w-6 text-rose-600" />;
+        return <AlertTriangle className="size-6 text-rose-600" />;
       case "warning":
-        return <AlertCircle className="h-6 w-6 text-amber-500" />;
+        return <AlertCircle className="size-6 text-amber-500" />;
       default:
-        return <Info className="h-6 w-6 text-indigo-500" />;
+        return <Info className="size-6 text-indigo-500" />;
     }
   };
 
@@ -91,7 +91,7 @@ export function DeleteConfirmDialog({
               onClick={() => onOpenChange(false)}
               className="absolute right-4 top-4 p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           )}
 
@@ -102,7 +102,7 @@ export function DeleteConfirmDialog({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white leading-tight">
                 {title}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 px-2 leading-relaxed">
@@ -139,7 +139,7 @@ export function DeleteConfirmDialog({
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 Đang xử lý...
               </>
             ) : (

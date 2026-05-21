@@ -190,7 +190,7 @@ export default function EditSupplierPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
@@ -230,12 +230,12 @@ export default function EditSupplierPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
         <div className="flex flex-col items-center gap-4 py-20 text-slate-500">
-          <AlertCircle className="h-10 w-10 text-rose-400" />
+          <AlertCircle className="size-10 text-rose-400" />
           <p className="text-sm">
             {apiErrMessage(error, "Không tìm thấy nhà cung cấp.")}
           </p>
@@ -266,7 +266,7 @@ export default function EditSupplierPage() {
               if (confirmLeave()) push("/suppliers");
             }}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />
@@ -276,8 +276,8 @@ export default function EditSupplierPage() {
           <div className="space-y-6 md:col-span-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-                <Building2 className="h-4 w-4 text-indigo-600" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                <Building2 className="size-4 text-indigo-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Thông tin doanh nghiệp
                 </h3>
               </div>
@@ -288,7 +288,7 @@ export default function EditSupplierPage() {
                       Mã nhà cung cấp <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
-                      <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                       <Input
                         value={code}
                         onChange={(e) => setCode(e.target.value)}
@@ -327,8 +327,8 @@ export default function EditSupplierPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-                <Info className="h-4 w-4 text-indigo-600" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                <Info className="size-4 text-indigo-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Thông tin liên hệ
                 </h3>
               </div>
@@ -339,7 +339,7 @@ export default function EditSupplierPage() {
                       Người liên hệ
                     </label>
                     <div className="relative">
-                      <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Briefcase className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                       <Input
                         value={contactName}
                         onChange={(e) => setContactName(e.target.value)}
@@ -353,7 +353,7 @@ export default function EditSupplierPage() {
                       SĐT liên hệ
                     </label>
                     <div className="relative">
-                      <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                       <Input
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
@@ -368,7 +368,7 @@ export default function EditSupplierPage() {
                     Email
                   </label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
@@ -383,7 +383,7 @@ export default function EditSupplierPage() {
                     Địa chỉ
                   </label>
                   <div className="relative">
-                    <MapPin className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <MapPin className="pointer-events-none absolute left-3 top-3 size-4 text-slate-400" />
                     <Textarea
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
@@ -398,7 +398,7 @@ export default function EditSupplierPage() {
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Trạng thái
                 </h3>
               </div>
@@ -421,7 +421,7 @@ export default function EditSupplierPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Điều khoản
                 </h3>
               </div>
@@ -431,7 +431,7 @@ export default function EditSupplierPage() {
                     Thời hạn thanh toán (ngày)
                   </label>
                   <div className="relative">
-                    <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Clock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       type="number"
                       min={0}
@@ -446,7 +446,7 @@ export default function EditSupplierPage() {
                     Thời gian giao hàng (ngày)
                   </label>
                   <div className="relative">
-                    <Truck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Truck className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       type="number"
                       min={0}
@@ -467,9 +467,9 @@ export default function EditSupplierPage() {
                   className="w-full bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 dark:shadow-none"
                 >
                   {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="mr-2 size-4" />
                   )}
                   Cập nhật thay đổi
                 </Button>

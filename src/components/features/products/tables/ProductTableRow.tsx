@@ -58,12 +58,12 @@ export const ProductTableRow = memo(function ProductTableRow({
   return (
     <>
       <TableRow className="ui-table-row hidden border-0 md:table-row">
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           <span className="tabular-nums text-xs font-medium text-muted-foreground">
             {rowNumber}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 align-middle">
+        <TableCell className="p-3 align-middle">
           <Link
             href={`/products/${product.id}`}
             className="font-mono text-xs font-semibold text-foreground hover:text-primary hover:underline"
@@ -71,17 +71,17 @@ export const ProductTableRow = memo(function ProductTableRow({
             {product.sku}
           </Link>
         </TableCell>
-        <TableCell className="max-w-70 px-3 py-3 align-middle">
+        <TableCell className="max-w-70 p-3 align-middle">
           <span className="line-clamp-2 text-sm font-medium text-foreground">
             {product.name}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 align-middle">
+        <TableCell className="p-3 align-middle">
           <span className="font-mono text-xs text-muted-foreground">
             {product.barcodeEan13?.trim() || "—"}
           </span>
         </TableCell>
-        <TableCell className="max-w-50 px-3 py-3 align-middle">
+        <TableCell className="max-w-50 p-3 align-middle">
           <div className="flex flex-col gap-0.5">
             <span className="truncate text-sm text-foreground/85">
               {categoryLabel}
@@ -93,12 +93,12 @@ export const ProductTableRow = memo(function ProductTableRow({
             ) : null}
           </div>
         </TableCell>
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           <span className="text-xs font-medium uppercase text-muted-foreground">
             {product.baseUnit?.trim() || "—"}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           {product.primarySupplierId ? (
             <span className="text-xs font-medium text-success">
               Đã gán
@@ -107,27 +107,27 @@ export const ProductTableRow = memo(function ProductTableRow({
             <span className="text-xs text-muted-foreground">Chưa gán</span>
           )}
         </TableCell>
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           <span className="tabular-nums text-sm font-semibold text-foreground">
             {formatStockValue(qtyOnHand)}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           <span className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600 dark:text-rose-400" : "tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400"}>
             {formatStockValue(qtyAvailable)}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 text-center align-middle">
+        <TableCell className="p-3 text-center align-middle">
           <StatusBadge tone={statusTone(product.status)}>
             {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
           </StatusBadge>
         </TableCell>
-        <TableCell className="whitespace-nowrap px-3 py-3 align-middle">
+        <TableCell className="whitespace-nowrap p-3 align-middle">
           <span className="text-xs text-muted-foreground">
             {formatDate(product.updatedAt)}
           </span>
         </TableCell>
-        <TableCell className="px-3 py-3 text-right align-middle">
+        <TableCell className="p-3 text-right align-middle">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -135,9 +135,9 @@ export const ProductTableRow = memo(function ProductTableRow({
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`Hành động cho sản phẩm ${product.name}`}
-                  className="h-8 w-8 rounded-lg"
+                  className="size-8 rounded-lg"
                 >
-                  <MoreHorizontal className="h-4 w-4" />
+                  <MoreHorizontal className="size-4" />
                 </Button>
               }
             />
@@ -149,7 +149,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                 className="rounded-lg"
                 render={<Link href={`/products/${product.id}`} />}
               >
-                <ChevronRight className="mr-2 h-4 w-4" />
+                <ChevronRight className="mr-2 size-4" />
                 Xem chi tiết
               </DropdownMenuItem>
               {canManageProducts ? (
@@ -158,14 +158,14 @@ export const ProductTableRow = memo(function ProductTableRow({
                     className="rounded-lg"
                     render={<Link href={`/products/${product.id}/edit`} />}
                   >
-                    <Edit2 className="mr-2 h-4 w-4" />
+                    <Edit2 className="mr-2 size-4" />
                     Chỉnh sửa
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="rounded-lg text-destructive focus:text-destructive"
                     onClick={() => onRequestDelete({ id: product.id, name: product.name })}
                   >
-                    <CircleOff className="mr-2 h-4 w-4" />
+                    <CircleOff className="mr-2 size-4" />
                     Ngừng dùng
                   </DropdownMenuItem>
                 </>
@@ -265,7 +265,7 @@ export const ProductTableRow = memo(function ProductTableRow({
               size="sm"
               className="flex-1 rounded-lg"
             >
-              <ChevronRight className="h-4 w-4 mr-1" />
+              <ChevronRight className="size-4 mr-1" />
               Xem
             </Button>
             {canManageProducts ? (
@@ -277,7 +277,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                   size="sm"
                   className="flex-1 rounded-lg"
                 >
-                  <Edit2 className="h-4 w-4 mr-1" />
+                  <Edit2 className="size-4 mr-1" />
                   Sửa
                 </Button>
                 <DropdownMenu>
@@ -288,7 +288,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                         size="sm"
                         className="rounded-lg px-3"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="size-4" />
                       </Button>
                     }
                   />
@@ -297,7 +297,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                       className="text-destructive focus:text-destructive"
                       onClick={() => onRequestDelete({ id: product.id, name: product.name })}
                     >
-                      <CircleOff className="mr-2 h-4 w-4" />
+                      <CircleOff className="mr-2 size-4" />
                       Ngừng dùng
                     </DropdownMenuItem>
                   </DropdownMenuContent>

@@ -169,9 +169,9 @@ export function ImportExportXlsxMenu({
         <DropdownMenuTrigger
           render={
             <Button variant="outline" size="sm" className={triggerClassName}>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 size-4" />
               Nhập/Xuất Excel
-              <ChevronDown className="ml-1 h-4 w-4 opacity-60" />
+              <ChevronDown className="ml-1 size-4 opacity-60" />
             </Button>
           }
         />
@@ -180,20 +180,20 @@ export function ImportExportXlsxMenu({
             <DropdownMenuLabel>{menuGroupLabel}</DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuItem className="rounded-lg" disabled={exportDisabled} onClick={handleExport}>
-            <FileDown className="mr-2 h-4 w-4" />
+            <FileDown className="mr-2 size-4" />
             {exportItemLabel}
           </DropdownMenuItem>
           {canImport ? (
             <>
               <DropdownMenuItem className="rounded-lg" onClick={handleTemplate}>
-                <FileDown className="mr-2 h-4 w-4" />
+                <FileDown className="mr-2 size-4" />
                 {templateItemLabel}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="rounded-lg"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <FileUp className="mr-2 h-4 w-4" />
+                <FileUp className="mr-2 size-4" />
                 {importItemLabel}
               </DropdownMenuItem>
             </>
@@ -302,7 +302,7 @@ export function ImportExportXlsxMenu({
               >
                 {serverUploadPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 size-4 animate-spin" />
                     Đang gửi…
                   </>
                 ) : (

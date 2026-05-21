@@ -246,8 +246,8 @@ export function CustomerForm({
         <div className="space-y-6 md:col-span-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <User className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <User className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Thông tin khách hàng
               </h3>
             </div>
@@ -259,7 +259,7 @@ export function CustomerForm({
                     Mã khách hàng <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <Hash className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={values.code}
                       onChange={(event) => updateField("code", event.target.value)}
@@ -291,7 +291,7 @@ export function CustomerForm({
                     Người liên hệ
                   </label>
                   <div className="relative">
-                    <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Briefcase className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={values.contactName}
                       onChange={(event) => updateField("contactName", event.target.value)}
@@ -308,7 +308,7 @@ export function CustomerForm({
                     Số điện thoại
                   </label>
                   <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={values.phone}
                       onChange={(event) => updateField("phone", event.target.value)}
@@ -327,7 +327,7 @@ export function CustomerForm({
                     Email
                   </label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={values.email}
                       onChange={(event) => updateField("email", event.target.value)}
@@ -358,8 +358,8 @@ export function CustomerForm({
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <MapPin className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <MapPin className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Địa chỉ và ghi chú
               </h3>
             </div>
@@ -395,7 +395,7 @@ export function CustomerForm({
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Trạng thái
               </h3>
             </div>
@@ -423,9 +423,9 @@ export function CustomerForm({
                 className="w-full bg-indigo-600 shadow-lg shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
               >
                 {isSubmitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 size-4" />
                 )}
                 {submitLabel}
               </Button>

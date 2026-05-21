@@ -1,4 +1,4 @@
-﻿import type { FormEvent } from "react";
+import type { FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,7 +155,7 @@ export function StockAdjustDialog({
                 <SelectItem value="__none__">Chọn vị trí</SelectItem>
                 {locations.map((loc) => (
                   <SelectItem key={loc.id} value={loc.id}>
-                    {loc.code} — Z:{loc.zone} A:{loc.aisle} R:{loc.rack}
+                    {loc.code}, Z:{loc.zone} A:{loc.aisle} R:{loc.rack}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -226,7 +226,7 @@ export function StockAdjustDialog({
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1 size-4 animate-spin" />
                   Đang xử lý...
                 </>
               ) : (

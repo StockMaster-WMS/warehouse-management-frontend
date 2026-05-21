@@ -99,7 +99,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
         <div className="grid grid-cols-1 gap-3 text-sm text-foreground sm:grid-cols-2">
           <div className="rounded-lg border border-border/70 bg-background px-3 py-2">
             <div className="flex items-start gap-2">
-              <User className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Khách hàng</p>
                 <p className="mt-0.5 font-semibold leading-snug">{so.customerName}</p>
@@ -108,7 +108,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
           </div>
           <div className="rounded-lg border border-border/70 bg-background px-3 py-2">
             <div className="flex items-start gap-2">
-              <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <Building2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Kho xuất</p>
                 <p className="mt-0.5 font-semibold leading-snug" title={so.warehouseId}>
@@ -119,7 +119,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
           </div>
           <div className="rounded-lg border border-border/70 bg-background px-3 py-2 sm:col-span-2">
             <div className="flex items-start gap-2">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Địa chỉ giao hàng</p>
                 <p className="mt-0.5 leading-snug text-foreground/90">{formatShippingShort(so.shippingAddress)}</p>
@@ -128,7 +128,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
           </div>
           <div className="rounded-lg border border-border/70 bg-background px-3 py-2 sm:col-span-2">
             <div className="flex items-start gap-2">
-              <Package className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <Package className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Quy mô đơn</p>
                 <p className="mt-0.5 leading-snug text-foreground/90">
@@ -155,10 +155,10 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
                 return (
                   <div key={step} className="relative flex flex-col items-center">
                     <div className={cn(
-                      "flex h-8 w-8 relative z-10 items-center justify-center rounded-full border-2 bg-background transition-colors",
+                      "flex size-8 relative z-10 items-center justify-center rounded-full border-2 bg-background transition-colors",
                       isActive ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : isPast ? "border-indigo-500 bg-indigo-500 text-white" : "border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600"
                     )}>
-                      <Icon className="h-4 w-4" />
+                      <Icon className="size-4" />
                     </div>
                     <span className={cn(
                       "absolute -bottom-6 w-24 text-center text-[10px] font-semibold uppercase tracking-wider",

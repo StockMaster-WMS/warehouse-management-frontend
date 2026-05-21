@@ -178,7 +178,7 @@ export function WarehouseFormDialog({
                       <span className="min-w-0 flex-1 truncate">
                         {isManagersLoading ? "Đang tải danh sách quản lý..." : selectedManagersLabel}
                       </span>
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <ChevronDown className="ml-2 size-4 shrink-0 text-muted-foreground" />
                     </Button>
                   }
                 />
@@ -198,7 +198,7 @@ export function WarehouseFormDialog({
                             checked={selected}
                             onCheckedChange={() => toggleManager(manager.id)}
                             className={cn(
-                              "items-start rounded-lg px-2 py-2 pr-8",
+                              "items-start rounded-lg p-2 pr-8",
                               selected && "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300",
                             )}
                           >
@@ -270,8 +270,8 @@ export function WarehouseFormDialog({
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang lưu...
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Đang lưu…
                 </>
               ) : editingWarehouse ? (
                 "Cập nhật"

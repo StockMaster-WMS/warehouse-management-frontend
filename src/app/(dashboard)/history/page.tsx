@@ -56,11 +56,11 @@ type LogType = "LOGIN" | "CREATE" | "UPDATE" | "DELETE" | "SYSTEM";
 type JsonRecord = Record<string, unknown>;
 
 const TYPE_ICONS: Record<LogType, ReactNode> = {
-  LOGIN: <LogIn className="h-4 w-4 text-emerald-600" />,
-  CREATE: <PackagePlus className="h-4 w-4 text-primary" />,
-  UPDATE: <FileEdit className="h-4 w-4 text-amber-600" />,
-  DELETE: <Trash2 className="h-4 w-4 text-rose-600" />,
-  SYSTEM: <Activity className="h-4 w-4 text-muted-foreground" />,
+  LOGIN: <LogIn className="size-4 text-emerald-600" />,
+  CREATE: <PackagePlus className="size-4 text-primary" />,
+  UPDATE: <FileEdit className="size-4 text-amber-600" />,
+  DELETE: <Trash2 className="size-4 text-rose-600" />,
+  SYSTEM: <Activity className="size-4 text-muted-foreground" />,
 };
 
 const TYPE_STYLES: Record<LogType, string> = {
@@ -345,9 +345,9 @@ function parseEntityNameParts(value: string | null | undefined) {
     const key = rawKey.trim().toLowerCase();
     const valueText = rawValue.join("=").trim();
     if (!valueText || isUuidLike(valueText)) continue;
-    if (key.includes("location")) parts.push(`Vị trí ${valueText}`);
-    else if (key.includes("lot")) parts.push(`Lô ${valueText}`);
-    else if (key.includes("sku")) parts.push(`Mã hàng ${valueText}`);
+    if (/location/.test(key)) parts.push(`Vị trí ${valueText}`);
+    else if (/lot/.test(key)) parts.push(`Lô ${valueText}`);
+    else if (/sku/.test(key)) parts.push(`Mã hàng ${valueText}`);
     else if (!key.endsWith("id") && key !== "product") parts.push(valueText);
   }
 
@@ -551,11 +551,11 @@ export default function HistoryPage() {
               onClick={() => refetch()}
               disabled={isFetching}
             >
-              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+              <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
               Tải lại
             </Button>
             <Button variant="outline" size="sm" className="rounded-lg border-border gap-2">
-              <Download className="h-4 w-4" />
+              <Download className="size-4" />
               Xuất dữ liệu
             </Button>
           </div>
@@ -565,7 +565,7 @@ export default function HistoryPage() {
       <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Tìm theo người dùng, thao tác, đối tượng..."
               value={searchTerm}
@@ -575,7 +575,7 @@ export default function HistoryPage() {
           </div>
           <Select value={effectiveModuleFilter} onValueChange={(value) => setModuleFilter(value || "ALL")}>
             <SelectTrigger className="h-10 w-[160px] rounded-lg border-border shrink-0">
-              <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+              <Filter className="mr-2 size-4 text-muted-foreground" />
               <span className="truncate text-sm">{MODULE_LABEL[effectiveModuleFilter] ?? effectiveModuleFilter}</span>
             </SelectTrigger>
             <SelectContent className="rounded-lg">
@@ -588,7 +588,7 @@ export default function HistoryPage() {
           </Select>
           <Select value={datePreset} onValueChange={(value) => setDatePreset(value as OperationDatePreset)}>
             <SelectTrigger className="h-10 w-[180px] rounded-lg border-border shrink-0">
-              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+              <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
               <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
             </SelectTrigger>
             <SelectContent className="rounded-lg">
@@ -600,7 +600,7 @@ export default function HistoryPage() {
           </Select>
           <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value || "ALL")}>
             <SelectTrigger className="h-10 w-[190px] rounded-lg border-border shrink-0">
-              <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+              <Filter className="mr-2 size-4 text-muted-foreground" />
               <span className="truncate text-sm">{ACTION_LABEL[typeFilter] ?? typeFilter}</span>
             </SelectTrigger>
             <SelectContent className="rounded-lg">
@@ -641,7 +641,7 @@ export default function HistoryPage() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-28 text-center text-sm text-muted-foreground">
-                  Đang tải nhật ký hoạt động...
+                  Đang tải nhật ký hoạt động…
                 </TableCell>
               </TableRow>
             ) : error ? (
@@ -668,7 +668,7 @@ export default function HistoryPage() {
                   <TableRow key={log.id} className="group border-b border-border/60 last:border-0 hover:bg-muted/50">
                     <TableCell className="py-4 pl-6">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 border border-border bg-card">
+                        <Avatar className="size-9 border border-border bg-card">
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                             {initials(actorName)}
                           </AvatarFallback>
@@ -722,7 +722,7 @@ export default function HistoryPage() {
                           {created.time}
                         </span>
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" />
+                          <CalendarIcon className="size-3" />
                           {created.date}
                         </span>
                       </div>

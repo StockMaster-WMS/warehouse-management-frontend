@@ -417,7 +417,7 @@ function AiAssistantHeader({
   onReset: () => void;
 }) {
   return (
-    <header className="flex shrink-0 flex-col gap-4 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <header className="flex shrink-0 flex-col gap-4 border-b border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="size-5" />
@@ -567,7 +567,7 @@ function TypingDots() {
       {[0, 1, 2].map((dot) => (
         <span
           key={dot}
-          className="size-2 rounded-full bg-muted-foreground animate-bounce"
+          className="size-2 rounded-full bg-muted-foreground animate-pulse"
           style={{ animationDelay: `${dot * 120}ms` }}
         />
       ))}

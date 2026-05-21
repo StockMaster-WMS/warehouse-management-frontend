@@ -55,7 +55,7 @@ export default function EditCustomerPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
@@ -95,7 +95,7 @@ export default function EditCustomerPage() {
               size="icon-sm"
               className="rounded-full"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
             </Button>
           }
         />
@@ -127,7 +127,7 @@ export default function EditCustomerPage() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />

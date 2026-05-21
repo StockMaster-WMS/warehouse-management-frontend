@@ -81,7 +81,7 @@ export function OrderSidebar({
                 disabled={isExecuting || lineCount === 0} 
                 className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
               >
-                {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+                {isExecuting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ClipboardCheck className="mr-2 size-4" />}
                 Xác nhận đơn
               </Button>
             ) : null}
@@ -93,7 +93,7 @@ export function OrderSidebar({
                 disabled={isExecuting || lineCount === 0} 
                 className="w-full justify-center bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
               >
-                {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                {isExecuting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Play className="mr-2 size-4" />}
                 Bắt đầu lấy hàng / tạo lệnh lấy
               </Button>
             ) : null}
@@ -105,7 +105,7 @@ export function OrderSidebar({
                 disabled={isExecuting}
                 className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               >
-                {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Box className="mr-2 h-4 w-4" />}
+                {isExecuting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Box className="mr-2 size-4" />}
                 Hoàn tất đóng gói
               </Button>
             ) : null}
@@ -117,7 +117,7 @@ export function OrderSidebar({
                 disabled={isExecuting} 
                 className="w-full justify-center bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
               >
-                {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
+                {isExecuting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Truck className="mr-2 size-4" />}
                 Xác nhận xuất kho
               </Button>
             ) : null}
@@ -132,7 +132,7 @@ export function OrderSidebar({
                 onClick={onOpenPrint}
                 className="justify-center text-xs h-9 bg-white"
               >
-                <Printer className="mr-1.5 h-3.5 w-3.5" />
+                <Printer className="mr-1.5 size-3.5" />
                 In phiếu
               </Button>
 
@@ -145,7 +145,7 @@ export function OrderSidebar({
                   disabled={deletingOrder}
                   onClick={onDeleteSalesOrder}
                 >
-                  {deletingOrder ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1.5 h-3.5 w-3.5" />}
+                  {deletingOrder ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Trash2 className="mr-1.5 size-3.5" />}
                   Xóa đơn
                 </Button>
               ) : canManageOrder ? (
@@ -157,7 +157,7 @@ export function OrderSidebar({
                   disabled={isExecuting || status === "CANCELLED" || status === "SHIPPED"}
                   onClick={onCancelOrder}
                 >
-                  {isExecuting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <XCircle className="mr-1.5 h-3.5 w-3.5" />}
+                  {isExecuting ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <XCircle className="mr-1.5 size-3.5" />}
                   Hủy đơn
                 </Button>
               ) : null}
@@ -166,7 +166,7 @@ export function OrderSidebar({
           
           <div className="mt-4 rounded-lg bg-slate-50 p-2.5 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-3.5 w-3.5 text-slate-400 mt-0.5" />
+              <AlertCircle className="size-3.5 text-slate-400 mt-0.5" />
               <p className="text-[10px] leading-relaxed text-slate-500">
                 Chỉ cho phép thêm/sửa hàng khi đơn ở trạng thái <strong>NHÁP</strong> hoặc <strong>SẴN SÀNG</strong>. Các bước vận hành tiếp theo sẽ tự động khóa dữ liệu.
               </p>

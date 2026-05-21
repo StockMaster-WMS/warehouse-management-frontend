@@ -6,7 +6,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
-      className={cn("ui-surface flex flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6", className)}
+      className={cn("ui-surface flex flex-col gap-4 p-4 sm:gap-6 sm:px-6 sm:py-6", className)}
       {...props}
     />
   );

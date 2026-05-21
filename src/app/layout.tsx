@@ -119,10 +119,8 @@ export default function RootLayout({
         >
           Bỏ qua đến nội dung chính
         </a>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+        <script type="application/ld+json">
+          {JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "StockMaster WMS",
@@ -139,9 +137,8 @@ export default function RootLayout({
               },
               areaServed: "VN",
               applicationCategory: "BusinessApplication",
-            }),
-          }}
-        />
+            })}
+        </script>
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
         </Providers>

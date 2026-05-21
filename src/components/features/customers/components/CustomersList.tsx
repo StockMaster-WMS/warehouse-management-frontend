@@ -114,7 +114,7 @@ export function CustomersList({
                 <TableRow key={`sk-${i}`} className="hover:bg-transparent">
                   <TableCell className="pl-5 py-3">
                     <div className="flex items-center gap-3">
-                      <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                      <Skeleton className="size-9 rounded-full shrink-0" />
                       <div className="space-y-1.5">
                         <Skeleton className="h-3.5 w-32" />
                         <Skeleton className="h-3 w-40" />
@@ -167,7 +167,7 @@ export function CustomersList({
                   {/* Customer info */}
                   <TableCell className="pl-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 shrink-0">
+                      <Avatar className="size-9 shrink-0">
                         <AvatarFallback className="bg-indigo-50 text-indigo-600 text-sm font-black ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400">
                           {customer.name[0]?.toUpperCase() ?? "K"}
                         </AvatarFallback>
@@ -186,7 +186,7 @@ export function CustomersList({
                           </span>
                         )}
                         <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400">
-                          <Mail className="h-3 w-3 shrink-0" />
+                          <Mail className="size-3 shrink-0" />
                           <span className="truncate">{customer.code} · {customer.email ?? "—"}</span>
                         </div>
                       </div>
@@ -196,7 +196,7 @@ export function CustomersList({
                   {/* Contact */}
                   <TableCell className="py-3.5">
                     <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
-                      {customer.phone && <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                      {customer.phone && <Phone className="size-3.5 shrink-0 text-slate-400" />}
                       <span className="truncate">
                         {customer.contactName || customer.phone || "—"}
                       </span>
@@ -206,7 +206,7 @@ export function CustomersList({
                   {/* Address */}
                   <TableCell className="py-3.5">
                     <div className="flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-400">
-                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
                       <span className="truncate">
                         {formatCustomerAddress(customer.address) || "—"}
                       </span>
@@ -232,22 +232,22 @@ export function CustomersList({
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 ring-1 ring-border transition-all"
+                              className="size-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 ring-1 ring-border transition-all"
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
                         <DropdownMenuContent align="end" className="w-48 rounded-xl">
                           <DropdownMenuItem className="rounded-lg" render={<Link href={`/customers/${customer.id}/edit`} />}>
-                            <Edit2 className="mr-2 h-4 w-4" />
+                            <Edit2 className="mr-2 size-4" />
                             Sửa hồ sơ
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="rounded-lg text-rose-600 focus:text-rose-600"
                             onClick={() => onRequestDelete({ id: customer.id, name: customer.name })}
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <Trash2 className="mr-2 size-4" />
                             Xóa khách hàng
                           </DropdownMenuItem>
                         </DropdownMenuContent>

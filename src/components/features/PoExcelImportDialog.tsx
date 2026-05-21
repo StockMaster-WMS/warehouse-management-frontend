@@ -192,7 +192,7 @@ export function PoExcelImportDialog({
               <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Danh mục sản phẩm (tham khảo UUID / mã)
                 <span className="ml-1 text-xs text-slate-400 group-open:hidden">
-                  — bấm để mở
+                 , bấm để mở
                 </span>
               </summary>
               <div className="max-h-48 overflow-y-auto border-t border-slate-200 dark:border-slate-700">
@@ -237,7 +237,7 @@ export function PoExcelImportDialog({
                 className="flex w-full cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-indigo-500"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <FileSpreadsheet className="h-10 w-10 text-slate-400" />
+                <FileSpreadsheet className="size-10 text-slate-400" />
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   Bấm để chọn file .xlsx
                 </p>
@@ -251,7 +251,7 @@ export function PoExcelImportDialog({
                 className="w-full"
                 onClick={handleDownloadTemplate}
               >
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="mr-2 size-4" />
                 Tải file mẫu (.xlsx)
               </Button>
             </div>
@@ -339,9 +339,9 @@ export function PoExcelImportDialog({
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 {result.failureCount === 0 ? (
-                  <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                  <CheckCircle2 className="size-8 text-emerald-500" />
                 ) : (
-                  <AlertTriangle className="h-8 w-8 text-amber-500" />
+                  <AlertTriangle className="size-8 text-amber-500" />
                 )}
                 <div>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">
@@ -465,12 +465,12 @@ export function PoExcelImportDialog({
                 >
                   {uploading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 size-4 animate-spin" />
                       Đang import…
                     </>
                   ) : (
                     <>
-                      <Upload className="mr-2 h-4 w-4" />
+                      <Upload className="mr-2 size-4" />
                       Import lên máy chủ
                     </>
                   )}

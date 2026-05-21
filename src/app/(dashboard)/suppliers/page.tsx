@@ -249,7 +249,7 @@ function PurchaseHistoryDialog({
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
               >
-                <ChevronLeft className="mr-1 h-3 w-3" />
+                <ChevronLeft className="mr-1 size-3" />
                 Trước
               </Button>
               <Button
@@ -259,7 +259,7 @@ function PurchaseHistoryDialog({
                 onClick={() => setPage((p) => p + 1)}
               >
                 Sau
-                <ChevronRight className="ml-1 h-3 w-3" />
+                <ChevronRight className="ml-1 size-3" />
               </Button>
             </div>
           </div>
@@ -358,7 +358,7 @@ function ChangeStatusDialog({
             disabled={isLoading || newStatus === currentStatus}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Xác nhận
           </Button>
         </DialogFooter>
@@ -473,9 +473,9 @@ export default function SuppliersPage() {
               onClick={handleExport}
             >
               {exporting ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               ) : (
-                <Download className="mr-1.5 h-3.5 w-3.5" />
+                <Download className="mr-1.5 size-3.5" />
               )}
               Xuất Excel
             </Button>
@@ -486,7 +486,7 @@ export default function SuppliersPage() {
                 size="sm"
                 className="bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 size-4" />
                 Thêm đối tác mới
               </Button>
             </PermissionControl>
@@ -532,7 +532,7 @@ export default function SuppliersPage() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 {stat.label}
               </span>
-              <stat.icon className={`h-4 w-4 ${stat.color} opacity-70`} />
+              <stat.icon className={`size-4 ${stat.color} opacity-70`} />
             </div>
             <div className="text-2xl font-bold text-slate-900 dark:text-white">
               {stat.value}
@@ -667,7 +667,7 @@ export default function SuppliersPage() {
                       <Skeleton className="mx-auto h-5 w-20 rounded-full" />
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
-                      <Skeleton className="ml-auto h-8 w-8 rounded-lg" />
+                      <Skeleton className="ml-auto size-8 rounded-lg" />
                     </TableCell>
                   </TableRow>
                 ))
@@ -725,7 +725,7 @@ export default function SuppliersPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
-                        <User className="h-3 w-3 shrink-0 text-slate-400" />
+                        <User className="size-3 shrink-0 text-slate-400" />
                         <span className="truncate">
                           {sup.contactName ?? "—"}
                         </span>
@@ -733,7 +733,7 @@ export default function SuppliersPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                        <Phone className="h-3 w-3 shrink-0 text-slate-400" />
+                        <Phone className="size-3 shrink-0 text-slate-400" />
                         {sup.contactPhone ?? "—"}
                       </div>
                     </TableCell>
@@ -752,9 +752,9 @@ export default function SuppliersPage() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="h-8 w-8 rounded-lg"
+                              className="size-8 rounded-lg"
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
@@ -769,7 +769,7 @@ export default function SuppliersPage() {
                             className="rounded-lg"
                             render={<Link href={`/suppliers/${sup.id}`} />}
                           >
-                            <Eye className="mr-2 h-4 w-4" />
+                            <Eye className="mr-2 size-4" />
                             Xem chi tiết
                           </DropdownMenuItem>
                           {canManageSuppliers ? (
@@ -778,14 +778,14 @@ export default function SuppliersPage() {
                                 className="rounded-lg"
                                 render={<Link href={`/suppliers/${sup.id}/edit`} />}
                               >
-                                <Edit2 className="mr-2 h-4 w-4" />
+                                <Edit2 className="mr-2 size-4" />
                                 Sửa thông tin
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="rounded-lg"
                                 onClick={() => setStatusTarget(sup)}
                               >
-                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                <ShieldAlert className="mr-2 size-4" />
                                 Đổi trạng thái
                               </DropdownMenuItem>
                             </>
@@ -794,7 +794,7 @@ export default function SuppliersPage() {
                             className="rounded-lg"
                             onClick={() => setHistoryTarget(sup)}
                           >
-                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <ExternalLink className="mr-2 size-4" />
                             Lịch sử nhập hàng
                           </DropdownMenuItem>
                           {canManageSuppliers ? (
@@ -804,7 +804,7 @@ export default function SuppliersPage() {
                                 className="rounded-lg text-rose-600 focus:text-rose-600"
                                 onClick={() => setDeleteTarget(sup)}
                               >
-                                <Trash2 className="mr-2 h-4 w-4" />
+                                <Trash2 className="mr-2 size-4" />
                                 Xóa đối tác
                               </DropdownMenuItem>
                             </>

@@ -28,7 +28,7 @@ export function ToggleOptionRow({
       )}
     >
       <div className="flex min-w-0 items-start gap-3">
-        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+        <Icon className="mt-0.5 size-4 flex-shrink-0 text-primary" />
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">
             {label}

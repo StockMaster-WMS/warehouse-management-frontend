@@ -37,7 +37,7 @@ const FILTERS: Array<{ value: NotificationFilter; label: string }> = [
 ];
 
 export default function NotificationsPage() {
-  const router = useRouter();
+  const { push } = useRouter();
   const { data: user } = useGetCurrentUserQuery();
   const canNavigateUser = getUserRoles(user?.roles).includes("ADMIN");
   const [filter, setFilter] = useState<NotificationFilter>("all");
@@ -71,7 +71,7 @@ export default function NotificationsPage() {
       }
       const href = getNotificationHref(notification, { canNavigateUser });
       if (href) {
-        router.push(href);
+        push(href);
       }
     } catch {
       toast.error("Không thể cập nhật trạng thái thông báo.");
@@ -104,9 +104,9 @@ export default function NotificationsPage() {
             className="gap-2"
           >
             {markingAll ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <CheckCheck className="h-4 w-4" />
+              <CheckCheck className="size-4" />
             )}
             Đánh dấu tất cả đã đọc
           </Button>
@@ -136,7 +136,7 @@ export default function NotificationsPage() {
             ))}
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {isFetching ? <Loader2 className="size-3.5 animate-spin" /> : null}
             <span>{totalElements.toLocaleString("vi-VN")} thông báo</span>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function NotificationsPage() {
           <div className="divide-y divide-border">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={`notification-loading-${index}`} className="flex gap-3 p-4">
-                <Skeleton className="h-10 w-10 rounded-xl" />
+                <Skeleton className="size-10 rounded-xl" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-48 max-w-full" />
                   <Skeleton className="h-3 w-full" />
@@ -229,23 +229,23 @@ function NotificationCenterRow({
       type="button"
       onClick={onOpen}
       className={cn(
-        "flex w-full gap-4 px-4 py-4 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex w-full gap-4 p-4 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         !notification.read && "bg-primary/5",
       )}
     >
       <span
         className={cn(
-          "mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+          "mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl",
           severity.iconWrap,
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="size-5" />
       </span>
 
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           {!notification.read ? (
-            <span className={cn("h-2.5 w-2.5 rounded-full", severity.dot)} />
+            <span className={cn("size-2.5 rounded-full", severity.dot)} />
           ) : null}
           <span
             className={cn(
@@ -267,7 +267,7 @@ function NotificationCenterRow({
         </span>
         <span className="mt-2 block text-xs font-medium text-muted-foreground">
           <span title={formatNotificationTime(notification.createdAt)}>
-            <SeverityIcon className="mr-1 inline h-3.5 w-3.5" />
+            <SeverityIcon className="mr-1 inline size-3.5" />
             {formatNotificationRelativeTime(notification.createdAt)}
           </span>
         </span>

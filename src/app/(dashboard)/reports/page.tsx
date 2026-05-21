@@ -1,36 +1,75 @@
 "use client";
 
+import { useState } from "react";
 import { Download, AlertCircle, TrendingUp, ShoppingBag, CheckCircle, ArrowUpRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/ui/page-section";
 import { StatCard } from "@/components/ui/stat-card";
-import { useGetReportSummaryQuery, useLazyExportInventoryReportQuery } from "@/store/services/report.service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetReportSummaryQuery, useLazyExportReportSummaryQuery } from "@/store/services/report.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevenueTrendChart } from "@/components/reports/revenue-trend-chart";
 import { TopSkusTable } from "@/components/reports/top-skus-table";
 import { apiErrMessage } from "@/types/api";
+import type { DashboardPeriod } from "@/types/dashboard";
+
+const REPORT_PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string; description: string }> = [
+  { value: "today", label: "Hôm nay", description: "Dữ liệu phát sinh trong ngày" },
+  { value: "7d", label: "7 ngày", description: "7 ngày gần nhất" },
+  { value: "30d", label: "1 tháng", description: "30 ngày gần nhất" },
+  { value: "year", label: "Năm", description: "Tổng hợp theo tháng trong năm" },
+];
+
+const currentYear = new Date().getFullYear();
+const REPORT_YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => currentYear - index);
 
 export default function ReportsPage() {
-  const { data: summary, isLoading, isError, refetch } = useGetReportSummaryQuery();
-  const [exportInventory, { isFetching: isExporting }] = useLazyExportInventoryReportQuery();
+  const [period, setPeriod] = useState<DashboardPeriod>("30d");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const activePeriod = REPORT_PERIOD_OPTIONS.find((item) => item.value === period) ?? REPORT_PERIOD_OPTIONS[2];
+  const reportParams = {
+    period,
+    year: period === "year" ? selectedYear : undefined,
+  };
+  const { data: summary, isLoading, isFetching, isError, refetch } = useGetReportSummaryQuery(reportParams);
+  const [exportReportSummary, { isFetching: isExporting }] = useLazyExportReportSummaryQuery();
 
-  const handleExportInventory = async () => {
+  const handleExportReport = async () => {
     try {
-      const blob = await exportInventory().unwrap();
+      const blob = await exportReportSummary(reportParams).unwrap();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `inventory-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const suffix = period === "year" ? selectedYear : period;
+      link.setAttribute('download', `summary-report-${suffix}-${new Date().toISOString().split('T')[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Đã tải xuống báo cáo kho hàng");
+      toast.success("Đã tải xuống báo cáo theo thời gian đã chọn");
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể tải báo cáo"));
     }
+  };
+
+  const handleExportPdf = () => {
+    toast.info("Đang mở hộp thoại in. Chọn 'Lưu thành PDF' để tải báo cáo.");
+    window.print();
+  };
+
+  const scrollToRevenueDetail = () => {
+    document.getElementById("revenue-detail")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   if (isLoading) {
@@ -53,8 +92,8 @@ export default function ReportsPage() {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <AlertCircle className="h-12 w-12 text-rose-500 mb-4" />
-        <h3 className="text-lg font-bold">Không thể tải dữ liệu báo cáo</h3>
+        <AlertCircle className="size-12 text-rose-500 mb-4" />
+        <h3 className="text-lg font-semibold">Không thể tải dữ liệu báo cáo</h3>
         <p className="text-muted-foreground mb-6">Lỗi khi kết nối với dịch vụ báo cáo.</p>
         <Button onClick={() => refetch()} variant="outline">Thử lại</Button>
       </div>
@@ -65,25 +104,69 @@ export default function ReportsPage() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Báo cáo & Phân tích"
-        description="Theo dõi hiệu suất kinh doanh và luân chuyển kho hàng theo thời gian thực."
+        description={`Đang xem ${period === "year" ? `năm ${selectedYear}` : activePeriod.description.toLowerCase()}.`}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {period === "year" ? (
+              <Select
+                value={String(selectedYear)}
+                onValueChange={(value) => setSelectedYear(Number(value))}
+                disabled={isFetching}
+              >
+                <SelectTrigger className="h-9 w-full rounded-lg sm:w-32">
+                  <SelectValue placeholder="Chọn năm" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-lg">
+                  {REPORT_YEAR_OPTIONS.map((year) => (
+                    <SelectItem key={year} value={String(year)}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             <Button 
               size="sm" 
-              onClick={handleExportInventory} 
+              onClick={handleExportReport} 
               disabled={isExporting}
               className="bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all active:scale-95"
             >
-              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Tải báo cáo kho
+              {isExporting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Download className="mr-2 size-4" />}
+              Tải báo cáo Excel
             </Button>
-            <Button size="sm" variant="outline" className="shadow-sm">
-              <Download className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="outline" className="shadow-sm" onClick={handleExportPdf}>
+              <Download className="mr-2 size-4" />
               Tải báo cáo PDF
             </Button>
           </div>
         }
       />
+
+      <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
+            Khoảng thời gian báo cáo
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dữ liệu biểu đồ, top SKU và file Excel đều dùng cùng bộ lọc này.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          {REPORT_PERIOD_OPTIONS.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              variant={period === item.value ? "default" : "outline"}
+              size="sm"
+              className="rounded-lg"
+              onClick={() => setPeriod(item.value)}
+              disabled={isFetching && period === item.value}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 md:gap-6">
@@ -92,21 +175,21 @@ export default function ReportsPage() {
           value={`${(summary?.totalRevenue ?? 0).toLocaleString('vi-VN')} ₫`}
           icon={TrendingUp}
           accentClassName="bg-indigo-600"
-          description="Trong 30 ngày qua"
+          description={period === "year" ? `Năm ${selectedYear}` : activePeriod.description}
         />
         <StatCard
           label="Tổng đơn hàng"
           value={summary?.totalOrders?.toLocaleString() ?? "0"}
           icon={ShoppingBag}
           accentClassName="bg-amber-500"
-          description="Đã hoàn thành & đang xử lý"
+          description="Trong khoảng thời gian đã chọn"
         />
         <StatCard
           label="Tỷ lệ hoàn thành"
           value={`${summary?.completionRate ?? 0}%`}
           icon={CheckCircle}
           accentClassName="bg-emerald-600"
-          description="Tỷ lệ giao hàng đúng hạn"
+          description="Tính trên đơn hoạt động"
         />
       </div>
 
@@ -114,14 +197,20 @@ export default function ReportsPage() {
         {/* Revenue Trend */}
         <PageSection
           title="Biểu đồ doanh thu"
-          description="Xu hướng doanh thu 7 ngày gần nhất."
+          description={period === "year" ? "Doanh thu theo từng tháng trong năm." : `Xu hướng doanh thu trong ${activePeriod.label.toLowerCase()}.`}
           action={
-            <Button variant="ghost" size="sm" className="h-8 text-indigo-600 text-xs font-bold hover:bg-indigo-50">
-              Chi tiết <ArrowUpRight className="ml-1 h-3 w-3" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 text-indigo-600 text-xs font-bold hover:bg-indigo-50"
+              onClick={scrollToRevenueDetail}
+            >
+              Chi tiết <ArrowUpRight className="ml-1 size-3" />
             </Button>
           }
         >
-          <div className="pt-2">
+          <div id="revenue-detail" className="scroll-mt-24 pt-2">
             <RevenueTrendChart data={summary?.revenueTrend} />
           </div>
         </PageSection>

@@ -105,7 +105,7 @@ export default function ProductDetailPage() {
                 size="sm"
                 className="border-slate-200"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-2 size-4" />
                 Về danh sách
               </Button>
             }
@@ -129,7 +129,7 @@ export default function ProductDetailPage() {
                     size="sm"
                     className="bg-indigo-600 hover:bg-indigo-700"
                   >
-                    <ListOrdered className="mr-2 h-4 w-4" />
+                    <ListOrdered className="mr-2 size-4" />
                     Danh sách sản phẩm
                   </Button>
                 </div>
@@ -141,7 +141,7 @@ export default function ProductDetailPage() {
         <>
           {isFetching ? (
             <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/30">
-              Đang đồng bộ dữ liệu mới nhất...
+              Đang đồng bộ dữ liệu mới nhất…
             </p>
           ) : null}
 
@@ -155,7 +155,7 @@ export default function ProductDetailPage() {
             <div className="space-y-6 lg:col-span-2">
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                     Thông tin vận hành
                   </h2>
                 </div>
@@ -181,7 +181,7 @@ export default function ProductDetailPage() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                     Quy cách sản phẩm
                   </h2>
                 </div>
@@ -201,7 +201,7 @@ export default function ProductDetailPage() {
             <div className="space-y-6">
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                     Trạng thái & tồn
                   </h2>
                 </div>
@@ -214,7 +214,7 @@ export default function ProductDetailPage() {
                         : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
                     }`}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    <span className="size-1.5 rounded-full bg-current" />
                     {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
                   </span>
                 </div>
@@ -233,7 +233,7 @@ export default function ProductDetailPage() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
                 <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                     Tồn theo vị trí
                   </h2>
                 </div>
@@ -249,7 +249,7 @@ export default function ProductDetailPage() {
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-none">
             <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Lịch sử xuất / nhập (Thẻ Kho)
               </h2>
             </div>

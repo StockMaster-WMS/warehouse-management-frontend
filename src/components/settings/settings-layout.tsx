@@ -34,7 +34,7 @@ export function SettingsSection({
     <section className={cn("space-y-4", className)}>
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          {Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
+          {Icon ? <Icon className="size-4 text-primary" /> : null}
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
         </div>
         {description ? (
@@ -67,7 +67,7 @@ export function SettingsPanel({
     <Card className={cn("border-border shadow-sm", className)}>
       <CardHeader className="space-y-1">
         <CardTitle className="flex items-center gap-2 text-base">
-          {Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
+          {Icon ? <Icon className="size-4 text-primary" /> : null}
           {title}
         </CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}
@@ -102,7 +102,7 @@ export function SettingsField({
         htmlFor={htmlFor}
         className="flex items-center gap-2 text-sm font-medium text-foreground"
       >
-        {Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
+        {Icon ? <Icon className="size-4 text-primary" /> : null}
         {label}
       </label>
       {children}
@@ -148,7 +148,7 @@ export function SettingsOptionButton({
         {Icon ? (
           <Icon
             className={cn(
-              "mt-0.5 h-4 w-4 shrink-0",
+              "mt-0.5 size-4 shrink-0",
               selected ? "text-primary" : "text-muted-foreground",
             )}
           />

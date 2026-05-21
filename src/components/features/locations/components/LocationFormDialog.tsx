@@ -230,8 +230,8 @@ export function LocationFormDialog({
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                    Đang lưu...
+                                    <Loader2 className="mr-1 size-4 animate-spin" />
+                                    Đang lưu…
                                 </>
                             ) : editingLocation ? (
                                 "Lưu thay đổi"

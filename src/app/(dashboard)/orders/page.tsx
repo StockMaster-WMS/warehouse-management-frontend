@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -15,7 +16,8 @@ import {
 } from "@/components/features/orders";
 
 function OrderPageContent() {
-  const logic = useOrdersPageLogic();
+  const { get } = useSearchParams();
+  const logic = useOrdersPageLogic(get("created") || "");
   const canManageOrders = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (
@@ -31,7 +33,7 @@ function OrderPageContent() {
               size="sm"
               className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 size-4" />
               Tạo đơn xuất
             </Button>
           </PermissionControl>

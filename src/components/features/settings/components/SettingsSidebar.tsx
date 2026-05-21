@@ -29,7 +29,7 @@ export function SettingsSidebar({ tabs, activeTab, onTabChange }: SettingsSideba
                     : "border-l-4 border-transparent text-foreground hover:bg-muted",
                 )}
               >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className="size-5 flex-shrink-0" />
                 <span>{item.label}</span>
               </button>
               {index < tabs.length - 1 && <Separator className="my-0" />}

@@ -105,7 +105,7 @@ export function InboundPrintModal({
             </DialogDescription>
           </div>
           <Button onClick={handlePrint} className="gap-2">
-            <Printer className="h-4 w-4" /> In Phiếu
+            <Printer className="size-4" /> In Phiếu
           </Button>
         </DialogHeader>
 
@@ -116,7 +116,7 @@ export function InboundPrintModal({
         >
           <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold uppercase tracking-widest">{title}</h1>
+              <h1 className="text-2xl font-semibold uppercase tracking-widest">{title}</h1>
               <p className="font-mono mt-1 text-sm font-semibold">
                 Mã đơn: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
               </p>
@@ -189,23 +189,23 @@ export function InboundPrintModal({
               {data.items && data.items.length > 0 ? (
                 data.items.map((item, idx) => (
                   <tr key={`${item.lineNumber ?? idx}-${item.productSku ?? item.productName ?? "item"}`} className="border-b border-slate-300 break-inside-avoid">
-                    <td className="py-2 px-2 text-center border-x border-slate-300">{item.lineNumber || idx + 1}</td>
-                    <td className="py-2 px-2 font-mono text-xs border-x border-slate-300">
+                    <td className="p-2 text-center border-x border-slate-300">{item.lineNumber || idx + 1}</td>
+                    <td className="p-2 font-mono text-xs border-x border-slate-300">
                       {item.productSku || "—"}
                     </td>
-                    <td className="py-2 px-2 border-x border-slate-300">
+                    <td className="p-2 border-x border-slate-300">
                       {item.productName || item.productSku || "—"}
                     </td>
-                    <td className="py-2 px-2 text-center border-x border-slate-300">
+                    <td className="p-2 text-center border-x border-slate-300">
                       {item.unit || "—"}
                     </td>
-                    <td className="py-2 px-2 text-right border-x border-slate-300">
+                    <td className="p-2 text-right border-x border-slate-300">
                       {item.orderedQty ?? 0}
                     </td>
-                    <td className="py-2 px-2 text-right font-bold border-x border-slate-300">
+                    <td className="p-2 text-right font-bold border-x border-slate-300">
                       {item.receivedQty ?? 0}
                     </td>
-                    <td className="py-2 px-2 text-left text-xs border-x border-slate-300">
+                    <td className="p-2 text-left text-xs border-x border-slate-300">
                       {item.note || ""}
                     </td>
                   </tr>

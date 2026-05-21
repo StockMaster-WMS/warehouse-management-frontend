@@ -158,7 +158,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     for (const stock of selectableStockRows) {
       const productId = String(stock.productId ?? "").trim();
       if (!productId) continue;
-      const product = productsById.get(productId) ?? stockOptionProducts.find((p) => p.id === productId);
+      const product = productsById.get(productId);
       if (!product) continue;
       const current = aggregate.get(productId);
       if (current) {
@@ -187,7 +187,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       label: `${product.sku ? `${product.sku} · ` : ""}${product.name ?? product.id}`,
       hint: `Tồn: ${qtyOnHand.toLocaleString("vi-VN")} · Khả dụng: ${qtyAvailable.toLocaleString("vi-VN")}`,
     }));
-  }, [productsById, selectableStockRows, selectedLineProduct, stockOptionProducts]);
+  }, [productsById, selectableStockRows, selectedLineProduct]);
 
   const canQueryLineStock = Boolean(salesOrder.warehouseId && lineProductId.trim());
   const {
@@ -488,8 +488,8 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     <Card className="gap-0 py-0 shadow-sm">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3 pt-5">
         <div className="flex min-w-0 gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/5">
-            <ClipboardList className="h-4 w-4 text-primary" />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/5">
+            <ClipboardList className="size-4 text-primary" />
           </div>
           <div>
             <CardTitle className="text-base">Dòng hàng</CardTitle>
@@ -515,12 +515,12 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
           />
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <PackagePlus className="h-4 w-4 text-primary" />
+              <PackagePlus className="size-4 text-primary" />
               <p className="text-xs font-bold uppercase text-muted-foreground">Thêm dòng</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={onDownloadImportTemplate}>
-                <FileDown className="mr-1.5 h-3.5 w-3.5" />
+                <FileDown className="mr-1.5 size-3.5" />
                 Mẫu file
               </Button>
               <Button
@@ -530,7 +530,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!allowLineMutation || importProductsLoading}
               >
-                <FileUp className="mr-1.5 h-3.5 w-3.5" />
+                <FileUp className="mr-1.5 size-3.5" />
                 Nhập file
               </Button>
             </div>
@@ -569,7 +569,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
               {lineProductId ? (
                 <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-900">
                   {lineStocksLoading ? (
-                    <span className="text-slate-500">Đang tải tồn kho của sản phẩm trong kho này...</span>
+                    <span className="text-slate-500">Đang tải tồn kho của sản phẩm trong kho này…</span>
                   ) : lineStocksError ? (
                     <span className="text-rose-600">Không tải được tồn kho của sản phẩm.</span>
                   ) : (
@@ -619,7 +619,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
 
           <div className="mt-3 flex justify-end">
             <Button type="submit" size="sm" disabled={!allowLineMutation || creatingLine || creatingLineAndPicking || updatingLine}>
-              {creatingLine || creatingLineAndPicking || updatingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {creatingLine || creatingLineAndPicking || updatingLine ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               Thêm dòng
             </Button>
           </div>
@@ -661,7 +661,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                       disabled={!allowLineMutation}
                       onClick={() => setEditingLine(l)}
                     >
-                      <Pencil className="mr-1.5 h-4 w-4" />
+                      <Pencil className="mr-1.5 size-4" />
                       Sửa
                     </Button>
                     <Button
@@ -672,7 +672,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                       disabled={!allowLineMutation || deletingLine}
                       onClick={() => onDeleteLine(l)}
                     >
-                      {deletingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      {deletingLine ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Trash2 className="mr-2 size-4" />}
                       Xóa
                     </Button>
                   </div>
