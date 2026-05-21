@@ -48,7 +48,7 @@ export function SearchToolbar({
         </div>
 
         {right && (
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
             {right}
           </div>
         )}
@@ -57,7 +57,7 @@ export function SearchToolbar({
       {filters && (
         <div className="empty:hidden">
           <div className="my-3 h-px w-full bg-border sm:my-4" />
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             {filters}
           </div>
         </div>

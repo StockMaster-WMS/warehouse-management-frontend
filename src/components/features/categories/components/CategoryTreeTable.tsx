@@ -60,7 +60,7 @@ export function CategoryTreeTable({
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <Table className="min-w-200">
           <TableHeader className="bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
             <TableRow className="border-none hover:bg-transparent">
@@ -245,7 +245,7 @@ export function CategoryTreeTable({
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400"
                         title="Thống kê theo nhóm — sắp cập nhật"
                       >
-                        <Package className="size-3.5 opacity-70" />,
+                        <Package className="size-3.5 opacity-70" />
                       </div>
                     </TableCell>
 
@@ -316,6 +316,171 @@ export function CategoryTreeTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="grid gap-3 p-3 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={`category-card-skeleton-${idx}`}
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div className="flex items-start gap-3">
+                <Skeleton className="size-10 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-3 w-36" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : error ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center dark:border-rose-900/60 dark:bg-rose-950/30">
+            <EmptyState
+              icon={Tag}
+              title="Không thể tải nhóm hàng"
+              description="Đã xảy ra lỗi khi tải cây phân loại."
+              action={
+                <Button variant="outline" size="sm" className="h-10" onClick={onRetry}>
+                  Thử lại
+                </Button>
+              }
+            />
+          </div>
+        ) : treeModel.visibleNodes.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900">
+            <EmptyState
+              icon={Tag}
+              title={treeModel.hasQuery ? "Không có nhóm khớp tìm kiếm" : "Chưa có nhóm / loại nào"}
+              description={treeModel.hasQuery ? "Thử từ khóa khác hoặc xóa bộ lọc." : "Tạo nhóm gốc hoặc loại con để gán cho sản phẩm."}
+              action={
+                treeModel.hasQuery ? (
+                  <Button variant="outline" size="sm" className="h-10" onClick={onRetry}>
+                    Làm mới
+                  </Button>
+                ) : canManageCategories ? (
+                  <Button
+                    render={<Link href="/categories/new" />}
+                    nativeButton={false}
+                    size="sm"
+                    className="h-10 bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Package className="mr-2 size-4" />
+                    Thêm phân loại mới
+                  </Button>
+                ) : null
+              }
+            />
+          </div>
+        ) : (
+          treeModel.visibleNodes.map(({ cat, treeDepth, hasChildren }) => {
+            const isExpanded = treeModel.effectiveExpandedIds.has(cat.id);
+            const inset = Math.min(treeDepth, 3) * 12;
+
+            return (
+              <article
+                key={cat.id}
+                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                style={{ marginLeft: inset }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                    {hasChildren ? (
+                      <button
+                        type="button"
+                        onClick={() => onToggleExpanded(cat.id)}
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? "Thu gọn nhánh" : "Mở rộng nhánh"}
+                        className="flex size-10 items-center justify-center rounded-lg"
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "size-5 transition-transform",
+                            isExpanded ? "rotate-0" : "-rotate-90",
+                          )}
+                        />
+                      </button>
+                    ) : (
+                      <Tag className="size-5" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold leading-5 text-slate-900 dark:text-white">
+                          {cat.name}
+                        </h3>
+                        <p className="mt-1 truncate font-mono text-xs text-slate-500 dark:text-slate-400">
+                          {cat.code}
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-1 text-[10px] font-bold",
+                          cat.isActive
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+                        )}
+                      >
+                        {cat.isActive ? "Hoạt động" : "Tạm dừng"}
+                      </span>
+                    </div>
+
+                    <p className="mt-3 truncate rounded-lg bg-slate-50 px-2 py-1.5 font-mono text-xs text-slate-500 dark:bg-slate-800/70 dark:text-slate-400">
+                      {cat.path || "Chưa có path"}
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
+                        <Package className="size-3.5 opacity-70" />
+                        Sản phẩm
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button variant="outline" size="icon-lg" className="size-10 rounded-lg">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Nhóm / loại</DropdownMenuLabel>
+                          </DropdownMenuGroup>
+                          {canManageCategories ? (
+                            <DropdownMenuItem
+                              className="cursor-pointer rounded-lg"
+                              onClick={() => onEditCategory(cat)}
+                            >
+                              <Tag className="mr-2 size-4" />
+                              Sửa thông tin
+                            </DropdownMenuItem>
+                          ) : null}
+                          <DropdownMenuItem className="rounded-lg" render={<Link href="/products" />}>
+                            <Package className="mr-2 size-4" />
+                            Sản phẩm
+                          </DropdownMenuItem>
+                          {canManageCategories ? (
+                            <DropdownMenuItem
+                              className="rounded-lg text-rose-600 focus:text-rose-600"
+                              onClick={() => onDeleteCategory(cat)}
+                            >
+                              <Tag className="mr-2 size-4" />
+                              Xóa nhóm hàng
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
       </div>
     </>
   );

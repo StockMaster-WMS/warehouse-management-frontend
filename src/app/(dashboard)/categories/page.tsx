@@ -28,7 +28,7 @@ export default function CategoriesPage() {
             <Button
               onClick={logic.openCreateDialog}
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+              className="h-10 w-full bg-indigo-600 shadow-sm shadow-indigo-200 hover:bg-indigo-700 dark:shadow-none sm:w-auto sm:h-7"
             >
               <Plus className="mr-2 size-4" />
               Thêm phân loại mới
