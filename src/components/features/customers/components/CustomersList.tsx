@@ -56,6 +56,7 @@ type CustomersListProps = {
   onPageSizeChange?: (size: number) => void;
   onRequestDelete: (target: { id: string; name: string }) => void;
   noContainer?: boolean;
+  canManageCustomers?: boolean;
 };
 
 export function CustomersList({
@@ -77,6 +78,7 @@ export function CustomersList({
   onPageSizeChange,
   onRequestDelete,
   noContainer = false,
+  canManageCustomers = false,
 }: CustomersListProps) {
   const content = (
     <>
@@ -171,12 +173,18 @@ export function CustomersList({
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <Link
-                          href={`/customers/${customer.id}/edit`}
-                          className="block truncate text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors dark:text-white"
-                        >
-                          {customer.name}
-                        </Link>
+                        {canManageCustomers ? (
+                          <Link
+                            href={`/customers/${customer.id}/edit`}
+                            className="block truncate text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors dark:text-white"
+                          >
+                            {customer.name}
+                          </Link>
+                        ) : (
+                          <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">
+                            {customer.name}
+                          </span>
+                        )}
                         <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400">
                           <Mail className="h-3 w-3 shrink-0" />
                           <span className="truncate">{customer.code} · {customer.email ?? "—"}</span>
@@ -217,32 +225,34 @@ export function CustomersList({
 
                   {/* Actions */}
                   <TableCell className="pr-4 py-3.5 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 ring-1 ring-border transition-all"
+                    {canManageCustomers ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 ring-1 ring-border transition-all"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          <DropdownMenuItem className="rounded-lg" render={<Link href={`/customers/${customer.id}/edit`} />}>
+                            <Edit2 className="mr-2 h-4 w-4" />
+                            Sửa hồ sơ
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="rounded-lg text-rose-600 focus:text-rose-600"
+                            onClick={() => onRequestDelete({ id: customer.id, name: customer.name })}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                      <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                        <DropdownMenuItem className="rounded-lg" render={<Link href={`/customers/${customer.id}/edit`} />}>
-                          <Edit2 className="mr-2 h-4 w-4" />
-                          Sửa hồ sơ
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="rounded-lg text-rose-600 focus:text-rose-600"
-                          onClick={() => onRequestDelete({ id: customer.id, name: customer.name })}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa khách hàng
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa khách hàng
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))

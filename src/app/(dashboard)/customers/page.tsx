@@ -4,6 +4,8 @@ import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
   CustomersList,
@@ -14,6 +16,7 @@ import {
 
 export default function CustomersPage() {
   const logic = useCustomersPageLogic();
+  const canManageCustomers = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -21,15 +24,17 @@ export default function CustomersPage() {
         title="Khách hàng"
         description="Duy trì mối quan hệ và quản lý thông tin khách hàng/nhà cung cấp."
         actions={
-          <Button
-            render={<Link href="/customers/new" />}
-            nativeButton={false}
-            size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Thêm mới
-          </Button>
+          <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+            <Button
+              render={<Link href="/customers/new" />}
+              nativeButton={false}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Thêm mới
+            </Button>
+          </PermissionControl>
         }
       />
 
@@ -86,6 +91,7 @@ export default function CustomersPage() {
             logic.setPage(0);
           }}
           onRequestDelete={logic.openDeleteDialog}
+          canManageCustomers={canManageCustomers}
         />
       </div>
 

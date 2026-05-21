@@ -40,6 +40,7 @@ interface ProductTableProps {
     onNextPage: () => void;
     onPageSizeChange?: (size: number) => void;
     noContainer?: boolean;
+    canManageProducts?: boolean;
 }
 
 function ProductTableSkeleton() {
@@ -109,6 +110,7 @@ export function ProductTable({
     onNextPage,
     onPageSizeChange,
     noContainer = false,
+    canManageProducts = false,
 }: ProductTableProps) {
     const content = (
         <>
@@ -206,15 +208,17 @@ export function ProductTable({
                                                     Xóa bộ lọc
                                                 </Button>
                                             ) : (
-                                                <Button
-                                                    render={<Link href="/products/new" />}
-                                                    nativeButton={false}
-                                                    size="sm"
-                                                    className="bg-indigo-600 hover:bg-indigo-700"
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Tạo sản phẩm
-                                                </Button>
+                                                canManageProducts ? (
+                                                    <Button
+                                                        render={<Link href="/products/new" />}
+                                                        nativeButton={false}
+                                                        size="sm"
+                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Tạo sản phẩm
+                                                    </Button>
+                                                ) : null
                                             )
                                         }
                                         className="py-10"
@@ -228,6 +232,7 @@ export function ProductTable({
                                     product={product}
                                     rowNumber={pageIndex * pageSize + index + 1}
                                     onRequestDelete={onRequestDelete}
+                                    canManageProducts={canManageProducts}
                                 />
                             ))
                         )}

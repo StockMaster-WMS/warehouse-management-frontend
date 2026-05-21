@@ -53,6 +53,8 @@ import {
   supplierStatusLabel,
   supplierStatusClass,
 } from "@/types/supplier";
+import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 /* ── helpers ── */
 const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
@@ -188,6 +190,7 @@ function ChangeStatusDialog({
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
+  const canManageSupplier = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   const {
     data: supplierRes,
@@ -456,59 +459,63 @@ export default function SupplierDetailPage() {
           </div>
 
           {/* Actions */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="mb-4 border-b pb-4 text-sm font-bold uppercase tracking-wider text-slate-900 dark:border-slate-800 dark:text-white">
-              Hành động
-            </h3>
-            <div className="flex flex-col gap-3">
-              <Button
-                render={<Link href={`/suppliers/${id}/edit`} />}
-                nativeButton={false}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                Sửa thông tin
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setStatusOpen(true)}
-              >
-                <ShieldAlert className="mr-2 h-4 w-4" />
-                Đổi trạng thái
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
-                disabled={hasPo}
-                onClick={() => setDeleteOpen(true)}
-                title={
-                  hasPo
-                    ? "Không thể xóa NCC đang có đơn nhập hàng"
-                    : "Xóa nhà cung cấp"
-                }
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa nhà cung cấp
-              </Button>
-              {hasPo && (
-                <p className="text-center text-[11px] text-amber-600">
-                  Không thể xóa — nhà cung cấp đang có đơn nhập hàng.
-                </p>
-              )}
+          {canManageSupplier ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="mb-4 border-b pb-4 text-sm font-bold uppercase tracking-wider text-slate-900 dark:border-slate-800 dark:text-white">
+                Hành động
+              </h3>
+              <div className="flex flex-col gap-3">
+                <Button
+                  render={<Link href={`/suppliers/${id}/edit`} />}
+                  nativeButton={false}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Sửa thông tin
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setStatusOpen(true)}
+                >
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  Đổi trạng thái
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                  disabled={hasPo}
+                  onClick={() => setDeleteOpen(true)}
+                  title={
+                    hasPo
+                      ? "Không thể xóa NCC đang có đơn nhập hàng"
+                      : "Xóa nhà cung cấp"
+                  }
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Xóa nhà cung cấp
+                </Button>
+                {hasPo && (
+                  <p className="text-center text-[11px] text-amber-600">
+                    Không thể xóa — nhà cung cấp đang có đơn nhập hàng.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
       {/* Dialogs */}
-      <ChangeStatusDialog
-        key={statusOpen ? "open" : "closed"}
-        open={statusOpen}
-        onOpenChange={setStatusOpen}
-        supplierId={id}
-        currentStatus={supplier.status}
-      />
+      {canManageSupplier ? (
+        <ChangeStatusDialog
+          key={statusOpen ? "open" : "closed"}
+          open={statusOpen}
+          onOpenChange={setStatusOpen}
+          supplierId={id}
+          currentStatus={supplier.status}
+        />
+      ) : null}
 
       <DeleteConfirmDialog
         open={deleteOpen}

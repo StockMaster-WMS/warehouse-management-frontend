@@ -38,6 +38,8 @@ import { useGetWarehouseByIdQuery } from "@/store/services/warehouse.service";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 const RMA_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
@@ -109,6 +111,7 @@ function receiveFormReducer(
 export default function RMADetailPage() {
   const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
+  const canManageReturn = useHasPermissions(ADMIN_MANAGER_ROLES);
   
   const { data: rmaRes, isLoading, refetch, isFetching } = useGetReturnRequestByIdQuery(id);
   const rma = rmaRes?.data;
@@ -154,7 +157,7 @@ export default function RMADetailPage() {
     lines.every(
       (line) => Number(line.receivedQty ?? 0) >= Number(line.expectedQty ?? 0),
     );
-  const canComplete = !isCompleted && allLinesReceived;
+  const canComplete = canManageReturn && !isCompleted && allLinesReceived;
   const lineOptions = useMemo(
     () =>
       lines.map((line) => ({
@@ -260,7 +263,7 @@ export default function RMADetailPage() {
               <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
-            {!isCompleted && (
+            {canManageReturn && !isCompleted && (
               <Button size="sm" onClick={handleClose} disabled={!canComplete || isClosing}>
                 Hoàn tất hồ sơ
               </Button>

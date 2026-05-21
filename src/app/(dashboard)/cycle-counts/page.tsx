@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils";
 import { apiErrMessage } from "@/types/api";
 import type { CycleCount, CycleCountStatus } from "@/types/cycle-count";
 import { useGetCycleCountsQuery } from "@/store/services/cycle-count.service";
+import { PermissionControl } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 const PAGE_SIZE = 20;
 
@@ -126,10 +128,12 @@ export default function CycleCountsPage() {
               <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md" onClick={() => dispatch({ createModalOpen: true })}>
-              <Plus className="mr-2 size-4" />
-              Tạo đợt kiểm
-            </Button>
+            <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md" onClick={() => dispatch({ createModalOpen: true })}>
+                <Plus className="mr-2 size-4" />
+                Tạo đợt kiểm
+              </Button>
+            </PermissionControl>
           </div>
         }
       />

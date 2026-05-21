@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { PermissionControl } from "@/components/permission-control";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useOrdersPageLogic,
@@ -15,6 +16,7 @@ import {
 
 function OrderPageContent() {
   const logic = useOrdersPageLogic();
+  const canManageOrders = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (
     <div className="space-y-6">
@@ -85,6 +87,7 @@ function OrderPageContent() {
             logic.setPageSize(nextSize);
             logic.setPage(0);
           }}
+          canManageOrders={canManageOrders}
         />
       </div>
     </div>

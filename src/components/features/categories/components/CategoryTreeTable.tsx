@@ -37,6 +37,7 @@ interface CategoryTreeTableProps {
   onEditCategory: (category: Category) => void;
   onDeleteCategory: (category: Category) => void;
   noContainer?: boolean;
+  canManageCategories?: boolean;
 }
 
 export function CategoryTreeTable({
@@ -49,6 +50,7 @@ export function CategoryTreeTable({
   onEditCategory,
   onDeleteCategory,
   noContainer = false,
+  canManageCategories = false,
 }: CategoryTreeTableProps) {
   const content = (
     <>
@@ -150,7 +152,7 @@ export function CategoryTreeTable({
                         <Button variant="outline" size="sm" onClick={onRetry}>
                           Làm mới
                         </Button>
-                      ) : (
+                      ) : canManageCategories ? (
                         <Button
                           render={<Link href="/categories/new" />}
                           nativeButton={false}
@@ -160,7 +162,7 @@ export function CategoryTreeTable({
                           <Package className="mr-2 h-4 w-4" />
                           Thêm phân loại mới
                         </Button>
-                      )
+                      ) : null
                     }
                   />
                 </TableCell>
@@ -280,13 +282,15 @@ export function CategoryTreeTable({
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Nhóm / loại</DropdownMenuLabel>
                           </DropdownMenuGroup>
-                          <DropdownMenuItem
-                            className="cursor-pointer rounded-lg"
-                            onClick={() => onEditCategory(cat)}
-                          >
-                            <Tag className="mr-2 h-4 w-4" />
-                            Sửa thông tin
-                          </DropdownMenuItem>
+                          {canManageCategories ? (
+                            <DropdownMenuItem
+                              className="cursor-pointer rounded-lg"
+                              onClick={() => onEditCategory(cat)}
+                            >
+                              <Tag className="mr-2 h-4 w-4" />
+                              Sửa thông tin
+                            </DropdownMenuItem>
+                          ) : null}
                           <DropdownMenuItem
                             className="rounded-lg"
                             render={<Link href="/products" />}
@@ -294,13 +298,15 @@ export function CategoryTreeTable({
                             <Package className="mr-2 h-4 w-4" />
                             Sản phẩm
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="rounded-lg text-rose-600 focus:text-rose-600"
-                            onClick={() => onDeleteCategory(cat)}
-                          >
-                            <Tag className="mr-2 h-4 w-4" />
-                            Xóa nhóm hàng
-                          </DropdownMenuItem>
+                          {canManageCategories ? (
+                            <DropdownMenuItem
+                              className="rounded-lg text-rose-600 focus:text-rose-600"
+                              onClick={() => onDeleteCategory(cat)}
+                            >
+                              <Tag className="mr-2 h-4 w-4" />
+                              Xóa nhóm hàng
+                            </DropdownMenuItem>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

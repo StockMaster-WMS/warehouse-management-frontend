@@ -85,6 +85,15 @@ const userManagementApi = baseApi.injectEndpoints({
       providesTags: [{ type: "User" as const, id: "ROLES" }],
     }),
 
+    getWarehouseStaff: builder.query<ApiResponse<ManagedUser[]>, { warehouseId?: string } | void>({
+      query: (params) => ({
+        url: "/users/warehouse-staff",
+        method: "GET",
+        params: params?.warehouseId ? { warehouseId: params.warehouseId } : undefined,
+      }),
+      providesTags: [{ type: "User" as const, id: "WAREHOUSE_STAFF" }],
+    }),
+
     getUserById: builder.query<ApiResponse<ManagedUser>, string>({
       query: (id) => ({ url: `/users/${id}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "User" as const, id }],
@@ -179,6 +188,7 @@ export const {
   useGetUsersQuery,
   useGetUserStatisticsQuery,
   useGetUserRolesQuery,
+  useGetWarehouseStaffQuery,
   useGetUserByIdQuery,
   useGetUserDetailQuery,
   useCreateUserMutation,

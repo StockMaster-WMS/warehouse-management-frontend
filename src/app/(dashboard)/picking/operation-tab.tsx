@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, CheckCircle2, ChevronRight, AlertTriangle, ScanLine, ArrowLeft, Package, Hash, ClipboardList } from "lucide-react";
+import { MapPin, CheckCircle2, ChevronRight, AlertTriangle, ScanLine, ArrowLeft, Package, Hash, ClipboardList, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,10 @@ function StepDot({ step, current, done }: { step: number; current: number; done:
     const active = step === current;
     return (
         <div className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition-all duration-300",
-            done ? "bg-emerald-500 text-white shadow-md shadow-emerald-200"
-                : active ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                    : "bg-slate-100 text-slate-400"
+            "flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold transition-colors",
+            done ? "bg-emerald-600 text-white"
+                : active ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-500"
         )}>
             {done ? <CheckCircle2 className="h-4 w-4" /> : step}
         </div>
@@ -42,6 +42,7 @@ export function OperationTab() {
 
     const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
     const tasks = useMemo(() => allItems.toSorted((a, b) => (a.pickSequence || 0) - (b.pickSequence || 0)), [allItems]);
+    const totalQty = useMemo(() => tasks.reduce((sum, task) => sum + Number(task.qtyToPick || 0), 0), [tasks]);
 
     const activeSummary = useMemo(() => selectedTaskId ? tasks.find(t => t.id === selectedTaskId) || null : null, [tasks, selectedTaskId]);
     const { data: detailData } = useGetPickingItemByIdQuery(activeSummary?.id as string, { skip: !activeSummary?.id });
@@ -65,6 +66,10 @@ export function OperationTab() {
         if (!activeItem) return;
         const input = (val || scannedLoc).trim().toUpperCase();
         const expected = (activeItem.locationCode || "").trim().toUpperCase();
+        if (!expected) {
+            toast.error("Nhiệm vụ chưa có mã vị trí kệ. Vui lòng báo quản lý kiểm tra lại.");
+            return;
+        }
         if (input !== expected) {
             playErrorSound();
             toast.error(`Sai vị trí! Cần: ${expected}`);
@@ -97,6 +102,15 @@ export function OperationTab() {
 
     const handleConfirmPick = async () => {
         if (!activeItem) return;
+        const confirmedQty = Number(pickedQty);
+        if (!Number.isFinite(confirmedQty) || confirmedQty <= 0) {
+            toast.error("Số lượng xác nhận không hợp lệ.");
+            return;
+        }
+        if (confirmedQty !== Number(activeItem.qtyToPick)) {
+            toast.error("Số lượng xác nhận phải đúng bằng số lượng cần lấy. Nếu thiếu hàng, dùng Báo lỗi.");
+            return;
+        }
         try {
             await completeMobile(activeItem.id).unwrap();
             playSuccessSound();
@@ -120,7 +134,7 @@ export function OperationTab() {
         return (
             <div className="flex flex-col items-center justify-center gap-4 py-24">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Đang đồng bộ dữ liệu...</p>
+                <p className="text-xs font-semibold text-slate-500">Đang tải nhiệm vụ lấy hàng...</p>
             </div>
         );
     }
@@ -128,14 +142,20 @@ export function OperationTab() {
     // ── Empty ──────────────────────────────────────────────────────────────────
     if (tasks.length === 0 && !activeItem) {
         return (
-            <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-6 px-4 py-24 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 dark:bg-emerald-950/30">
+            <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-6 rounded-lg border border-dashed border-slate-200 bg-white px-6 py-20 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/30">
                     <CheckCircle2 className="h-10 w-10 text-emerald-600" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white">Bạn chưa có nhiệm vụ được phân công.</h2>
-                    <p className="mt-1 text-sm text-slate-500">Các nhiệm vụ lấy hàng được giao cho bạn sẽ xuất hiện tại đây.</p>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Bạn chưa có nhiệm vụ được phân công.</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Khi quản lý kho phân công lệnh lấy hàng cho bạn, nhiệm vụ sẽ xuất hiện tại đây.
+                    </p>
                 </div>
+                <Button type="button" variant="outline" className="gap-2" onClick={() => refetch()}>
+                    <RefreshCw className="h-4 w-4" />
+                    Tải lại danh sách
+                </Button>
             </div>
         );
     }
@@ -143,75 +163,87 @@ export function OperationTab() {
     // ── Task list ──────────────────────────────────────────────────────────────
     if (!activeItem) {
         return (
-            <div className="mx-auto max-w-sm space-y-5 px-4 py-6">
+            <div className="mx-auto max-w-6xl space-y-5 px-4 py-2 sm:px-0">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">LỆNH LẤY HÀNG</h1>
+                        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Lệnh lấy hàng được giao</h1>
                         <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{tasks.length} nhiệm vụ chờ</p>
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <p className="text-xs font-medium text-slate-500">{tasks.length} nhiệm vụ chờ xử lý, sắp xếp theo tuyến lấy hàng</p>
                         </div>
                     </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-                        <ClipboardList className="h-6 w-6" />
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="sm" className="h-10 gap-2 rounded-lg" onClick={() => refetch()}>
+                            <RefreshCw className="h-4 w-4" />
+                            Tải lại
+                        </Button>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                            <ClipboardList className="h-6 w-6" />
+                        </div>
                     </div>
                 </div>
 
                 {/* Stats bar */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-white p-4 border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đơn hàng</p>
-                        <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg bg-white p-4 border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+                        <p className="text-xs font-semibold text-slate-500">Đơn hàng</p>
+                        <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">
                             {new Set(tasks.map(t => t.salesOrderNumber)).size}
                         </p>
                     </div>
-                    <div className="rounded-2xl bg-indigo-600 p-4 shadow-lg shadow-indigo-200">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200">Sản phẩm</p>
-                        <p className="mt-1 text-2xl font-black text-white">{tasks.length}</p>
+                    <div className="rounded-lg bg-indigo-600 p-4 shadow-sm">
+                        <p className="text-xs font-semibold text-indigo-100">Dòng cần lấy</p>
+                        <p className="mt-1 text-2xl font-semibold text-white">{tasks.length}</p>
+                    </div>
+                    <div className="rounded-lg bg-white p-4 border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+                        <p className="text-xs font-semibold text-slate-500">Tổng số lượng</p>
+                        <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{totalQty}</p>
                     </div>
                 </div>
 
                 {/* Task list */}
                 <div className="space-y-3">
-                    <p className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Danh sách chờ xử lý</p>
+                    <p className="px-1 text-xs font-semibold text-slate-500">Danh sách chờ xử lý</p>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {tasks.map((task, idx) => (
                         <button
                             key={task.id}
                             onClick={() => { setSelectedTaskId(task.id); resetState(); }}
-                            className="group relative flex w-full items-center gap-4 rounded-2xl bg-white p-4 text-left border border-slate-100 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md active:scale-[0.98] dark:bg-slate-900 dark:border-slate-800 dark:hover:border-indigo-700"
+                            className="group relative flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left border border-slate-100 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50/40 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-indigo-700"
                         >
                             {/* Sequence number */}
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 font-black text-sm text-slate-700 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 font-semibold text-sm text-slate-700 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                                 {idx + 1}
                             </div>
 
                             {/* Product info */}
                             <div className="flex-1 min-w-0">
-                                <p className="truncate font-bold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
+                                <p className="truncate font-semibold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
                                     {task.productName || task.productSku}
                                 </p>
                                 <div className="mt-0.5 flex items-center gap-2">
-                                    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                                    <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
                                         <Hash className="h-2.5 w-2.5" />{task.productSku}
                                     </span>
                                     <span className="text-slate-200 dark:text-slate-700">·</span>
-                                    <span className="text-[10px] text-slate-400 truncate max-w-[80px]">Đơn xuất: {task.salesOrderNumber?.slice(-8)}</span>
+                                    <span className="text-[11px] text-slate-500 truncate max-w-[100px]">Đơn: {task.salesOrderNumber}</span>
                                 </div>
                             </div>
 
                             {/* Right side: location + qty */}
                             <div className="flex shrink-0 flex-col items-end gap-1">
-                                <div className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[10px] font-black text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
+                                <div className="flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
                                     <MapPin className="h-2.5 w-2.5" />
                                     {task.locationCode || "Chưa rõ"}
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-500">×{task.qtyToPick} {task.baseUnit}</span>
+                                <span className="text-xs font-semibold text-slate-600">x{task.qtyToPick} {task.baseUnit}</span>
                             </div>
 
                             <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-400 transition-colors" />
                         </button>
                     ))}
+                    </div>
                 </div>
             </div>
         );
@@ -221,26 +253,26 @@ export function OperationTab() {
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
 
     return (
-        <div className="mx-auto max-w-sm space-y-4 px-4 py-6">
+        <div className="mx-auto max-w-3xl space-y-4 px-4 py-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => { setSelectedTaskId(null); resetState(); }}
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 shadow-sm transition-all active:scale-90 hover:border-indigo-200 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 shadow-sm transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800"
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div className="text-center">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Đang thực hiện</p>
-                    <p className="font-black text-slate-900 dark:text-white">LẤY HÀNG</p>
+                    <p className="text-xs font-medium text-slate-500">Đang thực hiện</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">Lấy hàng</p>
                 </div>
-                <div className="flex h-11 items-center rounded-2xl bg-indigo-50 px-3 text-[10px] font-black text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
+                <div className="flex h-10 items-center rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400">
                     {stepIndex}/3
                 </div>
             </div>
 
             {/* Step progress */}
-            <div className="flex items-center gap-2 rounded-2xl bg-white p-3 border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div className="flex items-center gap-2 rounded-lg bg-white p-3 border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
                 <StepDot step={1} current={stepIndex} done={stepIndex > 1} />
                 <div className={cn("h-0.5 flex-1 rounded-full transition-all duration-500", stepIndex > 1 ? "bg-emerald-400" : "bg-slate-100")} />
                 <StepDot step={2} current={stepIndex} done={stepIndex > 2} />
@@ -249,29 +281,29 @@ export function OperationTab() {
             </div>
 
             {/* Product hero card */}
-            <div className="relative overflow-hidden rounded-3xl bg-white p-5 shadow-lg border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+            <div className="relative overflow-hidden rounded-lg bg-white p-5 shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 <div className="absolute right-4 top-4 opacity-5">
                     <Package className="h-24 w-24" />
                 </div>
                 <div className="relative space-y-4">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sản phẩm cần lấy</p>
-                        <h2 className="mt-1 text-lg font-black leading-tight text-slate-900 dark:text-white">
+                        <p className="text-xs font-semibold text-slate-500">Sản phẩm cần lấy</p>
+                        <h2 className="mt-1 text-lg font-semibold leading-tight text-slate-900 dark:text-white">
                             {activeItem.productName && activeItem.productName !== "Sản phẩm không tên"
                                 ? activeItem.productName : activeItem.productSku}
                         </h2>
-                        <p className="mt-0.5 font-mono text-xs font-bold text-slate-400 uppercase">{activeItem.productSku}</p>
+                        <p className="mt-0.5 font-mono text-xs font-semibold text-slate-500 uppercase">{activeItem.productSku}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl bg-indigo-600 p-4 shadow-md shadow-indigo-200">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Vị trí kệ</p>
-                            <p className="mt-1 text-lg font-black text-white tracking-wider">{activeItem.locationCode || "Chưa rõ"}</p>
+                        <div className="rounded-lg bg-indigo-600 p-4 shadow-sm">
+                            <p className="text-xs font-semibold text-indigo-100">Vị trí kệ</p>
+                            <p className="mt-1 text-lg font-semibold text-white tracking-wider">{activeItem.locationCode || "Chưa rõ"}</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 dark:bg-slate-800 dark:border-slate-700">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Số lượng</p>
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 dark:bg-slate-800 dark:border-slate-700">
+                            <p className="text-xs font-semibold text-slate-500">Số lượng</p>
                             <div className="mt-1 flex items-baseline gap-1">
-                                <span className="text-lg font-black text-slate-900 dark:text-white">{activeItem.qtyToPick}</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">{activeItem.baseUnit || "cái"}</span>
+                                <span className="text-lg font-semibold text-slate-900 dark:text-white">{activeItem.qtyToPick}</span>
+                                <span className="text-xs font-medium text-slate-500">{activeItem.baseUnit || "cái"}</span>
                             </div>
                         </div>
                     </div>
@@ -286,23 +318,23 @@ export function OperationTab() {
                     { key: "sku" as const, step: 2, icon: ScanLine, label: "Bước 2 · Quét mã sản phẩm", placeholder: "QUÉT MÃ VẠCH...", value: scannedSku, setter: setScannedSku, onEnter: handleScanSku, done: stepIndex > 2 },
                 ].map(({ key, icon: Icon, label, placeholder, value, setter, onEnter, done }) => (
                     <div key={key} className={cn(
-                        "overflow-hidden rounded-2xl border transition-all duration-300",
-                        currentStep === key ? "border-indigo-200 bg-white shadow-lg shadow-indigo-100/50 dark:border-indigo-800 dark:bg-slate-900" : "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950"
+                        "overflow-hidden rounded-lg border transition-colors",
+                        currentStep === key ? "border-indigo-200 bg-white shadow-sm dark:border-indigo-800 dark:bg-slate-900" : "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950"
                     )}>
                         <div className="flex items-center gap-3 p-4">
                             <div className={cn(
-                                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all",
-                                currentStep === key ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : done ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
+                                "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors",
+                                currentStep === key ? "bg-indigo-600 text-white" : done ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"
                             )}>
                                 {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                             </div>
                             <div className="flex-1">
-                                <p className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === key ? "text-indigo-600" : done ? "text-emerald-600" : "text-slate-400")}>
+                                <p className={cn("text-xs font-semibold", currentStep === key ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-500")}>
                                     {label}
                                 </p>
                                 <Input
                                     placeholder={placeholder}
-                                    className="mt-0.5 h-8 border-none bg-transparent p-0 text-base font-black uppercase placeholder:text-slate-300 focus-visible:ring-0 shadow-none"
+                                    className="mt-0.5 h-8 border-none bg-transparent p-0 text-base font-semibold uppercase placeholder:text-slate-300 focus-visible:ring-0 shadow-none"
                                     value={value}
                                     disabled={currentStep !== key}
                                     onChange={(e) => setter(e.target.value)}
@@ -314,7 +346,7 @@ export function OperationTab() {
                         {/* Camera scanner — embedded in active step */}
                         {currentStep === key && (
                             <div className="px-4 pb-4">
-                                <div className="overflow-hidden rounded-xl border-2 border-dashed border-indigo-100 bg-slate-50 min-h-[160px] dark:border-indigo-900 dark:bg-slate-950">
+                                <div className="overflow-hidden rounded-lg border-2 border-dashed border-indigo-100 bg-slate-50 min-h-[160px] dark:border-indigo-900 dark:bg-slate-950">
                                     <BarcodeScanner
                                         onScanSuccess={(text) => onEnter(text)}
                                         onScanError={(err) => { if (err.includes("permission")) toast.error("Cần cấp quyền Camera để quét!"); }}
@@ -327,23 +359,23 @@ export function OperationTab() {
 
                 {/* Step 3: Qty */}
                 <div className={cn(
-                    "overflow-hidden rounded-2xl border transition-all duration-300",
-                    currentStep === "qty" ? "border-indigo-200 bg-white shadow-lg shadow-indigo-100/50 dark:border-indigo-800 dark:bg-slate-900" : "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950"
+                    "overflow-hidden rounded-lg border transition-colors",
+                    currentStep === "qty" ? "border-indigo-200 bg-white shadow-sm dark:border-indigo-800 dark:bg-slate-900" : "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950"
                 )}>
                     <div className="flex items-center gap-3 p-4">
                         <div className={cn(
-                            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all",
-                            currentStep === "qty" ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "bg-slate-100 text-slate-300"
+                            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors",
+                            currentStep === "qty" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
                         )}>
                             <CheckCircle2 className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === "qty" ? "text-indigo-600" : "text-slate-400")}>
+                            <p className={cn("text-xs font-semibold", currentStep === "qty" ? "text-indigo-700" : "text-slate-500")}>
                                 Bước 3 · Xác nhận số lượng
                             </p>
                             <Input
                                 type="number"
-                                className="mt-0.5 h-8 border-none bg-transparent p-0 text-base font-black focus-visible:ring-0 shadow-none"
+                                className="mt-0.5 h-8 border-none bg-transparent p-0 text-base font-semibold focus-visible:ring-0 shadow-none"
                                 value={pickedQty}
                                 onChange={(e) => setPickedQty(e.target.value)}
                                 disabled={currentStep !== "qty"}
@@ -357,14 +389,14 @@ export function OperationTab() {
             <div className="flex gap-3 pt-2">
                 <Button
                     variant="outline"
-                    className="h-14 flex-1 rounded-2xl border-slate-200 text-xs font-black text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition-all active:scale-95"
+                    className="h-12 flex-1 rounded-lg border-slate-200 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600"
                     onClick={() => setIsExceptionOpen(true)}
                 >
                     BÁO LỖI
                 </Button>
                 <Button
                     className={cn(
-                        "h-14 flex-[2.5] rounded-2xl text-sm font-black shadow-xl transition-all active:scale-95",
+                        "h-12 flex-[2.5] rounded-lg text-sm font-semibold shadow-sm transition-colors",
                         currentStep === "qty"
                             ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
                             : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"

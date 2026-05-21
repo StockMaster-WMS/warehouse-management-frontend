@@ -25,6 +25,7 @@ type ProductTableRowProps = {
   product: Product;
   rowNumber: number;
   onRequestDelete: (target: { id: string; name: string }) => void;
+  canManageProducts?: boolean;
 };
 
 function formatDate(value?: string) {
@@ -40,6 +41,7 @@ export const ProductTableRow = memo(function ProductTableRow({
   product,
   rowNumber,
   onRequestDelete,
+  canManageProducts = false,
 }: ProductTableRowProps) {
   const categoryName = getProductCategoryDisplayName(product);
   const categoryLabel =
@@ -150,20 +152,24 @@ export const ProductTableRow = memo(function ProductTableRow({
                 <ChevronRight className="mr-2 h-4 w-4" />
                 Xem chi tiết
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-lg"
-                render={<Link href={`/products/${product.id}/edit`} />}
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                Chỉnh sửa
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-lg text-destructive focus:text-destructive"
-                onClick={() => onRequestDelete({ id: product.id, name: product.name })}
-              >
-                <CircleOff className="mr-2 h-4 w-4" />
-                Ngừng dùng
-              </DropdownMenuItem>
+              {canManageProducts ? (
+                <>
+                  <DropdownMenuItem
+                    className="rounded-lg"
+                    render={<Link href={`/products/${product.id}/edit`} />}
+                  >
+                    <Edit2 className="mr-2 h-4 w-4" />
+                    Chỉnh sửa
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="rounded-lg text-destructive focus:text-destructive"
+                    onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+                  >
+                    <CircleOff className="mr-2 h-4 w-4" />
+                    Ngừng dùng
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </TableCell>
@@ -262,38 +268,42 @@ export const ProductTableRow = memo(function ProductTableRow({
               <ChevronRight className="h-4 w-4 mr-1" />
               Xem
             </Button>
-            <Button
-              render={<Link href={`/products/${product.id}/edit`} />}
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              className="flex-1 rounded-lg"
-            >
-              <Edit2 className="h-4 w-4 mr-1" />
-              Sửa
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg px-3"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+            {canManageProducts ? (
+              <>
+                <Button
+                  render={<Link href={`/products/${product.id}/edit`} />}
+                  nativeButton={false}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 rounded-lg"
                 >
-                  <CircleOff className="mr-2 h-4 w-4" />
-                  Ngừng dùng
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Sửa
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg px-3"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onRequestDelete({ id: product.id, name: product.name })}
+                    >
+                      <CircleOff className="mr-2 h-4 w-4" />
+                      Ngừng dùng
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : null}
           </div>
             </div>
           </div>

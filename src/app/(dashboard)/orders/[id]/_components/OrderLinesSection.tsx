@@ -29,9 +29,10 @@ type OrderLinesSectionProps = {
   soItems: SoItem[];
   products: Product[];
   itemsFetching: boolean;
+  canManageOrder?: boolean;
 };
 
-export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching }: OrderLinesSectionProps) {
+export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching, canManageOrder = false }: OrderLinesSectionProps) {
   const [createSoItem, { isLoading: creatingLine }] = useCreateSoItemMutation();
   const [updateSoItem, { isLoading: updatingLine }] = useUpdateSoItemMutation();
   const [deleteSoItem, { isLoading: deletingLine }] = useDeleteSoItemMutation();
@@ -140,7 +141,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   }, [products, selectableProducts, stockOptionProducts, selectedLineProduct]);
 
   const status = salesOrder.status;
-  const allowLineMutation = status === "DRAFT" || status === "PENDING";
+  const allowLineMutation = canManageOrder && (status === "DRAFT" || status === "PENDING");
 
   const nextLineNumber = useMemo(() => {
     if (soItems.length === 0) return 1;
@@ -503,6 +504,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
       <Separator />
 
       <CardContent className="space-y-4 pb-5 pt-4">
+        {canManageOrder ? (
         <form onSubmit={onAddLine} className="rounded-lg border border-border bg-muted/30 p-4">
           <input
             ref={fileInputRef}
@@ -622,6 +624,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
             </Button>
           </div>
         </form>
+        ) : null}
 
         {itemsFetching ? <p className="text-xs text-slate-400">Đang tải dòng…</p> : null}
 
@@ -649,29 +652,31 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                     ) : null}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!allowLineMutation}
-                    onClick={() => setEditingLine(l)}
-                  >
-                    <Pencil className="mr-1.5 h-4 w-4" />
-                    Sửa
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-rose-600"
-                    disabled={!allowLineMutation || deletingLine}
-                    onClick={() => onDeleteLine(l)}
-                  >
-                    {deletingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    Xóa
-                  </Button>
-                </div>
+                {canManageOrder ? (
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!allowLineMutation}
+                      onClick={() => setEditingLine(l)}
+                    >
+                      <Pencil className="mr-1.5 h-4 w-4" />
+                      Sửa
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-rose-600"
+                      disabled={!allowLineMutation || deletingLine}
+                      onClick={() => onDeleteLine(l)}
+                    >
+                      {deletingLine ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      Xóa
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

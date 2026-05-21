@@ -100,6 +100,7 @@ type LocationsTableProps = {
     onDelete: (location: Location) => void;
     onBulkDelete?: (locations: Location[]) => Promise<void> | void;
     onPrintBarcode: (location: Location) => void;
+    canManageLocations?: boolean;
 };
 
 export function LocationsTable({
@@ -122,6 +123,7 @@ export function LocationsTable({
     onDelete,
     onBulkDelete,
     onPrintBarcode,
+    canManageLocations = false,
 }: LocationsTableProps) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const selectedLocations = useMemo(
@@ -160,7 +162,7 @@ export function LocationsTable({
 
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {selectedLocations.length > 0 ? (
+            {canManageLocations && selectedLocations.length > 0 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
                     <div className="flex items-center gap-2">
                         <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="h-7 w-7">
@@ -193,11 +195,13 @@ export function LocationsTable({
                     <TableHeader>
                         <TableRow className="bg-slate-50/70 dark:bg-slate-800/50">
                             <TableHead className="w-10 px-4 py-3">
-                                <Checkbox
-                                    checked={allVisibleSelected}
-                                    onCheckedChange={(checked) => toggleAllVisible(checked === true)}
-                                    aria-label="Chọn tất cả vị trí đang hiển thị"
-                                />
+                                {canManageLocations ? (
+                                    <Checkbox
+                                        checked={allVisibleSelected}
+                                        onCheckedChange={(checked) => toggleAllVisible(checked === true)}
+                                        aria-label="Chọn tất cả vị trí đang hiển thị"
+                                    />
+                                ) : null}
                             </TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[30%]">Vị trí</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[22%]">Kho & Vùng</TableHead>
@@ -241,11 +245,13 @@ export function LocationsTable({
                                 return (
                                     <TableRow key={location.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                                         <TableCell className="px-4 py-3 align-middle">
-                                            <Checkbox
-                                                checked={selectedIds.has(location.id)}
-                                                onCheckedChange={(checked) => toggleLocation(location.id, checked === true)}
-                                                aria-label={`Chọn vị trí ${locationCode}`}
-                                            />
+                                            {canManageLocations ? (
+                                                <Checkbox
+                                                    checked={selectedIds.has(location.id)}
+                                                    onCheckedChange={(checked) => toggleLocation(location.id, checked === true)}
+                                                    aria-label={`Chọn vị trí ${locationCode}`}
+                                                />
+                                            ) : null}
                                         </TableCell>
                                         {/* Col 1: Location code + breadcrumb */}
                                         <TableCell className="px-4 py-3">
@@ -289,16 +295,22 @@ export function LocationsTable({
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-40">
-                                                    <DropdownMenuItem onClick={() => onEdit(location)}>
-                                                        <Pencil className="mr-2 h-3.5 w-3.5" />Sửa
-                                                    </DropdownMenuItem>
+                                                    {canManageLocations ? (
+                                                        <DropdownMenuItem onClick={() => onEdit(location)}>
+                                                            <Pencil className="mr-2 h-3.5 w-3.5" />Sửa
+                                                        </DropdownMenuItem>
+                                                    ) : null}
                                                     <DropdownMenuItem onClick={() => onPrintBarcode(location)} className="text-indigo-600 focus:text-indigo-600">
                                                         <Printer className="mr-2 h-3.5 w-3.5" />In mã vạch
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => onDelete(location)} className="text-rose-600 focus:text-rose-600">
-                                                        <Trash2 className="mr-2 h-3.5 w-3.5" />Xóa
-                                                    </DropdownMenuItem>
+                                                    {canManageLocations ? (
+                                                        <>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => onDelete(location)} className="text-rose-600 focus:text-rose-600">
+                                                                <Trash2 className="mr-2 h-3.5 w-3.5" />Xóa
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    ) : null}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -382,21 +394,25 @@ export function LocationsTable({
                                           </div>
                                           
                                           <div className="flex items-center gap-1">
-                                              <Button type="button" variant="outline" size="icon" onClick={() => onEdit(location)}>
-                                                  <Pencil className="h-3.5 w-3.5" />
-                                              </Button>
+                                              {canManageLocations ? (
+                                                  <Button type="button" variant="outline" size="icon" onClick={() => onEdit(location)}>
+                                                      <Pencil className="h-3.5 w-3.5" />
+                                                  </Button>
+                                              ) : null}
                                               <Button type="button" variant="outline" size="icon" onClick={() => onPrintBarcode(location)} className="text-indigo-600">
                                                   <Printer className="h-3.5 w-3.5" />
                                               </Button>
-                                              <Button
-                                                  type="button"
-                                                  variant="outline"
-                                                  size="icon"
-                                                  className="text-rose-600 hover:text-rose-600"
-                                                  onClick={() => onDelete(location)}
-                                              >
-                                                  <Trash2 className="h-3.5 w-3.5" />
-                                              </Button>
+                                              {canManageLocations ? (
+                                                  <Button
+                                                      type="button"
+                                                      variant="outline"
+                                                      size="icon"
+                                                      className="text-rose-600 hover:text-rose-600"
+                                                      onClick={() => onDelete(location)}
+                                                  >
+                                                      <Trash2 className="h-3.5 w-3.5" />
+                                                  </Button>
+                                              ) : null}
                                           </div>
                                       </div>
                                   </div>

@@ -26,8 +26,10 @@ import {
 
 import {
   AUDIT_LOG_ROLES,
-  ALL_ROLES,
+  ADMIN_MANAGER_ROLES,
   INVENTORY_READ_ROLES,
+  MANAGEMENT_READ_ROLES,
+  MANAGEMENT_OPERATION_ROLES,
   READ_OPERATION_ROLES,
   REPORT_ROLES,
   WAREHOUSE_OPERATION_ROLES,
@@ -74,9 +76,9 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
   {
     label: "Tổng quan",
     items: [
-      { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: ALL_ROLES },
+      { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: MANAGEMENT_READ_ROLES },
       // { label: "Thông báo", href: "/notifications", icon: Bell, roles: ALL_ROLES },
-      { label: "Trợ lý thông minh", href: "/ai-assistant", icon: Sparkles, roles: READ_OPERATION_ROLES },
+      { label: "Trợ lý thông minh", href: "/ai-assistant", icon: Sparkles, roles: MANAGEMENT_READ_ROLES },
     ],
   },
   {
@@ -84,7 +86,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     className: "mt-2",
     items: [
       { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: INVENTORY_READ_ROLES },
-      { label: "Kho hàng", href: "/warehouses", icon: Warehouse, roles: WAREHOUSE_OPERATION_ROLES },
+      { label: "Kho hàng", href: "/warehouses", icon: Warehouse, roles: MANAGEMENT_READ_ROLES },
       { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Kiểm kê kho", href: "/cycle-counts", icon: ClipboardCheck, roles: WAREHOUSE_OPERATION_ROLES },
     ],
@@ -97,21 +99,21 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
         label: "Sản phẩm & mã hàng",
         href: "/products",
         icon: Package,
-        roles: READ_OPERATION_ROLES,
+        roles: MANAGEMENT_OPERATION_ROLES,
         children: [
-          { label: "Danh sách sản phẩm", href: "/products", icon: PackageSearch, color: "indigo", roles: READ_OPERATION_ROLES },
-          { label: "Nhóm hàng", href: "/categories", icon: Tags, color: "violet", roles: READ_OPERATION_ROLES },
+          { label: "Danh sách sản phẩm", href: "/products", icon: PackageSearch, color: "indigo", roles: MANAGEMENT_OPERATION_ROLES },
+          { label: "Nhóm hàng", href: "/categories", icon: Tags, color: "violet", roles: ADMIN_MANAGER_ROLES },
         ],
       },
-      { label: "Khách hàng", href: "/customers", icon: Users2, roles: WAREHOUSE_OPERATION_ROLES },
-      { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: WAREHOUSE_OPERATION_ROLES },
+      { label: "Khách hàng", href: "/customers", icon: Users2, roles: ADMIN_MANAGER_ROLES },
+      { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: ADMIN_MANAGER_ROLES },
     ],
   },
   {
     label: "Nhập kho",
     className: "mt-2",
     items: [
-      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, roles: READ_OPERATION_ROLES },
+      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, roles: MANAGEMENT_OPERATION_ROLES },
       { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, roles: READ_OPERATION_ROLES },
       { label: "Xếp hàng lên kệ", href: "/putaway", icon: ScanLine, roles: WAREHOUSE_OPERATION_ROLES },
     ],
@@ -120,7 +122,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Xuất kho",
     className: "mt-2",
     items: [
-      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, roles: READ_OPERATION_ROLES },
+      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, roles: MANAGEMENT_OPERATION_ROLES },
       { label: "Lấy hàng", href: "/picking", icon: Scissors, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Hàng trả", href: "/returns", icon: RotateCcw, roles: READ_OPERATION_ROLES },
     ],

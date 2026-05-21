@@ -14,6 +14,12 @@ export const ADMIN_MANAGER_ROLES = [
   "WAREHOUSE_MANAGER",
 ] as const satisfies UserRole[];
 
+export const MANAGEMENT_READ_ROLES = [
+  "ADMIN",
+  "WAREHOUSE_MANAGER",
+  "REPORT_VIEWER",
+] as const satisfies UserRole[];
+
 export const AUDIT_LOG_ROLES = ADMIN_MANAGER_ROLES;
 
 export const PICKING_ASSIGN_ROLES = ADMIN_MANAGER_ROLES;
@@ -34,6 +40,11 @@ export const READ_OPERATION_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
   "WAREHOUSE_STAFF",
+] as const satisfies UserRole[];
+
+export const MANAGEMENT_OPERATION_ROLES = [
+  "ADMIN",
+  "WAREHOUSE_MANAGER",
 ] as const satisfies UserRole[];
 
 export const INVENTORY_READ_ROLES = [
@@ -111,7 +122,7 @@ type RouteAccessRule = {
 };
 
 export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
-  { pattern: "/dashboard", roles: ALL_ROLES },
+  { pattern: "/dashboard", roles: MANAGEMENT_READ_ROLES },
   { pattern: "/profile", roles: ALL_ROLES },
   { pattern: "/notifications", roles: ALL_ROLES },
 
@@ -121,17 +132,17 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
 
   { pattern: "/products/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/products/:id/edit", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/products/:id", roles: READ_OPERATION_ROLES },
-  { pattern: "/products", roles: READ_OPERATION_ROLES },
+  { pattern: "/products/:id", roles: MANAGEMENT_OPERATION_ROLES },
+  { pattern: "/products", roles: MANAGEMENT_OPERATION_ROLES },
 
   { pattern: "/categories/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/categories/:id/edit", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/categories/:id", roles: READ_OPERATION_ROLES },
-  { pattern: "/categories", roles: READ_OPERATION_ROLES },
+  { pattern: "/categories/:id", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/categories", roles: ADMIN_MANAGER_ROLES },
 
   { pattern: "/warehouses/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/warehouses/:id/edit", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/warehouses", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/warehouses", roles: MANAGEMENT_READ_ROLES },
   { pattern: "/locations", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/cycle-counts/:id", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/cycle-counts", roles: WAREHOUSE_OPERATION_ROLES },
@@ -139,29 +150,29 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
   { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/purchase-orders/:id", roles: READ_OPERATION_ROLES },
-  { pattern: "/purchase-orders", roles: READ_OPERATION_ROLES },
+  { pattern: "/purchase-orders/:id", roles: MANAGEMENT_OPERATION_ROLES },
+  { pattern: "/purchase-orders", roles: MANAGEMENT_OPERATION_ROLES },
   { pattern: "/putaway", roles: WAREHOUSE_OPERATION_ROLES },
 
   { pattern: "/orders/new", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/orders/:id", roles: READ_OPERATION_ROLES },
-  { pattern: "/orders", roles: READ_OPERATION_ROLES },
+  { pattern: "/orders/:id", roles: MANAGEMENT_OPERATION_ROLES },
+  { pattern: "/orders", roles: MANAGEMENT_OPERATION_ROLES },
   { pattern: "/picking", roles: WAREHOUSE_OPERATION_ROLES },
   { pattern: "/returns/:id", roles: READ_OPERATION_ROLES },
   { pattern: "/returns", roles: READ_OPERATION_ROLES },
 
   { pattern: "/customers/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/customers/:id/edit", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/customers/:id", roles: WAREHOUSE_OPERATION_ROLES },
-  { pattern: "/customers", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/customers/:id", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/customers", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/suppliers/new", roles: ADMIN_MANAGER_ROLES },
   { pattern: "/suppliers/:id/edit", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/suppliers/:id", roles: WAREHOUSE_OPERATION_ROLES },
-  { pattern: "/suppliers", roles: WAREHOUSE_OPERATION_ROLES },
+  { pattern: "/suppliers/:id", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/suppliers", roles: ADMIN_MANAGER_ROLES },
 
   { pattern: "/settings", roles: ["ADMIN"] },
   { pattern: "/security", roles: ["ADMIN"] },
-  { pattern: "/ai-assistant", roles: READ_OPERATION_ROLES },
+  { pattern: "/ai-assistant", roles: MANAGEMENT_READ_ROLES },
 ];
 
 function normalizePathname(pathname: string): string {
@@ -200,4 +211,16 @@ export function canAccessPath(
 ): boolean {
   const allowedRoles = getAllowedRolesForPath(pathname);
   return allowedRoles.length > 0 && hasAnyRole(userRoles, allowedRoles);
+}
+
+export function getDefaultPathForRoles(userRoles: readonly UserRole[]): string | null {
+  if (hasAnyRole(userRoles, MANAGEMENT_READ_ROLES)) {
+    return "/dashboard";
+  }
+
+  if (hasAnyRole(userRoles, ["WAREHOUSE_STAFF"])) {
+    return "/picking";
+  }
+
+  return null;
 }

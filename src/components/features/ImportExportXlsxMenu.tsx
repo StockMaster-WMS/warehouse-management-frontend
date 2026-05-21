@@ -53,6 +53,7 @@ export type ImportExportXlsxMenuProps = {
   onUploadToServer?: (file: File) => Promise<void>;
   serverUploadPending?: boolean;
   uploadToServerLabel?: string;
+  canImport?: boolean;
 };
 
 const defaultDescription = (
@@ -84,6 +85,7 @@ export function ImportExportXlsxMenu({
   onUploadToServer,
   serverUploadPending = false,
   uploadToServerLabel = "Import lên máy chủ",
+  canImport = true,
 }: ImportExportXlsxMenuProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -181,17 +183,21 @@ export function ImportExportXlsxMenu({
             <FileDown className="mr-2 h-4 w-4" />
             {exportItemLabel}
           </DropdownMenuItem>
-          <DropdownMenuItem className="rounded-lg" onClick={handleTemplate}>
-            <FileDown className="mr-2 h-4 w-4" />
-            {templateItemLabel}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="rounded-lg"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            {importItemLabel}
-          </DropdownMenuItem>
+          {canImport ? (
+            <>
+              <DropdownMenuItem className="rounded-lg" onClick={handleTemplate}>
+                <FileDown className="mr-2 h-4 w-4" />
+                {templateItemLabel}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="rounded-lg"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileUp className="mr-2 h-4 w-4" />
+                {importItemLabel}
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -18,10 +18,13 @@ import { useState } from "react";
 import type { Location } from "@/types/location";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { ImportExportXlsxMenu } from "@/components/features/ImportExportXlsxMenu";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+    const canManageLocations = useHasPermissions(ADMIN_MANAGER_ROLES);
         const {
         searchInput,
         setSearchInput,
@@ -105,6 +108,7 @@ export default function LocationsPage() {
                                     location.isActive === false ? "INACTIVE" : "ACTIVE",
                                 ]),
                             ]}
+                            canImport={canManageLocations}
                             importConfig={{
                                 expectedHeaders: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
                                 requiredRowFields: ["warehouseCode", "zone", "aisle", "rack", "level", "bin"],
@@ -120,25 +124,27 @@ export default function LocationsPage() {
                             dialogTitle="Kiểm tra file import vị trí"
                             importPreviewCountLabel="dòng vị trí"
                         />
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
-                            onClick={() => setIsBulkDialogOpen(true)}
-                        >
-                            <Sparkles className="mr-1 h-3.5 w-3.5" />
-                            Tạo hàng loạt
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700"
-                            onClick={openCreateDialog}
-                        >
-                            <Plus className="mr-1 h-4 w-4" />
-                            Thêm vị trí
-                        </Button>
+                        <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                                onClick={() => setIsBulkDialogOpen(true)}
+                            >
+                                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                                Tạo hàng loạt
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                                onClick={openCreateDialog}
+                            >
+                                <Plus className="mr-1 h-4 w-4" />
+                                Thêm vị trí
+                            </Button>
+                        </PermissionControl>
                     </div>
                 }
             />
@@ -208,6 +214,7 @@ export default function LocationsPage() {
                     onDelete={openDeleteDialog}
                     onBulkDelete={handleBulkDeleteLocations}
                     onPrintBarcode={setBarcodeLocation}
+                    canManageLocations={canManageLocations}
                 />
             )}
             

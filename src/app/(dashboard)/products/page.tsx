@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PermissionControl, useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import {
   ProductDeleteDialog,
   useProductsPageLogic,
@@ -19,6 +21,7 @@ const ProductImportExportMenu = dynamic(
 
 export default function ProductsPage() {
   const logic = useProductsPageLogic();
+  const canManageProducts = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -27,16 +30,18 @@ export default function ProductsPage() {
         description="Quản lý mã hàng, tồn kho đa điểm và vị trí lưu trữ."
         actions={
           <div className="flex items-center gap-2">
-            <ProductImportExportMenu products={logic.products} pageIndex={logic.page} listParams={logic.listParams} />
-            <Button
-              render={<Link href="/products/new" />}
-              nativeButton={false}
-              size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo mới Sản phẩm
-            </Button>
+            <ProductImportExportMenu products={logic.products} pageIndex={logic.page} listParams={logic.listParams} canImport={canManageProducts} />
+            <PermissionControl allowedRoles={ADMIN_MANAGER_ROLES}>
+              <Button
+                render={<Link href="/products/new" />}
+                nativeButton={false}
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tạo mới Sản phẩm
+              </Button>
+            </PermissionControl>
           </div>
         }
       />
@@ -89,6 +94,7 @@ export default function ProductsPage() {
           onPrevPage={logic.handlePrevPage}
           onNextPage={logic.handleNextPage}
           onPageSizeChange={logic.handlePageSizeChange}
+          canManageProducts={canManageProducts}
         />
       </div>
 

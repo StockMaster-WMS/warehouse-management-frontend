@@ -13,12 +13,15 @@ import { LayoutGrid, ListChecks, ScanBarcode } from "lucide-react";
 import { useState } from "react";
 import { OrderPrintModal } from "./OrderPrintModal";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
+import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 type OrderDetailViewProps = {
   salesOrderId: string;
 };
 
 export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
+  const canManageOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     type: "delete" | "ship";
@@ -133,6 +136,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
               onConfirmOrder={onConfirmOrder}
               onCancelOrder={onCancelOrder}
               onOpenPrint={() => setIsPrintModalOpen(true)}
+              canManageOrder={canManageOrder}
             />
           </div>
         </TabsContent>
@@ -143,6 +147,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
             soItems={soItems}
             products={products}
             itemsFetching={itemsFetching}
+            canManageOrder={canManageOrder}
           />
         </TabsContent>
 

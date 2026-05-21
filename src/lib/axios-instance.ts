@@ -37,6 +37,11 @@ function redirectToLogin() {
   }
 }
 
+function isRefreshSessionDenied(error: unknown) {
+  if (!axios.isAxiosError(error) || !error.response) return false;
+  return [400, 401, 403].includes(error.response.status);
+}
+
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
@@ -136,7 +141,9 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
-      redirectToLogin();
+      if (isRefreshSessionDenied(refreshError)) {
+        redirectToLogin();
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

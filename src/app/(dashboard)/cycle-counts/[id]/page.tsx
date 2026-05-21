@@ -42,6 +42,8 @@ import {
 import { apiErrMessage } from "@/types/api";
 import type { CycleCountLine, CycleCountStatus } from "@/types/cycle-count";
 import { cn } from "@/lib/utils";
+import { useHasPermissions } from "@/components/permission-control";
+import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
 
@@ -124,6 +126,7 @@ function buildCycleCountResults(
 export default function CycleCountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { push } = useRouter();
+  const canManageCycleCount = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   const { data: countRes, isLoading, refetch, isFetching } = useGetCycleCountByIdQuery(id);
   const count = countRes?.data;
@@ -231,6 +234,10 @@ export default function CycleCountDetailPage() {
   };
 
   const handleComplete = async () => {
+    if (!canManageCycleCount) {
+      toast.error("Chỉ quản lý kho hoặc quản trị viên được duyệt kiểm kê");
+      return;
+    }
     if (!count || !canApprove(count.status)) {
       toast.error("Chỉ duyệt khi đợt kiểm kê đang chờ duyệt");
       return;
@@ -245,6 +252,10 @@ export default function CycleCountDetailPage() {
   };
 
   const handleCancel = async () => {
+    if (!canManageCycleCount) {
+      toast.error("Chỉ quản lý kho hoặc quản trị viên được huỷ kiểm kê");
+      return;
+    }
     if (!confirm("Bạn có chắc muốn huỷ đợt kiểm kê này không?")) return;
     try {
       await cancelCount(id).unwrap();
@@ -323,7 +334,7 @@ export default function CycleCountDetailPage() {
               Làm mới
             </Button>
 
-            {canCancel(status) && (
+            {canManageCycleCount && canCancel(status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -387,7 +398,7 @@ export default function CycleCountDetailPage() {
               </>
             )}
 
-            {canApprove(status) && (
+            {canManageCycleCount && canApprove(status) && (
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-100 dark:shadow-none"
@@ -623,7 +634,7 @@ export default function CycleCountDetailPage() {
       )}
 
       {/* Approve reminder */}
-      {canApprove(status) && (
+      {canManageCycleCount && canApprove(status) && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />

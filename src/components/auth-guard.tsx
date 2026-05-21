@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   canAccessPath,
+  getDefaultPathForRoles,
   getUserRoles,
 } from "@/lib/access-control";
 import {
@@ -25,7 +26,7 @@ import {
 function isRefreshDeniedError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const status = (error as { status?: unknown }).status;
-  return status === 401 || status === 403;
+  return status === 400 || status === 401 || status === 403;
 }
 
 export function AuthGuard({ 
@@ -60,12 +61,13 @@ export function AuthGuard({
 
   const userRoles = getUserRoles(user?.roles);
   const canAccessCurrentPath = canAccessPath(pathname, userRoles);
-  const canAccessDashboard = canAccessPath("/dashboard", userRoles);
+  const defaultAllowedPath = getDefaultPathForRoles(userRoles);
 
   useEffect(() => {
     if (hasAccessToken && isUserError && !user) {
-      markExplicitLogout();
+      clearExplicitLogout();
       clearAccessToken();
+      refreshAttempted.current = false;
     }
   }, [hasAccessToken, isUserError, user]);
 
@@ -95,12 +97,13 @@ export function AuthGuard({
         })
         .catch((error) => {
           if (cancelled) return;
-          markExplicitLogout();
           clearAccessToken();
           if (isRefreshDeniedError(error)) {
+            markExplicitLogout();
             replace("/login");
             return;
           }
+          clearExplicitLogout();
           setAuthError("Không kết nối được backend để làm mới phiên đăng nhập.");
         });
 
@@ -112,14 +115,14 @@ export function AuthGuard({
     if (
       user &&
       !canAccessCurrentPath &&
-      canAccessDashboard &&
-      pathname !== "/dashboard"
+      defaultAllowedPath &&
+      pathname !== defaultAllowedPath
     ) {
-      replace("/dashboard");
+      replace(defaultAllowedPath);
     }
   }, [
     canAccessCurrentPath,
-    canAccessDashboard,
+    defaultAllowedPath,
     hasAccessToken,
     pathname,
     refreshToken,
@@ -224,12 +227,12 @@ export function AuthGuard({
           <p className="mt-2 text-sm text-muted-foreground">
             Vai trò hiện tại của bạn không được phép mở trang này.
           </p>
-          {canAccessDashboard ? (
+          {defaultAllowedPath ? (
             <Link
-              href="/dashboard"
+              href={defaultAllowedPath}
               className="mt-4 inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
             >
-              Về tổng quan
+              Về màn hình làm việc
             </Link>
           ) : null}
         </div>

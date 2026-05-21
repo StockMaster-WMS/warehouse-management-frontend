@@ -14,6 +14,8 @@ export type ManagedUser = {
   lastLoginAt?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  warehouseIds?: string[] | null;
+  warehouseNames?: string[] | null;
 };
 
 export type CreateManagedUserPayload = {
@@ -22,6 +24,7 @@ export type CreateManagedUserPayload = {
   fullName: string;
   password: string;
   roles: UserRole[];
+  warehouseIds?: string[];
 };
 
 export type UpdateManagedUserPayload = {
@@ -31,6 +34,7 @@ export type UpdateManagedUserPayload = {
   fullName: string;
   roles?: UserRole[];
   isActive?: boolean;
+  warehouseIds?: string[];
 };
 
 export type UpdateUserRolesPayload = {
