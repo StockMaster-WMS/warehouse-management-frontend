@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -333,7 +333,7 @@ export default function CycleCountDetailPage() {
   const counting = isCountingPhase(status);
   const hasLines = lines.length > 0;
   const displayLines = canApprove(status)
-    ? [...lines].sort((a, b) => Math.abs(Number(b.discrepancy ?? b.varianceQty ?? 0)) - Math.abs(Number(a.discrepancy ?? a.varianceQty ?? 0)))
+    ? lines.toSorted((a, b) => Math.abs(Number(b.discrepancy ?? b.varianceQty ?? 0)) - Math.abs(Number(a.discrepancy ?? a.varianceQty ?? 0)))
     : lines;
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -348,10 +348,10 @@ export default function CycleCountDetailPage() {
           onClick={() => push("/cycle-counts")}
           className="-ml-2 h-8"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 size-4" />
           Quay lại danh sách
         </Button>
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="size-4" />
         <span className="font-mono text-xs">{count.countNumber || count.id}</span>
       </div>
 
@@ -370,7 +370,7 @@ export default function CycleCountDetailPage() {
               onClick={() => refetch()}
               disabled={isFetching}
             >
-              <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+              <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
 
@@ -383,9 +383,9 @@ export default function CycleCountDetailPage() {
                 disabled={isCancelling}
               >
                 {isCancelling ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <Ban className="mr-2 h-4 w-4" />
+                  <Ban className="mr-2 size-4" />
                 )}
                 Huỷ đợt kiểm
               </Button>
@@ -399,9 +399,9 @@ export default function CycleCountDetailPage() {
                 disabled={isStarting}
               >
                 {isStarting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  <ClipboardCheck className="mr-2 size-4" />
                 )}
                 Bắt đầu kiểm kê
               </Button>
@@ -416,9 +416,9 @@ export default function CycleCountDetailPage() {
                   disabled={isRecording}
                 >
                   {isRecording ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="mr-2 size-4" />
                   )}
                   Lưu kết quả
                 </Button>
@@ -429,9 +429,9 @@ export default function CycleCountDetailPage() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    <CheckCircle2 className="mr-2 size-4" />
                   )}
                   Nộp kết quả
                 </Button>
@@ -446,9 +446,9 @@ export default function CycleCountDetailPage() {
                 disabled={isCompleting}
               >
                 {isCompleting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 size-4" />
                 )}
                 Duyệt & Hoàn tất
               </Button>
@@ -461,7 +461,7 @@ export default function CycleCountDetailPage() {
                 onClick={handleReject}
                 disabled={isRejecting}
               >
-                {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+                {isRejecting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <AlertTriangle className="mr-2 size-4" />}
                 Yêu cầu kiểm lại
               </Button>
             )}
@@ -496,10 +496,10 @@ export default function CycleCountDetailPage() {
       {/* Hint when IN_PROGRESS but no lines yet */}
       {counting && !hasLines && (
         <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/30 dark:bg-blue-950/20">
-          <Info className="h-5 w-5 shrink-0 text-blue-500 mt-0.5" />
+          <Info className="size-5 shrink-0 text-blue-500 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-              Hệ thống đang sinh dữ liệu dòng kiểm...
+              Hệ thống đang sinh dữ liệu dòng kiểm…
             </p>
             <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
               Backend cần một vài giây để quét tồn kho và tạo danh sách các dòng cần kiểm kê.
@@ -613,7 +613,7 @@ export default function CycleCountDetailPage() {
                                 : "text-rose-600"
                           )}
                         >
-                          {variance !== 0 && <Scale className="h-3 w-3" />}
+                          {variance !== 0 && <Scale className="size-3" />}
                           {variance > 0 ? `+${variance}` : variance}
                         </span>
                       </TableCell>
@@ -662,7 +662,7 @@ export default function CycleCountDetailPage() {
       {counting && hasLines && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-indigo-600 mt-0.5 shrink-0" />
+            <AlertTriangle className="size-5 text-indigo-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-bold text-indigo-900 dark:text-indigo-100">
                 Lưu và nộp kết quả
@@ -681,9 +681,9 @@ export default function CycleCountDetailPage() {
               disabled={isRecording}
             >
               {isRecording ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 size-4" />
               )}
               Lưu kết quả
             </Button>
@@ -693,9 +693,9 @@ export default function CycleCountDetailPage() {
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
-                <CheckCircle2 className="mr-2 h-4 w-4" />
+                <CheckCircle2 className="mr-2 size-4" />
               )}
               Nộp kết quả
             </Button>
@@ -707,7 +707,7 @@ export default function CycleCountDetailPage() {
       {canManageCycleCount && canApprove(status) && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <CheckCircle2 className="size-5 text-emerald-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
                 Kết quả kiểm đã được ghi nhận
@@ -723,9 +723,9 @@ export default function CycleCountDetailPage() {
             disabled={isCompleting}
           >
             {isCompleting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <CheckCircle2 className="mr-2 size-4" />
             )}
             Duyệt & Hoàn tất
           </Button>
@@ -735,7 +735,7 @@ export default function CycleCountDetailPage() {
             onClick={handleReject}
             disabled={isRejecting}
           >
-            {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+            {isRejecting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <AlertTriangle className="mr-2 size-4" />}
             Yêu cầu kiểm lại
           </Button>
         </div>

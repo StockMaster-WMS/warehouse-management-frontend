@@ -260,8 +260,8 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
         <div className="shrink-0 border-b bg-white px-6 py-4 dark:bg-slate-950">
           <DialogHeader className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <ClipboardList className="h-5 w-5" />
+              <div className="flex size-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <ClipboardList className="size-5" />
               </div>
               <div>
                 <DialogTitle>Tạo phiếu trả hàng</DialogTitle>
@@ -457,7 +457,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                     onClick={() => append({ productId: "", expectedQty: 1, lotNumber: "", locationId: "" })}
                     disabled={returnType === "CUSTOMER" && !salesOrderId}
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="mr-2 size-4" />
                     {returnType === "CUSTOMER" ? "Thêm ngoài đơn" : "Thêm dòng"}
                   </Button>
                 </div>
@@ -567,7 +567,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                 onClick={() => remove(index)}
                                 disabled={fields.length === 1 && returnType === "SUPPLIER"}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="size-4" />
                               </Button>
                             </div>
                           </div>
@@ -583,7 +583,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
           <DialogFooter className="shrink-0 border-t bg-white px-6 py-4 dark:bg-slate-950">
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>Hủy</Button>
             <Button type="submit" disabled={isCreating || isLoadingReceiptDetails} className="bg-indigo-600 hover:bg-indigo-700">
-              {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Package className="mr-2 h-4 w-4" />}
+              {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Package className="mr-2 size-4" />}
               Tạo phiếu trả hàng
             </Button>
           </DialogFooter>

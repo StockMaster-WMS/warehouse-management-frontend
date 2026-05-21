@@ -77,7 +77,7 @@ export function PoLinesSection({
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full",
+            "flex size-8 items-center justify-center rounded-full",
             locked
               ? "bg-slate-100 dark:bg-slate-800"
               : "bg-indigo-100 dark:bg-indigo-900/40",
@@ -88,7 +88,7 @@ export function PoLinesSection({
             )}>2</span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               Dòng hàng đơn nhập
             </h3>
             <p className="text-xs text-slate-400">
@@ -109,7 +109,7 @@ export function PoLinesSection({
             onClick={() => setImportDialogOpen(true)}
             className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
-            <FileSpreadsheet className="h-3.5 w-3.5" />
+            <FileSpreadsheet className="size-3.5" />
             Nhập từ Excel
           </Button>
         )}
@@ -121,10 +121,10 @@ export function PoLinesSection({
           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
             <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
               <TableHead className="w-14 py-3 pl-5 pr-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">STT</TableHead>
-              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm</TableHead>
-              <TableHead className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng</TableHead>
-              <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
-              <TableHead className="px-3 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn giá</TableHead>
+              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sản phẩm</TableHead>
+              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng</TableHead>
+              <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
+              <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn giá</TableHead>
               <TableHead className="w-14 py-3 pl-3 pr-5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400"></TableHead>
             </TableRow>
           </TableHeader>
@@ -132,14 +132,14 @@ export function PoLinesSection({
             {itemsLoading && lines.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-indigo-500" />
+                  <Loader2 className="mx-auto size-5 animate-spin text-indigo-500" />
                   <p className="mt-2 text-xs text-slate-400">Đang tải dòng hàng…</p>
                 </TableCell>
               </TableRow>
             ) : lines.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center">
-                  <Package className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
+                  <Package className="mx-auto size-8 text-slate-300 dark:text-slate-600 mb-2" />
                   <p className="text-sm text-slate-500 dark:text-slate-400">Chưa có dòng hàng nào</p>
                   <p className="text-xs text-slate-400 mt-0.5">Thêm từng dòng bên dưới hoặc nhập từ Excel</p>
                 </TableCell>
@@ -151,30 +151,30 @@ export function PoLinesSection({
                   className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 dark:border-slate-800/60 dark:hover:bg-slate-800/30 transition-colors"
                 >
                   <TableCell className="py-3 pl-5 pr-2 text-xs font-bold text-slate-400">{idx + 1}</TableCell>
-                  <TableCell className="max-w-60 truncate px-3 py-3 text-sm text-slate-700 dark:text-slate-300">
+                  <TableCell className="max-w-60 truncate p-3 text-sm text-slate-700 dark:text-slate-300">
                     {row.productName || productNameMap.get(row.productId) || row.productId}
                   </TableCell>
-                  <TableCell className="px-3 py-3">
+                  <TableCell className="p-3">
                     <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">
                       {row.productSku}
                     </span>
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-200">
+                  <TableCell className="p-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-200">
                     {row.orderedQty}
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">
+                  <TableCell className="p-3 text-right text-sm tabular-nums text-slate-600 dark:text-slate-400">
                     {row.unitPrice != null ? `₫${row.unitPrice.toLocaleString()}` : "—"}
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-right">
+                  <TableCell className="p-3 text-right">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg"
+                      className="text-rose-700 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg"
                       disabled={isDeletingLine}
                       onClick={() => onDeleteLine(row)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="size-3.5" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -272,8 +272,8 @@ export function PoLinesSection({
               className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 h-10 gap-1.5"
             >
               {savingLine
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <Plus className="h-4 w-4" />}
+                ? <Loader2 className="size-4 animate-spin" />
+                : <Plus className="size-4" />}
               Thêm dòng
             </Button>
           </div>

@@ -108,7 +108,7 @@ export function ProductBarcodeModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5 text-indigo-600" />
+            <Printer className="size-5 text-indigo-600" />
             In mã vạch sản phẩm
           </DialogTitle>
           <DialogDescription>
@@ -156,10 +156,10 @@ export function ProductBarcodeModal({
                 link.click();
             }}
           >
-            <Download className="mr-2 h-4 w-4" /> Tải ảnh về
+            <Download className="mr-2 size-4" /> Tải ảnh về
           </Button>
           <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> Bắt đầu in
+            <Printer className="mr-2 size-4" /> Bắt đầu in
           </Button>
         </div>
       </DialogContent>

@@ -9,7 +9,10 @@ export function useCategoryDetailLogic(categoryId: string) {
   const { data: allCategoriesData } = useGetCategoriesQuery();
 
   const category = data?.data;
-  const allCategories = allCategoriesData?.data?.content ?? [];
+  const allCategories = useMemo(
+    () => allCategoriesData?.data?.content ?? [],
+    [allCategoriesData],
+  );
 
   const categoriesById = useMemo(
     () => new Map(allCategories.map((c) => [c.id, c] as const)),

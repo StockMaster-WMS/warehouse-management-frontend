@@ -37,16 +37,16 @@ function LocationTypeBadge({ type }: { type?: string | null }) {
     const lowerType = type.toLowerCase();
     
     if (lowerType.includes('pick')) {
-        return <Badge variant="secondary" className="flex w-max items-center gap-1.5"><ShoppingCart className="h-3 w-3" /> {type}</Badge>;
+        return <Badge variant="secondary" className="flex w-max items-center gap-1.5"><ShoppingCart className="size-3" /> {type}</Badge>;
     }
     if (lowerType.includes('reser') || lowerType.includes('stor')) {
-        return <Badge variant="outline" className="flex w-max items-center gap-1.5 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"><Package className="h-3 w-3" /> {type}</Badge>;
+        return <Badge variant="outline" className="flex w-max items-center gap-1.5 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"><Package className="size-3" /> {type}</Badge>;
     }
     if (lowerType.includes('receiv')) {
-        return <Badge className="flex w-max items-center gap-1.5 bg-blue-100 text-blue-800 hover:bg-blue-200 border-none dark:bg-blue-900/30 dark:text-blue-300"><ArrowDownToLine className="h-3 w-3" /> {type}</Badge>;
+        return <Badge className="flex w-max items-center gap-1.5 bg-blue-100 text-blue-800 hover:bg-blue-200 border-none dark:bg-blue-900/30 dark:text-blue-300"><ArrowDownToLine className="size-3" /> {type}</Badge>;
     }
     if (lowerType.includes('dispatch') || lowerType.includes('ship')) {
-        return <Badge className="flex w-max items-center gap-1.5 bg-orange-100 text-orange-800 hover:bg-orange-200 border-none dark:bg-orange-900/30 dark:text-orange-300"><Truck className="h-3 w-3" /> {type}</Badge>;
+        return <Badge className="flex w-max items-center gap-1.5 bg-orange-100 text-orange-800 hover:bg-orange-200 border-none dark:bg-orange-900/30 dark:text-orange-300"><Truck className="size-3" /> {type}</Badge>;
     }
     return <Badge variant="outline">{type}</Badge>;
 }
@@ -165,8 +165,8 @@ export function LocationsTable({
             {canManageLocations && selectedLocations.length > 0 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="h-7 w-7">
-                            <X className="h-4 w-4" />
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="size-7">
+                            <X className="size-4" />
                         </Button>
                         <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
                             Đã chọn {selectedLocations.length.toLocaleString("vi-VN")} vị trí
@@ -184,7 +184,7 @@ export function LocationsTable({
                             onClick={handleBulkDelete}
                             disabled={!onBulkDelete}
                         >
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            <Trash2 className="mr-1.5 size-3.5" />
                             Xóa đã chọn
                         </Button>
                     </div>
@@ -214,7 +214,7 @@ export function LocationsTable({
                         {isLoading ? (
                             Array.from({ length: 6 }).map((_, index) => (
                                 <TableRow key={`location-table-skeleton-${index}`}>
-                                    <TableCell className="px-4 py-3"><Skeleton className="h-4 w-4 rounded" /></TableCell>
+                                    <TableCell className="px-4 py-3"><Skeleton className="size-4 rounded" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-52" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
@@ -282,8 +282,8 @@ export function LocationsTable({
                                             <CapacityCell location={location} />
                                             <div className="mt-2 flex items-center gap-1">
                                                 {location.isActive === false
-                                                    ? <><CircleOff className="h-3 w-3 text-rose-400" /><span className="text-[10px] text-rose-500">Ngừng dùng</span></>
-                                                    : <><CheckCircle2 className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-500">Đang hoạt động</span></>
+                                                    ? <><CircleOff className="size-3 text-rose-400" /><span className="text-[10px] text-rose-500">Ngừng dùng</span></>
+                                                    : <><CheckCircle2 className="size-3 text-emerald-400" /><span className="text-[10px] text-emerald-500">Đang hoạt động</span></>
                                                 }
                                             </div>
                                         </TableCell>
@@ -291,23 +291,23 @@ export function LocationsTable({
                                         {/* Col 5: Actions - 3-dot menu */}
                                         <TableCell className="px-4 py-3 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
-                                                    <MoreHorizontal className="h-4 w-4" />
+                                                <DropdownMenuTrigger className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+                                                    <MoreHorizontal className="size-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-40">
                                                     {canManageLocations ? (
                                                         <DropdownMenuItem onClick={() => onEdit(location)}>
-                                                            <Pencil className="mr-2 h-3.5 w-3.5" />Sửa
+                                                            <Pencil className="mr-2 size-3.5" />Sửa
                                                         </DropdownMenuItem>
                                                     ) : null}
                                                     <DropdownMenuItem onClick={() => onPrintBarcode(location)} className="text-indigo-600 focus:text-indigo-600">
-                                                        <Printer className="mr-2 h-3.5 w-3.5" />In mã vạch
+                                                        <Printer className="mr-2 size-3.5" />In mã vạch
                                                     </DropdownMenuItem>
                                                     {canManageLocations ? (
                                                         <>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem onClick={() => onDelete(location)} className="text-rose-600 focus:text-rose-600">
-                                                                <Trash2 className="mr-2 h-3.5 w-3.5" />Xóa
+                                                                <Trash2 className="mr-2 size-3.5" />Xóa
                                                             </DropdownMenuItem>
                                                         </>
                                                     ) : null}
@@ -373,11 +373,11 @@ export function LocationsTable({
 
                                       <div className="mt-4 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                                           <p className="flex items-center gap-2">
-                                              <Warehouse className="h-3.5 w-3.5" />
+                                              <Warehouse className="size-3.5" />
                                               {warehouseName || "Kho chưa xác định"}
                                           </p>
                                           <p className="flex items-center gap-2 font-mono">
-                                              <MapPin className="h-3.5 w-3.5" />
+                                              <MapPin className="size-3.5" />
                                               {formatLocationZoneLine(location)}
                                           </p>
                                       </div>
@@ -396,11 +396,11 @@ export function LocationsTable({
                                           <div className="flex items-center gap-1">
                                               {canManageLocations ? (
                                                   <Button type="button" variant="outline" size="icon" onClick={() => onEdit(location)}>
-                                                      <Pencil className="h-3.5 w-3.5" />
+                                                      <Pencil className="size-3.5" />
                                                   </Button>
                                               ) : null}
                                               <Button type="button" variant="outline" size="icon" onClick={() => onPrintBarcode(location)} className="text-indigo-600">
-                                                  <Printer className="h-3.5 w-3.5" />
+                                                  <Printer className="size-3.5" />
                                               </Button>
                                               {canManageLocations ? (
                                                   <Button
@@ -410,7 +410,7 @@ export function LocationsTable({
                                                       className="text-rose-600 hover:text-rose-600"
                                                       onClick={() => onDelete(location)}
                                                   >
-                                                      <Trash2 className="h-3.5 w-3.5" />
+                                                      <Trash2 className="size-3.5" />
                                                   </Button>
                                               ) : null}
                                           </div>

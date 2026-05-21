@@ -92,7 +92,7 @@ export function AiSettings() {
       >
           {isError ? (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="size-4" />
               <AlertTitle>Không tải được trạng thái</AlertTitle>
               <AlertDescription>
                 Vui lòng kiểm tra quyền admin hoặc thử lại sau.
@@ -101,9 +101,9 @@ export function AiSettings() {
           ) : (
             <Alert className="border-border bg-muted/30">
               {configured ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <CheckCircle2 className="size-4 text-emerald-600" />
               ) : (
-                <KeyRound className="h-4 w-4 text-amber-600" />
+                <KeyRound className="size-4 text-amber-600" />
               )}
               <AlertTitle>
                 {isFetching ? "Đang kiểm tra cấu hình" : configured ? "Đã cấu hình khóa kết nối" : "Chưa có khóa kết nối"}
@@ -134,7 +134,7 @@ export function AiSettings() {
                       }}
                       disabled={busy}
                       className={cn(
-                        "flex min-h-20 items-start gap-3 rounded-lg border px-3 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                        "flex min-h-20 items-start gap-3 rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                         selected
                           ? "border-primary/40 bg-primary/5 text-foreground ring-1 ring-primary/10"
                           : "border-border bg-background hover:bg-muted",
@@ -142,25 +142,25 @@ export function AiSettings() {
                     >
                       <span
                         className={cn(
-                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg",
                           selected
                             ? "bg-primary/10 text-primary"
                             : "bg-muted text-muted-foreground",
                         )}
                       >
-                        <Cloud className="h-4 w-4" />
+                        <Cloud className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium">{option.label}</span>
                         <span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                           {option.configured ? (
                             <>
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              <CheckCircle2 className="size-3.5 text-emerald-600" />
                               Đã cấu hình
                             </>
                           ) : (
                             <>
-                              <KeyRound className="h-3.5 w-3.5 text-amber-600" />
+                              <KeyRound className="size-3.5 text-amber-600" />
                               Chưa cấu hình
                             </>
                           )}
@@ -194,9 +194,9 @@ export function AiSettings() {
                   className="rounded-lg"
                 >
                   {isClearing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 size-4" />
                   )}
                   Xóa khóa
                 </Button>
@@ -207,9 +207,9 @@ export function AiSettings() {
                 className="rounded-lg"
               >
                 {isSaving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 size-4" />
                 )}
                 Lưu khóa
               </Button>

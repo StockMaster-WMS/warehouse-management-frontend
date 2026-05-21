@@ -56,7 +56,7 @@ export function CategoryTreeTable({
     <>
       {isFetching && !isLoading ? (
         <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
-          Đang cập nhật dữ liệu...
+          Đang cập nhật dữ liệu…
         </p>
       ) : null}
 
@@ -90,7 +90,7 @@ export function CategoryTreeTable({
                 >
                   <TableCell className="py-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                      <Skeleton className="size-8 shrink-0 rounded-lg" />
                       <div className="min-w-0 space-y-2">
                         <Skeleton className="h-4 w-56" />
                         <Skeleton className="h-3 w-40" />
@@ -112,7 +112,7 @@ export function CategoryTreeTable({
                   </TableCell>
                   <TableCell className="py-4 text-right">
                     <div className="flex justify-end">
-                      <Skeleton className="h-8 w-8 rounded-lg" />
+                      <Skeleton className="size-8 rounded-lg" />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -159,7 +159,7 @@ export function CategoryTreeTable({
                           size="sm"
                           className="bg-indigo-600 hover:bg-indigo-700"
                         >
-                          <Package className="mr-2 h-4 w-4" />
+                          <Package className="mr-2 size-4" />
                           Thêm phân loại mới
                         </Button>
                       ) : null
@@ -201,17 +201,17 @@ export function CategoryTreeTable({
                                 aria-label={
                                   isExpanded ? "Thu gọn nhánh" : "Mở rộng nhánh"
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-slate-700"
+                                className="flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-slate-700"
                               >
                                 <ChevronDown
                                   className={cn(
-                                    "h-4 w-4 transition-transform",
+                                    "size-4 transition-transform",
                                     isExpanded ? "rotate-0" : "-rotate-90",
                                   )}
                                 />
                               </button>
                             ) : (
-                              <span className="block h-8 w-8" aria-hidden />
+                              <span className="block size-8" aria-hidden />
                             )}
                           </div>
 
@@ -245,7 +245,7 @@ export function CategoryTreeTable({
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400"
                         title="Thống kê theo nhóm — sắp cập nhật"
                       >
-                        <Package className="h-3.5 w-3.5 opacity-70" />—
+                        <Package className="size-3.5 opacity-70" />,
                       </div>
                     </TableCell>
 
@@ -269,9 +269,9 @@ export function CategoryTreeTable({
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="h-8 w-8 rounded-lg"
+                              className="size-8 rounded-lg"
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
@@ -287,7 +287,7 @@ export function CategoryTreeTable({
                               className="cursor-pointer rounded-lg"
                               onClick={() => onEditCategory(cat)}
                             >
-                              <Tag className="mr-2 h-4 w-4" />
+                              <Tag className="mr-2 size-4" />
                               Sửa thông tin
                             </DropdownMenuItem>
                           ) : null}
@@ -295,7 +295,7 @@ export function CategoryTreeTable({
                             className="rounded-lg"
                             render={<Link href="/products" />}
                           >
-                            <Package className="mr-2 h-4 w-4" />
+                            <Package className="mr-2 size-4" />
                             Sản phẩm
                           </DropdownMenuItem>
                           {canManageCategories ? (
@@ -303,7 +303,7 @@ export function CategoryTreeTable({
                               className="rounded-lg text-rose-600 focus:text-rose-600"
                               onClick={() => onDeleteCategory(cat)}
                             >
-                              <Tag className="mr-2 h-4 w-4" />
+                              <Tag className="mr-2 size-4" />
                               Xóa nhóm hàng
                             </DropdownMenuItem>
                           ) : null}

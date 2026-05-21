@@ -20,8 +20,6 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
   });
 
   useEffect(() => {
-    console.log("BarcodeScanner: Component mounted");
-    
     if (error) {
       return;
     }
@@ -29,7 +27,6 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
     // Delay initialization to ensure the 'reader' element is in the DOM (especially inside Dialogs)
     const timer = setTimeout(() => {
       try {
-        console.log("BarcodeScanner: Initializing Html5QrcodeScanner...");
         const config = {
           fps: 10,
           qrbox: { width: 250, height: 180 },
@@ -47,7 +44,6 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
 
         scanner.render(
           (decodedText) => {
-            console.log("BarcodeScanner: Scan success", decodedText);
             onScanSuccess(decodedText);
           },
           (errorMessage) => {
@@ -65,7 +61,6 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
     }, 500); // 500ms delay for Dialog animation
 
     return () => {
-      console.log("BarcodeScanner: Component unmounting, clearing scanner...");
       clearTimeout(timer);
       if (scannerRef.current) {
         scannerRef.current.clear().catch((err) => console.error("Failed to clear scanner", err));
@@ -76,7 +71,7 @@ export function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerPro
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-y-3 rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
-        <AlertCircle className="h-10 w-10 text-red-500" />
+        <AlertCircle className="size-10 text-red-500" />
         <p className="text-xs font-bold text-red-900 leading-relaxed">{error}</p>
         <p className="text-[10px] text-red-600">Nếu bạn đang test qua IP, hãy sử dụng Localhost trên máy tính.</p>
       </div>

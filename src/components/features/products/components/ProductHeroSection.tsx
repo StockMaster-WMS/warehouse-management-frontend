@@ -16,7 +16,7 @@ export function ProductHeroSection({ product, onCopySku, onPrintBarcode }: Produ
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sản phẩm</p>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{product.name}</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{product.name}</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Mã hàng: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{product.sku}</span>
                     </p>
@@ -27,7 +27,7 @@ export function ProductHeroSection({ product, onCopySku, onPrintBarcode }: Produ
                     </Button>
                     {onPrintBarcode && (
                         <Button variant="outline" size="sm" className="w-fit border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-300" onClick={onPrintBarcode}>
-                            <Printer className="mr-2 h-4 w-4" />
+                            <Printer className="mr-2 size-4" />
                             In mã vạch
                         </Button>
                     )}

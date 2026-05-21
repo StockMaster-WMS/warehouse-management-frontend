@@ -1,4 +1,5 @@
 export type DashboardMetricTone = "indigo" | "emerald" | "amber" | "rose";
+export type DashboardPeriod = "today" | "7d" | "30d" | "year";
 
 export interface DashboardMetric {
   key: string;

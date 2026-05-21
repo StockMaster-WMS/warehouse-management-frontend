@@ -8,6 +8,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import { AddressForm } from "@/components/features/AddressForm";
 import { useCreateOrderForm } from "@/components/features/orders";
 
 function NewOrderFormContent() {
+  const { get } = useSearchParams();
   const {
     customerId,
     customerSearch,
@@ -43,7 +45,7 @@ function NewOrderFormContent() {
     creating,
     addressFormKey,
     onSubmit,
-  } = useCreateOrderForm();
+  } = useCreateOrderForm(get("warehouseId")?.trim() ?? "");
 
   return (
     <div className="w-full space-y-6 pb-20">
@@ -62,7 +64,7 @@ function NewOrderFormContent() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />
@@ -71,9 +73,9 @@ function NewOrderFormContent() {
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <User className="h-4 w-4 text-indigo-600" />
+              <User className="size-4 text-indigo-600" />
               <div className="flex flex-col">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Thông tin người nhận
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
@@ -147,8 +149,8 @@ function NewOrderFormContent() {
         <aside className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Warehouse className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Warehouse className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Cấu hình đơn xuất
               </h3>
             </div>
@@ -177,11 +179,11 @@ function NewOrderFormContent() {
                 {errors.warehouseId ? <p className="text-xs font-medium text-rose-600">{errors.warehouseId}</p> : null}
                 {warehouseIdFromUrl && warehouseId === warehouseIdFromUrl ? (
                   <p className="text-[11px] text-indigo-700 dark:text-indigo-300">
-                    Kho xuất đang theo liên kết <span className="font-mono">?warehouseId=</span> — có thể đổi tay nếu cần.
+                    Kho xuất đang theo liên kết <span className="font-mono">?warehouseId=</span>, có thể đổi tay nếu cần.
                   </p>
                 ) : warehouseIdFromUrl && !warehousesLoading && !warehouses.some((w) => String(w.id) === warehouseIdFromUrl) ? (
                   <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                    Tham số warehouseId trên URL không khớp kho nào — chọn kho thủ công.
+                    Tham số warehouseId trên URL không khớp kho nào, chọn kho thủ công.
                   </p>
                 ) : null}
               </div>
@@ -234,7 +236,7 @@ function NewOrderFormContent() {
                 disabled={creating}
                 className="h-12 w-full bg-indigo-600 shadow-xl shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70 dark:shadow-none"
               >
-                {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {creating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                 {creating ? "Đang tạo..." : "Xác nhận & Xuất kho"}
               </Button>
               <Button

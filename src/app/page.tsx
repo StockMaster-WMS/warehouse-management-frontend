@@ -181,10 +181,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main id="main-content" className="min-h-svh bg-background text-foreground">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
 
       <section className="relative isolate overflow-hidden bg-primary text-primary-foreground">
         <div

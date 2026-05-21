@@ -122,7 +122,7 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                 <DialogHeader className="space-y-1">
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 text-indigo-600">
-                            <Wand2 className="h-5 w-5" />
+                            <Wand2 className="size-5" />
                             <DialogTitle className="text-lg font-bold">Tạo nhiều vị trí</DialogTitle>
                         </div>
                     </div>
@@ -283,8 +283,8 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Đang tạo...
+                                <Loader2 className="mr-2 size-4 animate-spin" />
+                                Đang tạo…
                             </>
                         ) : (
                             <>

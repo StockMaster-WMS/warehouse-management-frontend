@@ -64,27 +64,27 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.Re
   DRAFT: {
     label: "Nháp",
     cls: "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
-    icon: <FileText className="h-3 w-3" />,
+    icon: <FileText className="size-3" />,
   },
   APPROVED: {
     label: "Đã duyệt",
     cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
-    icon: <CheckCircle2 className="h-3 w-3" />,
+    icon: <CheckCircle2 className="size-3" />,
   },
   PARTIAL: {
     label: "Nhận một phần",
     cls: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
-    icon: <Clock className="h-3 w-3" />,
+    icon: <Clock className="size-3" />,
   },
   COMPLETED: {
     label: "Hoàn tất",
     cls: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
-    icon: <CheckCircle2 className="h-3 w-3" />,
+    icon: <CheckCircle2 className="size-3" />,
   },
   CANCELLED: {
     label: "Đã hủy",
     cls: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900",
-    icon: <XCircle className="h-3 w-3" />,
+    icon: <XCircle className="size-3" />,
   },
 };
 
@@ -257,7 +257,7 @@ export default function PurchaseOrdersPage() {
               size="sm"
               className="rounded-xl border-slate-200 gap-1.5 text-xs"
             >
-              <ShoppingCart className="h-3.5 w-3.5" />
+              <ShoppingCart className="size-3.5" />
               Sắp xếp vào kho
             </Button>
             <Button
@@ -266,7 +266,7 @@ export default function PurchaseOrdersPage() {
               size="sm"
               className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               Tạo đơn nhập
             </Button>
           </div>
@@ -480,7 +480,7 @@ export default function PurchaseOrdersPage() {
         <div className="flex-1">
           {isFetching && !isLoading ? (
             <div className="flex items-center gap-2 border-b border-slate-100 bg-indigo-50/60 px-6 py-2 text-xs font-medium text-indigo-600 dark:border-slate-800 dark:bg-indigo-950/20 dark:text-indigo-400">
-              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+              <div className="size-1.5 animate-pulse rounded-full bg-indigo-500" />
               Đang cập nhật dữ liệu…
             </div>
           ) : null}
@@ -491,7 +491,7 @@ export default function PurchaseOrdersPage() {
               <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
                   <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã đơn nhập</TableHead>
                   <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Ngày đặt</span>
+                    <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />Ngày đặt</span>
                   </TableHead>
                   <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
                   <TableHead className="w-[180px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
@@ -555,7 +555,7 @@ export default function PurchaseOrdersPage() {
                           nativeButton={false}
                           variant="outline"
                           size="sm"
-                          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-indigo-950/30"
+                          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:border-slate-700 dark:text-indigo-700 dark:hover:bg-indigo-950/30"
                         >
                           Chi tiết
                         </Button>

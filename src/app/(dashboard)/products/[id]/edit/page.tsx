@@ -95,14 +95,14 @@ export default function EditProductPage() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />
 
       {isFetching ? (
         <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/30">
-          Đang đồng bộ dữ liệu...
+          Đang đồng bộ dữ liệu…
         </p>
       ) : null}
 
@@ -117,8 +117,8 @@ export default function EditProductPage() {
           {/* Khối 1: Thông tin định danh */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Info className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Info className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Thông tin định danh
               </h3>
             </div>
@@ -253,8 +253,8 @@ export default function EditProductPage() {
           {/* Khối 2: Quy cách và vận hành */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Ruler className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Ruler className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Quy cách & Vận chuyển
               </h3>
             </div>
@@ -349,7 +349,7 @@ export default function EditProductPage() {
         {/* Cột phụ: Trạng thái, ngưỡng tồn và nút lưu */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
               Trạng thái & ngưỡng
             </h3>
             <div className="space-y-4">
@@ -395,7 +395,7 @@ export default function EditProductPage() {
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/40 dark:bg-indigo-950/20">
             <div className="flex flex-col gap-4">
               <Button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70">
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 size-4" />
                 {isSubmitting ? "Đang lưu..." : "Lưu cập nhật"}
               </Button>
               <Button render={<Link href={`/products/${id}`} />} nativeButton={false} variant="outline" className="w-full border-slate-200 bg-white">

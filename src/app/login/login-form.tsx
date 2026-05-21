@@ -201,7 +201,7 @@ export function LoginForm() {
                     Mật khẩu
                   </Label>
                   <Link
-                    href="#"
+                    href="mailto:admin@stockmaster.local?subject=Yeu%20cau%20dat%20lai%20mat%20khau%20StockMaster"
                     className="text-xs font-medium text-primary underline-offset-4 hover:underline"
                   >
                     Quên mật khẩu?
@@ -281,7 +281,10 @@ export function LoginForm() {
 
             <p className="mt-5 text-center text-sm text-muted-foreground">
               Chưa có tài khoản?{" "}
-              <Link href="#" className="font-medium text-primary underline-offset-4 hover:underline">
+              <Link
+                href="mailto:admin@stockmaster.local?subject=Yeu%20cau%20cap%20tai%20khoan%20StockMaster"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
                 Liên hệ quản trị viên
               </Link>
             </p>

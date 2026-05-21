@@ -64,7 +64,7 @@ export function StatCard({
         </div>
         {Icon ? (
           <div className="ui-icon-tile p-2 group-hover:bg-primary/10 group-hover:text-primary">
-            <Icon className={cn("h-5 w-5", iconClassName)} aria-hidden="true" />
+            <Icon className={cn("size-5", iconClassName)} aria-hidden="true" />
           </div>
         ) : null}
       </div>

@@ -45,7 +45,7 @@ function formatUnreadBadge(count: number) {
 }
 
 export function NotificationBell({ compact = false }: NotificationBellProps) {
-  const router = useRouter();
+  const { push } = useRouter();
   const [open, setOpen] = useState(false);
   const { data: user } = useGetCurrentUserQuery();
   const canNavigateUser = getUserRoles(user?.roles).includes("ADMIN");
@@ -74,7 +74,7 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
       }
       const href = getNotificationHref(notification, { canNavigateUser });
       if (href) {
-        router.push(href);
+        push(href);
       }
     } catch {
       toast.error("Không thể cập nhật trạng thái thông báo.");
@@ -139,9 +139,9 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
             className="h-8 gap-1.5 px-2 text-xs"
           >
             {markingAll ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <CheckCheck className="h-3.5 w-3.5" />
+              <CheckCheck className="size-3.5" />
             )}
             Đánh dấu tất cả đã đọc
           </Button>
@@ -150,8 +150,8 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
         <div className="max-h-[28rem] overflow-y-auto p-2">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Đang tải thông báo...
+              <Loader2 className="size-4 animate-spin" />
+              Đang tải thông báo…
             </div>
           ) : notifications.length === 0 ? (
             <EmptyState
@@ -180,7 +180,7 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
         >
           Xem tất cả thông báo
           {isFetching ? (
-            <Loader2 className="ml-2 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="ml-2 size-3.5 animate-spin" />
           ) : null}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -211,16 +211,16 @@ function NotificationMenuItem({
     >
       <span
         className={cn(
-          "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+          "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg",
           severity.iconWrap,
         )}
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           {!notification.read ? (
-            <span className={cn("h-2 w-2 rounded-full", severity.dot)} />
+            <span className={cn("size-2 rounded-full", severity.dot)} />
           ) : null}
           <span
             className={cn(
@@ -235,7 +235,7 @@ function NotificationMenuItem({
           {notification.message}
         </span>
         <span className="mt-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-          <SeverityIcon className="h-3 w-3" />
+          <SeverityIcon className="size-3" />
           <span>{typeLabel}</span>
           <span>·</span>
           <span title={formatNotificationTime(notification.createdAt)}>

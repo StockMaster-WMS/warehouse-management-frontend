@@ -23,7 +23,7 @@ export default function SalesOrderDetailPage() {
             size="sm"
             className="border-slate-200"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 size-4" />
             Quay lại danh sách
           </Button>
         }

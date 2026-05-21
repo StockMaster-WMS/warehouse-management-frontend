@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
@@ -70,7 +69,6 @@ export function PoHeaderForm({
   savedPoNumber,
   savedStatus,
   purchaseOrderId,
-  suppliers: _suppliers,
   supplierOptions,
   warehouses,
   suppliersErr,
@@ -83,17 +81,17 @@ export function PoHeaderForm({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40">
+          <div className="flex size-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40">
             <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">1</span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Thông tin đơn nhập</h3>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Thông tin đơn nhập</h3>
             <p className="text-xs text-slate-400">Nhà cung cấp, kho nhận và ngày tháng</p>
           </div>
         </div>
         {headerLocked && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900">
-            <Lock className="h-3 w-3" />
+            <Lock className="size-3" />
             Đã lưu
           </span>
         )}
@@ -103,7 +101,7 @@ export function PoHeaderForm({
         {/* Success Banner */}
         {headerLocked && savedPoNumber && (
           <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
                 Đã tạo đơn: <span className="font-mono">{savedPoNumber}</span>
@@ -155,7 +153,7 @@ export function PoHeaderForm({
                 "rounded-xl h-10",
                 headerErrors.warehouseId && "border-rose-400 focus:ring-rose-400/20",
               )}>
-                <Warehouse className="h-4 w-4 mr-2 text-slate-400 shrink-0" />
+                <Warehouse className="size-4 mr-2 text-slate-400 shrink-0" />
                 <span className="flex flex-1 truncate text-left">
                   {warehouseId
                     ? (warehouses.find((w) => w.id === warehouseId)?.name ?? warehouseId)
@@ -181,7 +179,7 @@ export function PoHeaderForm({
           <div>
             <FieldLabel required>Ngày đặt hàng</FieldLabel>
             <div className="relative">
-              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="date"
                 value={orderDate}
@@ -197,7 +195,7 @@ export function PoHeaderForm({
           <div>
             <FieldLabel>Ngày dự kiến nhận</FieldLabel>
             <div className="relative">
-              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="date"
                 value={expectedDate}
@@ -233,8 +231,8 @@ export function PoHeaderForm({
             className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5"
           >
             {savingHeader
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <PackagePlus className="h-4 w-4" />}
+              ? <Loader2 className="size-4 animate-spin" />
+              : <PackagePlus className="size-4" />}
             {headerLocked ? "Đã lưu đơn" : "Lưu đơn nhập"}
           </Button>
           {!headerLocked && (

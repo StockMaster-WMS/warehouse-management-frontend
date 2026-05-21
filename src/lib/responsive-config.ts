@@ -72,9 +72,9 @@ export const TOUCH_TARGETS = {
     // Spacing between touch targets
     minSpacing: 8,
     // Common sizes
-    icon: 'h-5 w-5', // 20px - use with padding
-    iconSmall: 'h-4 w-4', // 16px - use with padding
-    iconLarge: 'h-6 w-6', // 24px - use with padding
+    icon: 'size-5', // 20px - use with padding
+    iconSmall: 'size-4', // 16px - use with padding
+    iconLarge: 'size-6', // 24px - use with padding
 } as const;
 
 /**
@@ -260,7 +260,7 @@ export const PERFORMANCE_TIPS = [
     'Không sử dụng fixed widths, dùng relative units',
 ] as const;
 
-export default {
+const responsiveConfig = {
     BREAKPOINTS,
     RESPONSIVE_PATTERNS,
     TOUCH_TARGETS,
@@ -272,3 +272,5 @@ export default {
     A11Y_GUIDELINES,
     PERFORMANCE_TIPS,
 };
+
+export default responsiveConfig;

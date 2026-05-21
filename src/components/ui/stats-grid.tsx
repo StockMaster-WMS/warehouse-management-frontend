@@ -58,7 +58,7 @@ export function StatsGrid({ stats, cols = 4, isLoading }: StatsGridProps) {
                                 {stat.label}
                             </span>
                             {stat.icon && (
-                                <stat.icon className={cn("h-4 w-4 opacity-70 transition-colors", stat.color ?? "text-muted-foreground", stat.onClick && "group-hover:text-primary")} />
+                                <stat.icon className={cn("size-4 opacity-70 transition-colors", stat.color ?? "text-muted-foreground", stat.onClick && "group-hover:text-primary")} />
                             )}
                         </div>
                         <div className="text-2xl font-bold text-foreground">

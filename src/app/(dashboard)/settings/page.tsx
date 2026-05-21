@@ -170,7 +170,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="rounded-lg border border-border bg-card shadow-sm">
           <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <Settings className="h-4 w-4 text-primary" />
+            <Settings className="size-4 text-primary" />
             <div>
               <h2 className="text-sm font-semibold text-foreground">Danh mục cài đặt</h2>
               <p className="text-xs text-muted-foreground">Theo nhóm cấu hình</p>
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                         >
                           <Icon
                             className={cn(
-                              "mt-0.5 h-4 w-4 shrink-0",
+                              "mt-0.5 size-4 shrink-0",
                               selected ? "text-primary" : "text-muted-foreground",
                             )}
                           />
@@ -228,10 +228,10 @@ export default function SettingsPage() {
         </aside>
 
         <main className="min-w-0 space-y-4">
-          <section className="rounded-lg border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm sm:px-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ActiveIcon className="h-5 w-5" />
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ActiveIcon className="size-5" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-base font-semibold text-foreground">{activeDetails.title}</h2>

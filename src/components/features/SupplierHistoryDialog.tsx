@@ -89,7 +89,7 @@ export function SupplierHistoryDialog({ open, onOpenChange, supplier }: Props) {
     >
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Lịch sử nhập hàng — {supplier?.name ?? ""}</DialogTitle>
+          <DialogTitle>Lịch sử nhập hàng, {supplier?.name ?? ""}</DialogTitle>
           <p className="text-xs text-slate-500">
             Mã: {supplier?.code} · Tổng: {totalElements} đơn
           </p>
@@ -190,9 +190,9 @@ export function SupplierHistoryDialog({ open, onOpenChange, supplier }: Props) {
                         nativeButton={false}
                         variant="ghost"
                         size="icon-sm"
-                        className="h-7 w-7"
+                        className="size-7"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="size-3.5" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -214,7 +214,7 @@ export function SupplierHistoryDialog({ open, onOpenChange, supplier }: Props) {
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
               >
-                <ChevronLeft className="mr-1 h-4 w-4" />
+                <ChevronLeft className="mr-1 size-4" />
                 Trước
               </Button>
               <Button
@@ -224,7 +224,7 @@ export function SupplierHistoryDialog({ open, onOpenChange, supplier }: Props) {
                 onClick={() => setPage((p) => p + 1)}
               >
                 Sau
-                <ChevronRight className="ml-1 h-4 w-4" />
+                <ChevronRight className="ml-1 size-4" />
               </Button>
             </div>
           </div>

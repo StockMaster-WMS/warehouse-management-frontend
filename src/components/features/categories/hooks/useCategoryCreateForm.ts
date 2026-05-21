@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
@@ -15,7 +15,6 @@ export function useCategoryCreateForm() {
     register,
     handleSubmit,
     control,
-    watch,
     formState,
     reset,
   } = useForm<CreateCategoryFormValues>({
@@ -36,15 +35,18 @@ export function useCategoryCreateForm() {
     refetch: refetchCategories,
   } = useGetCategoriesQuery();
 
-  const categories = categoryData?.data?.content ?? [];
+  const categories = useMemo(
+    () => categoryData?.data?.content ?? [],
+    [categoryData],
+  );
 
   const categoriesById = useMemo(
     () => new Map(categories.map((c) => [c.id, c] as const)),
     [categories]
   );
 
-  const watchedParentId = watch("parentId");
-  const watchedName = watch("name");
+  const watchedParentId = useWatch({ control, name: "parentId" }) ?? "";
+  const watchedName = useWatch({ control, name: "name" }) ?? "";
 
   const parentCategory = watchedParentId
     ? categoriesById.get(watchedParentId) ?? null

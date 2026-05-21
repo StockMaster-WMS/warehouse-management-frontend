@@ -73,7 +73,7 @@ export function InventoryFilters({
             className="h-10 rounded-xl"
             onClick={onExportStock}
           >
-            <FileSpreadsheet className="mr-1.5 h-4 w-4 text-emerald-600" />
+            <FileSpreadsheet className="mr-1.5 size-4 text-emerald-600" />
             Xuất Excel
           </Button>
 
@@ -85,7 +85,7 @@ export function InventoryFilters({
               className="h-10 rounded-xl"
               onClick={onExportNearExpiry}
             >
-              <FileSpreadsheet className="mr-1.5 h-4 w-4 text-rose-600" />
+              <FileSpreadsheet className="mr-1.5 size-4 text-rose-600" />
               Xuất hết hạn
             </Button>
           ) : null}

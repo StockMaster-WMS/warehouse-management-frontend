@@ -75,7 +75,7 @@ export function SuppliersTable({
   const content = (
     <>
       {isFetching && !isLoading ? (
-        <p className="ui-updating-banner">Đang cập nhật dữ liệu...</p>
+        <p className="ui-updating-banner">Đang cập nhật dữ liệu…</p>
       ) : null}
       <div className="overflow-x-auto">
         <table className="w-full text-left">
@@ -113,7 +113,7 @@ export function SuppliersTable({
                     <Skeleton className="mx-auto h-5 w-16 rounded-full" />
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Skeleton className="ml-auto h-8 w-8 rounded-lg" />
+                    <Skeleton className="ml-auto size-8 rounded-lg" />
                   </td>
                 </tr>
               ))
@@ -171,15 +171,15 @@ export function SuppliersTable({
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-y-1">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
-                          <User className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <User className="size-3 shrink-0 text-muted-foreground" />
                           <span className="truncate">{supplier.contactName ?? "-"}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <Mail className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <Mail className="size-3 shrink-0 text-muted-foreground" />
                           <span className="truncate">{supplier.contactEmail ?? "-"}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <Phone className="size-3 shrink-0 text-muted-foreground" />
                           {supplier.contactPhone ?? "-"}
                         </div>
                       </div>
@@ -206,8 +206,8 @@ export function SuppliersTable({
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           render={
-                            <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-lg">
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" size="icon-sm" className="size-8 rounded-lg">
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
@@ -219,18 +219,18 @@ export function SuppliersTable({
                             className="rounded-lg"
                             render={<Link href={`/suppliers/${supplier.id}/edit`} />}
                           >
-                            <Edit2 className="mr-2 h-4 w-4" />
+                            <Edit2 className="mr-2 size-4" />
                             Sửa thông tin
                           </DropdownMenuItem>
                           <DropdownMenuItem className="rounded-lg">
-                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <ExternalLink className="mr-2 size-4" />
                             Lịch sử nhập hàng
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="rounded-lg text-destructive focus:text-destructive"
                             onClick={() => onRequestDelete(supplier)}
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <Trash2 className="mr-2 size-4" />
                             Xóa đối tác
                           </DropdownMenuItem>
                         </DropdownMenuContent>

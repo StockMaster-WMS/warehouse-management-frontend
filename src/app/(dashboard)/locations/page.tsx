@@ -132,7 +132,7 @@ export default function LocationsPage() {
                                 className="border-indigo-100 text-indigo-600 hover:bg-indigo-50"
                                 onClick={() => setIsBulkDialogOpen(true)}
                             >
-                                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                                <Sparkles className="mr-1 size-3.5" />
                                 Tạo hàng loạt
                             </Button>
                             <Button
@@ -141,7 +141,7 @@ export default function LocationsPage() {
                                 className="bg-indigo-600 hover:bg-indigo-700"
                                 onClick={openCreateDialog}
                             >
-                                <Plus className="mr-1 h-4 w-4" />
+                                <Plus className="mr-1 size-4" />
                                 Thêm vị trí
                             </Button>
                         </PermissionControl>

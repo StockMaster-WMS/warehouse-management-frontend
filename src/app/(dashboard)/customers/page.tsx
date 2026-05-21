@@ -31,7 +31,7 @@ export default function CustomersPage() {
               size="sm"
               className="bg-indigo-600 hover:bg-indigo-700"
             >
-              <UserPlus className="mr-2 h-4 w-4" />
+              <UserPlus className="mr-2 size-4" />
               Thêm mới
             </Button>
           </PermissionControl>

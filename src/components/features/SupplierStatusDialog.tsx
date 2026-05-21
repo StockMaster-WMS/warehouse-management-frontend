@@ -109,7 +109,7 @@ export function SupplierStatusDialog({ open, onOpenChange, supplier }: Props) {
             disabled={isLoading}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Xác nhận
           </Button>
         </DialogFooter>

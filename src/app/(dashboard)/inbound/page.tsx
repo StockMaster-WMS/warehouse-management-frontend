@@ -255,7 +255,7 @@ export default function InboundPage() {
               size="sm"
               className="gap-1.5"
             >
-              <PackagePlus className="h-4 w-4" />
+              <PackagePlus className="size-4" />
               Tạo phiếu nhập
             </Button>
           </PermissionControl>
@@ -399,7 +399,7 @@ export default function InboundPage() {
 
         {isFetching && !isLoading ? (
           <div className="ui-updating-banner flex items-center gap-2">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+            <div className="size-1.5 animate-pulse rounded-full bg-primary" />
             Đang cập nhật dữ liệu…
           </div>
         ) : null}
@@ -416,7 +416,7 @@ export default function InboundPage() {
                 </TableHead>
                 <TableHead className="ui-label px-3 py-3.5">
                   <span className="inline-flex items-center gap-1.5">
-                    <CalendarDays className="h-3.5 w-3.5" />
+                    <CalendarDays className="size-3.5" />
                     Ngày nhập
                   </span>
                 </TableHead>
@@ -467,7 +467,7 @@ export default function InboundPage() {
                             size="sm"
                             className="gap-1.5"
                           >
-                            <PackagePlus className="h-4 w-4" />
+                            <PackagePlus className="size-4" />
                             Tạo phiếu đầu tiên
                           </Button>
                         </PermissionControl>
@@ -496,7 +496,7 @@ export default function InboundPage() {
                           {r.poNumber}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">,</span>
                       )}
                     </TableCell>
 
@@ -519,9 +519,9 @@ export default function InboundPage() {
                         className="flex h-8 items-center gap-1.5 px-3 text-xs font-semibold"
                       >
                         {printingId === r.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <Loader2 className="size-3.5 animate-spin" />
                         ) : (
-                          <Printer className="w-3.5 h-3.5" />
+                          <Printer className="size-3.5" />
                         )}
                         In phiếu
                       </Button>

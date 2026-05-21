@@ -1,7 +1,7 @@
 // Tạo slug từ tên tiếng Việt không dấu, giống backend
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
@@ -21,7 +21,6 @@ export function useCategoryEditForm(categoryId: string) {
     handleSubmit,
     control,
     reset,
-    watch,
     formState,
   } = useForm<EditCategoryFormValues>({
     resolver: zodResolver(editCategorySchema),
@@ -54,16 +53,19 @@ export function useCategoryEditForm(categoryId: string) {
     });
   }, [data, reset]);
 
-  const allCategories = categoryData?.data?.content ?? [];
+  const allCategories = useMemo(
+    () => categoryData?.data?.content ?? [],
+    [categoryData],
+  );
 
   const categoriesById = useMemo(
     () => new Map(allCategories.map((c) => [c.id, c] as const)),
     [allCategories]
   );
 
-  const watchedCode = watch("code");
-  const watchedParentId = watch("parentId");
-  const watchedName = watch("name");
+  const watchedCode = useWatch({ control, name: "code" }) ?? "";
+  const watchedParentId = useWatch({ control, name: "parentId" }) ?? "";
+  const watchedName = useWatch({ control, name: "name" }) ?? "";
 
   const codeUpper = useMemo(() => watchedCode.trim().toUpperCase(), [watchedCode]);
 

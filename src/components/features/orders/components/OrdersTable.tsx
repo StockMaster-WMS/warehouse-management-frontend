@@ -42,15 +42,15 @@ function OrdersTableSkeleton() {
     <>
       {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
         <TableRow key={`order-sk-${i}`}>
-          <TableCell className="px-3 py-3 text-center">
+          <TableCell className="p-3 text-center">
             <Skeleton className="mx-auto h-4 w-6" />
           </TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-4 w-28" /></TableCell>
-          <TableCell className="px-3 py-3"><Skeleton className="h-3 w-full max-w-60" /></TableCell>
-          <TableCell className="px-3 py-3 text-center"><Skeleton className="mx-auto h-5 w-24 rounded-full" /></TableCell>
-          <TableCell className="px-3 py-3 text-right"><Skeleton className="ml-auto h-3 w-20" /></TableCell>
-          <TableCell className="px-3 py-3 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
+          <TableCell className="p-3"><Skeleton className="h-4 w-28" /></TableCell>
+          <TableCell className="p-3"><Skeleton className="h-4 w-28" /></TableCell>
+          <TableCell className="p-3"><Skeleton className="h-3 w-full max-w-60" /></TableCell>
+          <TableCell className="p-3 text-center"><Skeleton className="mx-auto h-5 w-24 rounded-full" /></TableCell>
+          <TableCell className="p-3 text-right"><Skeleton className="ml-auto h-3 w-20" /></TableCell>
+          <TableCell className="p-3 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
         </TableRow>
       ))}
     </>
@@ -104,20 +104,20 @@ export function OrdersTable({
     <>
       {isFetching && !isLoading ? (
         <p className="ui-updating-banner">
-          Đang cập nhật dữ liệu...
+          Đang cập nhật dữ liệu…
         </p>
       ) : null}
       <div className="overflow-x-auto">
         <Table className="min-w-245 text-left">
           <TableHeader className="ui-table-header">
             <TableRow>
-              <TableHead className="ui-label w-12 px-3 py-3 text-center">STT</TableHead>
-              <TableHead className="ui-label px-3 py-3">Mã đơn</TableHead>
-              <TableHead className="ui-label px-3 py-3">Khách hàng</TableHead>
-              <TableHead className="ui-label px-3 py-3">Địa chỉ giao</TableHead>
-              <TableHead className="ui-label px-3 py-3 text-center">Trạng thái</TableHead>
-              <TableHead className="ui-label px-3 py-3 text-right">Tạo lúc</TableHead>
-              <TableHead className="ui-label px-3 py-3 text-right">Thao tác</TableHead>
+              <TableHead className="ui-label w-12 p-3 text-center">STT</TableHead>
+              <TableHead className="ui-label p-3">Mã đơn</TableHead>
+              <TableHead className="ui-label p-3">Khách hàng</TableHead>
+              <TableHead className="ui-label p-3">Địa chỉ giao</TableHead>
+              <TableHead className="ui-label p-3 text-center">Trạng thái</TableHead>
+              <TableHead className="ui-label p-3 text-right">Tạo lúc</TableHead>
+              <TableHead className="ui-label p-3 text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -181,43 +181,43 @@ export function OrdersTable({
                         : "ui-table-row"
                     }`}
                   >
-                    <TableCell className="px-3 py-3 text-center">
+                    <TableCell className="p-3 text-center">
                       <span className="tabular-nums text-xs font-medium text-muted-foreground">
                         {page * pageSize + index + 1}
                       </span>
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-sm font-semibold text-foreground">
+                    <TableCell className="p-3 text-sm font-semibold text-foreground">
                       {item.soNumber || `SO-${item.id.slice(0, 8)}`}
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-sm text-foreground/85">
+                    <TableCell className="p-3 text-sm text-foreground/85">
                       {item.customerName || "-"}
                     </TableCell>
-                    <TableCell className="max-w-80 px-3 py-3">
+                    <TableCell className="max-w-80 p-3">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <MapPin className="size-3.5 shrink-0" />
                         <span className="truncate">
                           {item.shippingAddress ? formatShippingShort(item.shippingAddress) : "-"}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-center">
+                    <TableCell className="p-3 text-center">
                       <StatusBadge tone={statusTone(item.status)}>
                         {salesOrderStatusLabel(item.status)}
                       </StatusBadge>
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-right text-xs text-muted-foreground">
+                    <TableCell className="p-3 text-right text-xs text-muted-foreground">
                       {formatOrderCreatedAt(item.createdAt)}
                     </TableCell>
-                    <TableCell className="px-3 py-3 text-right">
+                    <TableCell className="p-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           render={
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="h-8 w-8 rounded-lg"
+                              className="size-8 rounded-lg"
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              <MoreHorizontal className="size-4" />
                             </Button>
                           }
                         />
@@ -232,7 +232,7 @@ export function OrdersTable({
                             className="rounded-lg"
                             render={<Link href={`/orders/${item.id}`} />}
                           >
-                            <Eye className="mr-2 h-4 w-4" />
+                            <Eye className="mr-2 size-4" />
                             Xem chi tiết
                           </DropdownMenuItem>
                           {canManageOrders ? (
@@ -241,7 +241,7 @@ export function OrdersTable({
                                 className="rounded-lg text-muted-foreground"
                                 disabled
                               >
-                                <Edit2 className="mr-2 h-4 w-4" />
+                                <Edit2 className="mr-2 size-4" />
                                 Sửa thông tin
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
@@ -249,7 +249,7 @@ export function OrdersTable({
                                 className="rounded-lg text-destructive focus:text-destructive"
                                 disabled={item.status !== "DRAFT" && item.status !== "PENDING"}
                               >
-                                <Trash2 className="mr-2 h-4 w-4" />
+                                <Trash2 className="mr-2 size-4" />
                                 Hủy đơn hàng
                               </DropdownMenuItem>
                             </>

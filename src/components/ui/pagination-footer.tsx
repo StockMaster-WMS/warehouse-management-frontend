@@ -56,7 +56,7 @@ export function PaginationFooter({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {isLoading ? (
-                        <>Đang tải danh sách...</>
+                        <>Đang tải danh sách…</>
                     ) : isError ? (
                         <span className="text-rose-600 dark:text-rose-400">{errorText}</span>
                     ) : rowsCount > 0 ? (
@@ -121,7 +121,7 @@ export function PaginationFooter({
                     >
                         Sau
                     </Button>
-                    {isFetching ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
+                    {isFetching ? <Loader2 className="size-4 animate-spin text-slate-400" /> : null}
                 </div>
             </div>
         </div>

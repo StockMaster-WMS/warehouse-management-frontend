@@ -31,7 +31,7 @@ export function AdvancedFilterActions({
         onClick={onToggle}
         aria-expanded={open}
       >
-        <Filter className="mr-2 h-4 w-4 text-primary" />
+        <Filter className="mr-2 size-4 text-primary" />
         Bộ lọc nâng cao
         {activeCount > 0 ? (
           <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
@@ -39,9 +39,9 @@ export function AdvancedFilterActions({
           </span>
         ) : null}
         {open ? (
-          <ChevronUp className="ml-2 h-4 w-4 text-muted-foreground" />
+          <ChevronUp className="ml-2 size-4 text-muted-foreground" />
         ) : (
-          <ChevronDown className="ml-2 h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="ml-2 size-4 text-muted-foreground" />
         )}
       </Button>
 
@@ -52,7 +52,7 @@ export function AdvancedFilterActions({
           className="h-11 rounded-lg px-4 text-muted-foreground hover:bg-danger-soft hover:text-destructive"
           onClick={onClear}
         >
-          <X className="mr-2 h-4 w-4" />
+          <X className="mr-2 size-4" />
           Xoá lọc
         </Button>
       ) : null}

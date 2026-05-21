@@ -33,7 +33,7 @@ export function SearchToolbar({
     >
       <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 group w-full">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-hover:text-primary" />
+          <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-hover:text-primary" />
           <Input
             placeholder={placeholder}
             className="h-10 w-full rounded-lg border-border bg-muted/45 pl-11 pr-4 text-xs font-medium transition-all hover:bg-muted/70 focus-visible:bg-card sm:h-11 sm:text-sm"

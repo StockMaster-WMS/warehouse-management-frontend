@@ -288,7 +288,13 @@ export function Navbar() {
                   <span className="truncate">Cấu hình hệ thống</span>
                 </DropdownMenuItem>
               </PermissionControl>
-              <DropdownMenuItem className="rounded-lg py-2">
+              <DropdownMenuItem
+                className="rounded-lg py-2"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  toast.info("StockMaster đang dùng Tiếng Việt làm ngôn ngữ mặc định.");
+                }}
+              >
                 <Languages className="mr-2 size-4 shrink-0 text-zinc-500" />
                 <span className="truncate">Ngôn ngữ: Tiếng Việt</span>
               </DropdownMenuItem>

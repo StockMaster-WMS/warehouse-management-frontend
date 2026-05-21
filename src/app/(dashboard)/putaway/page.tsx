@@ -74,22 +74,22 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.Re
   PENDING: {
     label: "Chờ xử lý",
     cls: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
-    icon: <Clock className="h-3 w-3" />,
+    icon: <Clock className="size-3" />,
   },
   IN_PROGRESS: {
     label: "Đang thực hiện",
     cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
-    icon: <ChevronRight className="h-3 w-3" />,
+    icon: <ChevronRight className="size-3" />,
   },
   COMPLETED: {
     label: "Hoàn tất",
     cls: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
-    icon: <CheckCircle2 className="h-3 w-3" />,
+    icon: <CheckCircle2 className="size-3" />,
   },
   CANCELLED: {
     label: "Đã hủy",
     cls: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900",
-    icon: <XCircle className="h-3 w-3" />,
+    icon: <XCircle className="size-3" />,
   },
 };
 
@@ -271,18 +271,18 @@ function PutawayTaskRow({
       <TableCell className="px-3 py-4">
         {task.suggestedLocationId ? (
           <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-            <MapPin className="h-3 w-3 text-slate-400" />
+            <MapPin className="size-3 text-slate-400" />
             {locationMap.get(task.suggestedLocationId) ?? `…${task.suggestedLocationId.slice(-6)}`}
           </span>
-        ) : <span className="text-slate-400 text-xs">—</span>}
+        ) : <span className="text-slate-400 text-xs">,</span>}
       </TableCell>
       <TableCell className="px-3 py-4">
         {task.actualLocationId ? (
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="h-3 w-3" />
+            <CheckCircle2 className="size-3" />
             {locationMap.get(task.actualLocationId) ?? `…${task.actualLocationId.slice(-6)}`}
           </span>
-        ) : <span className="text-slate-400 text-xs">—</span>}
+        ) : <span className="text-slate-400 text-xs">,</span>}
       </TableCell>
       <TableCell className="py-4 pl-3 pr-6 text-right">
         <div className="flex items-center justify-end gap-1.5">
@@ -310,7 +310,7 @@ function PutawayTaskRow({
             onClick={() => canComplete && onComplete(task)}
             disabled={!canComplete}
           >
-            <PackageCheck className="h-3.5 w-3.5" />
+            <PackageCheck className="size-3.5" />
             Hoàn tất
           </Button>
         </div>
@@ -553,7 +553,7 @@ export default function PutawayPage() {
             onClick={() => refetch()}
             className="gap-1.5 rounded-xl border-slate-200"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
+            <RefreshCw className={cn("size-3.5", isFetching && "animate-spin")} />
             Làm mới
           </Button>
         }
@@ -581,7 +581,7 @@ export default function PutawayPage() {
                 }}
               >
                 <SelectTrigger className="h-10 w-44 shrink-0 rounded-xl border-slate-200 dark:border-slate-700">
-                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <SlidersHorizontal className="mr-1.5 size-3.5 shrink-0 text-slate-400" />
                   <span className="truncate text-sm">
                     {statusFilter ? (STATUS_CONFIG[statusFilter]?.label ?? statusFilter) : "Tất cả trạng thái"}
                   </span>
@@ -615,7 +615,7 @@ export default function PutawayPage() {
 
         {isFetching && !isLoading && (
           <div className="flex items-center gap-2 border-b border-slate-100 bg-indigo-50/60 px-6 py-2 text-xs font-medium text-indigo-600 dark:border-slate-800 dark:bg-indigo-950/20 dark:text-indigo-400">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+            <div className="size-1.5 animate-pulse rounded-full bg-indigo-500" />
             Đang cập nhật dữ liệu…
           </div>
         )}
@@ -718,7 +718,7 @@ export default function PutawayPage() {
           <form onSubmit={submitComplete}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <PackageCheck className="h-5 w-5 text-indigo-600" />
+                <PackageCheck className="size-5 text-indigo-600" />
                 Hoàn tất xếp hàng lên kệ
               </DialogTitle>
               {activeTask && (
@@ -744,7 +744,7 @@ export default function PutawayPage() {
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
                   emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
                   dialogTitle="Chọn vị trí đặt hàng thực tế"
-                  icon={<MapPin className="h-4 w-4" />}
+                  icon={<MapPin className="size-4" />}
                 />
                 {completeErrors.actualLocationId && (
                   <p className="mt-1 text-xs text-rose-600">{completeErrors.actualLocationId}</p>
@@ -763,7 +763,7 @@ export default function PutawayPage() {
                 disabled={completing}
                 className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5"
               >
-                {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {completing ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                 Xác nhận hoàn tất
               </Button>
             </DialogFooter>
@@ -811,7 +811,7 @@ export default function PutawayPage() {
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
                   emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
                   dialogTitle="Chọn vị trí gợi ý"
-                  icon={<MapPin className="h-4 w-4" />}
+                  icon={<MapPin className="size-4" />}
                 />
                 {editSuggested ? (
                   <Button
@@ -837,7 +837,7 @@ export default function PutawayPage() {
                 disabled={patching}
                 className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5"
               >
-                {patching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {patching ? <Loader2 className="size-4 animate-spin" /> : null}
                 Lưu thay đổi
               </Button>
             </DialogFooter>

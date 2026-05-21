@@ -45,7 +45,7 @@ export function FilterGroup({
         <>
             {showTitle ? (
                 <div className="flex items-center gap-2 pr-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    <Filter className="h-4 w-4 text-indigo-500" />
+                    <Filter className="size-4 text-indigo-500" />
                     {title}
                 </div>
             ) : null}
@@ -80,10 +80,10 @@ export function FilterGroup({
                 <Button
                     type="button"
                     variant="ghost"
-                    className="h-10 rounded-xl px-4 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                    className="h-10 rounded-xl px-4 text-rose-700 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
                     onClick={onClear}
                 >
-                    <X className="mr-2 h-4 w-4" />
+                    <X className="mr-2 size-4" />
                     Xoá lọc
                 </Button>
             )}

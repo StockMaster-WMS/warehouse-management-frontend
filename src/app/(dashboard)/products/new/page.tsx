@@ -55,7 +55,7 @@ export default function NewProductPage() {
             size="icon-sm"
             className="rounded-full hover:bg-slate-100"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         }
       />
@@ -71,8 +71,8 @@ export default function NewProductPage() {
           {/* Khối 1: Thông tin định danh */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Info className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Info className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Thông tin định danh
               </h3>
             </div>
@@ -229,8 +229,8 @@ export default function NewProductPage() {
           {/* Khối 2: Quy cách và cấu hình */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Ruler className="h-4 w-4 text-indigo-600" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Ruler className="size-4 text-indigo-600" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Quy cách & Vận chuyển
               </h3>
             </div>
@@ -328,8 +328,8 @@ export default function NewProductPage() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <AlertCircle className="size-4 text-amber-500" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                 Ngưỡng báo động
               </h3>
             </div>
@@ -356,7 +356,7 @@ export default function NewProductPage() {
                 disabled={isSubmitting}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:opacity-70 dark:shadow-none"
               >
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 size-4" />
                 {isSubmitting ? "Đang lưu..." : "Lưu sản phẩm"}
               </Button>
               <Button

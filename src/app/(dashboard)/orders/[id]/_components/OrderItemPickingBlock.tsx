@@ -202,7 +202,7 @@ export function OrderItemPickingBlock({
                     >
                         {summary.allPicked ? "Đã lấy đủ" : "Chưa xong"}
                     </Badge>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition group-open:rotate-180" />
+                    <ChevronDown className="size-4 text-muted-foreground transition group-open:rotate-180" />
                 </div>
             </summary>
 
@@ -224,7 +224,7 @@ export function OrderItemPickingBlock({
 
                             {stocksLoading ? (
                                 <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <Loader2 className="mr-2 size-4 animate-spin" />
                                     Đang tải vị trí tồn…
                                 </div>
                             ) : stocksError ? (
@@ -271,9 +271,9 @@ export function OrderItemPickingBlock({
                                                         onClick={() => onCreatePickFromStock(row)}
                                                     >
                                                         {creatingFromStockId === row.id ? (
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            <Loader2 className="mr-2 size-4 animate-spin" />
                                                         ) : (
-                                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                                            <PlusCircle className="mr-2 size-4" />
                                                         )}
                                                         Tạo lệnh lấy hàng từ vị trí này
                                                     </Button>
@@ -343,7 +343,7 @@ export function OrderItemPickingBlock({
                                                 disabled={!allowDeletePicking || deletingPick || updatingPick}
                                                 onClick={() => onDeletePicking(p)}
                                             >
-                                                {deletingPick ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                                {deletingPick ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Trash2 className="mr-2 size-4" />}
                                                 Xóa lệnh
                                             </Button>
                                             <Button
@@ -353,7 +353,7 @@ export function OrderItemPickingBlock({
                                                 disabled={!allowPickingMutation || updatingPick || p.status === "PICKED"}
                                                 onClick={() => onQuickMarkPicked(p)}
                                             >
-                                                {updatingPick ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                {updatingPick ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                                                 Xác nhận đủ SL
                                             </Button>
                                         </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { FileSpreadsheet, Wrench, History } from "lucide-react";
@@ -104,7 +104,7 @@ export default function InventoryPage() {
               className="gap-1.5 rounded-xl border-slate-200"
               onClick={() => setHistoryOpen(true)}
             >
-              <History className="h-4 w-4 text-indigo-600" />
+              <History className="size-4 text-indigo-600" />
               Lịch sử biến động
             </Button>
             <Button
@@ -121,7 +121,7 @@ export default function InventoryPage() {
             >
               <FileSpreadsheet
                 className={cn(
-                  "mr-1.5 h-4 w-4",
+                  "mr-1.5 size-4",
                   logic.activeTab === "near-expiry"
                     ? "text-rose-600"
                     : logic.activeTab === "low-stock"
@@ -142,7 +142,7 @@ export default function InventoryPage() {
                 size="sm"
                 onClick={() => logic.openAdjustDialog("qty")}
               >
-                <Wrench className="mr-1.5 h-4 w-4" />
+                <Wrench className="mr-1.5 size-4" />
                 Điều chỉnh tồn
               </Button>
               <Button
@@ -151,7 +151,7 @@ export default function InventoryPage() {
                 size="sm"
                 onClick={() => logic.openAdjustDialog("reserved")}
               >
-                <Wrench className="mr-1.5 h-4 w-4" />
+                <Wrench className="mr-1.5 size-4" />
                 Điều chỉnh giữ chỗ
               </Button>
             </PermissionControl>

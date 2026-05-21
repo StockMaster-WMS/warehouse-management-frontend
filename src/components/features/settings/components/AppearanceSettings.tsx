@@ -225,7 +225,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
                 name="sidebar"
                 checked={appearance.sidebar === item.id}
                 onChange={() => updateAppearance("sidebar", item.id)}
-                className="h-4 w-4 accent-primary"
+                className="size-4 accent-primary"
               />
               <div>
                 <p className="text-sm font-medium text-foreground">{item.label}</p>

@@ -125,10 +125,10 @@ function QuickSearchDialogContent({
           aria-haspopup="listbox"
           onKeyDown={handleContainerKeyDown}
         >
-          <div className="border-b border-border px-3 py-3">
+          <div className="border-b border-border p-3">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden
               />
               <Input

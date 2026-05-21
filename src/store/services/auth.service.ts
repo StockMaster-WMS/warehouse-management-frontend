@@ -71,7 +71,7 @@ export const authApi = baseApi.injectEndpoints({
             }),
             transformResponse: (r: ApiResponse<LoginResponse["user"]>) => r.data,
             providesTags: [{ type: "Auth", id: "CURRENT_USER" }],
-            keepUnusedDataFor: 0,
+            keepUnusedDataFor: 300,
         }),
         updateProfile: builder.mutation<ApiResponse<LoginResponse["user"]>, UpdateProfileRequest>({
             query: (body) => ({

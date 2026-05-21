@@ -90,11 +90,11 @@ export function ProductStockLedger({ productId }: { productId: string }) {
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         {entry.movementType === "INBOUND" ? (
                                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                                <ArrowDownRight className="w-3 h-3 mr-1" /> Nhập
+                                                <ArrowDownRight className="size-3 mr-1" /> Nhập
                                             </Badge>
                                         ) : entry.movementType === "OUTBOUND" ? (
                                             <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400">
-                                                <ArrowUpRight className="w-3 h-3 mr-1" /> Xuất
+                                                <ArrowUpRight className="size-3 mr-1" /> Xuất
                                             </Badge>
                                         ) : (
                                             <Badge variant="outline">{entry.movementType}</Badge>

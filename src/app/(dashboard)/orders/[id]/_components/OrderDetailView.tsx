@@ -74,28 +74,28 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
           <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-transparent p-0 sm:grid-cols-3">
             <TabsTrigger
               value="overview"
-              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-600 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
+              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-indigo-700 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-indigo-700 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
-                <LayoutGrid className="h-4 w-4 shrink-0" />
+                <LayoutGrid className="size-4 shrink-0" />
                 Tổng quan
               </span>   
             </TabsTrigger>
             <TabsTrigger
               value="lines"
-              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-600 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
+              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-indigo-700 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-indigo-700 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
-                <ListChecks className="h-4 w-4 shrink-0" />
+                <ListChecks className="size-4 shrink-0" />
                 Dòng hàng
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="picking"
-              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-600 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
+              className="group flex h-auto flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-indigo-700 shadow-none transition-all data-[state=active]:border-indigo-200 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-indigo-700 dark:data-[state=active]:border-indigo-900/50 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-200"
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
-                <ScanBarcode className="h-4 w-4 shrink-0" />
+                <ScanBarcode className="size-4 shrink-0" />
                 Lấy hàng
               </span>
             </TabsTrigger>

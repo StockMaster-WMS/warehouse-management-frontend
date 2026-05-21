@@ -1,11 +1,9 @@
 "use client";
 
-import { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Boxes, CalendarClock, ChevronRight, Copy, Edit2, Package, Ruler, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Boxes, CalendarClock, ChevronRight, Copy, Edit2, Ruler, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/ui/empty-state";
 import type { Product } from "@/types/product";
 import type { Location } from "@/types/location";
 import type { Stock } from "@/types/stock";
@@ -99,7 +97,7 @@ export function ProductHero({ product, onCopySku }: { product: Product; onCopySk
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4 sm:gap-5">
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-sm font-bold text-white shadow-md shadow-indigo-600/25 sm:h-16 sm:w-16 sm:text-base"
+            className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-sm font-bold text-white shadow-md shadow-indigo-600/25 sm:h-16 sm:w-16 sm:text-base"
             aria-hidden
           >
             {initials}
@@ -112,10 +110,10 @@ export function ProductHero({ product, onCopySku }: { product: Product; onCopySk
               >
                 Sản phẩm
               </Link>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
+              <ChevronRight className="size-3.5 text-slate-300 dark:text-slate-600" />
               <span className="truncate text-slate-600 dark:text-slate-300">Chi tiết</span>
             </nav>
-            <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               <span className="wrap-break-word">{product.name}</span>
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -131,7 +129,7 @@ export function ProductHero({ product, onCopySku }: { product: Product; onCopySk
                   title="Sao chép mã hàng"
                   aria-label="Sao chép mã hàng"
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="size-3.5" />
                 </button>
               </span>
               <StatusBadge status={product.status} />
@@ -155,7 +153,7 @@ export function ProductHero({ product, onCopySku }: { product: Product; onCopySk
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700 shadow-sm sm:min-w-35"
           >
-            <Edit2 className="mr-2 h-4 w-4" />
+            <Edit2 className="mr-2 size-4" />
             Chỉnh sửa
           </Button>
           <Button
@@ -165,7 +163,7 @@ export function ProductHero({ product, onCopySku }: { product: Product; onCopySk
             size="sm"
             className="border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900 sm:min-w-35"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 size-4" />
             Danh sách
           </Button>
         </div>
@@ -184,7 +182,7 @@ export function StatusBadge({ status }: { status: Product["status"] }) {
           : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
       }`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      <span className="size-1.5 rounded-full bg-current" />
       {active ? "Hoạt động" : "Ngưng"}
     </span>
   );
@@ -276,7 +274,7 @@ export function StockByLocationList({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                  <Boxes className="h-4 w-4 text-indigo-600" />
+                  <Boxes className="size-4 text-indigo-600" />
                   <span className="truncate">
                     {location?.code || formatLocationCode(location)}
                   </span>
@@ -298,15 +296,15 @@ export function StockByLocationList({
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 dark:bg-slate-800/70">
-                <Ruler className="h-3.5 w-3.5" />
+                <Ruler className="size-3.5" />
                 {parts.zone || "--"}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 dark:bg-slate-800/70">
-                <ShieldCheck className="h-3.5 w-3.5" />
+                <ShieldCheck className="size-3.5" />
                 {parts.aisle || "--"}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 dark:bg-slate-800/70">
-                <CalendarClock className="h-3.5 w-3.5" />
+                <CalendarClock className="size-3.5" />
                 {parts.rack || "--"}
               </span>
             </div>

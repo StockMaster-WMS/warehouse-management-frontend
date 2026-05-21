@@ -23,10 +23,10 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="ui-icon-tile mb-3 h-14 w-14 sm:mb-4 sm:h-16 sm:w-16">
-        <Icon className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden="true" />
+      <div className="ui-icon-tile mb-3 size-14 sm:mb-4 sm:h-16 sm:w-16">
+        <Icon className="size-7 sm:h-8 sm:w-8" aria-hidden="true" />
       </div>
-      <h3 className="px-2 text-base font-bold text-foreground sm:text-lg">
+      <h3 className="px-2 text-base font-semibold text-foreground sm:text-lg">
         {title}
       </h3>
       <p className="mt-1 max-w-md px-2 text-xs font-medium text-muted-foreground sm:text-sm">

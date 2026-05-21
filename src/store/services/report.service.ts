@@ -1,13 +1,20 @@
 import { baseApi } from "@/store/services/api";
 import type { ApiResponse } from "@/types/api";
+import type { DashboardPeriod } from "@/types/dashboard";
 import type { ReportSummary, RevenueTrend, TopSku } from "@/types/report";
+
+export interface ReportSummaryParams {
+  period?: DashboardPeriod;
+  year?: number;
+}
 
 export const reportApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getReportSummary: builder.query<ReportSummary, void>({
-      query: () => ({
+    getReportSummary: builder.query<ReportSummary, ReportSummaryParams | void>({
+      query: (params) => ({
         url: "/reports/summary",
         method: "GET",
+        params,
       }),
       transformResponse: (response: ApiResponse<ReportSummary>) => response.data,
       providesTags: ["Report"],
@@ -37,6 +44,14 @@ export const reportApi = baseApi.injectEndpoints({
         responseType: "blob",
       }),
     }),
+    exportReportSummary: builder.query<Blob, ReportSummaryParams | void>({
+      query: (params) => ({
+        url: "/reports/summary/export",
+        method: "GET",
+        params,
+        responseType: "blob",
+      }),
+    }),
   }),
 });
 
@@ -44,5 +59,6 @@ export const {
   useGetReportSummaryQuery, 
   useGetRevenueTrendQuery, 
   useGetTopSkusQuery,
-  useLazyExportInventoryReportQuery
+  useLazyExportInventoryReportQuery,
+  useLazyExportReportSummaryQuery
 } = reportApi;
