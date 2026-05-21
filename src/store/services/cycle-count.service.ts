@@ -42,11 +42,15 @@ function buildCycleCountsQueryParams(params: GetCycleCountsParams) {
 type BackendCycleCountItem = {
   id: string;
   productId?: string | null;
+  productSku?: string | null;
+  productName?: string | null;
   locationId?: string | null;
+  locationCode?: string | null;
   lotNumber?: string | null;
   systemQty?: number | null;
   countedQty?: number | null;
   discrepancy?: number | null;
+  varianceSeverity?: string | null;
   status?: string | null;
   notes?: string | null;
 };
@@ -78,8 +82,16 @@ function normalizeCycleCountLine(
         : "discrepancy" in item
           ? item.discrepancy
           : null,
+    discrepancy:
+      "discrepancy" in item
+        ? item.discrepancy
+        : "varianceQty" in item
+          ? item.varianceQty
+          : null,
+    varianceSeverity: ("varianceSeverity" in item ? item.varianceSeverity : null) as CycleCountLine["varianceSeverity"],
     status: (item.status ?? "PENDING") as CycleCountLine["status"],
     note: "note" in item ? item.note : "notes" in item ? item.notes : null,
+    notes: "notes" in item ? item.notes : "note" in item ? item.note : null,
   };
 }
 
@@ -162,9 +174,10 @@ const cycleCountApi = baseApi.injectEndpoints({
           warehouseId: body.warehouseId,
           description: body.description,
           scheduledAt: body.scheduledAt,
-          scope: "scope" in body ? body.scope : undefined,
-          scopeValue: "scopeValue" in body ? body.scopeValue : undefined,
-          items: "items" in body ? body.items : [],
+          assignedTo: body.assignedTo,
+          scope: "scope" in body ? body.scope : null,
+          scopeValue: "scopeValue" in body ? body.scopeValue : null,
+          items: "items" in body ? body.items : null,
         },
       }),
       transformResponse: normalizeCycleCountResponse,
@@ -196,9 +209,9 @@ const cycleCountApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Nộp kết quả: IN_PROGRESS → COMPLETED (chờ duyệt) */
+    /** Nộp kết quả: IN_PROGRESS → PENDING_REVIEW */
     submitCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
-      query: (id) => ({ url: `/cycle-counts/${id}/complete`, method: "POST" }),
+      query: (id) => ({ url: `/cycle-counts/${id}/submit`, method: "POST" }),
       transformResponse: normalizeCycleCountResponse,
       invalidatesTags: (_r, _e, id) => [
         { type: "CycleCount", id },
@@ -206,7 +219,7 @@ const cycleCountApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Duyệt & điều chỉnh tồn kho: COMPLETED → APPROVED */
+    /** Duyệt & điều chỉnh tồn kho: PENDING_REVIEW → APPROVED */
     completeCycleCount: builder.mutation<ApiResponse<CycleCount>, string>({
       query: (id) => ({ url: `/cycle-counts/${id}/approve`, method: "POST" }),
       transformResponse: normalizeCycleCountResponse,
@@ -214,6 +227,19 @@ const cycleCountApi = baseApi.injectEndpoints({
         { type: "CycleCount", id },
         { type: "CycleCount", id: "LIST" },
         { type: "Stock", id: "LIST" },
+      ],
+    }),
+
+    rejectCycleCount: builder.mutation<ApiResponse<CycleCount>, { id: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/cycle-counts/${id}/reject`,
+        method: "POST",
+        data: { reason },
+      }),
+      transformResponse: normalizeCycleCountResponse,
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "CycleCount", id: arg.id },
+        { type: "CycleCount", id: "LIST" },
       ],
     }),
 
@@ -237,5 +263,6 @@ export const {
   useRecordCycleCountMutation,
   useSubmitCycleCountMutation,
   useCompleteCycleCountMutation,
+  useRejectCycleCountMutation,
   useCancelCycleCountMutation,
 } = cycleCountApi;
