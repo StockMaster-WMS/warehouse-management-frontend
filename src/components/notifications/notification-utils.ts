@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Info,
+  PackageCheck,
   PackageMinus,
   PackagePlus,
   RefreshCcw,
@@ -47,6 +48,7 @@ export const NOTIFICATION_SEVERITY_ICON: Record<NotificationSeverity, LucideIcon
 };
 
 export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
+  PUTAWAY_ASSIGNED: "Xếp hàng lên kệ",
   LOW_STOCK: "Tồn kho thấp",
   PURCHASE_ORDER_CREATED: "Đơn nhập",
   RMA_RECEIVED: "Hàng trả",
@@ -59,6 +61,7 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
 };
 
 export const NOTIFICATION_TYPE_ICON: Record<NotificationType, LucideIcon> = {
+  PUTAWAY_ASSIGNED: PackageCheck,
   LOW_STOCK: PackageMinus,
   PURCHASE_ORDER_CREATED: PackagePlus,
   RMA_RECEIVED: RefreshCcw,
@@ -106,6 +109,8 @@ export function getNotificationHref(
 
   const targetId = encodeURIComponent(notification.targetId);
   switch (notification.targetType) {
+    case "PUTAWAY_TASK":
+      return `/putaway?taskId=${targetId}`;
     case "PICKING_ITEM":
       return `/picking?itemId=${targetId}`;
     case "SALES_ORDER":

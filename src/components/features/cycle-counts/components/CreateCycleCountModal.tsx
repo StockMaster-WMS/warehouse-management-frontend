@@ -120,7 +120,7 @@ export function CreateCycleCountModal({
     active: true,
     sort: "fullName",
     sortDir: "asc",
-  });
+  }, { skip: !open });
 
   const {
     register,

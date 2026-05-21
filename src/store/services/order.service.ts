@@ -14,6 +14,7 @@ export type GetOrdersParams = {
 };
 
 export type CreateSalesOrderPayload = {
+  customerId?: string;
   customerName: string;
   shippingAddress: {
     line1: string;

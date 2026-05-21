@@ -13,8 +13,8 @@ import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 
 function PickingPageContent() {
     const [isMobileMode, setIsMobileMode] = useState(false);
-    const { get } = useSearchParams();
-    const itemId = get("itemId");
+    const searchParams = useSearchParams();
+    const itemId = searchParams.get("itemId");
     const canCoordinatePicking = useHasPermissions(PICKING_ASSIGN_ROLES);
 
     if (!canCoordinatePicking) {

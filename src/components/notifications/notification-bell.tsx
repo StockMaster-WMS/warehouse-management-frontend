@@ -196,8 +196,8 @@ function NotificationMenuItem({
   onOpen: () => void;
 }) {
   const Icon = NOTIFICATION_TYPE_ICON[notification.type] ?? Bell;
-  const SeverityIcon = NOTIFICATION_SEVERITY_ICON[notification.severity];
-  const severity = NOTIFICATION_SEVERITY_STYLE[notification.severity];
+  const SeverityIcon = NOTIFICATION_SEVERITY_ICON[notification.severity] ?? Bell;
+  const severity = NOTIFICATION_SEVERITY_STYLE[notification.severity] ?? NOTIFICATION_SEVERITY_STYLE.INFO;
   const typeLabel = NOTIFICATION_TYPE_LABEL[notification.type] ?? notification.type;
 
   return (

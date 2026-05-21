@@ -18,7 +18,7 @@ import { AddressForm } from "@/components/features/AddressForm";
 import { useCreateOrderForm } from "@/components/features/orders";
 
 function NewOrderFormContent() {
-  const { get } = useSearchParams();
+  const searchParams = useSearchParams();
   const {
     customerId,
     customerSearch,
@@ -45,7 +45,7 @@ function NewOrderFormContent() {
     creating,
     addressFormKey,
     onSubmit,
-  } = useCreateOrderForm(get("warehouseId")?.trim() ?? "");
+  } = useCreateOrderForm(searchParams.get("warehouseId")?.trim() ?? "");
 
   return (
     <div className="w-full space-y-6 pb-20">

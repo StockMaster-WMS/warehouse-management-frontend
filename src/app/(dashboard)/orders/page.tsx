@@ -16,8 +16,8 @@ import {
 } from "@/components/features/orders";
 
 function OrderPageContent() {
-  const { get } = useSearchParams();
-  const logic = useOrdersPageLogic(get("created") || "");
+  const searchParams = useSearchParams();
+  const logic = useOrdersPageLogic(searchParams.get("created") || "");
   const canManageOrders = useHasPermissions(ADMIN_MANAGER_ROLES);
 
   return (

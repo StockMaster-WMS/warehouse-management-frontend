@@ -114,7 +114,10 @@ export default function CycleCountsPage() {
   const isReportViewerOnly = hasReportViewerRole && !hasOperationRole;
   const { page, pageSize, keyword, status, warehouseId, createModalOpen } = state;
   const { data: warehousesRes } = useGetWarehousesQuery({ page: 0, size: 200 });
-  const { data: staffRes } = useGetUsersQuery({ page: 0, size: 200, role: "WAREHOUSE_STAFF", active: true });
+  const { data: staffRes } = useGetUsersQuery(
+    { page: 0, size: 200, role: "WAREHOUSE_STAFF", active: true },
+    { skip: !canCreate },
+  );
   const warehouses = warehousesRes?.data?.content ?? [];
   const staffUsers = staffRes?.data?.content ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
@@ -157,7 +160,9 @@ export default function CycleCountsPage() {
         }
       />
 
-      <CreateCycleCountModal open={createModalOpen} onOpenChange={(createModalOpen) => dispatch({ createModalOpen })} />
+      {canCreate ? (
+        <CreateCycleCountModal open={createModalOpen} onOpenChange={(createModalOpen) => dispatch({ createModalOpen })} />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5 md:gap-6">
         <StatCard label="Tổng đợt kiểm" value={totalElements.toLocaleString("vi-VN")} icon={ClipboardCheck} showAccentBar={false} />
