@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Users, FileText, Lock, Loader2, ShieldCheck } from "lucide-react";
+import { Lock, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ToggleOptionRow } from "@/components/settings/toggle-option-row";
 import {
   SettingsField,
   SettingsPanel,
-  settingsSelectClassName,
 } from "@/components/settings/settings-layout";
 import { useChangePasswordMutation } from "@/store/services/auth.service";
 import { apiErrMessage } from "@/types/api";
@@ -87,39 +85,6 @@ export function SecuritySettings() {
               </Button>
             </div>
           </form>
-      </SettingsPanel>
-
-      <SettingsPanel
-        icon={Users}
-        title="Quyền truy cập hệ thống"
-        description="Cấu hình quyền hạn mặc định cho các đối tượng"
-      >
-          <div className="space-y-3">
-            <SettingsField label="Vai trò mặc định cho nhân viên mới">
-              <select className={settingsSelectClassName}>
-                <option value="staff">Nhân viên kho</option>
-                <option value="manager">Quản lý kho</option>
-                <option value="viewer">Người xem</option>
-              </select>
-            </SettingsField>
-          </div>
-      </SettingsPanel>
-
-      <SettingsPanel
-        icon={FileText}
-        title="Audit Log & Bảo mật dữ liệu"
-        description="Lịch sử hoạt động và thay đổi hệ thống"
-      >
-          <div className="space-y-3">
-            <ToggleOptionRow icon={FileText} label="Bật audit log" description="Ghi lại tất cả thay đổi quan trọng trong hệ thống" checked={true} onCheckedChange={() => {}} />
-            <SettingsField label="Thời gian lưu audit log">
-              <select className={settingsSelectClassName}>
-                <option value="90">90 ngày</option>
-                <option value="180">180 ngày</option>
-                <option value="365">1 năm</option>
-              </select>
-            </SettingsField>
-          </div>
       </SettingsPanel>
     </div>
   );

@@ -1,16 +1,11 @@
 "use client";
 
 import {
-  Bell,
   Bot,
-  Database,
-  Package,
   Palette,
   Settings,
   Shield,
   UserCog,
-  Warehouse,
-  Workflow,
 } from "lucide-react";
 import { useSettingsPage } from "@/components/features/settings";
 import { SettingsContent } from "@/components/features/settings/components/SettingsContent";
@@ -34,34 +29,6 @@ const tabs = [
     icon: Palette,
   },
   {
-    key: "notifications",
-    label: "Thông báo",
-    description: "Kênh và lịch gửi",
-    group: "Cá nhân",
-    icon: Bell,
-  },
-  {
-    key: "warehouse",
-    label: "Kho & vị trí",
-    description: "Kho, vị trí, phương pháp lưu trữ",
-    group: "Nghiệp vụ kho",
-    icon: Warehouse,
-  },
-  {
-    key: "products",
-    label: "Sản phẩm & mã hàng",
-    description: "Mã hàng, danh mục, đơn vị tính",
-    group: "Nghiệp vụ kho",
-    icon: Package,
-  },
-  {
-    key: "workflow",
-    label: "Luồng xử lý",
-    description: "Tự động hóa và phê duyệt",
-    group: "Nghiệp vụ kho",
-    icon: Workflow,
-  },
-  {
     key: "ai",
     label: "Trợ lý thông minh",
     description: "Khóa kết nối và nhà cung cấp",
@@ -75,13 +42,6 @@ const tabs = [
     group: "Quản trị hệ thống",
     icon: Shield,
   },
-  {
-    key: "data",
-    label: "Dữ liệu hệ thống",
-    description: "Xuất nhập, múi giờ, lưu trữ",
-    group: "Quản trị hệ thống",
-    icon: Database,
-  },
 ] as const satisfies Array<{
   key: SettingsTab;
   label: string;
@@ -90,7 +50,7 @@ const tabs = [
   icon: typeof UserCog;
 }>;
 
-const tabGroups = ["Cá nhân", "Nghiệp vụ kho", "Quản trị hệ thống"] as const;
+const tabGroups = ["Cá nhân", "Quản trị hệ thống"] as const;
 
 const tabDetails: Record<SettingsTab, { title: string; description: string }> = {
   personal: {
@@ -101,22 +61,6 @@ const tabDetails: Record<SettingsTab, { title: string; description: string }> = 
     title: "Giao diện hệ thống",
     description: "Thiết lập chế độ màu, mật độ hiển thị, ngôn ngữ và định dạng ngày.",
   },
-  notifications: {
-    title: "Thông báo vận hành",
-    description: "Kiểm soát kênh thông báo, lịch gửi báo cáo và cảnh báo quan trọng.",
-  },
-  warehouse: {
-    title: "Kho & vị trí lưu trữ",
-    description: "Cấu hình kho, vị trí và phương pháp vận hành vị trí.",
-  },
-  products: {
-    title: "Sản phẩm & mã hàng",
-    description: "Thiết lập mã hàng, danh mục, đơn vị tính và cảnh báo sản phẩm.",
-  },
-  workflow: {
-    title: "Luồng xử lý nghiệp vụ",
-    description: "Quản lý tự động hóa, phê duyệt, cảnh báo và reorder.",
-  },
   ai: {
     title: "Cấu hình trợ lý thông minh",
     description: "Quản lý nhà cung cấp và khóa kết nối dùng cho trợ lý đám mây.",
@@ -125,35 +69,15 @@ const tabDetails: Record<SettingsTab, { title: string; description: string }> = 
     title: "Bảo mật & phân quyền",
     description: "Quản lý mật khẩu, quyền truy cập và nhật ký kiểm toán.",
   },
-  data: {
-    title: "Dữ liệu hệ thống",
-    description: "Cấu hình dữ liệu, múi giờ và các thiết lập lưu trữ.",
-  },
 };
 
 export default function SettingsPage() {
   const {
     activeTab,
     setActiveTab,
-    activeSubTab,
-    setActiveSubTab,
-    activeWarehouseSubTab,
-    setActiveWarehouseSubTab,
-    activeProductsSubTab,
-    setActiveProductsSubTab,
-    activeWorkflowSubTab,
-    setActiveWorkflowSubTab,
     appearance,
-    notificationData,
-    emergencyPhone,
-    dailyReportTime,
-    weeklyReportDay,
-    handleToggleNotification,
     gotoProfile,
     updateAppearance,
-    setEmergencyPhone,
-    setDailyReportTime,
-    setWeeklyReportDay,
   } = useSettingsPage();
 
   const activeItem = tabs.find((item) => item.key === activeTab) ?? tabs[0];
@@ -242,25 +166,9 @@ export default function SettingsPage() {
 
           <SettingsContent
             activeTab={activeTab}
-            activeSubTab={activeSubTab}
-            activeWarehouseSubTab={activeWarehouseSubTab}
-            activeProductsSubTab={activeProductsSubTab}
-            activeWorkflowSubTab={activeWorkflowSubTab}
             appearance={appearance}
-            notificationData={notificationData}
-            emergencyPhone={emergencyPhone}
-            dailyReportTime={dailyReportTime}
-            weeklyReportDay={weeklyReportDay}
-            handleToggleNotification={handleToggleNotification}
             gotoProfile={gotoProfile}
             updateAppearance={updateAppearance}
-            setEmergencyPhone={setEmergencyPhone}
-            setDailyReportTime={setDailyReportTime}
-            setWeeklyReportDay={setWeeklyReportDay}
-            setActiveSubTab={setActiveSubTab}
-            setActiveWarehouseSubTab={setActiveWarehouseSubTab}
-            setActiveProductsSubTab={setActiveProductsSubTab}
-            setActiveWorkflowSubTab={setActiveWorkflowSubTab}
           />
         </main>
       </div>

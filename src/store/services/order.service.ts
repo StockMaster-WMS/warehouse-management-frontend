@@ -22,6 +22,7 @@ export type CreateSalesOrderPayload = {
     district: string;
     city: string;
     country: string;
+    phone?: string;
   };
   warehouseId: string;
   priority?: number;

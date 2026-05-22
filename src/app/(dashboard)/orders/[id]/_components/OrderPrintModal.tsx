@@ -136,6 +136,12 @@ export function OrderPrintModal({
                 <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
                 <span>{formatShippingShort(salesOrder.shippingAddress)}</span>
               </p>
+              {salesOrder.shippingAddress.phone ? (
+                <p>
+                  <span className="font-semibold inline-block w-24">SĐT nhận:</span>{" "}
+                  {salesOrder.shippingAddress.phone}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">

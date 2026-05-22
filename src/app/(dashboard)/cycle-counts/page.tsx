@@ -253,7 +253,7 @@ export default function CycleCountsPage() {
                     <EmptyState
                       icon={AlertCircle}
                       title="Chưa tải được dữ liệu kiểm kê"
-                      description={apiErrMessage(error, "Frontend đã có contract /cycle-counts, backend có thể chưa triển khai endpoint kiểm kê kho.")}
+                      description={apiErrMessage(error, "Không thể tải danh sách kiểm kê. Vui lòng kiểm tra kết nối và thử lại.")}
                       action={<Button variant="outline" size="sm" onClick={() => refetch()}>Thử lại</Button>}
                       className="py-12"
                     />
@@ -265,7 +265,7 @@ export default function CycleCountsPage() {
                     <EmptyState
                       icon={ClipboardCheck}
                       title="Chưa có đợt kiểm kê"
-                      description="Khi backend tạo cycle count, danh sách kiểm kê và chênh lệch tồn sẽ hiển thị tại đây."
+                      description="Tạo đợt kiểm kê để ghi nhận số đếm thực tế và xử lý chênh lệch tồn."
                       className="py-12"
                     />
                   </TableCell>

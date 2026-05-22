@@ -17,6 +17,7 @@ export type ShippingAddress = {
   district: string;
   city: string;
   country: string;
+  phone?: string | null;
 };
 
 export interface SalesOrder {

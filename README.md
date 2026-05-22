@@ -33,7 +33,9 @@ Trong bối cảnh doanh nghiệp cần theo dõi hàng hóa đa kho, luồng nh
 - **Nhập hàng** — phiếu nhập, đơn nhập (PO), putaway
 - **Khách hàng**, **Nhà cung cấp**
 - **Nhật ký hoạt động**, **Báo cáo**
-- **Cài đặt**, **Bảo mật & phân quyền** (theo tiến độ backend)
+- **Cài đặt cá nhân / AI**, **Bảo mật & phân quyền**
+
+`/settings` hiện chỉ giữ các cấu hình đã có hành vi thật: hồ sơ nhanh, giao diện cá nhân, đổi mật khẩu và khóa kết nối AI. Các màn cấu hình workflow / dữ liệu / mặc định nghiệp vụ chưa được đưa vào phạm vi bàn giao khi chưa có persistence và logic backend tương ứng.
 
 Trang gốc `/` là landing page public để công cụ tìm kiếm có nội dung index; các màn vận hành nội bộ vẫn yêu cầu đăng nhập.
 
@@ -94,7 +96,7 @@ src/
 ## Kiểm thử
 
 ```bash
-npx vitest
+npm run test
 ```
 
 (Cấu hình trong `vitest.config.ts`.)

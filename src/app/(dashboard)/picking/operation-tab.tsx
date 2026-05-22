@@ -41,26 +41,14 @@ import { playErrorSound, playSuccessSound } from "@/lib/audio-utils";
 import { BarcodeScanner } from "@/components/ui/barcode-scanner";
 import { taskScopeErrMessage } from "@/types/api";
 import type { PickingItem } from "@/types/picking-item";
-
-type PickingOrder = {
-    soNumber: string;
-    items: PickingItem[];
-    locations: string[];
-    totalToPick: number;
-    totalPicked: number;
-    progress: number;
-    priority: "high" | "medium" | "low";
-};
-
-function displayLocation(item: PickingItem) {
-    return item.locationCode || item.locationName || "Chưa rõ";
-}
-
-function priorityForOrder(index: number): PickingOrder["priority"] {
-    if (index === 0) return "high";
-    if (index === 1) return "medium";
-    return "low";
-}
+import {
+    displayPickingLocation,
+    groupPickingLocations,
+    groupPickingOrders,
+    type PickingLocationGroup,
+    type PickingOrder,
+    type PickingOrderSort,
+} from "./operation-utils";
 
 function priorityText(priority: PickingOrder["priority"]) {
     if (priority === "high") return "Ưu tiên cao";
@@ -101,32 +89,13 @@ export function OperationTab() {
     const [scannedSku, setScannedSku] = useState("");
     const [pickedQty, setPickedQty] = useState<string>("");
     const [orderTab, setOrderTab] = useState<"all" | "completed">("all");
+    const [queueView, setQueueView] = useState<"orders" | "locations">("orders");
+    const [orderSort, setOrderSort] = useState<PickingOrderSort>("sequence");
     const [scanInputMode, setScanInputMode] = useState<"camera" | "manual">("camera");
 
     const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
-    const orders = useMemo(() => {
-        const sorted = [...allItems].sort((a, b) => (a.pickSequence || 0) - (b.pickSequence || 0));
-        const grouped = new Map<string, PickingItem[]>();
-        sorted.forEach((item) => {
-            const key = item.salesOrderNumber || "SO chưa gắn";
-            grouped.set(key, [...(grouped.get(key) || []), item]);
-        });
-
-        return Array.from(grouped.entries()).map(([soNumber, items], index) => {
-            const totalToPick = items.reduce((sum, item) => sum + Number(item.qtyToPick || 0), 0);
-            const totalPicked = items.reduce((sum, item) => sum + Number(item.qtyPicked || 0), 0);
-            const locations = Array.from(new Set(items.map(displayLocation)));
-            return {
-                soNumber,
-                items,
-                locations,
-                totalToPick,
-                totalPicked,
-                progress: totalToPick ? Math.round((totalPicked / totalToPick) * 100) : 0,
-                priority: priorityForOrder(index),
-            };
-        });
-    }, [allItems]);
+    const orders = useMemo(() => groupPickingOrders(allItems, orderSort), [allItems, orderSort]);
+    const locationQueue = useMemo(() => groupPickingLocations(allItems), [allItems]);
 
     const selectedOrder = useMemo(
         () => orders.find((order) => order.soNumber === selectedOrderNumber) || orders[0] || null,
@@ -158,7 +127,7 @@ export function OperationTab() {
 
     const stats = useMemo(() => {
         const totalOrders = orders.length;
-        const totalLocations = new Set(allItems.map(displayLocation)).size;
+        const totalLocations = new Set(allItems.map(displayPickingLocation)).size;
         const totalQty = orders.reduce((sum, order) => sum + order.totalToPick, 0);
         const totalPicked = orders.reduce((sum, order) => sum + order.totalPicked, 0);
         const progress = totalQty ? Math.round((totalPicked / totalQty) * 100) : 0;
@@ -381,7 +350,16 @@ export function OperationTab() {
                 }}
             />
             <PickingStats stats={stats} />
+            <PickingQueueControls
+                orderSort={orderSort}
+                queueView={queueView}
+                onOrderSortChange={setOrderSort}
+                onQueueViewChange={setQueueView}
+            />
 
+            {queueView === "locations" ? (
+                <LocationQueue groups={locationQueue} onStartTask={startTask} />
+            ) : (
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(340px,0.95fr)_minmax(0,1.85fr)]">
                 <div className={cn("space-y-4", selectedOrderNumber ? "hidden lg:block" : "block")}>
                     <PickingTabs
@@ -419,6 +397,89 @@ export function OperationTab() {
                         />
                     ) : null}
                 </div>
+            </div>
+            )}
+        </div>
+    );
+}
+
+function PickingQueueControls({
+    orderSort,
+    queueView,
+    onOrderSortChange,
+    onQueueViewChange,
+}: {
+    orderSort: PickingOrderSort;
+    queueView: "orders" | "locations";
+    onOrderSortChange: (sort: PickingOrderSort) => void;
+    onQueueViewChange: (view: "orders" | "locations") => void;
+}) {
+    return (
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-slate-100 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                <Button type="button" variant="ghost" size="sm" className={cn("h-8 rounded-md", queueView === "orders" && "bg-white text-indigo-600 shadow-sm")} onClick={() => onQueueViewChange("orders")}>
+                    Theo đơn
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className={cn("h-8 rounded-md", queueView === "locations" && "bg-white text-indigo-600 shadow-sm")} onClick={() => onQueueViewChange("locations")}>
+                    Theo vị trí
+                </Button>
+            </div>
+            {queueView === "orders" ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">Sắp xếp</span>
+                    {([
+                        ["sequence", "Thứ tự pick"],
+                        ["order", "Mã đơn"],
+                        ["location", "Vị trí đầu"],
+                    ] as const).map(([sort, label]) => (
+                        <Button
+                            key={sort}
+                            type="button"
+                            variant={orderSort === sort ? "default" : "outline"}
+                            size="sm"
+                            className={cn("h-8 rounded-lg", orderSort === sort && "bg-indigo-600 hover:bg-indigo-700")}
+                            onClick={() => onOrderSortChange(sort)}
+                        >
+                            {label}
+                        </Button>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-xs font-medium text-slate-500">Các nhiệm vụ cùng vị trí được gom để giảm lượt di chuyển.</p>
+            )}
+        </div>
+    );
+}
+
+function LocationQueue({
+    groups,
+    onStartTask,
+}: {
+    groups: PickingLocationGroup[];
+    onStartTask: (task: PickingItem) => void;
+}) {
+    return (
+        <div className="mt-5 rounded-lg border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 className="text-base font-semibold">Hàng chờ theo vị trí</h2>
+                    <p className="text-sm text-slate-500">{groups.length} vị trí đang có nhiệm vụ lấy hàng.</p>
+                </div>
+            </div>
+            <div className="space-y-3">
+                {groups.map((group, index) => (
+                    <div key={group.location} className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <MapPin className="size-4 text-indigo-600" />
+                                <span className="font-semibold text-indigo-600">{group.location}</span>
+                                <span className="text-slate-500">{group.orderNumbers.join(", ")}</span>
+                            </div>
+                            <span className="font-semibold text-slate-600">{group.totalPicked}/{group.totalToPick} đã lấy</span>
+                        </div>
+                        <LocationSection index={index} items={group.items} location={group.location} onStartTask={onStartTask} />
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -629,7 +690,7 @@ function OrderDetail({
     const groupedByLocation = useMemo(() => {
         const grouped = new Map<string, PickingItem[]>();
         order.items.forEach((item) => {
-            const key = displayLocation(item);
+            const key = displayPickingLocation(item);
             grouped.set(key, [...(grouped.get(key) || []), item]);
         });
         return Array.from(grouped.entries());
@@ -666,9 +727,6 @@ function OrderDetail({
             <div className="p-4 sm:p-5">
                 <div className="mb-3 flex items-center justify-between">
                     <p className="text-sm font-bold text-slate-500">Chi tiết hàng cần lấy ({order.locations.length} vị trí)</p>
-                    <Button type="button" variant="outline" className="hidden h-9 rounded-lg border-slate-200 text-xs font-medium sm:inline-flex" disabled>
-                        Xem theo vị trí kho
-                    </Button>
                 </div>
 
                 <div className="space-y-3">
@@ -817,7 +875,6 @@ function DesktopOrderRail({ activeSo, orders }: { activeSo: string; orders: Pick
         <div className="space-y-4 rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
                 <h2 className="font-semibold">Danh sách đơn hàng ({orders.length})</h2>
-                <Button variant="outline" className="h-9 rounded-lg text-xs" disabled>Sắp xếp: Ưu tiên <ChevronDown className="ml-2 size-4" /></Button>
             </div>
             <div className="space-y-3">
                 {orders.map((order) => (
@@ -882,7 +939,7 @@ function MobileProductCard({ activeItem, loc }: { activeItem: PickingItem; loc: 
             <div className="mt-4 grid grid-cols-[1.35fr_0.9fr] gap-3">
                 <div className="rounded-xl bg-indigo-50 p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-indigo-600"><MapPin className="size-4" />Vị trí kệ</p>
-                    <p className="mt-2 text-2xl font-bold text-indigo-600">{displayLocation(activeItem)}</p>
+                    <p className="mt-2 text-2xl font-bold text-indigo-600">{displayPickingLocation(activeItem)}</p>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-500">Kệ {loc.rack} <span className="mx-1">•</span> Tầng {loc.floor} <span className="mx-1">•</span> Ô {loc.bin}</p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
@@ -1078,7 +1135,7 @@ function PickingScanFlow({
 }) {
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
     const [isMobileViewport, setIsMobileViewport] = useState(false);
-    const loc = splitLocation(displayLocation(activeItem));
+    const loc = splitLocation(displayPickingLocation(activeItem));
     const picked = Number(activeItem.qtyPicked || 0);
     const remaining = Math.max(Number(activeItem.qtyToPick || 0) - picked, 0);
     const progress = activeItem.qtyToPick ? Math.round((picked / Number(activeItem.qtyToPick)) * 100) : 0;
@@ -1171,7 +1228,7 @@ function PickingScanFlow({
                                             <h2 className="max-w-xl text-base font-semibold leading-snug">{activeItem.productName || activeItem.productSku}</h2>
                                             <span className="shrink-0 rounded bg-indigo-100 px-2 py-1 text-[11px] font-medium text-indigo-600">{activeItem.productSku}</span>
                                         </div>
-                                        <p className="mt-3 text-sm font-medium text-slate-500">Vị trí kho: <span className="text-base font-semibold text-indigo-600">{displayLocation(activeItem)}</span></p>
+                                        <p className="mt-3 text-sm font-medium text-slate-500">Vị trí kho: <span className="text-base font-semibold text-indigo-600">{displayPickingLocation(activeItem)}</span></p>
                                         <p className="mt-2 text-xs font-medium text-slate-500">Kệ: {loc.rack} <span className="mx-2">•</span> Tầng: {loc.floor} <span className="mx-2">•</span> Ô: {loc.bin}</p>
                                     </div>
                                 </div>

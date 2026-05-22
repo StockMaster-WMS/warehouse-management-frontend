@@ -114,16 +114,13 @@ function NewOrderFormContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">SĐT người nhận (nội bộ)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">SĐT người nhận</label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Tự động điền hoặc nhập mới..."
                     className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
                   />
-                  <p className="text-[11px] text-slate-400">
-                    Thông tin này hiện chưa gửi lên hệ thống, dùng cho vận hành nội bộ.
-                  </p>
                 </div>
               </div>
 

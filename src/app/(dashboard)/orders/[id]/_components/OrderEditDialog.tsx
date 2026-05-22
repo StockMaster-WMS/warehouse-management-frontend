@@ -31,6 +31,7 @@ function buildInitialForm(so: SalesOrder) {
   const a = so.shippingAddress;
   return {
     customerName: so.customerName ?? "",
+    phone: a?.phone ?? "",
     line1: a?.line1 ?? "",
     ward: a?.ward ?? "",
     district: a?.district ?? "",
@@ -53,6 +54,7 @@ function OrderEditDialogContent({
   const [updateOrder, { isLoading }] = useUpdateSalesOrderMutation();
   const init = buildInitialForm(salesOrder);
   const [customerName, setCustomerName] = useState(init.customerName);
+  const [phone, setPhone] = useState(init.phone);
   const [line1, setLine1] = useState(init.line1);
   const [ward, setWard] = useState(init.ward);
   const [district, setDistrict] = useState(init.district);
@@ -93,6 +95,7 @@ function OrderEditDialogContent({
             district: district.trim(),
             city: city.trim(),
             country: country.trim().toUpperCase() || "VN",
+            phone: phone.trim() || undefined,
           },
           warehouseId,
           priority: p,
@@ -129,6 +132,10 @@ function OrderEditDialogContent({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Khách hàng *</label>
             <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">SĐT người nhận</label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Kho xuất *</label>
