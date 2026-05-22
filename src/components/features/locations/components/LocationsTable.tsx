@@ -163,7 +163,7 @@ export function LocationsTable({
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {canManageLocations && selectedLocations.length > 0 ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/95 px-4 py-3 backdrop-blur dark:border-indigo-900/40 dark:bg-indigo-950/90">
                     <div className="flex items-center gap-2">
                         <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="size-7">
                             <X className="size-4" />
@@ -172,15 +172,15 @@ export function LocationsTable({
                             Đã chọn {selectedLocations.length.toLocaleString("vi-VN")} vị trí
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" size="sm" disabled className="border-indigo-100 bg-white/70">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+                        <Button type="button" variant="outline" size="sm" disabled className="h-10 border-indigo-100 bg-white/70 sm:h-7">
                             Sửa loại vị trí
                         </Button>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="border-rose-100 bg-white/70 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                            className="h-10 border-rose-100 bg-white/70 text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:h-7"
                             onClick={handleBulkDelete}
                             disabled={!onBulkDelete}
                         >
@@ -322,7 +322,7 @@ export function LocationsTable({
                 </Table>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+            <div className="grid grid-cols-1 gap-3 p-3 md:hidden">
                 {isLoading
                     ? Array.from({ length: 4 }).map((_, index) => (
                           <div
@@ -350,21 +350,43 @@ export function LocationsTable({
                                   Thử lại
                               </Button>
                           </div>
+                      ) : visibleLocations.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                              Chưa có vị trí nào phù hợp.
+                          </div>
                       ) : (
                           visibleLocations.map((location) => {
                               const warehouseName = warehouseNameMap[location.warehouseId];
                               const locationCode = location.code || "--";
+                              const selected = selectedIds.has(location.id);
 
                               return (
                                   <div
                                       key={location.id}
-                                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200 dark:border-slate-800 dark:bg-slate-900"
+                                      className={`rounded-2xl border bg-white p-4 shadow-sm transition-colors dark:bg-slate-900 ${
+                                          selected
+                                              ? "border-indigo-300 ring-2 ring-indigo-100 dark:border-indigo-700 dark:ring-indigo-950/60"
+                                              : "border-slate-200 hover:border-indigo-200 dark:border-slate-800"
+                                      }`}
                                   >
                                       <div className="flex items-start justify-between gap-3">
-                                          <div>
+                                          <div className="flex min-w-0 items-start gap-3">
+                                              {canManageLocations ? (
+                                                  <Checkbox
+                                                      checked={selected}
+                                                      onCheckedChange={(checked) => toggleLocation(location.id, checked === true)}
+                                                      aria-label={`Chọn vị trí ${locationCode}`}
+                                                      className="mt-0.5"
+                                                  />
+                                              ) : null}
+                                              <div className="min-w-0">
                                               <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">
                                                   {locationCode}
                                               </p>
+                                              <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                                                  {location.locationType || "Chưa phân loại"}
+                                              </p>
+                                              </div>
                                           </div>
                                           <Badge variant={location.isActive === false ? "secondary" : "default"}>
                                               {location.isActive === false ? "Ngừng dùng" : "Đang dùng"}
@@ -389,25 +411,25 @@ export function LocationsTable({
                                       </div>
 
                                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800/80">
-                                          <div className="flex w-1/2 flex-col gap-1.5">
+                                          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                                               <CapacityCell location={location} />
                                           </div>
                                           
                                           <div className="flex items-center gap-1">
                                               {canManageLocations ? (
-                                                  <Button type="button" variant="outline" size="icon" onClick={() => onEdit(location)}>
+                                                  <Button type="button" variant="outline" size="icon-lg" className="size-10" onClick={() => onEdit(location)}>
                                                       <Pencil className="size-3.5" />
                                                   </Button>
                                               ) : null}
-                                              <Button type="button" variant="outline" size="icon" onClick={() => onPrintBarcode(location)} className="text-indigo-600">
+                                              <Button type="button" variant="outline" size="icon-lg" onClick={() => onPrintBarcode(location)} className="size-10 text-indigo-600">
                                                   <Printer className="size-3.5" />
                                               </Button>
                                               {canManageLocations ? (
                                                   <Button
                                                       type="button"
                                                       variant="outline"
-                                                      size="icon"
-                                                      className="text-rose-600 hover:text-rose-600"
+                                                      size="icon-lg"
+                                                      className="size-10 text-rose-600 hover:text-rose-600"
                                                       onClick={() => onDelete(location)}
                                                   >
                                                       <Trash2 className="size-3.5" />

@@ -23,13 +23,13 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0 space-y-1">
-        <h1 className="wrap-break-word text-xl font-semibold tracking-tight text-foreground sm:text-2xl md:text-3xl">
+        <h1 className="wrap-break-word text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl md:text-3xl">
           {title}
         </h1>
-        <p className="wrap-break-word text-xs font-medium text-muted-foreground sm:text-sm">{description}</p>
+        <p className="wrap-break-word max-w-3xl text-xs font-medium leading-relaxed text-muted-foreground sm:text-sm">{description}</p>
       </div>
       {actions ? (
-        <div className={cn("flex flex-wrap items-center gap-2 shrink-0", actionsClassName)}>{actions}</div>
+        <div className={cn("flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0", actionsClassName)}>{actions}</div>
       ) : null}
     </div>
   );

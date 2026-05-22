@@ -80,14 +80,14 @@ export function PaginationFooter({
                     )}
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2 sm:flex sm:justify-end">
                     {hasSizeControl ? (
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 dark:border-slate-800 dark:bg-slate-900 sm:h-auto sm:py-1">
                             <Select
                                 value={String(pageSize)}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}
                             >
-                                <SelectTrigger className="h-7 min-w-16 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
+                                <SelectTrigger className="h-8 min-w-16 border-0 px-1 text-xs shadow-none focus-visible:ring-0">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
@@ -106,7 +106,7 @@ export function PaginationFooter({
                         variant="outline"
                         size="sm"
                         disabled={!canGoPrev || isFetching}
-                        className="h-8 px-3 text-xs border-slate-200"
+                        className="h-10 px-3 text-xs border-slate-200 sm:h-8"
                         onClick={onPrevPage}
                     >
                         Trước
@@ -116,7 +116,7 @@ export function PaginationFooter({
                         variant="outline"
                         size="sm"
                         disabled={!canGoNext || isFetching}
-                        className="h-8 px-3 text-xs border-slate-200"
+                        className="h-10 px-3 text-xs border-slate-200 sm:h-8"
                         onClick={onNextPage}
                     >
                         Sau

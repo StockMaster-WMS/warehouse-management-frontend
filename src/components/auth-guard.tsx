@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   canAccessPath,
   getDefaultPathForRoles,
@@ -128,22 +126,11 @@ export function AuthGuard({
 
   if (!hasAccessToken && hasExplicitLogoutSnapshot()) {
     return (
-      <main className="flex min-h-svh w-full items-center justify-center bg-background px-4">
-        <div className="max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-          <h1 className="text-lg font-semibold text-foreground">
-            Phiên đăng nhập đã hết hạn
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Token cũ không còn hợp lệ. Vui lòng đăng nhập lại để tiếp tục.
-          </p>
-          <Button
-            render={<Link href="/login" />}
-            nativeButton={false}
-            className="mt-5"
-          >
-            Về đăng nhập
-          </Button>
-        </div>
+      <main className="flex min-h-svh w-full items-center justify-center bg-background">
+        <div
+          aria-label="Đang chuyển về đăng nhập"
+          className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
+        />
       </main>
     );
   }

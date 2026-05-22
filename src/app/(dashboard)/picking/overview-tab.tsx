@@ -128,6 +128,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
         page,
         size: pageSize,
         status: status === "all" ? undefined : status,
+        salesOrderStatus: "PICKING",
         ...dateRange,
     });
 

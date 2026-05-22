@@ -253,7 +253,7 @@ export default function EditSupplierPage() {
   }
 
   return (
-    <div className="w-full space-y-4 pb-20 sm:space-y-6">
+    <div className="w-full space-y-4 pb-32 sm:space-y-6 md:pb-20">
       <PageHeader
         title="Chỉnh sửa nhà cung cấp"
         description={`${supplier.name} (${supplier.code})`}
@@ -272,9 +272,9 @@ export default function EditSupplierPage() {
       />
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="space-y-6 md:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
+          <div className="space-y-4 md:col-span-2 md:space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
                 <Building2 className="size-4 text-indigo-600" />
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -325,7 +325,7 @@ export default function EditSupplierPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
                 <Info className="size-4 text-indigo-600" />
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -395,8 +395,8 @@ export default function EditSupplierPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="space-y-4 md:space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Trạng thái
@@ -419,7 +419,7 @@ export default function EditSupplierPage() {
               </Select>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
               <div className="mb-6 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
                   Điều khoản
@@ -459,12 +459,12 @@ export default function EditSupplierPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+            <div className="hidden rounded-2xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/20 md:block">
               <div className="flex flex-col gap-4">
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="w-full bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 dark:shadow-none"
+                  className="h-11 w-full bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 dark:shadow-none"
                 >
                   {saving ? (
                     <Loader2 className="mr-2 size-4 animate-spin" />
@@ -476,7 +476,7 @@ export default function EditSupplierPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-slate-200 bg-white"
+                  className="h-11 w-full border-slate-200 bg-white"
                   onClick={() => {
                     if (confirmLeave()) push("/suppliers");
                   }}
@@ -484,7 +484,35 @@ export default function EditSupplierPage() {
                   Hủy bỏ
                 </Button>
               </div>
-            </div>          </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
+          <div className="mx-auto grid max-w-lg grid-cols-[1fr_1.35fr] gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 border-slate-200 bg-white"
+              onClick={() => {
+                if (confirmLeave()) push("/suppliers");
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="h-11 bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 dark:shadow-none"
+            >
+              {saving ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 size-4" />
+              )}
+              Cập nhật
+            </Button>
+          </div>
         </div>
       </form>
     </div>
