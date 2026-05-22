@@ -5,6 +5,7 @@ import type { CreatePickingItemPayload, PickingItem, UpdatePickingItemPayload } 
 export type GetPickingItemsParams = {
   soItemId?: string;
   status?: string;
+  salesOrderStatus?: string;
   page?: number;
   size?: number;
   createdFrom?: string;
@@ -14,10 +15,10 @@ export type GetPickingItemsParams = {
 const pickingItemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPickingItems: builder.query<ApiResponse<PagedResponse<PickingItem>>, GetPickingItemsParams>({
-      query: ({ soItemId, status, page = 0, size = 50, createdFrom, createdTo }) => ({
+      query: ({ soItemId, status, salesOrderStatus, page = 0, size = 50, createdFrom, createdTo }) => ({
         url: "/picking-items",
         method: "GET",
-        params: { soItemId, status, page, size, createdFrom, createdTo },
+        params: { soItemId, status, salesOrderStatus, page, size, createdFrom, createdTo },
       }),
       transformResponse: (r: ApiResponse<PickingItem[] | PagedResponse<PickingItem>>) => normalizeApiResponsePaged(r),
       providesTags: (result, _e, arg) => {

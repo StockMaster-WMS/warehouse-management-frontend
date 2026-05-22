@@ -110,6 +110,10 @@ export function Navbar() {
     markExplicitLogout();
     clearToken();
     dispatch(baseApi.util.resetApiState());
+    if (typeof window !== "undefined") {
+      window.location.replace("/login");
+      return;
+    }
     replace("/login");
   };
 

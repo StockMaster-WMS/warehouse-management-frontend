@@ -630,8 +630,8 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
 
 /* ── Main Page ────────────────────────────────────────────────────── */
 function NewInboundReceiptContent() {
-  const { get } = useSearchParams();
-  const initialPoId = get("poId") ?? "";
+  const searchParams = useSearchParams();
+  const initialPoId = searchParams.get("poId") ?? "";
   const [selectedPoId, setSelectedPoId] = useState(initialPoId);
 
   const step = selectedPoId ? 2 : 1;

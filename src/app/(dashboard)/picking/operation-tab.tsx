@@ -31,7 +31,11 @@ function StepDot({ step, current, done }: { step: number; current: number; done:
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function OperationTab() {
-    const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({ status: "PENDING", size: 50 });
+    const { data: pagedData, isLoading, refetch } = useGetPickingItemsQuery({
+        status: "PENDING",
+        salesOrderStatus: "PICKING",
+        size: 50,
+    });
 
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [isExceptionOpen, setIsExceptionOpen] = useState(false);
