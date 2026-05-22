@@ -1,4 +1,5 @@
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import { ProductFiltersPanel } from "@/components/features/products/components/ProductFiltersPanel";
 import type { ApiResponse, PagedResponse } from "@/types/api";
@@ -27,6 +28,8 @@ type ProductsSearchSectionProps = {
     warehousesLoading: boolean;
     warehousesError: unknown;
     onRefetchWarehouses: () => void;
+    isFetching?: boolean;
+    onRefresh: () => void;
     noContainer?: boolean;
 };
 
@@ -52,6 +55,8 @@ export function ProductsSearchSection({
     warehousesLoading,
     warehousesError,
     onRefetchWarehouses,
+    isFetching = false,
+    onRefresh,
     noContainer = false,
 }: ProductsSearchSectionProps) {
     const showFilters = advancedOpen || advancedCount > 0;
@@ -63,13 +68,16 @@ export function ProductsSearchSection({
             value={searchInput}
             onValueChange={onSearchChange}
             right={
-                <AdvancedFilterActions
-                    open={advancedOpen}
-                    onToggle={onToggleAdvanced}
-                    activeCount={advancedCount}
-                    hasAnyFilter={hasAnyFilter}
-                    onClear={onClearFilters}
-                />
+                <>
+                    <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+                    <AdvancedFilterActions
+                        open={advancedOpen}
+                        onToggle={onToggleAdvanced}
+                        activeCount={advancedCount}
+                        hasAnyFilter={hasAnyFilter}
+                        onClear={onClearFilters}
+                    />
+                </>
             }
             filters={
                 showFilters ? (

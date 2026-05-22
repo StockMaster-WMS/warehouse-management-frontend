@@ -1,6 +1,7 @@
 ﻿import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { Input } from "@/components/ui/input";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,8 @@ type HistorySearchSectionProps = {
   onFromDateChange: (value: string) => void;
   toDate: string;
   onToDateChange: (value: string) => void;
+  isFetching?: boolean;
+  onRefresh: () => void;
   noContainer?: boolean;
 };
 
@@ -51,6 +54,8 @@ export function HistorySearchSection({
   onFromDateChange,
   toDate,
   onToDateChange,
+  isFetching = false,
+  onRefresh,
   noContainer = false,
 }: HistorySearchSectionProps) {
   const showFilters = advancedOpen || advancedCount > 0;
@@ -78,13 +83,36 @@ export function HistorySearchSection({
       placeholder="Lịch sử biến động tồn kho"
       className="max-w-full"
       right={
-        <AdvancedFilterActions
-          open={advancedOpen}
-          onToggle={onToggleAdvanced}
-          activeCount={advancedCount}
-          hasAnyFilter={hasAnyFilter}
-          onClear={onClearFilters}
-        />
+        <>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-500">Từ:</span>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => onFromDateChange(e.target.value)}
+                className="h-10 w-full rounded-xl sm:w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-500">Đến:</span>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => onToDateChange(e.target.value)}
+                className="h-10 w-full rounded-xl sm:w-40"
+              />
+            </div>
+          </div>
+          <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={onToggleAdvanced}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={onClearFilters}
+          />
+        </>
       }
       filters={
         showFilters ? (
@@ -106,22 +134,6 @@ export function HistorySearchSection({
                       Loại:{" "}
                       <span className="font-semibold text-slate-800 dark:text-slate-100">
                         {getMovementTypeLabel(movementType)}
-                      </span>
-                    </span>
-                  ) : null}
-                  {fromDate ? (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
-                      Từ:{" "}
-                      <span className="font-semibold text-slate-800 dark:text-slate-100">
-                        {fromDate}
-                      </span>
-                    </span>
-                  ) : null}
-                  {toDate ? (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
-                      Đến:{" "}
-                      <span className="font-semibold text-slate-800 dark:text-slate-100">
-                        {toDate}
                       </span>
                     </span>
                   ) : null}
@@ -172,24 +184,6 @@ export function HistorySearchSection({
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">Từ:</span>
-              <Input
-                type="date"
-                value={fromDate}
-                onChange={(e) => onFromDateChange(e.target.value)}
-                className="h-10 w-40 rounded-xl"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">Đến:</span>
-              <Input
-                type="date"
-                value={toDate}
-                onChange={(e) => onToDateChange(e.target.value)}
-                className="h-10 w-40 rounded-xl"
-              />
-            </div>
           </AdvancedFilterPanel>
         ) : null
       }

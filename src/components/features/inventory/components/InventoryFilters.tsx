@@ -1,6 +1,7 @@
 import { FileSpreadsheet } from "lucide-react";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { Button } from "@/components/ui/button";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,8 @@ type InventoryFiltersProps = {
   onExportStock: () => void;
   onExportNearExpiry?: () => void;
   showExportNearExpiry?: boolean;
+  isFetching?: boolean;
+  onRefresh?: () => void;
 };
 
 export function InventoryFilters({
@@ -33,6 +36,8 @@ export function InventoryFilters({
   onExportStock,
   onExportNearExpiry,
   showExportNearExpiry,
+  isFetching = false,
+  onRefresh,
 }: InventoryFiltersProps) {
   const warehouseLabel = warehouseId
     ? warehouses.find((w) => w.id === warehouseId)?.name ?? "—"
@@ -45,6 +50,7 @@ export function InventoryFilters({
       onValueChange={onSearchChange}
       right={
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {onRefresh ? <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} /> : null}
           <Select
             value={warehouseId || "all"}
             onValueChange={(v) => onWarehouseChange(v === "all" ? "" : (v ?? ""))}

@@ -66,6 +66,8 @@ function OrderPageContent() {
             logic.clearFilters();
             logic.setAdvancedOpen(false);
           }}
+          isFetching={logic.isFetching}
+          onRefresh={logic.refetch}
         />
         <OrdersTable
           noContainer

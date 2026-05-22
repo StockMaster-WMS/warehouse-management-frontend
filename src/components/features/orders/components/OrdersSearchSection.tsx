@@ -1,6 +1,8 @@
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions } from "@/components/features/AdvancedFilters";
 import { OrdersFiltersPanel } from "@/components/features/orders/components/OrdersFiltersPanel";
+import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import type { OperationDatePreset } from "@/lib/date-range";
 
 type OrdersSearchSectionProps = {
@@ -15,6 +17,8 @@ type OrdersSearchSectionProps = {
   datePreset: OperationDatePreset;
   onDatePresetChange: (value: OperationDatePreset) => void;
   onClearFilters: () => void;
+  isFetching?: boolean;
+  onRefresh: () => void;
   noContainer?: boolean;
 };
 
@@ -30,6 +34,8 @@ export function OrdersSearchSection({
   datePreset,
   onDatePresetChange,
   onClearFilters,
+  isFetching = false,
+  onRefresh,
   noContainer = false,
 }: OrdersSearchSectionProps) {
   const showFilters = advancedOpen || advancedCount > 0;
@@ -41,13 +47,20 @@ export function OrdersSearchSection({
       value={searchInput}
       onValueChange={onSearchChange}
       right={
-        <AdvancedFilterActions
-          open={advancedOpen}
-          onToggle={onToggleAdvanced}
-          activeCount={advancedCount}
-          hasAnyFilter={hasAnyFilter}
-          onClear={onClearFilters}
-        />
+        <>
+          <OperationDatePresetSelect
+            value={datePreset}
+            onValueChange={onDatePresetChange}
+          />
+          <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={onToggleAdvanced}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={onClearFilters}
+          />
+        </>
       }
       filters={
         showFilters ? (
@@ -57,8 +70,6 @@ export function OrdersSearchSection({
             hasAnyFilter={hasAnyFilter}
             statusFilter={statusFilter}
             onStatusChange={onStatusChange}
-            datePreset={datePreset}
-            onDatePresetChange={onDatePresetChange}
             onClear={onClearFilters}
           />
         ) : null

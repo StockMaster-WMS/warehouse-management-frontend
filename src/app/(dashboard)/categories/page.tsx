@@ -45,6 +45,8 @@ export default function CategoriesPage() {
           query={logic.query}
           onQueryChange={logic.setQuery}
           onClearQuery={logic.clearQuery}
+          isFetching={logic.isFetching}
+          onRefresh={logic.refetch}
         />
 
         <CategoryTreeTable

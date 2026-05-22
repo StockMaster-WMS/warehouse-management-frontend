@@ -72,6 +72,8 @@ export default function ProductsPage() {
           warehousesLoading={logic.warehousesLoading}
           warehousesError={logic.warehousesError}
           onRefetchWarehouses={logic.refetchWarehouses}
+          isFetching={logic.isFetching}
+          onRefresh={logic.refetch}
         />
 
         <ProductTable

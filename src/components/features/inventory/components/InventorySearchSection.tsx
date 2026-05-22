@@ -1,5 +1,6 @@
 ﻿import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,8 @@ type InventorySearchSectionProps = {
   onAlertTypeChange: (value: InventoryTab) => void;
   warehouses: WarehouseOption[];
   isWarehousesLoading: boolean;
+  isFetching?: boolean;
+  onRefresh: () => void;
   noContainer?: boolean;
 };
 
@@ -48,6 +51,8 @@ export function InventorySearchSection({
   onAlertTypeChange,
   warehouses,
   isWarehousesLoading,
+  isFetching = false,
+  onRefresh,
   noContainer = false,
 }: InventorySearchSectionProps) {
   const showFilters = advancedOpen || advancedCount > 0;
@@ -66,13 +71,16 @@ export function InventorySearchSection({
       value={searchInput}
       onValueChange={onSearchChange}
       right={
-        <AdvancedFilterActions
-          open={advancedOpen}
-          onToggle={onToggleAdvanced}
-          activeCount={advancedCount}
-          hasAnyFilter={hasAnyFilter}
-          onClear={onClearFilters}
-        />
+        <>
+          <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={onToggleAdvanced}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={onClearFilters}
+          />
+        </>
       }
       filters={
         showFilters ? (

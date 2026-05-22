@@ -20,17 +20,7 @@ function PickingPageContent() {
     if (!canCoordinatePicking) {
         return (
             <div className="flex h-full flex-col">
-                <PageHeader
-                    title="Lấy hàng"
-                    description="Danh sách nhiệm vụ lấy hàng được phân công cho nhân viên kho."
-                    actions={
-                        <Badge variant="outline" className="hidden sm:flex h-7 gap-1.5 border-slate-200 bg-white text-xs font-semibold text-slate-600">
-                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Nhân viên kho
-                        </Badge>
-                    }
-                />
-                <div className="flex-1 pt-6">
+                <div className="flex-1">
                     <OperationTab />
                 </div>
             </div>

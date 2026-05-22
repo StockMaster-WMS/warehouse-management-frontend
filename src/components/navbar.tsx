@@ -153,17 +153,60 @@ export function Navbar() {
 
         <div className="flex items-center gap-1 shrink-0">
           <ThemeToggle />
-          <Button
-            render={<Link href="/settings" />}
-            nativeButton={false}
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full text-primary-foreground hover:bg-white/10 hover:text-white"
-            aria-label="Cài đặt"
-          >
-            <CircleHelp className="size-5" />
-          </Button>
           <NotificationBell compact />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full p-0 text-primary-foreground hover:bg-white/10 hover:text-white aria-expanded:bg-white/20"
+                  aria-label="Tài khoản"
+                >
+                  <Avatar size="sm" className="size-8 ring-2 ring-white/30">
+                    <AvatarImage
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || user?.name || user?.username || "User")}&background=fff&color=111827`}
+                      alt="User avatar"
+                    />
+                    <AvatarFallback className="bg-white text-primary text-xs">
+                      {(user?.fullName || user?.name || user?.username || "US").substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              }
+            />
+            <DropdownMenuContent
+              sideOffset={8}
+              align="end"
+              className="w-60 rounded-xl p-2 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-800"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="px-2 py-1.5 font-normal">
+                  <div className="flex flex-col gap-y-1">
+                    <p className="text-sm font-semibold leading-none">
+                      {user?.fullName || user?.name || user?.username || "Người dùng"}
+                    </p>
+                    <p className="text-xs leading-none text-zinc-500 font-medium truncate">
+                      {user?.email || roleLabel}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="rounded-lg py-2" render={<Link href="/profile" />}>
+                <UserCog className="mr-2 size-4 shrink-0 text-zinc-500" />
+                <span className="truncate">Hồ sơ người dùng</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="rounded-lg py-2 text-red-600 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 size-4 shrink-0" />
+                <span className="truncate">Đăng xuất</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
