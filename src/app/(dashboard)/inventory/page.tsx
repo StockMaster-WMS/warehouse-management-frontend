@@ -57,6 +57,8 @@ function HistoryModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
             onFromDateChange={logic.setFromDate}
             toDate={logic.toDate}
             onToDateChange={logic.setToDate}
+            isFetching={logic.isFetching}
+            onRefresh={() => logic.refetch()}
           />
 
           <StockMovementsTable
@@ -190,6 +192,8 @@ export default function InventoryPage() {
           onAlertTypeChange={logic.setActiveTab}
           warehouses={logic.warehouses}
           isWarehousesLoading={logic.isWarehousesLoading}
+          isFetching={logic.isDataFetching}
+          onRefresh={logic.refetchAll}
         />
 
         <InventoryStockTable

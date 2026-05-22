@@ -1,6 +1,7 @@
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
   ALL_CUSTOMER_STATUS,
   CUSTOMER_STATUS_OPTIONS,
@@ -16,6 +17,8 @@ type CustomersSearchSectionProps = {
   advancedCount: number;
   hasAnyFilter: boolean;
   onClearFilters: () => void;
+  isFetching?: boolean;
+  onRefresh: () => void;
   noContainer?: boolean;
 };
 
@@ -29,6 +32,8 @@ export function CustomersSearchSection({
   advancedCount,
   hasAnyFilter,
   onClearFilters,
+  isFetching = false,
+  onRefresh,
   noContainer = false,
 }: CustomersSearchSectionProps) {
   const showFilters = advancedOpen || advancedCount > 0;
@@ -40,13 +45,16 @@ export function CustomersSearchSection({
       value={searchInput}
       onValueChange={onSearchChange}
       right={
-        <AdvancedFilterActions
-          open={advancedOpen}
-          onToggle={onToggleAdvanced}
-          activeCount={advancedCount}
-          hasAnyFilter={hasAnyFilter}
-          onClear={onClearFilters}
-        />
+        <>
+          <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+          <AdvancedFilterActions
+            open={advancedOpen}
+            onToggle={onToggleAdvanced}
+            activeCount={advancedCount}
+            hasAnyFilter={hasAnyFilter}
+            onClear={onClearFilters}
+          />
+        </>
       }
       filters={
         showFilters ? (

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
   AlertCircle,
   PackagePlus,
@@ -42,7 +44,6 @@ import { INBOUND_RECEIVE_ROLES } from "@/lib/access-control";
 import {
   DEFAULT_OPERATION_DATE_PRESET,
   getOperationDateRange,
-  operationDatePresetLabel,
   type OperationDatePreset,
 } from "@/lib/date-range";
 import { useGetInboundReceiptsQuery, useLazyGetInboundReceiptPrintDataQuery } from "@/store/services/inbound.service";
@@ -134,11 +135,10 @@ export default function InboundPage() {
     let count = 0;
     if (status) count++;
     if (warehouseId) count++;
-    if (datePreset !== DEFAULT_OPERATION_DATE_PRESET) count++;
     return count;
-  }, [status, warehouseId, datePreset]);
+  }, [status, warehouseId]);
 
-  const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0);
+  const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0 || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
 
   const clearFilters = () => {
     setKeyword("");
@@ -274,13 +274,23 @@ export default function InboundPage() {
             setPage(0);
           }}
           right={
-            <AdvancedFilterActions
-              open={advancedOpen}
-              onToggle={() => setAdvancedOpen(!advancedOpen)}
-              activeCount={activeFiltersCount}
-              hasAnyFilter={hasAnyFilter}
-              onClear={clearFilters}
-            />
+            <>
+              <OperationDatePresetSelect
+                value={datePreset}
+                onValueChange={(v) => {
+                  setDatePreset(v);
+                  setPage(0);
+                }}
+              />
+              <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
+              <AdvancedFilterActions
+                open={advancedOpen}
+                onToggle={() => setAdvancedOpen(!advancedOpen)}
+                activeCount={activeFiltersCount}
+                hasAnyFilter={hasAnyFilter}
+                onClear={clearFilters}
+              />
+            </>
           }
           filters={
             advancedOpen || activeFiltersCount > 0 ? (
@@ -305,36 +315,10 @@ export default function InboundPage() {
                           </span>
                         </span>
                       ) : null}
-                      {datePreset !== DEFAULT_OPERATION_DATE_PRESET ? (
-                        <span className="rounded-full bg-muted px-3 py-1">
-                          Thời gian:{" "}
-                          <span className="font-semibold text-foreground">
-                            {operationDatePresetLabel(datePreset)}
-                          </span>
-                        </span>
-                      ) : null}
                     </div>
                   ) : null
                 }
               >
-                <Select
-                  value={datePreset}
-                  onValueChange={(v) => {
-                    setDatePreset(v as OperationDatePreset);
-                    setPage(0);
-                  }}
-                >
-                  <SelectTrigger className="h-10 w-44 shrink-0 rounded-lg">
-                    <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-lg">
-                    <SelectItem value="today" className="rounded-lg">Hôm nay</SelectItem>
-                    <SelectItem value="7d" className="rounded-lg">7 ngày gần nhất</SelectItem>
-                    <SelectItem value="30d" className="rounded-lg">30 ngày gần nhất</SelectItem>
-                    <SelectItem value="all" className="rounded-lg">Tất cả thời gian</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 <Select
                   value={status}
                   onValueChange={(v) => {

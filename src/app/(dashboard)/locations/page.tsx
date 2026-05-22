@@ -171,6 +171,8 @@ export default function LocationsPage() {
                 selectedWarehouseLabel={selectedWarehouseLabel}
                 isWarehousesLoading={isWarehousesLoading}
                 warehouses={warehouses}
+                isFetching={isLocationsFetching}
+                onRefresh={() => refetchLocations()}
             />
 
             {!isLocationsLoading && !locationsError && locations.length === 0 ? (

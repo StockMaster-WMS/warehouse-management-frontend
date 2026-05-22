@@ -1,4 +1,5 @@
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
     Select,
     SelectContent,
@@ -21,6 +22,8 @@ type LocationsFiltersProps = {
     selectedWarehouseLabel: string;
     isWarehousesLoading: boolean;
     warehouses: WarehouseOption[];
+    isFetching?: boolean;
+    onRefresh: () => void;
 };
 
 export function LocationsFilters({
@@ -31,6 +34,8 @@ export function LocationsFilters({
     selectedWarehouseLabel,
     isWarehousesLoading,
     warehouses,
+    isFetching = false,
+    onRefresh,
 }: LocationsFiltersProps) {
     return (
         <SearchToolbar
@@ -38,30 +43,33 @@ export function LocationsFilters({
             value={searchInput}
             onValueChange={onSearchChange}
             right={
-                <div className="w-full sm:w-70">
-                    <Select
-                        value={warehouseFilter}
-                        onValueChange={(value) => onWarehouseFilterChange(value ?? ALL_WAREHOUSES)}
-                    >
-                        <SelectTrigger className="h-10 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                            <SelectValue
-                                placeholder={
-                                    isWarehousesLoading ? "Đang tải danh sách kho..." : "Lọc theo kho"
-                                }
-                            >
-                                {selectedWarehouseLabel}
-                            </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_WAREHOUSES}>Tất cả kho</SelectItem>
-                            {warehouses.map((warehouse) => (
-                                <SelectItem key={warehouse.id} value={warehouse.id}>
-                                    {warehouse.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <>
+                    <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+                    <div className="w-full sm:w-70">
+                        <Select
+                            value={warehouseFilter}
+                            onValueChange={(value) => onWarehouseFilterChange(value ?? ALL_WAREHOUSES)}
+                        >
+                            <SelectTrigger className="h-10 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                                <SelectValue
+                                    placeholder={
+                                        isWarehousesLoading ? "Đang tải danh sách kho..." : "Lọc theo kho"
+                                    }
+                                >
+                                    {selectedWarehouseLabel}
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_WAREHOUSES}>Tất cả kho</SelectItem>
+                                {warehouses.map((warehouse) => (
+                                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                                        {warehouse.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </>
             }
         />
     );

@@ -56,7 +56,7 @@ export function useOrdersPageLogic(createdId = "") {
     statusFilter !== "Tất cả trạng thái" ||
     datePreset !== DEFAULT_OPERATION_DATE_PRESET;
   const advancedCount =
-    Number(statusFilter !== "Tất cả trạng thái") + Number(datePreset !== DEFAULT_OPERATION_DATE_PRESET);
+    Number(statusFilter !== "Tất cả trạng thái");
 
   useEffect(() => {
     if (!createdId) return;

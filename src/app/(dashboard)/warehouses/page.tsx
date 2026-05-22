@@ -56,6 +56,8 @@ export default function WarehousesPage() {
             logic.clearFilters();
             logic.setAdvancedOpen(false);
           }}
+          isFetching={logic.isFetching}
+          onRefresh={logic.refetch}
         />
 
         <div className="bg-slate-50/50 dark:bg-slate-900/20 border-t border-slate-100 dark:border-slate-800">

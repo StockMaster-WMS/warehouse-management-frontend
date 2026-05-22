@@ -1,6 +1,7 @@
 import { FilterGroup } from "@/components/features/FilterGroup";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import {
     SORT_DIR_OPTIONS,
     SORT_FIELD_OPTIONS,
@@ -22,6 +23,8 @@ type WarehousesSearchSectionProps = {
     onSortChange: (value: string) => void;
     onSortDirChange: (value: string) => void;
     onClearFilters: () => void;
+    isFetching?: boolean;
+    onRefresh: () => void;
     noContainer?: boolean;
 };
 
@@ -39,6 +42,8 @@ export function WarehousesSearchSection({
     onSortChange,
     onSortDirChange,
     onClearFilters,
+    isFetching = false,
+    onRefresh,
     noContainer = false,
 }: WarehousesSearchSectionProps) {
     const showFilters = advancedOpen || advancedCount > 0;
@@ -51,13 +56,16 @@ export function WarehousesSearchSection({
             value={searchInput}
             onValueChange={onSearchChange}
             right={
-                <AdvancedFilterActions
-                    open={advancedOpen}
-                    onToggle={onToggleAdvanced}
-                    activeCount={advancedCount}
-                    hasAnyFilter={hasAnyFilter}
-                    onClear={onClearFilters}
-                />
+                <>
+                    <TableRefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+                    <AdvancedFilterActions
+                        open={advancedOpen}
+                        onToggle={onToggleAdvanced}
+                        activeCount={advancedCount}
+                        hasAnyFilter={hasAnyFilter}
+                        onClear={onClearFilters}
+                    />
+                </>
             }
             filters={
                 showFilters ? (

@@ -19,10 +19,8 @@ export function useStockMovementsPageLogic() {
     let count = 0;
     if (warehouseId) count++;
     if (movementType) count++;
-    if (fromDate) count++;
-    if (toDate) count++;
     return count;
-  }, [warehouseId, movementType, fromDate, toDate]);
+  }, [warehouseId, movementType]);
 
   const hasAnyFilter = !!(warehouseId || movementType || fromDate || toDate);
 

@@ -67,6 +67,8 @@ export default function CustomersPage() {
           advancedCount={logic.advancedCount}
           hasAnyFilter={logic.hasAnyFilter}
           onClearFilters={logic.clearFilters}
+          isFetching={logic.isFetching}
+          onRefresh={logic.refetch}
         />
 
         <CustomersList

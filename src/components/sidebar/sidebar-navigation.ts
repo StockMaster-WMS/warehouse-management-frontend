@@ -121,7 +121,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Xuất kho",
     className: "mt-2",
     items: [
-      { label: "Đơn xuất", href: "/orders", icon: ListOrdered, roles: MANAGEMENT_OPERATION_ROLES },
+      { label: "Đơn xuất hàng", href: "/orders", icon: ListOrdered, roles: MANAGEMENT_OPERATION_ROLES },
       { label: "Lấy hàng", href: "/picking", icon: Scissors, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Hàng trả", href: "/returns", icon: RotateCcw, roles: READ_OPERATION_ROLES },
     ],

@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -552,17 +553,20 @@ export default function SuppliersPage() {
             setPage(0);
           }}
           right={
-            <AdvancedFilterActions
-              open={advancedOpen}
-              onToggle={() => setAdvancedOpen(!advancedOpen)}
-              activeCount={statusFilter ? 1 : 0}
-              hasAnyFilter={hasAnyFilter}
-              onClear={() => {
-                setSearchInput("");
-                setStatusFilter("");
-                setPage(0);
-              }}
-            />
+            <>
+              <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
+              <AdvancedFilterActions
+                open={advancedOpen}
+                onToggle={() => setAdvancedOpen(!advancedOpen)}
+                activeCount={statusFilter ? 1 : 0}
+                hasAnyFilter={hasAnyFilter}
+                onClear={() => {
+                  setSearchInput("");
+                  setStatusFilter("");
+                  setPage(0);
+                }}
+              />
+            </>
           }
           filters={
             advancedOpen || statusFilter ? (

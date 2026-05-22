@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
@@ -181,6 +182,7 @@ export default function CycleCountsPage() {
           }}
           right={
             <div className="flex flex-wrap items-center gap-2">
+              <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
               <Select
                 value={warehouseId || "all"}
                 onValueChange={(value) => dispatch({ warehouseId: !value || value === "all" ? "" : value, page: 0 })}

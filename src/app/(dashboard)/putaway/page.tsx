@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { StatsGrid, type StatItem } from "@/components/ui/stats-grid";
 import { PageHeader } from "@/components/page-header";
@@ -573,6 +574,7 @@ export default function PutawayPage() {
           }}
           right={
             <>
+              <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
               <Select
                 value={statusFilter || "all"}
                 onValueChange={(value) => {

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
+import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
@@ -18,7 +20,6 @@ import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 import {
     DEFAULT_OPERATION_DATE_PRESET,
     getOperationDateRange,
-    operationDatePresetLabel,
     type OperationDatePreset,
 } from "@/lib/date-range";
 import { statusTone } from "@/lib/design-system";
@@ -34,6 +35,8 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -44,7 +47,9 @@ import {
     useGetPickingItemsQuery,
 } from "@/store/services/picking-item.service";
 import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import type { ManagedUser } from "@/types/user-management";
+import type { Warehouse } from "@/types/warehouse";
 
 interface GroupedPicking {
     soNumber: string;
@@ -64,7 +69,8 @@ type OverviewState = {
     pageSize: number;
     status: "all" | "PENDING" | "PICKED";
     datePreset: OperationDatePreset;
-    assigneeId: string;
+    assignGroup: GroupedPicking | null;
+    assignAssigneeId: string;
 };
 
 const INITIAL_OVERVIEW_STATE: OverviewState = {
@@ -76,7 +82,8 @@ const INITIAL_OVERVIEW_STATE: OverviewState = {
     pageSize: 20,
     status: "PENDING",
     datePreset: DEFAULT_OPERATION_DATE_PRESET,
-    assigneeId: "",
+    assignGroup: null,
+    assignAssigneeId: "",
 };
 
 function overviewReducer(state: OverviewState, patch: Partial<OverviewState>) {
@@ -102,20 +109,72 @@ function userDisplayName(user: ManagedUser) {
     return `${name}${warehouses}`;
 }
 
+function userShortDisplayName(user: ManagedUser) {
+    return user.name?.trim() || user.fullName?.trim() || user.username || user.email || user.id;
+}
+
+function getGroupWarehouseId(group: GroupedPicking | null) {
+    return group?.items.find((item) => item.warehouseId)?.warehouseId ?? "";
+}
+
+function warehouseDisplayName(warehouse?: Warehouse, fallbackId?: string) {
+    if (warehouse) {
+        return `${warehouse.name}${warehouse.code ? ` (${warehouse.code})` : ""}`;
+    }
+    return fallbackId || "Kho chưa xác định";
+}
+
+function assigneeDisplayName(assigneeId: string | null | undefined, assigneeNameById: Map<string, string>) {
+    if (!assigneeId) {
+        return "";
+    }
+    return assigneeNameById.get(assigneeId) ?? assigneeId;
+}
+
+function groupAssigneeSummary(group: GroupedPicking, assigneeNameById: Map<string, string>) {
+    const assigneeIds = Array.from(new Set(group.items.map((item) => item.assigneeId).filter(Boolean) as string[]));
+    if (assigneeIds.length === 0) {
+        return "Chưa giao nhân viên";
+    }
+    if (assigneeIds.length === 1) {
+        return `Giao cho: ${assigneeDisplayName(assigneeIds[0], assigneeNameById)}`;
+    }
+    return `Giao cho ${assigneeIds.length} nhân viên`;
+}
+
 export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string | null }) {
     const [state, dispatch] = useReducer(overviewReducer, INITIAL_OVERVIEW_STATE);
-    const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset, assigneeId } = state;
+    const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset, assignGroup, assignAssigneeId } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
     const canAssignPicking = useHasPermissions(PICKING_ASSIGN_ROLES);
-    const { data: staffData, isLoading: isStaffLoading, isError: isStaffError } = useGetWarehouseStaffQuery(undefined, {
+    const assignWarehouseId = useMemo(() => getGroupWarehouseId(assignGroup), [assignGroup]);
+    const { data: warehousesData } = useGetWarehousesQuery({
+        page: 0,
+        size: 200,
+        sort: "name",
+        sortDir: "asc",
+        isActive: true,
+    });
+    const { data: staffData, isLoading: isStaffLoading, isError: isStaffError } = useGetWarehouseStaffQuery({ warehouseId: assignWarehouseId }, {
+        skip: !canAssignPicking || !assignGroup || !assignWarehouseId,
+    });
+    const { data: allStaffData } = useGetWarehouseStaffQuery(undefined, {
         skip: !canAssignPicking,
     });
 
     const staffUsers = useMemo(() => staffData?.data ?? [], [staffData]);
-    const selectedAssignee = useMemo(
-        () => staffUsers.find((user) => user.id === assigneeId),
-        [assigneeId, staffUsers],
+    const assigneeNameById = useMemo(
+        () => new Map((allStaffData?.data ?? []).map((user) => [user.id, userShortDisplayName(user)])),
+        [allStaffData],
+    );
+    const warehouseById = useMemo(
+        () => new Map((warehousesData?.data?.content ?? []).map((warehouse) => [warehouse.id, warehouse])),
+        [warehousesData],
+    );
+    const selectedAssignAssignee = useMemo(
+        () => staffUsers.find((user) => user.id === assignAssigneeId),
+        [assignAssigneeId, staffUsers],
     );
 
     useEffect(() => {
@@ -124,7 +183,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
         }
     }, [initialSelectedId]);
 
-    const { data, isLoading, isFetching, isError } = useGetPickingItemsQuery({
+    const { data, isLoading, isFetching, isError, refetch } = useGetPickingItemsQuery({
         page,
         size: pageSize,
         status: status === "all" ? undefined : status,
@@ -238,7 +297,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
         dispatch({ expandedGroups: { ...expandedGroups, [so]: !expandedGroups[so] } });
     };
 
-    const handleAssignGroup = async (event: React.MouseEvent, group: GroupedPicking) => {
+    const openAssignDialog = (event: React.MouseEvent, group: GroupedPicking) => {
         event.stopPropagation();
 
         if (!canAssignPicking) {
@@ -246,18 +305,35 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
             return;
         }
 
-        if (!assigneeId) {
+        dispatch({ assignGroup: group, assignAssigneeId: "" });
+    };
+
+    const closeAssignDialog = () => {
+        dispatch({ assignGroup: null, assignAssigneeId: "" });
+    };
+
+    const handleAssignGroup = async () => {
+        if (!assignGroup) {
+            return;
+        }
+
+        if (!assignWarehouseId) {
+            toast.error("Không xác định được kho của đơn xuất này. Vui lòng tải lại danh sách lấy hàng.");
+            return;
+        }
+
+        if (!assignAssigneeId) {
             toast.error("Vui lòng chọn nhân viên nhận nhiệm vụ trước khi phân công.");
             return;
         }
 
-        const assignee = staffUsers.find((user) => user.id === assigneeId);
+        const assignee = staffUsers.find((user) => user.id === assignAssigneeId);
         if (!assignee) {
             toast.error("Không tìm thấy nhân viên nhận nhiệm vụ. Vui lòng tải lại danh sách nhân viên.");
             return;
         }
 
-        const itemsToAssign = group.items.filter((item) => item.assigneeId !== assigneeId);
+        const itemsToAssign = assignGroup.items.filter((item) => item.assigneeId !== assignAssigneeId);
         if (itemsToAssign.length === 0) {
             toast.info("Các nhiệm vụ này đã được phân công cho nhân viên đã chọn.");
             return;
@@ -269,11 +345,12 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     assignTask({
                         id: item.id,
                         soItemId: item.soItemId,
-                        assigneeId,
+                        assigneeId: assignAssigneeId,
                     }).unwrap(),
                 ),
             );
             toast.success(`Đã giao ${itemsToAssign.length} nhiệm vụ cho ${userDisplayName(assignee)}.`);
+            closeAssignDialog();
         } catch (err) {
             toast.error(apiErrMessage(err, "Không thể phân công. Kiểm tra nhân viên nhận nhiệm vụ còn hoạt động."));
         }
@@ -285,16 +362,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
     const rowsCount = data?.data?.content?.length ?? 0;
     const hasAnyFilter = Boolean(searchTerm.trim() || status !== "all" || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
     const activeFilterCount =
-        (status !== "all" ? 1 : 0) +
-        (datePreset !== DEFAULT_OPERATION_DATE_PRESET ? 1 : 0) +
-        (searchTerm.trim() ? 1 : 0);
-    const assigneeSelectLabel = isStaffLoading
-        ? "Đang tải nhân viên..."
-        : isStaffError
-          ? "Không tải được nhân viên"
-          : selectedAssignee
-            ? userDisplayName(selectedAssignee)
-            : "Chọn nhân viên phân công";
+        (status !== "all" ? 1 : 0);
 
     return (
         <div className="space-y-6">
@@ -306,32 +374,11 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     onValueChange={(searchTerm) => dispatch({ searchTerm, page: 0 })}
                     right={
                         <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center md:justify-end">
-                            {canAssignPicking ? (
-                                <Select
-                                    value={assigneeId || "__clear__"}
-                                    onValueChange={(value) => dispatch({ assigneeId: !value || value === "__clear__" ? "" : value })}
-                                    disabled={isStaffLoading || isStaffError}
-                                >
-                                    <SelectTrigger className="h-11 w-full min-w-[260px] rounded-lg bg-background md:w-[300px]">
-                                        <span
-                                            className={cn(
-                                                "min-w-0 flex-1 truncate text-left text-sm",
-                                                selectedAssignee ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
-                                            )}
-                                        >
-                                            {assigneeSelectLabel}
-                                        </span>
-                                    </SelectTrigger>
-                                    <SelectContent align="end">
-                                        <SelectItem value="__clear__">Chọn nhân viên phân công</SelectItem>
-                                        {staffUsers.map((user) => (
-                                            <SelectItem key={user.id} value={user.id}>
-                                                {userDisplayName(user)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            ) : null}
+                            <OperationDatePresetSelect
+                                value={datePreset}
+                                onValueChange={(datePreset) => dispatch({ datePreset, page: 0 })}
+                            />
+                            <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
                             <AdvancedFilterActions
                                 open={advancedOpen}
                                 onToggle={() => dispatch({ advancedOpen: !advancedOpen })}
@@ -351,8 +398,6 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     open={advancedOpen}
                     status={status}
                     onStatusChange={(status) => dispatch({ status, page: 0 })}
-                    datePreset={datePreset}
-                    onDatePresetChange={(datePreset) => dispatch({ datePreset, page: 0 })}
                 />
 
                 <PickingOverviewTable
@@ -361,9 +406,11 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     canAssignPicking={canAssignPicking}
                     isAssigning={isAssigning}
                     isLoading={isLoading}
-                    onAssignGroup={handleAssignGroup}
+                    onAssignGroup={openAssignDialog}
                     onDispatch={dispatch}
                     onToggleGroup={toggleGroup}
+                    warehouseById={warehouseById}
+                    assigneeNameById={assigneeNameById}
                 />
                 <PaginationFooter
                     itemLabel="dòng lấy hàng"
@@ -389,6 +436,22 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                 open={!!selectedId}
                 onOpenChange={(open) => !open && dispatch({ selectedId: null })}
             />
+            <AssignStaffDialog
+                group={assignGroup}
+                isAssigning={isAssigning}
+                isStaffError={isStaffError}
+                isStaffLoading={isStaffLoading}
+                selectedAssignee={selectedAssignAssignee}
+                selectedAssigneeId={assignAssigneeId}
+                staffUsers={staffUsers}
+                warehouseId={assignWarehouseId}
+                open={!!assignGroup}
+                onAssign={handleAssignGroup}
+                onOpenChange={(open) => {
+                    if (!open) closeAssignDialog();
+                }}
+                onSelectAssignee={(assignAssigneeId) => dispatch({ assignAssigneeId })}
+            />
         </div>
     );
 }
@@ -397,14 +460,10 @@ function PickingAdvancedFilters({
     open,
     status,
     onStatusChange,
-    datePreset,
-    onDatePresetChange,
 }: {
     open: boolean;
     status: OverviewState["status"];
     onStatusChange: (status: OverviewState["status"]) => void;
-    datePreset: OperationDatePreset;
-    onDatePresetChange: (datePreset: OperationDatePreset) => void;
 }) {
     const statusLabel: Record<OverviewState["status"], string> = {
         all: "Tất cả trạng thái",
@@ -414,20 +473,6 @@ function PickingAdvancedFilters({
 
     return (
         <AdvancedFilterPanel open={open}>
-            <div className="min-w-52 space-y-1">
-                <p className="ui-label">Thời gian</p>
-                <Select value={datePreset} onValueChange={(value) => onDatePresetChange(value as OperationDatePreset)}>
-                    <SelectTrigger className="h-10 rounded-lg bg-background">
-                        <span className="truncate text-sm">{operationDatePresetLabel(datePreset)}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="today">{operationDatePresetLabel("today")}</SelectItem>
-                        <SelectItem value="7d">{operationDatePresetLabel("7d")}</SelectItem>
-                        <SelectItem value="30d">{operationDatePresetLabel("30d")}</SelectItem>
-                        <SelectItem value="all">{operationDatePresetLabel("all")}</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
             <div className="min-w-52 space-y-1">
                 <p className="ui-label">Trạng thái lấy hàng</p>
                 <Select value={status} onValueChange={(value) => onStatusChange(value as OverviewState["status"])}>
@@ -445,6 +490,147 @@ function PickingAdvancedFilters({
     );
 }
 
+function AssignStaffDialog({
+    group,
+    isAssigning,
+    isStaffError,
+    isStaffLoading,
+    selectedAssignee,
+    selectedAssigneeId,
+    staffUsers,
+    warehouseId,
+    open,
+    onAssign,
+    onOpenChange,
+    onSelectAssignee,
+}: {
+    group: GroupedPicking | null;
+    isAssigning: boolean;
+    isStaffError: boolean;
+    isStaffLoading: boolean;
+    selectedAssignee?: ManagedUser;
+    selectedAssigneeId: string;
+    staffUsers: ManagedUser[];
+    warehouseId: string;
+    open: boolean;
+    onAssign: () => void;
+    onOpenChange: (open: boolean) => void;
+    onSelectAssignee: (assigneeId: string) => void;
+}) {
+    const assignableCount = group?.items.filter((item) => item.assigneeId !== selectedAssigneeId).length ?? 0;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-3xl p-4">
+                <DialogHeader className="px-5 pt-5">
+                    <DialogTitle>Chọn nhân viên lấy hàng</DialogTitle>
+                    <DialogDescription>
+                        {group
+                            ? `Đơn ${group.soNumber} có ${group.items.length} dòng lấy hàng cần điều phối.`
+                            : "Chọn nhân viên để phân công nhiệm vụ lấy hàng."}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="max-h-[56vh] overflow-auto px-5">
+                    <Table>
+                        <TableHeader className="ui-table-header">
+                            <TableRow>
+                                <TableHead className="ui-label p-3">Nhân viên</TableHead>
+                                <TableHead className="ui-label p-3">Kho phụ trách</TableHead>
+                                <TableHead className="ui-label w-[120px] p-3 text-right">Chọn</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {!warehouseId ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="py-10 text-center text-sm font-medium text-rose-500">
+                                        Không xác định được kho của đơn xuất này.
+                                    </TableCell>
+                                </TableRow>
+                            ) : isStaffLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="py-10 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                        Đang tải nhân viên...
+                                    </TableCell>
+                                </TableRow>
+                            ) : isStaffError ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="py-10 text-center text-sm font-medium text-rose-500">
+                                        Không tải được danh sách nhân viên.
+                                    </TableCell>
+                                </TableRow>
+                            ) : staffUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="py-10 text-center text-sm font-medium text-muted-foreground">
+                                        Chưa có nhân viên kho được phân quyền vào kho của đơn xuất này.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                staffUsers.map((user) => {
+                                    const selected = user.id === selectedAssigneeId;
+                                    const email = user.email?.trim();
+                                    const name = user.name?.trim() || user.fullName?.trim() || user.username || user.id;
+                                    const warehouses = user.warehouseNames?.length ? user.warehouseNames.join(", ") : "Chưa gắn kho";
+
+                                    return (
+                                        <TableRow
+                                            key={user.id}
+                                            className={cn("ui-table-row cursor-pointer", selected && "bg-primary/5")}
+                                            onClick={() => onSelectAssignee(user.id)}
+                                        >
+                                            <TableCell className="p-3">
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                                                    <p className="truncate text-xs text-muted-foreground">{email || user.username}</p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="max-w-[260px] p-3">
+                                                <span className="line-clamp-2 text-sm text-muted-foreground">{warehouses}</span>
+                                            </TableCell>
+                                            <TableCell className="p-3 text-right">
+                                                <Button
+                                                    type="button"
+                                                    variant={selected ? "default" : "outline"}
+                                                    size="sm"
+                                                    className="h-8 rounded-lg"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        onSelectAssignee(user.id);
+                                                    }}
+                                                >
+                                                    {selected ? "Đã chọn" : "Chọn"}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                <DialogFooter className="items-center gap-2">
+                    <div className="mr-auto min-w-0 text-xs text-muted-foreground">
+                        {selectedAssignee
+                            ? `${assignableCount} nhiệm vụ sẽ giao cho ${userDisplayName(selectedAssignee)}.`
+                            : "Chọn một nhân viên trong bảng để phân công."}
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        Hủy
+                    </Button>
+                    <Button
+                        type="button"
+                        disabled={!warehouseId || !selectedAssigneeId || isAssigning || isStaffLoading || isStaffError}
+                        onClick={onAssign}
+                    >
+                        {isAssigning ? "Đang giao..." : "Giao nhân viên"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function PickingOverviewTable({
     expandedGroups,
     groupedData,
@@ -454,6 +640,8 @@ function PickingOverviewTable({
     onAssignGroup,
     onDispatch,
     onToggleGroup,
+    warehouseById,
+    assigneeNameById,
 }: {
     expandedGroups: Record<string, boolean>;
     groupedData: GroupedPicking[];
@@ -463,6 +651,8 @@ function PickingOverviewTable({
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
+    warehouseById: Map<string, Warehouse>;
+    assigneeNameById: Map<string, string>;
 }) {
     return (
         <div className="overflow-x-auto">
@@ -493,6 +683,8 @@ function PickingOverviewTable({
                                 onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
                                 onToggleGroup={onToggleGroup}
+                                warehouseById={warehouseById}
+                                assigneeNameById={assigneeNameById}
                             />
                         ))
                     )}
@@ -538,6 +730,8 @@ function PickingGroupRows({
     onAssignGroup,
     onDispatch,
     onToggleGroup,
+    warehouseById,
+    assigneeNameById,
 }: {
     expanded: boolean;
     group: GroupedPicking;
@@ -546,7 +740,13 @@ function PickingGroupRows({
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
     onToggleGroup: (so: string) => void;
+    warehouseById: Map<string, Warehouse>;
+    assigneeNameById: Map<string, string>;
 }) {
+    const warehouseId = getGroupWarehouseId(group);
+    const warehouseLabel = warehouseDisplayName(warehouseById.get(warehouseId), warehouseId);
+    const assigneeSummary = groupAssigneeSummary(group, assigneeNameById);
+
     return (
         <React.Fragment>
             <TableRow className="ui-table-row group cursor-pointer" onClick={() => onToggleGroup(group.soNumber)}>
@@ -561,6 +761,14 @@ function PickingGroupRows({
                             <StatusBadge dot={false} tone="neutral" className="h-4 px-1 text-[9px]">
                                 {group.items.length} mã hàng
                             </StatusBadge>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <MapPin className="size-3" />
+                            <span className="truncate">Kho: {warehouseLabel}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <Users className="size-3" />
+                            <span className="truncate">{assigneeSummary}</span>
                         </div>
                     </div>
                 </TableCell>
@@ -583,7 +791,7 @@ function PickingGroupRows({
                             className="h-8 gap-1.5 rounded-lg"
                         >
                             <Users className="size-3.5" />
-                            Phân công
+                            Giao nhân viên
                         </Button>
                     ) : null}
                 </TableCell>
@@ -591,7 +799,7 @@ function PickingGroupRows({
 
             {expanded
                 ? group.items.map((item) => (
-                    <PickingItemRow key={item.id} item={item} onDispatch={onDispatch} />
+                    <PickingItemRow key={item.id} item={item} assigneeNameById={assigneeNameById} onDispatch={onDispatch} />
                 ))
                 : null}
         </React.Fragment>
@@ -624,11 +832,15 @@ function PickingGroupProgress({ group }: { group: GroupedPicking }) {
 
 function PickingItemRow({
     item,
+    assigneeNameById,
     onDispatch,
 }: {
     item: PickingItem;
+    assigneeNameById: Map<string, string>;
     onDispatch: Dispatch<Partial<OverviewState>>;
 }) {
+    const assigneeName = assigneeDisplayName(item.assigneeId, assigneeNameById);
+
     return (
         <TableRow className="ui-table-row group/row animate-in fade-in slide-in-from-left-2 duration-300">
             <TableCell className="pl-6"></TableCell>
@@ -636,6 +848,10 @@ function PickingItemRow({
                 <div className="flex flex-col">
                     <span className="text-[13px] font-black uppercase tracking-tight text-foreground">{item.productSku}</span>
                     <span className="mt-0.5 line-clamp-1 max-w-[250px] text-[11px] font-medium text-muted-foreground">{item.productName}</span>
+                    <span className={cn("mt-1 inline-flex items-center gap-1 text-[11px] font-semibold", assigneeName ? "text-primary" : "text-muted-foreground")}>
+                        <Users className="size-3" />
+                        {assigneeName ? `Giao cho: ${assigneeName}` : "Chưa giao nhân viên"}
+                    </span>
                 </div>
             </TableCell>
             <TableCell>

@@ -196,6 +196,11 @@ function formatLogTime(value: string) {
   };
 }
 
+function csvCell(value: unknown) {
+  const text = String(value ?? "").replace(/"/g, '""');
+  return `"${text}"`;
+}
+
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -532,6 +537,33 @@ export default function HistoryPage() {
   });
 
   const logs = useMemo(() => data?.data?.content ?? [], [data]);
+  const handleExportCsv = () => {
+    const header = ["Thời gian", "Ngày", "Người thực hiện", "Email/Dịch vụ", "Hành động", "Mô tả", "Đối tượng", "Module"];
+    const rows = logs.map((log) => {
+      const actorName = log.actorName?.trim() || "system";
+      const actorEmail = log.actorEmail?.trim() || log.serviceName || "";
+      const created = formatLogTime(log.createdAt);
+      const view = buildAuditView(log);
+      return [
+        created.time,
+        created.date,
+        actorName,
+        actorEmail,
+        view.actionTitle,
+        view.description,
+        view.entity,
+        view.module,
+      ];
+    });
+    const csv = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-logs-${format(new Date(), "yyyyMMdd-HHmmss")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -554,7 +586,7 @@ export default function HistoryPage() {
               <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
               Tải lại
             </Button>
-            <Button variant="outline" size="sm" className="rounded-lg border-border gap-2">
+            <Button variant="outline" size="sm" className="rounded-lg border-border gap-2" onClick={handleExportCsv} disabled={logs.length === 0}>
               <Download className="size-4" />
               Xuất dữ liệu
             </Button>
