@@ -6,6 +6,9 @@ import type { ReportSummary, RevenueTrend, TopSku } from "@/types/report";
 export interface ReportSummaryParams {
   period?: DashboardPeriod;
   year?: number;
+  warehouseId?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export const reportApi = baseApi.injectEndpoints({
