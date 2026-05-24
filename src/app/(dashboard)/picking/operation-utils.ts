@@ -25,6 +25,11 @@ export function displayPickingLocation(item: PickingItem) {
   return item.locationCode || item.locationName || "Chưa rõ";
 }
 
+export function displayPickingWarehouse(item: PickingItem) {
+  if (item.warehouseName && item.warehouseCode) return `${item.warehouseName} (${item.warehouseCode})`;
+  return item.warehouseName || item.warehouseCode || "Chưa rõ kho";
+}
+
 function sequenceValue(item: PickingItem) {
   return Number(item.pickSequence ?? Number.MAX_SAFE_INTEGER);
 }

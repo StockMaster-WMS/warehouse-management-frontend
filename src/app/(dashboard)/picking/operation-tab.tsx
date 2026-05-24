@@ -24,6 +24,7 @@ import {
     RefreshCw,
     ScanLine,
     SlidersHorizontal,
+    Warehouse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ import { taskScopeErrMessage } from "@/types/api";
 import type { PickingItem } from "@/types/picking-item";
 import {
     displayPickingLocation,
+    displayPickingWarehouse,
     groupPickingLocations,
     groupPickingOrders,
     type PickingLocationGroup,
@@ -347,7 +349,7 @@ export function OperationTab() {
     }
 
     return (
-        <div className="min-h-full bg-slate-50/60 px-4 pb-6 pt-2 text-slate-950 sm:px-6 lg:px-0 lg:pt-0">
+        <div className="min-h-full bg-slate-50 px-4 pb-6 pt-2 text-slate-950 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-0 lg:pt-0">
             <PickingHeader
                 isFetching={isFetching}
                 onRefresh={() => refetch()}
@@ -945,6 +947,13 @@ function MobileStepProgress({ stepIndex }: { stepIndex: number }) {
 function MobileProductCard({ activeItem, loc }: { activeItem: PickingItem; loc: ReturnType<typeof pickingLocationParts> }) {
     return (
         <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                <Warehouse className="size-4 shrink-0 text-emerald-600" />
+                <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase text-emerald-700">Kho lấy hàng</p>
+                    <p className="truncate text-sm font-bold text-emerald-800">{displayPickingWarehouse(activeItem)}</p>
+                </div>
+            </div>
             <div className="grid grid-cols-[56px_1fr] gap-3">
                 <ProductVisual className="h-16 w-14" />
                 <div className="relative min-w-0">
@@ -1167,6 +1176,7 @@ function PickingScanFlow({
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
     const [isMobileViewport, setIsMobileViewport] = useState(false);
     const loc = pickingLocationParts(activeItem);
+    const warehouseLabel = displayPickingWarehouse(activeItem);
     const picked = Number(activeItem.qtyPicked || 0);
     const remaining = Math.max(Number(activeItem.qtyToPick || 0) - picked, 0);
     const progress = activeItem.qtyToPick ? Math.round((picked / Number(activeItem.qtyToPick)) * 100) : 0;
@@ -1184,7 +1194,7 @@ function PickingScanFlow({
     }, []);
 
     return (
-        <div className="bg-slate-50 text-slate-950">
+        <div className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
             {isMobileViewport ? (
                 <div className="min-h-screen bg-slate-50">
                     <div className="bg-slate-50 px-3 pb-20 pt-2">
@@ -1196,6 +1206,7 @@ function PickingScanFlow({
                                 <div>
                                     <p className="text-xs font-medium text-slate-500">Đang thực hiện</p>
                                     <p className="text-base font-semibold">{activeItem.salesOrderNumber || "Đơn hiện tại"}</p>
+                                    <p className="mt-0.5 max-w-[190px] truncate text-xs font-semibold text-emerald-700">{warehouseLabel}</p>
                                 </div>
                             </div>
                             <div className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-600">{stepIndex} / 3</div>
@@ -1230,8 +1241,9 @@ function PickingScanFlow({
                 </div>
             ) : (
                 <div className="min-h-full space-y-4 p-5">
-                    <div className="grid grid-cols-5 rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+                    <div className="grid grid-cols-6 rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
                         <DesktopStat label="Tiến độ đơn hàng" value={activeItem.salesOrderNumber || "SO"} badge="Ưu tiên cao" />
+                        <DesktopStat label="Kho lấy hàng" value={warehouseLabel} className="text-emerald-700" />
                         <DesktopStat label="Tổng sản phẩm" value={String(activeItem.qtyToPick)} />
                         <DesktopStat label="Đã lấy" value={String(picked)} className="text-emerald-600" />
                         <DesktopStat label="Còn lại" value={String(remaining)} className="text-red-600" />
