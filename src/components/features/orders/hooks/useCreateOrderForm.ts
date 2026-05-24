@@ -181,6 +181,7 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
           district: address.districtName,
           city: address.provinceName,
           country: country.trim().toUpperCase(),
+          phone: phone.trim() || undefined,
         },
         warehouseId,
         priority: Number(priority),

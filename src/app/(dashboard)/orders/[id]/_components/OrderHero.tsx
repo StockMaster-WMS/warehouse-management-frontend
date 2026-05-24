@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type LucideIcon, MapPin, Package, User, Building2, Clock, Search, CheckCircle2, Box, Truck } from "lucide-react";
+import { type LucideIcon, MapPin, Package, Phone, User, Building2, Clock, Search, CheckCircle2, Box, Truck } from "lucide-react";
 import { formatShippingShort, salesOrderStatusColor, salesOrderStatusLabel } from "@/types/sales-order";
 import { cn } from "@/lib/utils";
 import type { SalesOrder } from "@/types/sales-order";
@@ -126,6 +126,17 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
               </div>
             </div>
           </div>
+          {so.shippingAddress.phone ? (
+            <div className="rounded-lg border border-border/70 bg-background px-3 py-2 sm:col-span-2">
+              <div className="flex items-start gap-2">
+                <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">SĐT người nhận</p>
+                  <p className="mt-0.5 leading-snug text-foreground/90">{so.shippingAddress.phone}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="rounded-lg border border-border/70 bg-background px-3 py-2 sm:col-span-2">
             <div className="flex items-start gap-2">
               <Package className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

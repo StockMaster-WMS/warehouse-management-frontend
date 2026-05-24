@@ -4,16 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type {
   AppearanceSettings,
-  NotificationSetting,
   SettingsTab,
-  NotificationSubTab,
-  AppearanceSubTab,
-  WarehouseSubTab,
-  ProductsSubTab,
-  WorkflowSubTab,
   ColorType,
 } from "../types";
-import { defaultAppearanceSettings, mockNotificationData } from "../data";
+import { defaultAppearanceSettings } from "../data";
 
 const APPEARANCE_STORAGE_KEY = "appearanceSettings:v1";
 const LEGACY_APPEARANCE_STORAGE_KEY = "appearanceSettings";
@@ -21,11 +15,6 @@ const LEGACY_APPEARANCE_STORAGE_KEY = "appearanceSettings";
 export function useSettingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<SettingsTab>("personal");
-  const [activeSubTab, setActiveSubTab] = useState<NotificationSubTab>("email");
-  const [activeAppearanceSubTab, setActiveAppearanceSubTab] = useState<AppearanceSubTab>("theme");
-  const [activeWarehouseSubTab, setActiveWarehouseSubTab] = useState<WarehouseSubTab>("warehouses");
-  const [activeProductsSubTab, setActiveProductsSubTab] = useState<ProductsSubTab>("sku");
-  const [activeWorkflowSubTab, setActiveWorkflowSubTab] = useState<WorkflowSubTab>("automation");
 
   const [appearance, setAppearance] = useState<AppearanceSettings>(() => {
     if (typeof window !== "undefined") {
@@ -42,22 +31,6 @@ export function useSettingsPage() {
     }
     return defaultAppearanceSettings;
   });
-
-  const [notificationData, setNotificationData] = useState<NotificationSetting[]>(mockNotificationData);
-  const [emergencyPhone, setEmergencyPhone] = useState("+84 123 456 789");
-  const [dailyReportTime, setDailyReportTime] = useState("18:00");
-  const [weeklyReportDay, setWeeklyReportDay] = useState("friday");
-
-  const handleToggleNotification = useCallback((itemId: string) => {
-    setNotificationData((prevData) =>
-      prevData.map((channel) => ({
-        ...channel,
-        items: channel.items.map((item) =>
-          item.id === itemId ? { ...item, isEnabled: !item.isEnabled } : item
-        ),
-      }))
-    );
-  }, []);
 
   const gotoProfile = useCallback(() => {
     router.push("/profile");
@@ -105,26 +78,8 @@ export function useSettingsPage() {
   return {
     activeTab,
     setActiveTab,
-    activeSubTab,
-    setActiveSubTab,
-    activeAppearanceSubTab,
-    setActiveAppearanceSubTab,
-    activeWarehouseSubTab,
-    setActiveWarehouseSubTab,
-    activeProductsSubTab,
-    setActiveProductsSubTab,
-    activeWorkflowSubTab,
-    setActiveWorkflowSubTab,
     appearance,
-    notificationData,
-    emergencyPhone,
-    dailyReportTime,
-    weeklyReportDay,
-    handleToggleNotification,
     gotoProfile,
     updateAppearance,
-    setEmergencyPhone,
-    setDailyReportTime,
-    setWeeklyReportDay,
   };
 }
