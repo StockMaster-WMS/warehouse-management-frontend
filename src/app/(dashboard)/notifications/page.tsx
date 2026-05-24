@@ -22,11 +22,12 @@ import type { AppNotification } from "@/types/notification";
 import {
   formatNotificationTime,
   formatNotificationRelativeTime,
+  displayNotificationMessage,
+  displayNotificationType,
   getNotificationHref,
   NOTIFICATION_SEVERITY_ICON,
   NOTIFICATION_SEVERITY_STYLE,
   NOTIFICATION_TYPE_ICON,
-  NOTIFICATION_TYPE_LABEL,
 } from "@/components/notifications/notification-utils";
 
 type NotificationFilter = "all" | "unread";
@@ -222,53 +223,54 @@ function NotificationCenterRow({
   const Icon = NOTIFICATION_TYPE_ICON[notification.type] ?? Bell;
   const SeverityIcon = NOTIFICATION_SEVERITY_ICON[notification.severity] ?? Bell;
   const severity = NOTIFICATION_SEVERITY_STYLE[notification.severity] ?? NOTIFICATION_SEVERITY_STYLE.INFO;
-  const typeLabel = NOTIFICATION_TYPE_LABEL[notification.type] ?? notification.type;
+  const typeLabel = displayNotificationType(notification.type);
+  const message = displayNotificationMessage(notification);
 
   return (
     <button
       type="button"
       onClick={onOpen}
       className={cn(
-        "flex w-full gap-4 p-4 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex w-full gap-3 p-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-4 sm:p-4",
         !notification.read && "bg-primary/5",
       )}
     >
       <span
         className={cn(
-          "mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl",
+          "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl sm:size-11",
           severity.iconWrap,
         )}
       >
-        <Icon className="size-5" />
+        <Icon className="size-4 sm:size-5" />
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2">
-          {!notification.read ? (
-            <span className={cn("size-2.5 rounded-full", severity.dot)} />
-          ) : null}
+        <span className="flex min-w-0 items-start justify-between gap-2">
           <span
             className={cn(
-              "text-sm font-semibold text-foreground",
+              "min-w-0 flex-1 truncate text-sm font-semibold text-foreground",
               !notification.read && "font-bold",
             )}
           >
+            {!notification.read ? (
+              <span className={cn("mr-2 inline-block size-2 rounded-full align-middle", severity.dot)} />
+            ) : null}
             {notification.title}
           </span>
-          <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+          <span className="shrink-0 text-[11px] font-medium text-muted-foreground" title={formatNotificationTime(notification.createdAt)}>
+            {formatNotificationRelativeTime(notification.createdAt)}
+          </span>
+        </span>
+        <span className="mt-1 line-clamp-2 text-sm font-medium leading-relaxed text-muted-foreground sm:line-clamp-none">
+          {message}
+        </span>
+        <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-muted-foreground sm:gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
+            <SeverityIcon className="size-3" />
             {typeLabel}
           </span>
-          <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+          <span className="rounded-full border border-border px-2 py-0.5">
             {severity.label}
-          </span>
-        </span>
-        <span className="mt-1 block text-sm font-medium leading-relaxed text-muted-foreground">
-          {notification.message}
-        </span>
-        <span className="mt-2 block text-xs font-medium text-muted-foreground">
-          <span title={formatNotificationTime(notification.createdAt)}>
-            <SeverityIcon className="mr-1 inline size-3.5" />
-            {formatNotificationRelativeTime(notification.createdAt)}
           </span>
         </span>
       </span>

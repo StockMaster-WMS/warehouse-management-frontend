@@ -28,11 +28,12 @@ import type { AppNotification } from "@/types/notification";
 import {
   formatNotificationTime,
   formatNotificationRelativeTime,
+  displayNotificationMessage,
+  displayNotificationType,
   getNotificationHref,
   NOTIFICATION_SEVERITY_ICON,
   NOTIFICATION_SEVERITY_STYLE,
   NOTIFICATION_TYPE_ICON,
-  NOTIFICATION_TYPE_LABEL,
 } from "./notification-utils";
 
 type NotificationBellProps = {
@@ -198,7 +199,8 @@ function NotificationMenuItem({
   const Icon = NOTIFICATION_TYPE_ICON[notification.type] ?? Bell;
   const SeverityIcon = NOTIFICATION_SEVERITY_ICON[notification.severity] ?? Bell;
   const severity = NOTIFICATION_SEVERITY_STYLE[notification.severity] ?? NOTIFICATION_SEVERITY_STYLE.INFO;
-  const typeLabel = NOTIFICATION_TYPE_LABEL[notification.type] ?? notification.type;
+  const typeLabel = displayNotificationType(notification.type);
+  const message = displayNotificationMessage(notification);
 
   return (
     <button
@@ -231,8 +233,8 @@ function NotificationMenuItem({
             {notification.title}
           </span>
         </span>
-        <span className="mt-0.5 line-clamp-2 text-xs font-medium text-muted-foreground">
-          {notification.message}
+        <span className="mt-0.5 line-clamp-2 text-xs font-medium leading-relaxed text-muted-foreground">
+          {message}
         </span>
         <span className="mt-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
           <SeverityIcon className="size-3" />

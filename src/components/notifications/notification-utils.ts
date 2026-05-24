@@ -55,6 +55,10 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   PICKING_ASSIGNED: "Lấy hàng",
   PICKING_EXCEPTION: "Lỗi lấy hàng",
   CYCLE_COUNT_CREATED: "Kiểm kê",
+  CYCLE_COUNT_ASSIGNED: "Phiếu kiểm kê",
+  CYCLE_COUNT_SUBMITTED: "Chờ duyệt kiểm kê",
+  CYCLE_COUNT_APPROVED: "Đã duyệt kiểm kê",
+  CYCLE_COUNT_REJECTED: "Kiểm kê lại",
   STOCK_DISCREPANCY: "Lệch tồn kho",
   ROLE_CHANGED: "Phân quyền",
   SYSTEM_ALERT: "Hệ thống",
@@ -68,10 +72,26 @@ export const NOTIFICATION_TYPE_ICON: Record<NotificationType, LucideIcon> = {
   PICKING_ASSIGNED: ClipboardList,
   PICKING_EXCEPTION: AlertTriangle,
   CYCLE_COUNT_CREATED: ClipboardCheck,
+  CYCLE_COUNT_ASSIGNED: ClipboardCheck,
+  CYCLE_COUNT_SUBMITTED: ClipboardList,
+  CYCLE_COUNT_APPROVED: ClipboardCheck,
+  CYCLE_COUNT_REJECTED: AlertTriangle,
   STOCK_DISCREPANCY: AlertOctagon,
   ROLE_CHANGED: UserCog,
   SYSTEM_ALERT: Info,
 };
+
+export function displayNotificationType(type: string) {
+  return NOTIFICATION_TYPE_LABEL[type as NotificationType] ?? type.replace(/_/g, " ").toLowerCase();
+}
+
+export function displayNotificationMessage(notification: AppNotification) {
+  let message = notification.message || "";
+  message = message.replace(/,\s*productId=[0-9a-f-]{36}/gi, "");
+  message = message.replace(/\s*productId=[0-9a-f-]{36}/gi, "sản phẩm");
+  message = message.replace(/^Bạn được giao picking cho\s+/i, "Đơn ");
+  return message;
+}
 
 const dateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
