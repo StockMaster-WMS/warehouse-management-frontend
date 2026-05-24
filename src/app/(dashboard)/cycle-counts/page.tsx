@@ -92,7 +92,7 @@ function formatDate(value?: string | null) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("vi-VN");
+  return date.toLocaleString("vi-VN");
 }
 
 function lineStats(count: CycleCount) {
@@ -233,7 +233,7 @@ export default function CycleCountsPage() {
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Kho / Người kiểm</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trạng thái</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tiến độ</TableHead>
-                <TableHead className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ngày tạo</TableHead>
+                <TableHead className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tạo lúc</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -105,6 +105,12 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 const EMPTY_PUTAWAY_TASKS: PutawayTask[] = [];
 
 function putawayErrorMessage(error: unknown) {
@@ -284,6 +290,9 @@ function PutawayTaskRow({
             {locationMap.get(task.actualLocationId) ?? `…${task.actualLocationId.slice(-6)}`}
           </span>
         ) : <span className="text-slate-400 text-xs">,</span>}
+      </TableCell>
+      <TableCell className="whitespace-nowrap px-3 py-4 text-xs text-slate-500 dark:text-slate-400">
+        {formatDateTime(task.createdAt)}
       </TableCell>
       <TableCell className="py-4 pl-3 pr-6 text-right">
         <div className="flex items-center justify-end gap-1.5">
@@ -631,6 +640,7 @@ export default function PutawayPage() {
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
+                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tạo lúc</TableHead>
                 <TableHead className="py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -643,6 +653,7 @@ export default function PutawayPage() {
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-24 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-16 rounded" /></TableCell>
+                    <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
                     <TableCell className="py-4 pl-3 pr-6 text-right">
                       <div className="flex justify-end gap-1.5">
                         <Skeleton className="h-8 w-12 rounded-lg" />
@@ -653,7 +664,7 @@ export default function PutawayPage() {
                 ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12">
+                  <TableCell colSpan={7} className="py-12">
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách xếp hàng"
@@ -664,7 +675,7 @@ export default function PutawayPage() {
                 </TableRow>
               ) : tasks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12">
+                  <TableCell colSpan={7} className="py-12">
                     <EmptyState
                       icon={PackageOpen}
                       title="Không có nhiệm vụ xếp hàng"

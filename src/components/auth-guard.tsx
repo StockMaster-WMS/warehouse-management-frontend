@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -25,7 +25,7 @@ import {
 function isRefreshDeniedError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const status = (error as { status?: unknown }).status;
-  return status === 400 || status === 401 || status === 403;
+  return status === 401 || status === 403;
 }
 
 export function AuthGuard({ 
@@ -59,52 +59,49 @@ export function AuthGuard({
   const canAccessCurrentPath = canAccessPath(pathname, userRoles);
   const defaultAllowedPath = getDefaultPathForRoles(userRoles);
 
+  const tryRefreshSession = useCallback(() => {
+    if (refreshAttempted.current) return;
+
+    refreshAttempted.current = true;
+    refreshToken()
+      .unwrap()
+      .then((res) => {
+        const token = setAccessToken(res.accessToken);
+        if (!token) {
+          clearAccessToken();
+          replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+        }
+      })
+      .catch((error) => {
+        clearAccessToken();
+        if (isRefreshDeniedError(error)) {
+          markExplicitLogout();
+          replace("/login");
+          return;
+        }
+        clearExplicitLogout();
+        refreshAttempted.current = false;
+        replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+      });
+  }, [pathname, refreshToken, replace]);
+
   useEffect(() => {
     if (hasAccessToken && isUserError && !user) {
       clearExplicitLogout();
       clearAccessToken();
       refreshAttempted.current = false;
+      tryRefreshSession();
+      return;
     }
-  }, [hasAccessToken, isUserError, user]);
 
-  useEffect(() => {
     if (!hasAccessToken) {
       if (hasExplicitLogoutSnapshot()) {
         replace("/login");
         return;
       }
 
-      if (refreshAttempted.current) return;
-
-      refreshAttempted.current = true;
-      let cancelled = false;
-
-      refreshToken()
-        .unwrap()
-        .then((res) => {
-          if (cancelled) return;
-          const token = setAccessToken(res.accessToken);
-          if (!token) {
-            markExplicitLogout();
-            clearAccessToken();
-            replace("/login");
-          }
-        })
-        .catch((error) => {
-          if (cancelled) return;
-          clearAccessToken();
-          if (isRefreshDeniedError(error)) {
-            markExplicitLogout();
-            replace("/login");
-            return;
-          }
-          clearExplicitLogout();
-          replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
-        });
-
-      return () => {
-        cancelled = true;
-      };
+      tryRefreshSession();
+      return;
     }
 
     if (
@@ -119,9 +116,10 @@ export function AuthGuard({
     canAccessCurrentPath,
     defaultAllowedPath,
     hasAccessToken,
+    isUserError,
     pathname,
-    refreshToken,
     replace,
+    tryRefreshSession,
     user,
   ]);
 

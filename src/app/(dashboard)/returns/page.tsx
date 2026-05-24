@@ -108,7 +108,7 @@ function formatDate(value?: string | null) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("vi-VN");
+  return date.toLocaleString("vi-VN");
 }
 
 function displayCode(value?: string | null) {
@@ -260,7 +260,7 @@ export default function ReturnsPage() {
           <Table className="min-w-[1120px]">
             <TableHeader className="bg-muted/50">
               <TableRow className="hover:bg-transparent">
-                {["Mã phiếu", "Loại", "Khách/NCC", "Kho", "Trạng thái", "SL dự kiến", "Đã nhận", "Còn lại", "Ngày tạo"].map((label, index) => (
+                {["Mã phiếu", "Loại", "Khách/NCC", "Kho", "Trạng thái", "SL dự kiến", "Đã nhận", "Còn lại", "Tạo lúc"].map((label, index) => (
                   <TableHead key={label} className={cn("px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground", index >= 5 && "text-right")}>
                     {label}
                   </TableHead>

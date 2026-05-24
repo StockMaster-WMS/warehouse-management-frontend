@@ -39,7 +39,7 @@ function redirectToLogin() {
 
 function isRefreshSessionDenied(error: unknown) {
   if (!axios.isAxiosError(error) || !error.response) return false;
-  return [400, 401, 403].includes(error.response.status);
+  return [401, 403].includes(error.response.status);
 }
 
 export const axiosInstance = axios.create({

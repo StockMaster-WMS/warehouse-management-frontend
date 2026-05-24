@@ -82,84 +82,22 @@ Chạy bản production sau khi build:
 npm start
 ```
 
-
 ## Chức năng chính
 
-### Dashboard và theo dõi vận hành
-
-- Hiển thị số liệu tổng quan về kho, sản phẩm, tồn kho, nhập hàng và xuất hàng.
-- Theo dõi cảnh báo tồn kho thấp, hàng gần hết hạn và các chỉ số cần xử lý.
-- Truy cập nhanh tới các nghiệp vụ thường dùng trong hệ thống.
-
-### Quản lý danh mục và dữ liệu nền
-
-- Quản lý sản phẩm: thêm, sửa, xóa, tìm kiếm, lọc dữ liệu, import/export Excel.
-- Quản lý danh mục sản phẩm để phân nhóm hàng hóa.
-- Quản lý nhà cung cấp, khách hàng, kho và vị trí lưu trữ.
-- Hỗ trợ các màn chi tiết, tạo mới và chỉnh sửa theo từng loại dữ liệu.
-
-### Quản lý tồn kho
-
-- Xem danh sách tồn kho theo sản phẩm, kho, vị trí và trạng thái.
-- Theo dõi lịch sử dịch chuyển tồn kho.
-- Cảnh báo tồn thấp, gần hết hạn và hỗ trợ xuất báo cáo Excel.
-- Hỗ trợ điều chỉnh tồn kho theo quyền của người dùng.
-
-### Nghiệp vụ nhập hàng
-
-- Quản lý đơn nhập hàng `Purchase Order`.
-- Quản lý dòng hàng trong đơn nhập.
-- Tạo và theo dõi phiếu nhập kho.
-- Quản lý tác vụ putaway sau khi hàng được nhập.
-- Hỗ trợ gợi ý vị trí putaway bằng AI.
-
-### Nghiệp vụ xuất hàng
-
-- Quản lý đơn xuất hàng `Sales Order`.
-- Quản lý dòng hàng trong đơn xuất.
-- Theo dõi tác vụ picking và trạng thái xử lý.
-- Hỗ trợ các thao tác assign, hoàn tất picking và xử lý ngoại lệ.
-
-### Kiểm kê, hoàn trả và báo cáo
-
-- Quản lý phiếu kiểm kê kho theo trạng thái.
-- Ghi nhận số lượng kiểm kê và xử lý chênh lệch.
-- Quản lý hoàn trả hàng từ khách hàng hoặc nhà cung cấp.
-- Xem báo cáo tổng hợp, báo cáo tồn kho và xuất dữ liệu Excel.
-
-### Thông báo và nhật ký
-
-- Hiển thị thông báo hệ thống.
-- Theo dõi nhật ký hoạt động để phục vụ kiểm tra và truy vết thao tác.
-
-### Tài khoản, phân quyền và cài đặt
-
-- Đăng nhập, đăng xuất và xem thông tin tài khoản hiện tại.
-- Cập nhật hồ sơ cá nhân và đổi mật khẩu.
-- Quản lý người dùng, vai trò và phân quyền truy cập.
-- Cấu hình giao diện cá nhân và cấu hình AI.
-
-## Giao diện admin
-
-Khu vực admin tập trung vào quản trị người dùng, vai trò, phân quyền và theo dõi vận hành hệ thống. Các màn hình chính:
-
-| Màn hình | Mục đích |
-| --- | --- |
-| Dashboard admin | Theo dõi nhanh số liệu vận hành, cảnh báo và trạng thái hệ thống |
-| Quản lý người dùng | Xem danh sách tài khoản, tạo tài khoản, cập nhật thông tin và reset mật khẩu |
-| Vai trò và phân quyền | Gán quyền theo vai trò như `ADMIN`, `WAREHOUSE_MANAGER`, `WAREHOUSE_STAFF` |
-| Nhật ký hoạt động | Kiểm tra lịch sử thao tác của người dùng trong hệ thống |
-| Cấu hình hệ thống | Cấu hình hồ sơ, giao diện, mật khẩu và kết nối AI |
-
-Ảnh minh họa giao diện admin:
-
-![Dashboard admin](/screenshots/admin-dashboard.png)
-
-![Quản lý phân quyền admin](/screenshots/admin-security.png)
-
-![Cài đặt admin](/screenshots/admin-settings.png)
-
-> Lưu ảnh chụp màn hình vào `public/screenshots/` với đúng tên file ở trên để README hiển thị ảnh trực tiếp trên GitHub.
+- Dashboard tổng quan
+- Quản lý sản phẩm và danh mục
+- Quản lý nhà cung cấp và khách hàng
+- Quản lý kho và vị trí lưu trữ
+- Theo dõi tồn kho, cảnh báo tồn thấp và gần hết hạn
+- Nhập hàng: purchase order, phiếu nhập, putaway
+- Xuất hàng: sales order, picking
+- Kiểm kê kho
+- Hoàn trả hàng
+- Báo cáo và xuất Excel
+- Nhật ký hoạt động, thông báo
+- Quản lý người dùng, vai trò và phân quyền
+- Hồ sơ cá nhân, đổi mật khẩu, cài đặt giao diện
+- Trợ lý AI và cấu hình AI
 
 ## Route chính
 
