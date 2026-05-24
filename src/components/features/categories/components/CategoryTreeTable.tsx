@@ -22,6 +22,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types/category";
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 interface CategoryTreeTableProps {
   treeModel: {
     visibleNodes: Array<{ cat: Category; treeDepth: number; hasChildren: boolean }>;
@@ -61,7 +67,7 @@ export function CategoryTreeTable({
       ) : null}
 
       <div className="hidden overflow-x-auto md:block">
-        <Table className="min-w-200">
+        <Table className="min-w-230">
           <TableHeader className="bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
             <TableRow className="border-none hover:bg-transparent">
               <TableHead className="w-[35%] py-4 pl-14 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -70,11 +76,14 @@ export function CategoryTreeTable({
               <TableHead className="w-[25%] py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Đường dẫn (Path)
               </TableHead>
-              <TableHead className="w-[15%] py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-[12%] py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Sản phẩm
               </TableHead>
-              <TableHead className="w-[15%] py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className="w-[13%] py-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Trạng thái
+              </TableHead>
+              <TableHead className="w-[15%] py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Tạo lúc
               </TableHead>
               <TableHead className="w-[10%] py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 <span className="sr-only">Thao tác</span>
@@ -110,6 +119,9 @@ export function CategoryTreeTable({
                       <Skeleton className="h-5 w-24 rounded-full" />
                     </div>
                   </TableCell>
+                  <TableCell className="py-4">
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
                   <TableCell className="py-4 text-right">
                     <div className="flex justify-end">
                       <Skeleton className="size-8 rounded-lg" />
@@ -119,7 +131,7 @@ export function CategoryTreeTable({
               ))
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center">
+                <TableCell colSpan={6} className="py-10 text-center">
                   <EmptyState
                     icon={Tag}
                     title="Không thể tải nhóm hàng"
@@ -134,7 +146,7 @@ export function CategoryTreeTable({
               </TableRow>
             ) : treeModel.visibleNodes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center">
+                <TableCell colSpan={6} className="py-10 text-center">
                   <EmptyState
                     icon={Tag}
                     title={
@@ -260,6 +272,10 @@ export function CategoryTreeTable({
                       >
                         {cat.isActive ? "Đang hoạt động" : "Tạm dừng"}
                       </span>
+                    </TableCell>
+
+                    <TableCell className="whitespace-nowrap py-4 text-xs text-slate-500 dark:text-slate-400">
+                      {formatDateTime(cat.createdAt)}
                     </TableCell>
 
                     <TableCell className="py-4 text-right">
@@ -430,6 +446,9 @@ export function CategoryTreeTable({
 
                     <p className="mt-3 truncate rounded-lg bg-slate-50 px-2 py-1.5 font-mono text-xs text-slate-500 dark:bg-slate-800/70 dark:text-slate-400">
                       {cat.path || "Chưa có path"}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                      Tạo lúc: {formatDateTime(cat.createdAt)}
                     </p>
 
                     <div className="mt-3 flex items-center justify-between gap-2">

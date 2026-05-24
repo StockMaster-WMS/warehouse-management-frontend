@@ -32,6 +32,12 @@ import { formatLocationZoneLine } from "@/components/features/locations/utils";
 import type { Location, LocationOption } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
 
+function formatDateTime(value?: string | null) {
+    if (!value) return "—";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 function LocationTypeBadge({ type }: { type?: string | null }) {
     if (!type) return <Badge variant="outline">Chưa phân loại</Badge>;
     const lowerType = type.toLowerCase();
@@ -203,10 +209,11 @@ export function LocationsTable({
                                     />
                                 ) : null}
                             </TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[30%]">Vị trí</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[22%]">Kho & Vùng</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[14%]">Phân loại</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[16%]">TT</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[27%]">Vị trí</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Kho & Vùng</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[13%]">Phân loại</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">TT</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">Tạo lúc</TableHead>
                             <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -219,12 +226,13 @@ export function LocationsTable({
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-2 w-full rounded-full" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                    <TableCell className="px-4 py-3"><Skeleton className="h-3 w-28" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="ml-auto flex w-max gap-1"><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /></div></TableCell>
                                 </TableRow>
                             ))
                         ) : errorMessage ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="px-4 py-8 text-center">
+                                <TableCell colSpan={7} className="px-4 py-8 text-center">
                                     <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Không thể tải danh sách vị trí</p>
                                     <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errorMessage}</p>
                                     <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onRetry}>Thử lại</Button>
@@ -286,6 +294,10 @@ export function LocationsTable({
                                                     : <><CheckCircle2 className="size-3 text-emerald-400" /><span className="text-[10px] text-emerald-500">Đang hoạt động</span></>
                                                 }
                                             </div>
+                                        </TableCell>
+
+                                        <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                                            {formatDateTime(location.createdAt)}
                                         </TableCell>
 
                                         {/* Col 5: Actions - 3-dot menu */}
@@ -402,6 +414,7 @@ export function LocationsTable({
                                               <MapPin className="size-3.5" />
                                               {formatLocationZoneLine(location)}
                                           </p>
+                                          <p>Tạo lúc: {formatDateTime(location.createdAt)}</p>
                                       </div>
 
                                       <div className="mt-4 flex flex-wrap items-center gap-2">

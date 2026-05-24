@@ -71,6 +71,17 @@ function splitLocation(location: string) {
     };
 }
 
+function pickingLocationParts(item: PickingItem) {
+    const fallback = splitLocation(displayPickingLocation(item));
+    return {
+        code: displayPickingLocation(item),
+        zone: item.zone || fallback.rack,
+        aisle: item.aisle || "",
+        shelf: item.shelf || fallback.floor,
+        position: item.position || fallback.bin,
+    };
+}
+
 export function OperationTab() {
     const router = useRouter();
     const pathname = usePathname();
@@ -625,11 +636,18 @@ function OrderCard({
     onStart: () => void;
 }) {
     return (
-        <button
-            type="button"
+        <div
+            role="button"
+            tabIndex={0}
             onClick={onOpen}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen();
+                }
+            }}
             className={cn(
-                "w-full rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:border-indigo-200 hover:shadow-md",
+                "w-full cursor-pointer rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
                 active ? "border-indigo-500 ring-1 ring-indigo-500" : "border-slate-100",
             )}
         >
@@ -672,7 +690,7 @@ function OrderCard({
                     </div>
                 </div>
             </div>
-        </button>
+        </div>
     );
 }
 
@@ -909,14 +927,14 @@ function DesktopOrderRail({ activeSo, orders }: { activeSo: string; orders: Pick
 function MobileStepProgress({ stepIndex }: { stepIndex: number }) {
     const steps = ["Quét vị trí kệ", "Quét sản phẩm", "Xác nhận số lượng"];
     return (
-        <div className="my-6 grid grid-cols-3 items-start gap-2">
+        <div className="my-3 grid grid-cols-3 items-start gap-2">
             {steps.map((label, index) => {
                 const step = index + 1;
                 return (
-                    <div key={label} className="relative flex flex-col items-center gap-3 text-center">
-                        {index < 2 ? <div className={cn("absolute left-1/2 top-5 h-1 w-full", stepIndex > step ? "bg-indigo-600" : "bg-slate-200")} /> : null}
-                        <span className={cn("relative z-10 flex size-10 items-center justify-center rounded-full text-base font-bold", step === stepIndex ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-950")}>{step}</span>
-                        <p className={cn("text-sm font-semibold leading-tight", step === stepIndex ? "text-indigo-600" : "text-slate-500")}>{label}</p>
+                    <div key={label} className="relative flex flex-col items-center gap-1.5 text-center">
+                        {index < 2 ? <div className={cn("absolute left-1/2 top-4 h-0.5 w-full", stepIndex > step ? "bg-indigo-600" : "bg-slate-200")} /> : null}
+                        <span className={cn("relative z-10 flex size-8 items-center justify-center rounded-full text-sm font-bold", step === stepIndex ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-950")}>{step}</span>
+                        <p className={cn("text-[11px] font-semibold leading-tight", step === stepIndex ? "text-indigo-600" : "text-slate-500")}>{label}</p>
                     </div>
                 );
             })}
@@ -924,28 +942,41 @@ function MobileStepProgress({ stepIndex }: { stepIndex: number }) {
     );
 }
 
-function MobileProductCard({ activeItem, loc }: { activeItem: PickingItem; loc: ReturnType<typeof splitLocation> }) {
+function MobileProductCard({ activeItem, loc }: { activeItem: PickingItem; loc: ReturnType<typeof pickingLocationParts> }) {
     return (
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="grid grid-cols-[72px_1fr] gap-4">
-                <ProductVisual className="h-24 w-[72px]" />
-                <div className="relative">
-                    <Package className="absolute right-0 top-3 size-16 text-slate-100" />
-                    <p className="text-sm font-semibold text-slate-500">Sản phẩm cần lấy</p>
-                    <h2 className="relative mt-1 text-xl font-bold leading-snug">{activeItem.productName || activeItem.productSku}</h2>
-                    <p className="relative mt-2 text-base font-semibold text-slate-500">{activeItem.productSku}</p>
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+            <div className="grid grid-cols-[56px_1fr] gap-3">
+                <ProductVisual className="h-16 w-14" />
+                <div className="relative min-w-0">
+                    <Package className="absolute right-0 top-1 size-10 text-slate-100" />
+                    <p className="text-[11px] font-semibold uppercase text-slate-500">Sản phẩm cần lấy</p>
+                    <h2 className="relative mt-0.5 line-clamp-2 text-sm font-bold leading-snug">{activeItem.productName || activeItem.productSku}</h2>
+                    <p className="relative mt-1 text-xs font-semibold text-slate-500">{activeItem.productSku}</p>
                 </div>
             </div>
-            <div className="mt-4 grid grid-cols-[1.35fr_0.9fr] gap-3">
-                <div className="rounded-xl bg-indigo-50 p-4">
-                    <p className="flex items-center gap-2 text-sm font-semibold text-indigo-600"><MapPin className="size-4" />Vị trí kệ</p>
-                    <p className="mt-2 text-2xl font-bold text-indigo-600">{displayPickingLocation(activeItem)}</p>
-                    <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-500">Kệ {loc.rack} <span className="mx-1">•</span> Tầng {loc.floor} <span className="mx-1">•</span> Ô {loc.bin}</p>
+            <div className="mt-3 grid grid-cols-[1.25fr_0.8fr] gap-2">
+                <div className="rounded-lg bg-indigo-50 p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600"><MapPin className="size-3.5" />Vị trí kệ</p>
+                    <p className="mt-1 truncate text-lg font-bold text-indigo-600">{loc.code}</p>
+                    <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+                        <div className="rounded-md bg-white px-1 py-1">
+                            <p className="text-[10px] font-medium text-slate-400">Kệ</p>
+                            <p className="truncate text-xs font-bold text-slate-700">{loc.zone}</p>
+                        </div>
+                        <div className="rounded-md bg-white px-1 py-1">
+                            <p className="text-[10px] font-medium text-slate-400">Tầng</p>
+                            <p className="truncate text-xs font-bold text-slate-700">{loc.shelf}</p>
+                        </div>
+                        <div className="rounded-md bg-white px-1 py-1">
+                            <p className="text-[10px] font-medium text-slate-400">Ô</p>
+                            <p className="truncate text-xs font-bold text-slate-700">{loc.position}</p>
+                        </div>
+                    </div>
                 </div>
-                <div className="rounded-xl bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-600">Số lượng cần lấy</p>
-                    <p className="mt-4 text-2xl font-bold">{activeItem.qtyToPick}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-500">{activeItem.baseUnit || "Cái"}</p>
+                <div className="rounded-lg bg-slate-50 p-3 text-center">
+                    <p className="text-xs font-semibold text-slate-600">Cần lấy</p>
+                    <p className="mt-1 text-3xl font-bold leading-none text-slate-950">{activeItem.qtyToPick}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{activeItem.baseUnit || "Cái"}</p>
                 </div>
             </div>
         </div>
@@ -979,7 +1010,7 @@ function MobileStepCards({
 }) {
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
     return (
-        <div className="mt-5 space-y-4">
+        <div className="mt-3 space-y-3">
             <MobileActiveStep
                 active={currentStep === "location"}
                 done={stepIndex > 1}
@@ -1004,17 +1035,17 @@ function MobileStepCards({
                 onScan={onScanSku}
                 onShowGuide={onShowGuide}
             />
-        <div className={cn("rounded-2xl border bg-white p-4 shadow-sm", currentStep === "qty" ? "border-indigo-200" : "border-slate-100")}>
-                <div className="flex items-center gap-3">
-                    <span className={cn("flex size-10 items-center justify-center rounded-full text-base font-bold", currentStep === "qty" ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-950")}>3</span>
+        <div className={cn("rounded-xl border bg-white p-3 shadow-sm", currentStep === "qty" ? "border-indigo-200" : "border-slate-100")}>
+                <div className="flex items-center gap-2.5">
+                    <span className={cn("flex size-8 items-center justify-center rounded-full text-sm font-bold", currentStep === "qty" ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-950")}>3</span>
                     <div className="flex-1">
-                        <p className="text-base font-bold text-slate-700">Bước 3 - Xác nhận số lượng</p>
-                        <p className="text-sm font-medium text-slate-500">Xác nhận và hoàn tất việc lấy hàng</p>
+                        <p className="text-sm font-bold text-slate-700">Bước 3 - Xác nhận số lượng</p>
+                        <p className="text-xs font-medium text-slate-500">Xác nhận và hoàn tất việc lấy hàng</p>
                     </div>
-                    <ChevronDown className="size-5 text-slate-500" />
+                    <ChevronDown className="size-4 text-slate-500" />
                 </div>
                 {currentStep === "qty" ? (
-                    <Input type="number" value={pickedQty} onChange={(event) => onSetPickedQty(event.target.value)} className="mt-5 h-14 text-center text-2xl font-semibold" />
+                    <Input type="number" value={pickedQty} onChange={(event) => onSetPickedQty(event.target.value)} className="mt-3 h-11 text-center text-xl font-semibold" />
                 ) : null}
             </div>
         </div>
@@ -1045,41 +1076,41 @@ function MobileActiveStep({
     onShowGuide: () => void;
 }) {
     return (
-        <div className={cn("rounded-2xl border bg-white p-4 shadow-sm", active ? "border-indigo-200" : "border-slate-100")}>
-            <div className="flex items-center gap-3">
-                <span className={cn("flex size-10 items-center justify-center rounded-full text-base font-bold", active ? "bg-indigo-600 text-white" : done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-950")}>{done ? <CheckCircle2 className="size-6" /> : step}</span>
+        <div className={cn("rounded-xl border bg-white p-3 shadow-sm", active ? "border-indigo-200" : "border-slate-100")}>
+            <div className="flex items-center gap-2.5">
+                <span className={cn("flex size-8 items-center justify-center rounded-full text-sm font-bold", active ? "bg-indigo-600 text-white" : done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-950")}>{done ? <CheckCircle2 className="size-5" /> : step}</span>
                 <div className="flex-1">
-                    <p className="text-base font-bold text-indigo-600">{label}</p>
-                    {!active ? <p className="text-sm font-medium text-slate-500">{step === 2 ? "Quét từng sản phẩm để ghi nhận số lượng" : "Đưa mã kệ vào vùng quét"}</p> : null}
+                    <p className="text-sm font-bold text-indigo-600">{label}</p>
+                    {!active ? <p className="text-xs font-medium text-slate-500">{step === 2 ? "Quét từng sản phẩm để ghi nhận số lượng" : "Đưa mã kệ vào vùng quét"}</p> : null}
                 </div>
                 {active ? (
-                    <Button variant="outline" className="h-9 rounded-lg border-indigo-200 px-3 text-sm font-semibold text-indigo-600" onClick={onShowGuide}>
-                        <HelpCircle className="mr-1.5 size-4" />
+                    <Button variant="outline" className="h-8 rounded-lg border-indigo-200 px-2 text-xs font-semibold text-indigo-600" onClick={onShowGuide}>
+                        <HelpCircle className="mr-1 size-3.5" />
                         Hướng dẫn
                     </Button>
-                ) : <ChevronDown className="size-5 text-slate-500" />}
+                ) : <ChevronDown className="size-4 text-slate-500" />}
             </div>
             {active ? (
-                <div className="mt-5 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-4 text-center">
-                    <Barcode className="mx-auto size-11 text-indigo-600" />
-                    <h3 className="mt-3 text-xl font-bold text-slate-700">Quét mã {step === 1 ? "KỆ / VỊ TRÍ" : "SẢN PHẨM"}</h3>
-                    <p className="mt-1.5 text-sm font-medium text-slate-500">Đưa mã vạch vào vùng quét</p>
-                    <div className="mt-4 overflow-hidden rounded-xl">
+                <div className="mt-3 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-3 text-center">
+                    <Barcode className="mx-auto size-8 text-indigo-600" />
+                    <h3 className="mt-2 text-base font-bold text-slate-700">Quét mã {step === 1 ? "KỆ / VỊ TRÍ" : "SẢN PHẨM"}</h3>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Đưa mã vạch vào vùng quét</p>
+                    <div className="mt-3 overflow-hidden rounded-lg">
                         <BarcodeScanner
-                            className="min-h-[170px] rounded-xl [&_video]:max-h-[170px] [&_video]:object-cover"
-                            qrbox={{ width: 180, height: 120 }}
+                            className="min-h-[130px] rounded-lg [&_video]:max-h-[130px] [&_video]:object-cover"
+                            qrbox={{ width: 150, height: 100 }}
                             onScanSuccess={onScan}
                             onScanError={() => toast.error("Cần cấp quyền Camera để quét.")}
                         />
                     </div>
                     <div className="mt-3 flex gap-2">
-                        <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="h-11 bg-white text-center text-sm font-semibold" />
-                        <Button variant="outline" className="h-11 shrink-0 rounded-lg bg-white text-sm font-semibold" onClick={onManualSubmit}>
-                            <Keyboard className="mr-2 size-4" />
+                        <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="h-10 bg-white text-center text-sm font-semibold" />
+                        <Button variant="outline" className="h-10 shrink-0 rounded-lg bg-white px-3 text-xs font-semibold" onClick={onManualSubmit}>
+                            <Keyboard className="mr-1.5 size-3.5" />
                             Nhập mã
                         </Button>
                     </div>
-                    <div className="mt-4 rounded-xl bg-white/80 py-3 text-sm font-semibold text-slate-400">
+                    <div className="mt-3 rounded-lg bg-white/80 py-2 text-xs font-semibold text-slate-400">
                         {done ? "Đã quét đúng vị trí" : "Đang chờ quét"}
                     </div>
                 </div>
@@ -1135,7 +1166,7 @@ function PickingScanFlow({
 }) {
     const stepIndex = currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
     const [isMobileViewport, setIsMobileViewport] = useState(false);
-    const loc = splitLocation(displayPickingLocation(activeItem));
+    const loc = pickingLocationParts(activeItem);
     const picked = Number(activeItem.qtyPicked || 0);
     const remaining = Math.max(Number(activeItem.qtyToPick || 0) - picked, 0);
     const progress = activeItem.qtyToPick ? Math.round((picked / Number(activeItem.qtyToPick)) * 100) : 0;
@@ -1156,7 +1187,7 @@ function PickingScanFlow({
         <div className="bg-slate-50 text-slate-950">
             {isMobileViewport ? (
                 <div className="min-h-screen bg-slate-50">
-                    <div className="bg-slate-50 px-4 pb-24 pt-3">
+                    <div className="bg-slate-50 px-3 pb-20 pt-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <button type="button" onClick={onBack} className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-indigo-600 shadow-sm">
@@ -1167,7 +1198,7 @@ function PickingScanFlow({
                                     <p className="text-base font-semibold">{activeItem.salesOrderNumber || "Đơn hiện tại"}</p>
                                 </div>
                             </div>
-                            <div className="rounded-full border border-indigo-100 bg-indigo-50 px-4 py-2 text-base font-semibold text-indigo-600">{stepIndex} / 3</div>
+                            <div className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-600">{stepIndex} / 3</div>
                         </div>
 
                         <MobileStepProgress stepIndex={stepIndex} />
@@ -1187,13 +1218,13 @@ function PickingScanFlow({
                         />
                     </div>
 
-                    <div className="fixed inset-x-0 bottom-0 grid grid-cols-[0.8fr_1.9fr] gap-3 border-t border-slate-200 bg-white px-4 py-3">
-                        <Button variant="outline" className="h-12 rounded-xl border-red-200 text-sm font-semibold text-red-600" onClick={() => onExceptionOpenChange(true)}>
-                            <AlertTriangle className="mr-2 size-5" />
+                    <div className="fixed inset-x-0 bottom-0 grid grid-cols-[0.8fr_1.9fr] gap-2 border-t border-slate-200 bg-white px-3 py-2">
+                        <Button variant="outline" className="h-11 rounded-xl border-red-200 text-sm font-semibold text-red-600" onClick={() => onExceptionOpenChange(true)}>
+                            <AlertTriangle className="mr-1.5 size-4" />
                             Báo lỗi
                         </Button>
-                        <Button className="h-12 rounded-xl bg-indigo-600 text-sm font-semibold hover:bg-indigo-700" onClick={currentStep === "qty" ? onConfirmPick : onBack}>
-                            {currentStep === "qty" ? "Hoàn tất" : "Tạm dừng"} <Pause className="ml-2 size-5" />
+                        <Button className="h-11 rounded-xl bg-indigo-600 text-sm font-semibold hover:bg-indigo-700" onClick={currentStep === "qty" ? onConfirmPick : onBack}>
+                            {currentStep === "qty" ? "Hoàn tất" : "Tạm dừng"} <Pause className="ml-2 size-4" />
                         </Button>
                     </div>
                 </div>
@@ -1228,8 +1259,8 @@ function PickingScanFlow({
                                             <h2 className="max-w-xl text-base font-semibold leading-snug">{activeItem.productName || activeItem.productSku}</h2>
                                             <span className="shrink-0 rounded bg-indigo-100 px-2 py-1 text-[11px] font-medium text-indigo-600">{activeItem.productSku}</span>
                                         </div>
-                                        <p className="mt-3 text-sm font-medium text-slate-500">Vị trí kho: <span className="text-base font-semibold text-indigo-600">{displayPickingLocation(activeItem)}</span></p>
-                                        <p className="mt-2 text-xs font-medium text-slate-500">Kệ: {loc.rack} <span className="mx-2">•</span> Tầng: {loc.floor} <span className="mx-2">•</span> Ô: {loc.bin}</p>
+                                        <p className="mt-3 text-sm font-medium text-slate-500">Vị trí kho: <span className="text-base font-semibold text-indigo-600">{loc.code}</span></p>
+                                        <p className="mt-2 text-xs font-medium text-slate-500">Kệ: {loc.zone} <span className="mx-2">•</span> Tầng: {loc.shelf} <span className="mx-2">•</span> Ô: {loc.position}</p>
                                     </div>
                                 </div>
                                 <div className="border-l border-slate-100 px-5">

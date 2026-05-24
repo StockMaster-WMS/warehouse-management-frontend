@@ -107,6 +107,12 @@ function StatusPill({ status }: { status: string | null | undefined }) {
   );
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 
 export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(0);
@@ -479,6 +485,7 @@ export default function PurchaseOrdersPage() {
                   </TableHead>
                   <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
                   <TableHead className="w-[180px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
+                  <TableHead className="w-[170px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tạo lúc</TableHead>
                   <TableHead className="w-[120px] py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -490,12 +497,13 @@ export default function PurchaseOrdersPage() {
                       <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
                       <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
                       <TableCell className="px-3 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
                       <TableCell className="py-4 pl-3 pr-6 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
                     </TableRow>
                   ))
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12">
+                    <TableCell colSpan={6} className="py-12">
                       <EmptyState
                         icon={AlertCircle}
                         title="Không tải được danh sách đơn nhập"
@@ -506,7 +514,7 @@ export default function PurchaseOrdersPage() {
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12">
+                    <TableCell colSpan={6} className="py-12">
                       <EmptyState
                         icon={FileText}
                         title="Chưa có đơn nhập"
@@ -532,6 +540,9 @@ export default function PurchaseOrdersPage() {
                       <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
                       <TableCell className="px-3 py-4">
                         <StatusPill status={po.status} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-3 py-4 text-xs text-slate-500 dark:text-slate-400">
+                        {formatDateTime(po.createdAt)}
                       </TableCell>
                       <TableCell className="py-4 pl-3 pr-6 text-right">
                         <Button

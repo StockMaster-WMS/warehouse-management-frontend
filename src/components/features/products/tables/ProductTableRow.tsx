@@ -30,7 +30,7 @@ type ProductTableRowProps = {
 
 function formatDate(value?: string) {
   if (!value) return "--";
-  return new Date(value).toLocaleDateString("vi-VN");
+  return new Date(value).toLocaleString("vi-VN");
 }
 
 function formatStockValue(value?: number | null) {
