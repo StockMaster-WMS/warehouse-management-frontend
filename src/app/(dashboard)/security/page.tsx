@@ -116,6 +116,10 @@ function roleCodesFromOptions(roles?: Array<{ code: string }>): UserRole[] {
   return fromApi?.length ? fromApi : [...ALL_ROLES];
 }
 
+function needsWarehouseScope(roles: UserRole[]) {
+  return roles.includes("WAREHOUSE_MANAGER") || roles.includes("WAREHOUSE_STAFF");
+}
+
 function validateUserForm(form: UserFormState, mode: "create" | "edit") {
   if (form.username.trim().length < 3 || form.username.trim().length > 50) {
     return "Username phải từ 3 đến 50 ký tự.";
@@ -124,25 +128,27 @@ function validateUserForm(form: UserFormState, mode: "create" | "edit") {
   if (!form.fullName.trim()) return "Họ tên là bắt buộc.";
   if (mode === "create" && form.password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự.";
   if (form.roles.length === 0) return "Vui lòng chọn ít nhất 1 vai trò.";
-  if (form.roles.includes("WAREHOUSE_STAFF") && form.warehouseIds.length === 0) {
-    return "Nhân viên kho phải được gán ít nhất một kho.";
+  if (needsWarehouseScope(form.roles) && form.warehouseIds.length === 0) {
+    return "Quản lý kho/Nhân viên kho phải được gán ít nhất một kho.";
   }
   return null;
 }
 
 function toForm(user: ManagedUser): UserFormState {
+  const roles = getUserRoles(user.roles);
   return {
     username: user.username,
     email: user.email ?? "",
     fullName: user.fullName ?? user.name ?? "",
     password: "",
-    roles: getUserRoles(user.roles),
+    roles,
     isActive: isActiveUser(user),
-    warehouseIds: user.warehouseIds ?? [],
+    warehouseIds: needsWarehouseScope(roles) ? (user.warehouseIds ?? []) : [],
   };
 }
 
 function warehouseLabelFromUser(user: ManagedUser) {
+  if (!needsWarehouseScope(getUserRoles(user.roles))) return "Không giới hạn theo kho";
   const names = user.warehouseNames ?? [];
   if (names.length) return names.join(", ");
   const ids = user.warehouseIds ?? [];
@@ -177,7 +183,7 @@ export default function SecurityPage() {
   });
   const { data: statisticsData, isFetching: isStatsFetching, refetch: refetchStats } = useGetUserStatisticsQuery();
   const { data: rolesData } = useGetUserRolesQuery();
-  const { data: warehousesData, isFetching: isWarehousesFetching } = useGetWarehousesQuery({ page: 0, size: 200, isActive: true });
+  const { data: warehousesData, isFetching: isWarehousesFetching } = useGetWarehousesQuery({ page: 0, size: 1000, isActive: true });
   const { data: detailData, isFetching: isDetailLoading } = useGetUserDetailQuery(detailUserId ?? "", {
     skip: !detailUserId,
   });
@@ -220,14 +226,17 @@ export default function SecurityPage() {
   function toggleRole(nextRole: UserRole) {
     setForm((current) => {
       const exists = current.roles.includes(nextRole);
+      const nextRoles = exists ? current.roles.filter((item) => item !== nextRole) : [...current.roles, nextRole];
       return {
         ...current,
-        roles: exists ? current.roles.filter((item) => item !== nextRole) : [...current.roles, nextRole],
+        roles: nextRoles,
+        warehouseIds: needsWarehouseScope(nextRoles) ? current.warehouseIds : [],
       };
     });
   }
 
   function toggleWarehouse(warehouseId: string) {
+    if (!needsWarehouseScope(form.roles)) return;
     setForm((current) => {
       const exists = current.warehouseIds.includes(warehouseId);
       return {
@@ -258,6 +267,7 @@ export default function SecurityPage() {
     }
 
     try {
+      const warehouseIds = needsWarehouseScope(form.roles) ? form.warehouseIds : [];
       if (formMode === "create") {
         const res = await createUser({
           username: form.username.trim(),
@@ -265,7 +275,7 @@ export default function SecurityPage() {
           fullName: form.fullName.trim(),
           password: form.password,
           roles: form.roles,
-          warehouseIds: form.warehouseIds,
+          warehouseIds,
         }).unwrap();
         toast.success(res.message || "Đã tạo người dùng.");
       } else if (editingUser) {
@@ -276,7 +286,7 @@ export default function SecurityPage() {
           fullName: form.fullName.trim(),
           roles: form.roles,
           isActive: form.isActive,
-          warehouseIds: form.warehouseIds,
+          warehouseIds,
         }).unwrap();
         toast.success(res.message || "Đã cập nhật người dùng.");
       }
@@ -362,6 +372,7 @@ export default function SecurityPage() {
 
   const formIsSelf = editingUser?.id === currentUser?.id;
   const formSelfAdmin = formIsSelf && getUserRoles(editingUser?.roles).includes("ADMIN");
+  const warehouseScopeEnabled = needsWarehouseScope(form.roles);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -649,11 +660,15 @@ export default function SecurityPage() {
                 <div className="flex items-center justify-between gap-3">
                   <label className="text-xs font-semibold text-muted-foreground">Kho được phép thao tác</label>
                   <span className="text-[11px] text-muted-foreground">
-                    {form.warehouseIds.length ? `${form.warehouseIds.length} kho đã chọn` : "Chưa chọn kho"}
+                    {!warehouseScopeEnabled ? "Không giới hạn theo kho" : form.warehouseIds.length ? `${form.warehouseIds.length} kho đã chọn` : "Chưa chọn kho"}
                   </span>
                 </div>
-                <div className="max-h-44 overflow-auto rounded-xl border border-border p-2">
-                  {isWarehousesFetching ? (
+                <div className={cn("max-h-44 overflow-auto rounded-xl border border-border p-2", !warehouseScopeEnabled && "bg-muted/40 opacity-70")}>
+                  {!warehouseScopeEnabled ? (
+                    <div className="p-3 text-sm text-muted-foreground">
+                      Chỉ cần chọn kho cho vai trò Quản lý kho hoặc Nhân viên kho.
+                    </div>
+                  ) : isWarehousesFetching ? (
                     <div className="p-3 text-sm text-muted-foreground">Đang tải danh sách kho…</div>
                   ) : warehouseOptions.length ? (
                     <div className="grid gap-2">
@@ -663,6 +678,7 @@ export default function SecurityPage() {
                           <button
                             key={warehouse.id}
                             type="button"
+                            disabled={!warehouseScopeEnabled}
                             onClick={() => toggleWarehouse(warehouse.id)}
                             className={cn(
                               "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",

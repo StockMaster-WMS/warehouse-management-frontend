@@ -29,7 +29,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   Table,
@@ -42,12 +41,16 @@ import {
 import { PaginationFooter } from "@/components/ui/pagination-footer";
 import { apiErrMessage } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
-import { useGetLocationsListQuery } from "@/store/services/location.service";
 import {
   useGetPurchaseOrderDetailQuery,
   useGetPurchaseOrdersQuery,
 } from "@/store/services/purchase-order.service";
-import { useCreateInboundReceiptMutation } from "@/store/services/inbound.service";
+import {
+  useCreateInboundReceiptMutation,
+  useLazyGetInboundLocationSuggestionsQuery,
+} from "@/store/services/inbound.service";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import type { InboundLocationSuggestion } from "@/types/inbound-receipt";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 import { statusTone } from "@/lib/design-system";
@@ -292,25 +295,17 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   const po = detail?.purchaseOrder;
   const items = useMemo(() => detail?.items ?? [], [detail?.items]);
 
-  const { data: whLocRes } = useGetLocationsListQuery(
-    { warehouseId: po?.warehouseId ?? "", size: 100 },
-    { skip: !po?.warehouseId },
-  );
-  const locationOptions = Array.isArray(whLocRes?.data?.content)
-    ? whLocRes.data.content
-    : Array.isArray(whLocRes?.data)
-      ? whLocRes.data
-      : [];
-
-  const [locationId, setLocationId] = useState("");
   const [note, setNote] = useState("");
-  const [lines, setLines] = useState<Record<string, { qty: string; note: string }>>({});
+  const [lines, setLines] = useState<Record<string, { qty: string; note: string; locationId: string }>>({});
+  const [locationSuggestions, setLocationSuggestions] = useState<Record<string, InboundLocationSuggestion[]>>({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState<Record<string, boolean>>({});
+  const [loadLocationSuggestions] = useLazyGetInboundLocationSuggestionsQuery();
 
   const linesInit = useMemo(() => {
-    const init: Record<string, { qty: string; note: string }> = {};
+    const init: Record<string, { qty: string; note: string; locationId: string }> = {};
     for (const item of items) {
       const remain = Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0);
-      if (remain > 0) init[item.id] = { qty: "", note: "" };
+      if (remain > 0) init[item.id] = { qty: "", note: "", locationId: "" };
     }
     return init;
   }, [items]);
@@ -323,8 +318,46 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
     return m;
   }, [linesInit, lines]);
 
-  function setLine(id: string, field: "qty" | "note", val: string) {
+  function setLine(id: string, field: "qty" | "note" | "locationId", val: string) {
     setLines((prev) => ({ ...prev, [id]: { ...mergedLines[id], [field]: val } }));
+  }
+
+  async function loadLineLocations(itemId: string) {
+    if (!itemId || locationSuggestions[itemId]?.length || loadingSuggestions[itemId]) {
+      return;
+    }
+    setLoadingSuggestions((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      const res = await loadLocationSuggestions({
+        poItemId: itemId,
+        limit: 20,
+      }).unwrap();
+      setLocationSuggestions((prev) => ({ ...prev, [itemId]: res.data ?? [] }));
+      if ((res.data ?? []).length === 0) {
+        console.info("Không có vị trí phù hợp cho poItemId", itemId);
+      }
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không tải được gợi ý vị trí nhập hàng"));
+    } finally {
+      setLoadingSuggestions((prev) => ({ ...prev, [itemId]: false }));
+    }
+  }
+
+  function locationSuggestionOptions(itemId: string) {
+    const suggestions = locationSuggestions[itemId] ?? [];
+    if (suggestions.length === 0) {
+      return [];
+    }
+
+    return suggestions.map((loc) => ({
+      value: loc.locationId,
+      label: `${loc.locationCode} - ${loc.locationType ?? "STORAGE"}${loc.zone ? ` - Zone ${loc.zone}` : ""}`,
+      hint: loc.existingProductLocation
+        ? `Vị trí cũ của sản phẩm · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`
+        : loc.emptyLocation
+          ? "Vị trí trống"
+          : `Vị trí phù hợp · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`,
+    }));
   }
 
   // Auto-focus first qty input
@@ -340,13 +373,19 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const validLines: { poItemId: string; receivedQty: number; note?: string }[] = [];
+    const validLines: { poItemId: string; receivedQty: number; locationId: string; note?: string }[] = [];
     for (const [poItemId, value] of Object.entries(mergedLines)) {
       const qty = Number(value.qty.replace(",", "."));
       if (!qty || Number.isNaN(qty) || qty <= 0) continue;
+      if (!value.locationId?.trim()) {
+        const item = items.find((row) => row.id === poItemId);
+        toast.error(`Vui lòng chọn vị trí nhập cho ${item?.productSku ?? "dòng hàng"}`);
+        return;
+      }
       validLines.push({
         poItemId,
         receivedQty: qty,
+        locationId: value.locationId.trim(),
         ...(value.note.trim() ? { note: value.note.trim() } : {}),
       });
     }
@@ -367,15 +406,10 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       }
     }
 
-    if (!locationId.trim()) {
-      toast.error("Vui lòng chọn vị trí nhận hàng");
-      return;
-    }
-
     try {
       const res = await createGrn({
         purchaseOrderId: poId,
-        locationId: locationId.trim(),
+        locationId: null,
         ...(note.trim() ? { note: note.trim() } : {}),
         items: validLines,
       }).unwrap();
@@ -481,6 +515,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                     <TableHead className="ui-label p-3 text-right">Đã nhận</TableHead>
                     <TableHead className="ui-label p-3 text-right">Còn lại</TableHead>
                     <TableHead className="ui-label w-36 p-3 text-right">Nhập lần này ★</TableHead>
+                    <TableHead className="ui-label min-w-56 p-3">Vị trí nhập ★</TableHead>
                     <TableHead className="ui-label p-3">Ghi chú</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -535,6 +570,26 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                           )}
                         </TableCell>
                         <TableCell className="p-3">
+                          <SearchableSelect
+                            options={locationSuggestionOptions(item.id)}
+                            value={lineVal.locationId}
+                            onValueChange={(locationId) => setLine(item.id, "locationId", locationId)}
+                            onOpenChange={(open) => {
+                              if (open) void loadLineLocations(item.id);
+                            }}
+                            placeholder="Chọn vị trí nhập..."
+                            searchPlaceholder="Tìm mã vị trí..."
+                            emptyText="Không có vị trí phù hợp trong kho của đơn nhập này"
+                            dialogTitle={`Chọn vị trí nhập cho ${item.productSku}`}
+                            loading={Boolean(loadingSuggestions[item.id])}
+                            disabled={!po?.warehouseId}
+                            className={cn(
+                              "h-8 rounded-lg text-xs",
+                              hasValue && !lineVal.locationId && "border-destructive ring-1 ring-destructive/30",
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="p-3">
                           <Input
                             value={lineVal.note}
                             onChange={(e) => setLine(item.id, "note", e.target.value)}
@@ -552,42 +607,7 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
 
           <div className="ui-surface p-5">
             <p className="ui-label mb-4">Thông tin bổ sung</p>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-foreground">
-                  Vị trí nhận hàng <span className="text-destructive">*</span>
-                </label>
-                <p className="text-xs text-muted-foreground">Chọn khu vực hoặc dock tiếp nhận hàng</p>
-                {locationOptions.length === 0 ? (
-                  <div className="rounded-lg border border-warning/25 bg-warning-soft px-3 py-2.5 text-xs text-warning-foreground">
-                    Kho này chưa có vị trí nào. Vui lòng tạo vị trí cho kho trước khi nhập hàng.
-                  </div>
-                ) : (
-                  <Select
-                    value={locationId || "__empty__"}
-                    onValueChange={(v) => setLocationId(!v || v === "__empty__" ? "" : v)}
-                  >
-                    <SelectTrigger className="h-10 rounded-lg">
-                      <SelectValue>
-                        {locationId
-                          ? (locationOptions.find((l) => l.id === locationId)?.code ??
-                            locationOptions.find((l) => l.id === locationId)?.name ??
-                            locationId)
-                          : <span className="text-muted-foreground">Chọn vị trí nhận hàng…</span>}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg">
-                      {locationOptions.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
-                          {loc.code ?? loc.name ?? loc.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
+            <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">
                   Ghi chú chung <span className="text-xs font-normal text-muted-foreground">(tuỳ chọn)</span>
                 </label>
@@ -599,7 +619,6 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
                   rows={2}
                   className="resize-none rounded-lg text-sm"
                 />
-              </div>
             </div>
           </div>
 

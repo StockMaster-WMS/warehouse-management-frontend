@@ -35,6 +35,7 @@ type SearchableSelectProps = {
   serverSearch?: boolean;
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
+  onOpenChange?: (open: boolean) => void;
   className?: string;
 };
 
@@ -54,6 +55,7 @@ function SearchableSelect({
   serverSearch,
   searchQuery: searchQueryProp,
   onSearchChange,
+  onOpenChange,
   className,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
@@ -94,7 +96,10 @@ function SearchableSelect({
         type="button"
         variant="outline"
         disabled={disabled}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          onOpenChange?.(true);
+        }}
         className={cn(
           "h-10 w-full justify-between border-slate-200 bg-slate-50/50 px-3 font-normal text-left hover:bg-slate-100/80 dark:border-slate-700 dark:bg-slate-950/50 dark:hover:bg-slate-900",
           !selected && "text-muted-foreground",
@@ -111,7 +116,13 @@ function SearchableSelect({
         <ChevronDown className="size-4 shrink-0 opacity-50" />
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          onOpenChange?.(nextOpen);
+        }}
+      >
         <DialogContent
           className="flex max-h-[min(85dvh,32rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
           showCloseButton

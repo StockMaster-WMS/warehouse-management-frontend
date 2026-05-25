@@ -6,6 +6,7 @@ import {
 } from "@/types/api";
 import type {
   CreateReturnRequestPayload,
+  DispositionReturnPayload,
   ReceiveReturnPayload,
   ReturnLine,
   ReturnReason,
@@ -15,6 +16,7 @@ import type {
   ReturnStatus,
   ReturnType,
 } from "@/types/returns";
+import type { Location } from "@/types/location";
 
 export type GetReturnRequestsParams = {
   page?: number;
@@ -36,6 +38,11 @@ export type GetReturnReportParams = {
   returnType?: ReturnType | "";
   createdFrom?: string;
   createdTo?: string;
+};
+
+export type GetReturnLocationsParams = {
+  warehouseId: string;
+  condition?: string;
 };
 
 function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
@@ -146,6 +153,13 @@ function normalizeReturnLine(
     notes: item.notes ?? item.note ?? null,
     lotNumber: item.lotNumber ?? null,
     condition: item.condition ?? null,
+    dispositionAction: item.dispositionAction ?? null,
+    dispositionLocationId: item.dispositionLocationId ?? null,
+    dispositionLocationCode: item.dispositionLocationCode ?? null,
+    dispositionAt: item.dispositionAt ?? null,
+    dispositionBy: item.dispositionBy ?? null,
+    dispositionNote: item.dispositionNote ?? null,
+    supplierReturnRmaId: item.supplierReturnRmaId ?? null,
   };
 }
 
@@ -303,6 +317,24 @@ const returnApi = baseApi.injectEndpoints({
       }),
     }),
 
+    getReturnLocations: builder.query<ApiResponse<Location[]>, GetReturnLocationsParams>({
+      query: ({ warehouseId, condition }) => ({
+        url: "/rma/return-locations",
+        method: "GET",
+        params: {
+          warehouseId,
+          ...(condition?.trim() ? { condition: condition.trim() } : {}),
+        },
+      }),
+      transformResponse: (response: ApiResponse<Location[]> | Location[]) =>
+        Array.isArray(response)
+          ? { success: true, message: "OK", data: response, timestamp: new Date().toISOString() }
+          : response,
+      providesTags: (_result, _error, arg) => [
+        { type: "Location" as const, id: `RMA-${arg.warehouseId}-${arg.condition || "QUARANTINE"}` },
+      ],
+    }),
+
     receiveReturn: builder.mutation<
       ApiResponse<ReturnRequest>,
       { id: string; body: ReceiveReturnPayload }
@@ -315,6 +347,24 @@ const returnApi = baseApi.injectEndpoints({
       transformResponse: normalizeReturnResponse,
       invalidatesTags: (_r, _e, arg) => [
         { type: "ReturnRequest", id: arg.id },
+        { type: "ReturnRequest", id: "LIST" },
+        { type: "Stock", id: "LIST" },
+        { type: "StockMovement", id: "LIST" },
+      ],
+    }),
+
+    dispositionReturnItem: builder.mutation<
+      ApiResponse<ReturnRequest>,
+      { rmaId: string; itemId: string; body: DispositionReturnPayload }
+    >({
+      query: ({ rmaId, itemId, body }) => ({
+        url: `/rma/${rmaId}/items/${itemId}/disposition`,
+        method: "POST",
+        data: body,
+      }),
+      transformResponse: normalizeReturnResponse,
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "ReturnRequest", id: arg.rmaId },
         { type: "ReturnRequest", id: "LIST" },
         { type: "Stock", id: "LIST" },
         { type: "StockMovement", id: "LIST" },
@@ -383,7 +433,9 @@ export const {
   useCreateReturnRequestMutation,
   useGetReturnableReceiptsByCustomerQuery,
   useGetReturnableReceiptDetailsQuery,
+  useGetReturnLocationsQuery,
   useReceiveReturnMutation,
+  useDispositionReturnItemMutation,
   useApproveReturnRequestMutation,
   useRejectReturnRequestMutation,
   useCloseReturnRequestMutation,

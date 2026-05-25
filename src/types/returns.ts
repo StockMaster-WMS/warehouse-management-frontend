@@ -25,6 +25,13 @@ export type ReturnReason =
 
 export type ReturnCondition = "GOOD" | "DAMAGED" | "DEFECTIVE" | string;
 
+export type ReturnDispositionAction =
+  | "RESTOCK"
+  | "KEEP_QUARANTINE"
+  | "SCRAP"
+  | "RETURN_TO_SUPPLIER"
+  | string;
+
 export type ReturnDisposition =
   | "RESTOCK"
   | "REPAIR"
@@ -53,6 +60,13 @@ export type ReturnLine = {
   notes?: string | null;
   lotNumber?: string | null;
   condition?: ReturnCondition | null;
+  dispositionAction?: ReturnDispositionAction | null;
+  dispositionLocationId?: string | null;
+  dispositionLocationCode?: string | null;
+  dispositionAt?: string | null;
+  dispositionBy?: string | null;
+  dispositionNote?: string | null;
+  supplierReturnRmaId?: string | null;
 };
 
 export type ReturnRequest = {
@@ -128,6 +142,13 @@ export type ReceiveReturnPayload = {
   locationId: string;
   condition?: ReturnCondition;
   notes?: string;
+};
+
+export type DispositionReturnPayload = {
+  action: ReturnDispositionAction;
+  targetLocationId?: string | null;
+  supplierId?: string | null;
+  note?: string | null;
 };
 
 export type InspectReturnLinePayload = {

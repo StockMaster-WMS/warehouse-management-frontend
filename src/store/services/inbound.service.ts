@@ -7,6 +7,7 @@ import {
 import type {
   InboundReceipt,
   CreateInboundReceiptRequest,
+  InboundLocationSuggestion,
 } from "@/types/inbound-receipt";
 
 export type GetInboundReceiptsParams = {
@@ -122,6 +123,38 @@ const inboundApi = baseApi.injectEndpoints({
         { type: "PutawayTask", id: "LIST" },
       ],
     }),
+
+    getInboundLocationSuggestions: builder.query<
+      ApiResponse<InboundLocationSuggestion[]>,
+      { poItemId: string; limit?: number }
+    >({
+      query: ({ poItemId, limit = 20 }) => ({
+        url: "/inbound-receipts/location-suggestions",
+        method: "GET",
+        params: { poItemId, limit },
+      }),
+      transformResponse: (response: ApiResponse<InboundLocationSuggestion[]> | InboundLocationSuggestion[] | { data?: { content?: InboundLocationSuggestion[] } }) => {
+        if (Array.isArray(response)) {
+          return {
+            success: true,
+            message: "OK",
+            data: response,
+          } as ApiResponse<InboundLocationSuggestion[]>;
+        }
+        const wrapped = response as ApiResponse<InboundLocationSuggestion[]> & { data?: unknown };
+        const data = wrapped.data as { content?: InboundLocationSuggestion[] } | undefined;
+        if (data && !Array.isArray(data) && Array.isArray(data.content)) {
+          return {
+            ...wrapped,
+            data: data.content,
+          } as ApiResponse<InboundLocationSuggestion[]>;
+        }
+        return response as ApiResponse<InboundLocationSuggestion[]>;
+      },
+      providesTags: (_r, _e, arg) => [
+        { type: "Location" as const, id: `INBOUND-SUGGEST-${arg.poItemId}` },
+      ],
+    }),
     
     getInboundReceiptPrintData: builder.query<
       ApiResponse<import("@/types/inbound-receipt").InboundReceiptPrintResponse>,
@@ -143,5 +176,6 @@ export const {
   useGetInboundReceiptByIdQuery,
   useGetInboundReceiptsByPoQuery,
   useCreateInboundReceiptMutation,
+  useLazyGetInboundLocationSuggestionsQuery,
   useLazyGetInboundReceiptPrintDataQuery,
 } = inboundApi;

@@ -9,6 +9,8 @@ export interface InboundReceiptLine {
   poItemId: string;
   productId?: string | null;
   productSku?: string | null;
+  locationId?: string | null;
+  locationCode?: string | null;
   receivedQty: number;
   note?: string | null;
 }
@@ -32,15 +34,26 @@ export interface InboundReceipt {
 export interface CreateInboundReceiptLine {
   poItemId: string;
   receivedQty: number;
+  locationId: string;
   note?: string;
 }
 
 export interface CreateInboundReceiptRequest {
   purchaseOrderId: string;
-  locationId: string;
+  locationId?: string | null;
   receivedDate?: string;
   note?: string;
   items: CreateInboundReceiptLine[];
+}
+
+export interface InboundLocationSuggestion {
+  locationId: string;
+  locationCode: string;
+  locationType?: string | null;
+  zone?: string | null;
+  existingProductLocation?: boolean | null;
+  emptyLocation?: boolean | null;
+  qtyOnHand?: number | null;
 }
 
 export function inboundStatusLabel(
@@ -81,6 +94,8 @@ export interface InboundReceiptPrintItem {
   unit?: string;
   orderedQty: number;
   receivedQty: number;
+  locationId?: string;
+  locationCode?: string;
   note?: string;
 }
 

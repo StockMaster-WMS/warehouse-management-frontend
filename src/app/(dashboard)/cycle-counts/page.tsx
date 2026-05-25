@@ -37,7 +37,7 @@ import { apiErrMessage } from "@/types/api";
 import type { CycleCount, CycleCountStatus } from "@/types/cycle-count";
 import { useGetCycleCountsQuery } from "@/store/services/cycle-count.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
-import { useGetUsersQuery } from "@/store/services/user-management.service";
+import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
 
 const PAGE_SIZE = 20;
 
@@ -115,12 +115,9 @@ export default function CycleCountsPage() {
   const isReportViewerOnly = hasReportViewerRole && !hasOperationRole;
   const { page, pageSize, keyword, status, warehouseId, createModalOpen } = state;
   const { data: warehousesRes } = useGetWarehousesQuery({ page: 0, size: 200 });
-  const { data: staffRes } = useGetUsersQuery(
-    { page: 0, size: 200, role: "WAREHOUSE_STAFF", active: true },
-    { skip: !canCreate },
-  );
+  const { data: staffRes } = useGetWarehouseStaffQuery(undefined, { skip: !canCreate });
   const warehouses = warehousesRes?.data?.content ?? [];
-  const staffUsers = staffRes?.data?.content ?? [];
+  const staffUsers = staffRes?.data ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
   const selectedStatus = isReportViewerOnly ? "APPROVED" : status;
   const staffNameById = new Map(staffUsers.map((user) => [user.id, user.fullName || user.username || user.email || user.id]));
