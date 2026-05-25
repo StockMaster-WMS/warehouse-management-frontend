@@ -10,6 +10,7 @@ export type GetLocationsParams = {
   warehouseId?: string;
   zone?: string;
   keyword?: string;
+  locationType?: string;
 };
 
 function buildLocationsQueryParams(params: GetLocationsParams) {
@@ -21,6 +22,7 @@ function buildLocationsQueryParams(params: GetLocationsParams) {
     warehouseId,
     zone,
     keyword,
+    locationType,
   } = params;
 
   const query: Record<string, string | number> = { page, size, sort, sortDir };
@@ -30,6 +32,8 @@ function buildLocationsQueryParams(params: GetLocationsParams) {
   if (z) query.zone = z;
   const k = keyword?.trim();
   if (k) query.keyword = k;
+  const type = locationType?.trim();
+  if (type) query.locationType = type;
   return query;
 }
 

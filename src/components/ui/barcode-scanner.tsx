@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeScannerState, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,30 @@ interface BarcodeScannerProps {
   onScanError?: (errorMessage: string) => void;
   className?: string;
   qrbox?: { width: number; height: number };
+}
+
+function isIgnorableScannerStopError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Cannot stop, scanner is not running or paused/i.test(message);
+}
+
+async function safelyClearScanner(scanner: Html5Qrcode) {
+  try {
+    const state = scanner.getState();
+    if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+      await scanner.stop();
+    }
+  } catch (error) {
+    if (!isIgnorableScannerStopError(error)) {
+      throw error;
+    }
+  } finally {
+    try {
+      scanner.clear();
+    } catch {
+      // The scanner container may already be gone during fast mode switches.
+    }
+  }
 }
 
 export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }: BarcodeScannerProps) {
@@ -37,11 +61,16 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
       return;
     }
 
+    let cancelled = false;
     const timer = setTimeout(() => {
       void (async () => {
         try {
+          const scannerElement = document.getElementById(scannerId);
+          if (!scannerElement || cancelled) return;
+
           hasScannedRef.current = false;
           const cameras = await Html5Qrcode.getCameras();
+          if (cancelled || !document.getElementById(scannerId)) return;
           if (!cameras.length) {
             setError("Không tìm thấy camera trên thiết bị.");
             return;
@@ -62,6 +91,11 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
 
           const scanner = new Html5Qrcode(scannerId);
           scannerRef.current = scanner;
+          if (cancelled || !document.getElementById(scannerId)) {
+            void safelyClearScanner(scanner);
+            scannerRef.current = null;
+            return;
+          }
 
           await scanner.start(
             { deviceId: { exact: backCamera.id } },
@@ -79,6 +113,9 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
             },
           );
         } catch (err) {
+          if (cancelled) return;
+          const message = err instanceof Error ? err.message : String(err);
+          if (/HTML Element with id=.*not found/i.test(message)) return;
           console.error("BarcodeScanner: Error during initialization", err);
           if (err instanceof DOMException && err.name === "NotAllowedError") {
             setError("Trình duyệt đang chặn quyền camera. Hãy cấp quyền Camera rồi tải lại trang.");
@@ -90,15 +127,14 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
     }, 250);
 
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       if (scannerRef.current) {
-        scannerRef.current
-          .stop()
-          .catch(() => undefined)
-          .finally(() => {
-            scannerRef.current?.clear();
-            scannerRef.current = null;
-          });
+        const scanner = scannerRef.current;
+        scannerRef.current = null;
+        void safelyClearScanner(scanner).catch((cleanupError) => {
+          console.warn("BarcodeScanner: cleanup skipped", cleanupError);
+        });
       }
     };
   }, [error, qrbox, scannerId]);

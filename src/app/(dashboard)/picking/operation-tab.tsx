@@ -86,9 +86,23 @@ export function OperationTab() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { data: pagedData, isLoading, refetch, isFetching } = useGetPickingItemsQuery({
+    const {
+        data: pendingData,
+        isLoading: isPendingLoading,
+        refetch: refetchPending,
+        isFetching: isPendingFetching,
+    } = useGetPickingItemsQuery({
         status: "PENDING",
         salesOrderStatus: "PICKING",
+        size: 50,
+    });
+    const {
+        data: pickedData,
+        isLoading: isPickedLoading,
+        refetch: refetchPicked,
+        isFetching: isPickedFetching,
+    } = useGetPickingItemsQuery({
+        status: "PICKED",
         size: 50,
     });
 
@@ -104,16 +118,29 @@ export function OperationTab() {
     const [orderSort, setOrderSort] = useState<PickingOrderSort>("sequence");
     const [scanInputMode, setScanInputMode] = useState<"camera" | "manual">("camera");
 
-    const allItems = useMemo(() => pagedData?.data?.content || [], [pagedData]);
+    const isLoading = isPendingLoading || isPickedLoading;
+    const isFetching = isPendingFetching || isPickedFetching;
+    const refetch = async () => {
+        await Promise.all([refetchPending(), refetchPicked()]);
+    };
+    const pendingItems = useMemo(() => pendingData?.data?.content ?? [], [pendingData]);
+    const pickedItems = useMemo(() => pickedData?.data?.content ?? [], [pickedData]);
+    const allItems = useMemo(() => {
+        const merged = new Map<string, PickingItem>();
+        for (const item of pendingItems) merged.set(item.id, item);
+        for (const item of pickedItems) merged.set(item.id, item);
+        return Array.from(merged.values());
+    }, [pendingItems, pickedItems]);
     const orders = useMemo(() => groupPickingOrders(allItems, orderSort), [allItems, orderSort]);
-    const locationQueue = useMemo(() => groupPickingLocations(allItems), [allItems]);
+    const pendingOrders = useMemo(() => groupPickingOrders(pendingItems, orderSort), [pendingItems, orderSort]);
+    const completedOrders = useMemo(() => groupPickingOrders(pickedItems, orderSort), [pickedItems, orderSort]);
+    const locationQueue = useMemo(() => groupPickingLocations(pendingItems), [pendingItems]);
 
+    const displayedOrders = orderTab === "completed" ? completedOrders : pendingOrders;
     const selectedOrder = useMemo(
-        () => orders.find((order) => order.soNumber === selectedOrderNumber) || orders[0] || null,
-        [orders, selectedOrderNumber],
+        () => displayedOrders.find((order) => order.soNumber === selectedOrderNumber) || displayedOrders[0] || null,
+        [displayedOrders, selectedOrderNumber],
     );
-    const completedOrders = useMemo(() => orders.filter((order) => order.progress >= 100), [orders]);
-    const displayedOrders = orderTab === "completed" ? completedOrders : orders;
     const selectedTaskSummary = useMemo(
         () => (activeTaskId ? allItems.find((item) => item.id === activeTaskId) || null : null),
         [activeTaskId, allItems],
@@ -176,6 +203,9 @@ export function OperationTab() {
         resetState();
         updateTaskUrl(null);
     };
+
+    const firstPendingTask = (order: PickingOrder) =>
+        order.items.find((item) => item.status !== "PICKED") ?? order.items[0];
 
     const goToAdjacentTask = (direction: "prev" | "next") => {
         if (!activeOrder || activeTaskIndex < 0) return;
@@ -267,7 +297,9 @@ export function OperationTab() {
             await completeMobile(activeItem.id).unwrap();
             playSuccessSound();
             toast.success("Hoàn tất lấy hàng.");
-            const nextTask = activeOrder && activeTaskIndex >= 0 ? activeOrder.items[activeTaskIndex + 1] : null;
+            const nextTask = activeOrder && activeTaskIndex >= 0
+                ? activeOrder.items.slice(activeTaskIndex + 1).find((item) => item.status !== "PICKED") ?? null
+                : null;
             if (nextTask) {
                 setActiveTaskId(nextTask.id);
                 resetState();
@@ -275,7 +307,7 @@ export function OperationTab() {
             } else {
                 closeActiveTask();
             }
-            refetch();
+            await refetch();
         } catch (err) {
             playErrorSound();
             toast.error(taskScopeErrMessage(err));
@@ -352,7 +384,8 @@ export function OperationTab() {
                 isFetching={isFetching}
                 onRefresh={() => refetch()}
                 onStartFirstTask={() => {
-                    const firstTask = displayedOrders[0]?.items[0] ?? orders[0]?.items[0];
+                    const firstOrder = displayedOrders[0] ?? pendingOrders[0];
+                    const firstTask = firstOrder ? firstPendingTask(firstOrder) : null;
                     if (firstTask) {
                         startTask(firstTask);
                     } else {
@@ -376,7 +409,7 @@ export function OperationTab() {
                     <PickingTabs
                         activeTab={orderTab}
                         completedCount={completedOrders.length}
-                        totalCount={orders.length}
+                        totalCount={pendingOrders.length}
                         onTabChange={setOrderTab}
                     />
                     <div className="space-y-3">
@@ -387,12 +420,13 @@ export function OperationTab() {
                                 index={index}
                                 order={order}
                                 onOpen={() => setSelectedOrderNumber(order.soNumber)}
-                                onStart={() => startTask(order.items[0])}
+                                onStart={() => startTask(firstPendingTask(order))}
+                                readOnly={orderTab === "completed" || order.progress >= 100}
                             />
                         ))}
                         {displayedOrders.length === 0 ? (
                             <div className="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-medium text-slate-500">
-                                Chưa có đơn hoàn thành.
+                                {orderTab === "completed" ? "Chưa có đơn đã lấy xong." : "Không còn đơn chờ lấy."}
                             </div>
                         ) : null}
                     </div>                 
@@ -403,8 +437,9 @@ export function OperationTab() {
                         <OrderDetail
                             order={selectedOrder}
                             onBack={() => setSelectedOrderNumber(null)}
-                            onStartOrder={() => startTask(selectedOrder.items[0])}
+                            onStartOrder={() => startTask(firstPendingTask(selectedOrder))}
                             onStartTask={startTask}
+                            readOnly={orderTab === "completed" || selectedOrder.progress >= 100}
                         />
                     ) : null}
                 </div>
@@ -595,7 +630,7 @@ function PickingTabs({
                         activeTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700",
                     )}
                 >
-                    Tất cả đơn ({totalCount})
+                    Đơn chờ lấy ({totalCount})
                 </button>
                 <button
                     type="button"
@@ -628,12 +663,14 @@ function OrderCard({
     order,
     onOpen,
     onStart,
+    readOnly = false,
 }: {
     active: boolean;
     index: number;
     order: PickingOrder;
     onOpen: () => void;
     onStart: () => void;
+    readOnly?: boolean;
 }) {
     return (
         <div
@@ -660,7 +697,8 @@ function OrderCard({
                     <h3 className="mt-3 text-base font-semibold tracking-tight">{order.soNumber}</h3>
                     <p className="mt-1 text-sm font-medium text-slate-600">{order.locations.length} vị trí kho</p>
                     <p className="text-sm font-medium text-slate-500">{order.totalPicked} / {order.totalToPick} sản phẩm đã lấy</p>
-                    <Button
+                    {!readOnly ? (
+                        <Button
                         type="button"
                         variant={index === 0 ? "default" : "outline"}
                         className={cn("mt-4 h-10 gap-2 rounded-lg px-5 text-sm font-bold sm:hidden", index === 0 && "bg-indigo-600 hover:bg-indigo-700")}
@@ -671,7 +709,8 @@ function OrderCard({
                     >
                         <Play className="size-4" />
                         Bắt đầu lấy
-                    </Button>
+                        </Button>
+                    ) : null}
                 </div>
                 <div className="flex min-w-[88px] flex-col items-end justify-between">
                     <div className="space-y-1 text-right text-sm">
@@ -699,11 +738,13 @@ function OrderDetail({
     onBack,
     onStartOrder,
     onStartTask,
+    readOnly = false,
 }: {
     order: PickingOrder;
     onBack: () => void;
     onStartOrder: () => void;
     onStartTask: (task: PickingItem) => void;
+    readOnly?: boolean;
 }) {
     const groupedByLocation = useMemo(() => {
         const grouped = new Map<string, PickingItem[]>();
@@ -732,13 +773,15 @@ function OrderDetail({
                             <InfoBlock label="Đơn hàng" value={order.soNumber} />
                             <InfoBlock label="Vị trí kho" value={`${order.locations.length} vị trí`} />
                             <InfoBlock label="Tổng số lượng" value={`${order.totalToPick} sản phẩm`} />
-                            <InfoBlock label="Trạng thái" value="Chờ lấy" badge />
+                            <InfoBlock label="Trạng thái" value={readOnly ? "Đã lấy xong" : "Chờ lấy"} badge />
                         </div>
                     </div>
+                    {!readOnly ? (
                     <Button type="button" className="hidden h-12 gap-2 rounded-lg bg-indigo-600 px-6 font-bold hover:bg-indigo-700 sm:flex" onClick={onStartOrder}>
                         <Play className="size-4" />
                         Bắt đầu lấy đơn này
                     </Button>
+                    ) : null}
                 </div>
             </div>
 
@@ -749,7 +792,7 @@ function OrderDetail({
 
                 <div className="space-y-3">
                     {groupedByLocation.map(([location, items], index) => (
-                        <LocationSection key={location} index={index} items={items} location={location} onStartTask={onStartTask} />
+                        <LocationSection key={location} index={index} items={items} location={location} onStartTask={onStartTask} readOnly={readOnly} />
                     ))}
                 </div>
 
@@ -761,10 +804,12 @@ function OrderDetail({
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div className="h-full bg-indigo-600" style={{ width: `${order.progress}%` }} />
                     </div>
+                    {!readOnly ? (
                     <Button type="button" className="mt-6 h-12 w-full gap-2 rounded-lg bg-indigo-600 text-base font-bold hover:bg-indigo-700" onClick={onStartOrder}>
                         <Play className="size-5" />
                         Bắt đầu lấy đơn này
                     </Button>
+                    ) : null}
                 </div>
             </div>
         </div>
@@ -789,11 +834,13 @@ function LocationSection({
     items,
     location,
     onStartTask,
+    readOnly = false,
 }: {
     index: number;
     items: PickingItem[];
     location: string;
     onStartTask: (task: PickingItem) => void;
+    readOnly?: boolean;
 }) {
     const loc = splitLocation(location);
     return (
@@ -817,14 +864,15 @@ function LocationSection({
             </div>
             <div className="divide-y divide-slate-100">
                 {items.map((item) => (
-                    <ProductRow key={item.id} item={item} onStart={() => onStartTask(item)} />
+                    <ProductRow key={item.id} item={item} onStart={() => onStartTask(item)} readOnly={readOnly || item.status === "PICKED"} />
                 ))}
             </div>
         </div>
     );
 }
 
-function ProductRow({ item, onStart }: { item: PickingItem; onStart: () => void }) {
+function ProductRow({ item, onStart, readOnly = false }: { item: PickingItem; onStart: () => void; readOnly?: boolean }) {
+    const pickedQty = item.qtyPicked ?? (item.status === "PICKED" ? item.qtyToPick : 0);
     return (
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-[1fr_120px_140px_110px] sm:items-center">
             <div className="flex min-w-0 gap-3">
@@ -850,17 +898,23 @@ function ProductRow({ item, onStart }: { item: PickingItem; onStart: () => void 
                 </div>
                 <div className="sm:hidden">
                     <p className="text-xs font-semibold text-slate-500">Đã lấy</p>
-                    <p className="mt-1 text-xl font-semibold tabular-nums">{item.qtyPicked || 0}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">{pickedQty}</p>
                 </div>
             </div>
             <div className="hidden sm:block">
                 <p className="text-xs font-semibold text-slate-500">Đã lấy</p>
-                <p className="mt-1 text-lg font-semibold tabular-nums">{item.qtyPicked || 0}</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{pickedQty}</p>
             </div>
             <div className="flex items-center justify-between sm:justify-end">
+                {!readOnly ? (
                 <Button type="button" variant="outline" className="h-10 rounded-lg border-indigo-200 px-5 font-bold text-indigo-600 hover:bg-indigo-50" onClick={onStart}>
                     Lấy hàng
                 </Button>
+                ) : (
+                    <span className="inline-flex h-10 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700">
+                        Đã lấy xong
+                    </span>
+                )}
                 <ChevronRight className="size-5 text-slate-400 sm:hidden" />
             </div>
         </div>
@@ -1190,7 +1244,13 @@ function PickingScanFlow({
                     <div className="bg-slate-50 px-3 pb-20 pt-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <button type="button" onClick={onBack} className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-indigo-600 shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={onBack}
+                                    className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-indigo-600 shadow-sm"
+                                    aria-label="Quay lại danh sách lấy hàng"
+                                    title="Quay lại danh sách lấy hàng"
+                                >
                                     <ArrowLeft className="size-5" />
                                 </button>
                                 <div>
