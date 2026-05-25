@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download, AlertCircle, TrendingUp, ShoppingBag, CheckCircle, ArrowUpRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/ui/page-section";
 import { StatCard } from "@/components/ui/stat-card";
@@ -15,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetReportSummaryQuery, useLazyExportReportSummaryQuery } from "@/store/services/report.service";
+import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevenueTrendChart } from "@/components/reports/revenue-trend-chart";
 import { TopSkusTable } from "@/components/reports/top-skus-table";
@@ -30,17 +32,35 @@ const REPORT_PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string; desc
 
 const currentYear = new Date().getFullYear();
 const REPORT_YEAR_OPTIONS = Array.from({ length: 6 }, (_, index) => currentYear - index);
+const ALL_WAREHOUSES = "__all__";
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState<DashboardPeriod>("30d");
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [warehouseId, setWarehouseId] = useState(ALL_WAREHOUSES);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const activePeriod = REPORT_PERIOD_OPTIONS.find((item) => item.value === period) ?? REPORT_PERIOD_OPTIONS[2];
   const reportParams = {
     period,
     year: period === "year" ? selectedYear : undefined,
+    warehouseId: warehouseId === ALL_WAREHOUSES ? undefined : warehouseId,
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
   };
   const { data: summary, isLoading, isFetching, isError, refetch } = useGetReportSummaryQuery(reportParams);
+  const { data: warehousesData, isFetching: isWarehousesFetching } = useGetWarehousesQuery({ page: 0, size: 200, isActive: true });
   const [exportReportSummary, { isFetching: isExporting }] = useLazyExportReportSummaryQuery();
+  const warehouses = warehousesData?.data?.content ?? [];
+  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
+  const selectedWarehouseLabel = selectedWarehouse
+    ? `${selectedWarehouse.name}${selectedWarehouse.code ? ` (${selectedWarehouse.code})` : ""}`
+    : "Tất cả kho được phép";
+  const rangeLabel = fromDate || toDate
+    ? `${fromDate || "tự động"} đến ${toDate || "hôm nay"}`
+    : period === "year"
+      ? `năm ${selectedYear}`
+      : activePeriod.description.toLowerCase();
 
   const handleExportReport = async () => {
     try {
@@ -48,8 +68,9 @@ export default function ReportsPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const suffix = period === "year" ? selectedYear : period;
-      link.setAttribute('download', `summary-report-${suffix}-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const suffix = fromDate || toDate ? `${fromDate || "auto"}-${toDate || "today"}` : period === "year" ? selectedYear : period;
+      const warehouseSuffix = selectedWarehouse?.code ? `-${selectedWarehouse.code}` : "";
+      link.setAttribute('download', `summary-report-${suffix}${warehouseSuffix}-${new Date().toISOString().split('T')[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -104,7 +125,7 @@ export default function ReportsPage() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Báo cáo & Phân tích"
-        description={`Đang xem ${period === "year" ? `năm ${selectedYear}` : activePeriod.description.toLowerCase()}.`}
+        description={`Đang xem ${rangeLabel}${selectedWarehouse ? ` tại ${selectedWarehouse.name}` : ""}.`}
         actions={
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {period === "year" ? (
@@ -168,6 +189,73 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      <div className="grid gap-3 rounded-xl border bg-card p-3 shadow-sm md:grid-cols-[minmax(220px,1fr)_repeat(2,180px)_auto] md:items-end">
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Kho xuất báo cáo</p>
+          <Select
+            name="reportWarehouseId"
+            value={warehouseId}
+            onValueChange={(value) => setWarehouseId(value ?? ALL_WAREHOUSES)}
+            disabled={isWarehousesFetching || isFetching}
+          >
+            <SelectTrigger
+              id="report-warehouse"
+              aria-label="Kho xuất báo cáo"
+              className="h-10 rounded-lg"
+            >
+              <span className="truncate text-left">{selectedWarehouseLabel}</span>
+            </SelectTrigger>
+            <SelectContent className="rounded-lg">
+              <SelectItem value={ALL_WAREHOUSES}>Tất cả kho được phép</SelectItem>
+              {warehouses.map((warehouse) => (
+                <SelectItem key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}{warehouse.code ? ` (${warehouse.code})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Từ ngày</p>
+          <Input
+            id="report-from-date"
+            name="fromDate"
+            type="date"
+            aria-label="Từ ngày"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+            className="h-10 rounded-lg"
+          />
+          <p className="text-[11px] text-muted-foreground">Định dạng ngày theo trình duyệt, dữ liệu lưu dạng yyyy-mm-dd.</p>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Đến ngày</p>
+          <Input
+            id="report-to-date"
+            name="toDate"
+            type="date"
+            aria-label="Đến ngày"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+            className="h-10 rounded-lg"
+          />
+          <p className="text-[11px] text-muted-foreground">Ví dụ: 2026-05-25.</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded-lg"
+          onClick={() => {
+            setWarehouseId(ALL_WAREHOUSES);
+            setFromDate("");
+            setToDate("");
+          }}
+          disabled={isFetching && !fromDate && !toDate && warehouseId === ALL_WAREHOUSES}
+        >
+          Xóa lọc
+        </Button>
+      </div>
+
       {/* Overview Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 md:gap-6">
         <StatCard
@@ -189,7 +277,7 @@ export default function ReportsPage() {
           value={`${summary?.completionRate ?? 0}%`}
           icon={CheckCircle}
           accentClassName="bg-emerald-600"
-          description="Tính trên đơn hoạt động"
+          description={`${summary?.shippedOrders ?? 0}/${summary?.activeOrders ?? 0} đơn hoạt động`}
         />
       </div>
 

@@ -5,11 +5,14 @@ import Link from "next/link";
 import {
   AlertCircle,
   AlertTriangle,
+  BadgeCheck,
   CheckCircle2,
   ClipboardList,
+  Clock,
   History,
   PackageCheck,
   RefreshCw,
+  Route,
   ShoppingCart,
   TrendingDown,
   TrendingUp,
@@ -119,6 +122,45 @@ export default function DashboardPage() {
       icon: METRIC_META[stat.key]?.icon,
       color: METRIC_META[stat.key]?.color,
     })) ?? [];
+  const operations = summary?.operations;
+  const operationStats: StatItem[] = [
+    {
+      label: "Đơn chờ lấy hàng",
+      value: formatNumber(operations?.pendingPickingOrders ?? 0),
+      icon: ShoppingCart,
+      color: "text-blue-500",
+    },
+    {
+      label: "Picking quá hạn",
+      value: formatNumber(operations?.overduePickingTasks ?? 0),
+      icon: Clock,
+      color: (operations?.overduePickingTasks ?? 0) > 0 ? "text-rose-500" : "text-emerald-500",
+    },
+    {
+      label: "Tồn thấp",
+      value: formatNumber(operations?.lowStockItems ?? 0),
+      icon: AlertTriangle,
+      color: (operations?.lowStockItems ?? 0) > 0 ? "text-rose-500" : "text-emerald-500",
+    },
+    {
+      label: "Sắp hết hạn",
+      value: formatNumber(operations?.nearExpiryLots ?? 0),
+      icon: TriangleAlert,
+      color: (operations?.nearExpiryLots ?? 0) > 0 ? "text-amber-500" : "text-emerald-500",
+    },
+    {
+      label: "Độ chính xác kiểm kê",
+      value: `${(operations?.cycleCountAccuracy ?? 100).toLocaleString("vi-VN")}%`,
+      icon: BadgeCheck,
+      color: (operations?.cycleCountAccuracy ?? 100) >= 95 ? "text-emerald-500" : "text-amber-500",
+    },
+    {
+      label: "Hoàn thành hôm nay",
+      value: formatNumber(operations?.completedOrdersToday ?? 0),
+      icon: CheckCircle2,
+      color: "text-emerald-500",
+    },
+  ];
   const flow = summary?.flow ?? [];
   const todayFlow = flow[flow.length - 1];
   const yesterdayFlow = flow[flow.length - 2];
@@ -225,6 +267,43 @@ export default function DashboardPage() {
 
       <StatsGrid stats={dashboardStats} cols={4} isLoading={isLoading && !summary} />
 
+      <PageSection
+        title="Dashboard vận hành"
+        description="Các chỉ số cần theo dõi trong ca vận hành kho."
+      >
+        <StatsGrid stats={operationStats} cols={6} isLoading={isLoading && !summary} />
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase text-muted-foreground">
+                Đơn xuất chưa picking
+              </span>
+              <Route className="size-4 text-amber-500" aria-hidden />
+            </div>
+            <div className="text-2xl font-bold tabular-nums text-foreground">
+              {formatNumber(operations?.outboundOrdersWithoutPicking ?? 0)}
+            </div>
+            <p className="mt-1 text-xs font-medium text-muted-foreground">
+              Đơn xuất đã chờ xử lý nhưng chưa có nhiệm vụ lấy hàng.
+            </p>
+          </div>
+          <div className="rounded-xl border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase text-muted-foreground">
+                Kiểm kê lệch lớn
+              </span>
+              <AlertCircle className="size-4 text-rose-500" aria-hidden />
+            </div>
+            <div className="text-2xl font-bold tabular-nums text-foreground">
+              {formatNumber(operations?.largeVarianceCycleCountItems ?? 0)}
+            </div>
+            <p className="mt-1 text-xs font-medium text-muted-foreground">
+              Dòng kiểm kê cần quản lý xem lại trước khi điều chỉnh tồn.
+            </p>
+          </div>
+        </div>
+      </PageSection>
+
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6">
         <PageSection
           title="Thống kê theo thời gian"
@@ -308,8 +387,8 @@ export default function DashboardPage() {
       </div>
 
       <PageSection
-        title="Hoạt động gần đây"
-        description="Các thay đổi mới nhất được ghi nhận từ nhật ký hệ thống."
+        title="Nhật ký kiểm soát"
+        description="Theo dõi ai tạo, duyệt, lấy hàng, xuất kho hoặc điều chỉnh tồn."
         action={
           <Button
             render={<Link href="/history" />}

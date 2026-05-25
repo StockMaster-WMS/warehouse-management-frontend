@@ -25,6 +25,11 @@ export function displayPickingLocation(item: PickingItem) {
   return item.locationCode || item.locationName || "Chưa rõ";
 }
 
+export function displayPickingWarehouse(item: PickingItem) {
+  if (item.warehouseName && item.warehouseCode) return `${item.warehouseName} (${item.warehouseCode})`;
+  return item.warehouseName || item.warehouseCode || "Chưa rõ kho";
+}
+
 function sequenceValue(item: PickingItem) {
   return Number(item.pickSequence ?? Number.MAX_SAFE_INTEGER);
 }
@@ -43,7 +48,10 @@ function priorityForIndex(index: number): PickingPriority {
 
 function summarizeOrder(soNumber: string, items: PickingItem[], index: number): PickingOrder {
   const totalToPick = items.reduce((sum, item) => sum + Number(item.qtyToPick || 0), 0);
-  const totalPicked = items.reduce((sum, item) => sum + Number(item.qtyPicked || 0), 0);
+  const totalPicked = items.reduce(
+    (sum, item) => sum + Number(item.qtyPicked ?? (item.status === "PICKED" ? item.qtyToPick : 0) ?? 0),
+    0,
+  );
   return {
     soNumber,
     items,
@@ -102,6 +110,9 @@ export function groupPickingLocations(items: PickingItem[]): PickingLocationGrou
         new Set(locationItems.map((item) => item.salesOrderNumber || "SO chưa gắn")),
       ),
       totalToPick: locationItems.reduce((sum, item) => sum + Number(item.qtyToPick || 0), 0),
-      totalPicked: locationItems.reduce((sum, item) => sum + Number(item.qtyPicked || 0), 0),
+      totalPicked: locationItems.reduce(
+        (sum, item) => sum + Number(item.qtyPicked ?? (item.status === "PICKED" ? item.qtyToPick : 0) ?? 0),
+        0,
+      ),
     }));
 }

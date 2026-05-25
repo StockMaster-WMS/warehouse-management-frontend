@@ -70,6 +70,12 @@ const STATUS_LABEL: Record<string, string> = {
 
 const EMPTY_RECEIPTS: InboundReceipt[] = [];
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 export default function InboundPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -407,6 +413,9 @@ export default function InboundPage() {
                 <TableHead className="ui-label px-3 py-3.5">
                   Trạng thái
                 </TableHead>
+                <TableHead className="ui-label px-3 py-3.5">
+                  Tạo lúc
+                </TableHead>
                 <TableHead className="ui-label py-3.5 pl-3 pr-6 text-right">
                   Thao tác
                 </TableHead>
@@ -420,12 +429,13 @@ export default function InboundPage() {
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-4 w-24 rounded" /></TableCell>
                     <TableCell className="px-3 py-4"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                    <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
                     <TableCell className="py-4 pl-3 pr-6 text-right"><Skeleton className="ml-auto h-8 w-24 rounded-lg" /></TableCell>
                   </TableRow>
                 ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12">
+                  <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={AlertCircle}
                       title="Không tải được danh sách phiếu nhập"
@@ -438,7 +448,7 @@ export default function InboundPage() {
                 </TableRow>
               ) : receipts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12">
+                  <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={FileText}
                       title="Chưa có phiếu nhập"
@@ -492,6 +502,10 @@ export default function InboundPage() {
                       <StatusBadge tone={statusTone(r.status)}>
                         {STATUS_LABEL[r.status ?? ""] ?? r.status ?? "—"}
                       </StatusBadge>
+                    </TableCell>
+
+                    <TableCell className="whitespace-nowrap px-3 py-4 text-xs text-muted-foreground">
+                      {formatDateTime(r.createdAt)}
                     </TableCell>
 
                     <TableCell className="py-4 pl-3 pr-6 text-right">

@@ -37,6 +37,12 @@ import {
   type Customer,
 } from "@/types/customer";
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 type CustomersListProps = {
   rows: Customer[];
   page: number;
@@ -89,7 +95,7 @@ export function CustomersList({
       ) : null}
 
       <div className="overflow-x-auto">
-        <Table className="min-w-[700px] table-fixed">
+        <Table className="min-w-[860px] table-fixed">
           <TableHeader className="bg-slate-50/60 dark:bg-slate-800/40">
             <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
               <TableHead className="pl-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400" style={{ width: '30%' }}>
@@ -101,8 +107,11 @@ export function CustomersList({
               <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400" style={{ width: '30%' }}>
                 Địa chỉ
               </TableHead>
-              <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400" style={{ width: '14%' }}>
+              <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400" style={{ width: '12%' }}>
                 Trạng thái
+              </TableHead>
+              <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400" style={{ width: '14%' }}>
+                Tạo lúc
               </TableHead>
               <TableHead className="pr-4 py-3" style={{ width: '8%' }} />
             </TableRow>
@@ -124,12 +133,13 @@ export function CustomersList({
                   <TableCell><Skeleton className="h-3 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-3 w-36" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-3 w-28" /></TableCell>
                   <TableCell />
                 </TableRow>
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={5} className="p-0">
+                <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không tải được danh sách"
@@ -145,7 +155,7 @@ export function CustomersList({
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="p-0">
+                <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     icon={Users}
                     title="Chưa có khách hàng"
@@ -221,6 +231,10 @@ export function CustomersList({
                     )}>
                       {customerStatusLabel(customer.isActive)}
                     </span>
+                  </TableCell>
+
+                  <TableCell className="py-3.5 text-xs text-slate-500 dark:text-slate-400">
+                    {formatDateTime(customer.createdAt)}
                   </TableCell>
 
                   {/* Actions */}

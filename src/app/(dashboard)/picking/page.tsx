@@ -19,7 +19,7 @@ function PickingPageContent() {
 
     if (!canCoordinatePicking) {
         return (
-            <div className="flex h-full flex-col">
+            <div className="flex h-full flex-col bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
                 <div className="flex-1">
                     <OperationTab />
                 </div>
@@ -28,12 +28,12 @@ function PickingPageContent() {
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
             {/* ── Mobile overlay ──────────────────────────────────────────── */}
             {isMobileMode && (
-                <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 animate-in fade-in duration-200 dark:bg-slate-950">
                     {/* Mobile top bar */}
-                    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm">
+                    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
                         <div className="flex items-center gap-3">
                             <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
                                 <Smartphone className="size-4" />
@@ -42,7 +42,7 @@ function PickingPageContent() {
                                 <div className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-500 leading-none">
                                     StockMaster
                                 </div>
-                                <div className="font-black text-sm uppercase tracking-wider text-slate-900 leading-tight">
+                                <div className="font-black text-sm uppercase tracking-wider text-slate-900 leading-tight dark:text-slate-100">
                                     Chế độ lấy hàng
                                 </div>
                             </div>

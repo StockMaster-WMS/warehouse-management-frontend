@@ -37,7 +37,7 @@ import { apiErrMessage } from "@/types/api";
 import type { CycleCount, CycleCountStatus } from "@/types/cycle-count";
 import { useGetCycleCountsQuery } from "@/store/services/cycle-count.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
-import { useGetUsersQuery } from "@/store/services/user-management.service";
+import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
 
 const PAGE_SIZE = 20;
 
@@ -92,7 +92,7 @@ function formatDate(value?: string | null) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("vi-VN");
+  return date.toLocaleString("vi-VN");
 }
 
 function lineStats(count: CycleCount) {
@@ -115,12 +115,9 @@ export default function CycleCountsPage() {
   const isReportViewerOnly = hasReportViewerRole && !hasOperationRole;
   const { page, pageSize, keyword, status, warehouseId, createModalOpen } = state;
   const { data: warehousesRes } = useGetWarehousesQuery({ page: 0, size: 200 });
-  const { data: staffRes } = useGetUsersQuery(
-    { page: 0, size: 200, role: "WAREHOUSE_STAFF", active: true },
-    { skip: !canCreate },
-  );
+  const { data: staffRes } = useGetWarehouseStaffQuery(undefined, { skip: !canCreate });
   const warehouses = warehousesRes?.data?.content ?? [];
-  const staffUsers = staffRes?.data?.content ?? [];
+  const staffUsers = staffRes?.data ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
   const selectedStatus = isReportViewerOnly ? "APPROVED" : status;
   const staffNameById = new Map(staffUsers.map((user) => [user.id, user.fullName || user.username || user.email || user.id]));
@@ -233,7 +230,7 @@ export default function CycleCountsPage() {
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Kho / Người kiểm</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trạng thái</TableHead>
                 <TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tiến độ</TableHead>
-                <TableHead className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ngày tạo</TableHead>
+                <TableHead className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tạo lúc</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

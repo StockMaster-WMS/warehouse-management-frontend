@@ -32,6 +32,12 @@ import { formatLocationZoneLine } from "@/components/features/locations/utils";
 import type { Location, LocationOption } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
 
+function formatDateTime(value?: string | null) {
+    if (!value) return "—";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 function LocationTypeBadge({ type }: { type?: string | null }) {
     if (!type) return <Badge variant="outline">Chưa phân loại</Badge>;
     const lowerType = type.toLowerCase();
@@ -165,7 +171,7 @@ export function LocationsTable({
             {canManageLocations && selectedLocations.length > 0 ? (
                 <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/95 px-4 py-3 backdrop-blur dark:border-indigo-900/40 dark:bg-indigo-950/90">
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="size-7">
+                        <Button type="button" variant="ghost" size="icon-sm" aria-label="Bỏ chọn tất cả vị trí" onClick={clearSelection} className="size-7">
                             <X className="size-4" />
                         </Button>
                         <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
@@ -203,10 +209,11 @@ export function LocationsTable({
                                     />
                                 ) : null}
                             </TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[30%]">Vị trí</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[22%]">Kho & Vùng</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[14%]">Phân loại</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[16%]">TT</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[27%]">Vị trí</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Kho & Vùng</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[13%]">Phân loại</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">TT</TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">Tạo lúc</TableHead>
                             <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -219,12 +226,13 @@ export function LocationsTable({
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-2 w-full rounded-full" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                    <TableCell className="px-4 py-3"><Skeleton className="h-3 w-28" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="ml-auto flex w-max gap-1"><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /></div></TableCell>
                                 </TableRow>
                             ))
                         ) : errorMessage ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="px-4 py-8 text-center">
+                                <TableCell colSpan={7} className="px-4 py-8 text-center">
                                     <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Không thể tải danh sách vị trí</p>
                                     <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errorMessage}</p>
                                     <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onRetry}>Thử lại</Button>
@@ -288,10 +296,17 @@ export function LocationsTable({
                                             </div>
                                         </TableCell>
 
+                                        <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                                            {formatDateTime(location.createdAt)}
+                                        </TableCell>
+
                                         {/* Col 5: Actions - 3-dot menu */}
                                         <TableCell className="px-4 py-3 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+                                                <DropdownMenuTrigger
+                                                    aria-label={`Mở hành động cho vị trí ${locationCode}`}
+                                                    className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+                                                >
                                                     <MoreHorizontal className="size-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-40">
@@ -402,6 +417,7 @@ export function LocationsTable({
                                               <MapPin className="size-3.5" />
                                               {formatLocationZoneLine(location)}
                                           </p>
+                                          <p>Tạo lúc: {formatDateTime(location.createdAt)}</p>
                                       </div>
 
                                       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -417,11 +433,11 @@ export function LocationsTable({
                                           
                                           <div className="flex items-center gap-1">
                                               {canManageLocations ? (
-                                                  <Button type="button" variant="outline" size="icon-lg" className="size-10" onClick={() => onEdit(location)}>
+                                                  <Button type="button" variant="outline" size="icon-lg" aria-label={`Sửa vị trí ${locationCode}`} className="size-10" onClick={() => onEdit(location)}>
                                                       <Pencil className="size-3.5" />
                                                   </Button>
                                               ) : null}
-                                              <Button type="button" variant="outline" size="icon-lg" onClick={() => onPrintBarcode(location)} className="size-10 text-indigo-600">
+                                              <Button type="button" variant="outline" size="icon-lg" aria-label={`In mã vạch vị trí ${locationCode}`} onClick={() => onPrintBarcode(location)} className="size-10 text-indigo-600">
                                                   <Printer className="size-3.5" />
                                               </Button>
                                               {canManageLocations ? (
@@ -429,6 +445,7 @@ export function LocationsTable({
                                                       type="button"
                                                       variant="outline"
                                                       size="icon-lg"
+                                                      aria-label={`Xóa vị trí ${locationCode}`}
                                                       className="size-10 text-rose-600 hover:text-rose-600"
                                                       onClick={() => onDelete(location)}
                                                   >

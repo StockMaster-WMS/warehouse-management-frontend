@@ -349,7 +349,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     }).unwrap(),
                 ),
             );
-            toast.success(`Đã giao ${itemsToAssign.length} nhiệm vụ cho ${userDisplayName(assignee)}.`);
+            toast.success(`Đã giao nhiệm vụ cho ${userDisplayName(assignee)}.`);
             closeAssignDialog();
         } catch (err) {
             toast.error(apiErrMessage(err, "Không thể phân công. Kiểm tra nhân viên nhận nhiệm vụ còn hoạt động."));

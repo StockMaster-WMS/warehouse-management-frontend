@@ -287,11 +287,11 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[92vh] w-[min(980px,96vw)] max-w-5xl flex-col overflow-hidden p-0">
-        <div className="shrink-0 border-b bg-white px-6 py-4 dark:bg-slate-950">
-          <DialogHeader className="space-y-1">
+      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-3xl">
+        <div className="border-b border-slate-200 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+          <DialogHeader className="gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/30">
                 <ClipboardList className="size-5" />
               </div>
               <div>
@@ -304,26 +304,26 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
           </DialogHeader>
         </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex max-h-[calc(92vh-5rem)] flex-col">
+          <div className="flex-1 space-y-5 overflow-y-auto bg-slate-50/60 p-6 dark:bg-slate-950/30">
             <div className="space-y-5">
-              <section className="rounded-lg border bg-background p-4">
+              <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Loại phiếu</Label>
-                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {(["CUSTOMER", "SUPPLIER"] as ReturnType[]).map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setReturnType(type)}
                         className={cn(
-                          "rounded-lg border p-3 text-left transition-colors",
+                          "min-h-24 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20",
                           returnType === type
-                            ? "border-indigo-300 bg-indigo-50 text-indigo-900"
-                            : "border-border bg-background hover:bg-muted/60",
+                            ? "border-indigo-200 bg-indigo-50 text-indigo-900 shadow-sm"
+                            : "border-slate-200 bg-slate-50 hover:border-indigo-200 hover:bg-indigo-50/40",
                         )}
                       >
                         <div className="font-semibold">{RETURN_TYPE_LABEL[type]}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="mt-2 text-xs leading-relaxed text-muted-foreground">
                           {type === "CUSTOMER"
                             ? "Tạo từ đơn xuất đã giao của khách hàng."
                             : "Xuất trả hàng về nhà cung cấp."}
@@ -333,7 +333,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                   </div>
               </section>
 
-              <section className="space-y-4 rounded-lg border bg-background p-4">
+              <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <div>
                     <h3 className="text-sm font-semibold">Thông tin phiếu</h3>
                     <p className="mt-1 text-xs text-muted-foreground">Các trường bắt buộc theo từng loại trả hàng.</p>
@@ -388,7 +388,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
 
                       <div className="space-y-2">
                         <Label>Kho nhận hàng</Label>
-                        <div className="flex min-h-10 items-center rounded-md border bg-slate-50 px-3 text-sm text-muted-foreground">
+                        <div className="flex min-h-12 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-muted-foreground">
                           {isLoadingReceiptDetails
                             ? "Đang tải kho từ đơn xuất..."
                             : selectedWarehouse
@@ -474,8 +474,8 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                   </div>
               </section>
 
-              <section className="min-w-0 rounded-lg border bg-background">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+              <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
                   <div>
                     <h3 className="text-sm font-semibold">Danh sách sản phẩm</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -488,6 +488,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-10 rounded-lg border-indigo-200 bg-indigo-50/50 font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50"
                     onClick={() => append({ productId: "", expectedQty: 1, lotNumber: "", locationId: "" })}
                     disabled={returnType === "CUSTOMER" && !salesOrderId}
                   >
@@ -511,12 +512,12 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                       const orderItem = receiptDetailsRes?.data?.items.find((item) => item.salesOrderItemId === line?.salesOrderItemId);
 
                       return (
-                        <div key={field.id} className="rounded-lg border bg-slate-50/60 p-4">
-                          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_minmax(220px,1fr)_120px_150px_44px]">
-                            <div className="space-y-2">
+                        <div key={field.id} className="group relative rounded-lg border border-slate-200 bg-slate-50/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/30">
+                          <div className="grid gap-4 md:grid-cols-12">
+                            <div className="space-y-2 md:col-span-5">
                               <Label className="text-xs">Sản phẩm</Label>
                               {fromOrder ? (
-                                <div className="min-h-10 rounded-md border bg-white px-3 py-2 text-sm">
+                                <div className="min-h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                                   <div className="font-medium">{orderItem?.productName ?? "Sản phẩm từ đơn xuất"}</div>
                                   <div className="mt-0.5 text-xs text-muted-foreground">{orderItem?.productSku ?? line.productId}</div>
                                 </div>
@@ -539,7 +540,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                             </div>
 
                             {returnType === "CUSTOMER" && fromOrder ? (
-                              <div className="grid grid-cols-3 gap-2 rounded-md border bg-white p-3 text-xs">
+                              <div className="grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs md:col-span-3">
                                 <div>
                                   <div className="text-muted-foreground">Đã giao</div>
                                   <strong>{formatNumber(line.shippedQty)}</strong>
@@ -554,7 +555,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                 </div>
                               </div>
                             ) : returnType === "SUPPLIER" ? (
-                              <div className="space-y-2">
+                              <div className="space-y-2 md:col-span-3">
                                 <Label className="text-xs">Vị trí xuất trả</Label>
                                 <Controller
                                   name={`lines.${index}.locationId`}
@@ -573,26 +574,26 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                 />
                               </div>
                             ) : (
-                              <div />
+                              <div className="hidden md:col-span-3 md:block" />
                             )}
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-2">
                               <Label className="text-xs">SL trả</Label>
                               <Input
                                 type="number"
                                 min={1}
                                 max={fromOrder ? returnableQty : undefined}
-                                className="bg-white"
+                                className="h-10 rounded-lg bg-white"
                                 {...form.register(`lines.${index}.expectedQty`, { valueAsNumber: true })}
                               />
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-1">
                               <Label className="text-xs">Số lô</Label>
                               <Input className="bg-white" placeholder="Không bắt buộc" {...form.register(`lines.${index}.lotNumber`)} />
                             </div>
 
-                            <div className="flex items-end justify-end">
+                            <div className="flex items-end justify-end md:col-span-1">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -614,9 +615,9 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
             </div>
           </div>
 
-          <DialogFooter className="shrink-0 border-t bg-white px-6 py-4 dark:bg-slate-950">
+          <DialogFooter className="mx-0 mb-0 flex min-h-[76px] shrink-0 items-center justify-end gap-3 rounded-none border-t border-slate-200 bg-white px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900">
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>Hủy</Button>
-            <Button type="submit" disabled={isCreating || isLoadingReceiptDetails} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button type="submit" disabled={isCreating || isLoadingReceiptDetails} className="h-10 min-w-[170px] rounded-lg bg-indigo-600 font-semibold hover:bg-indigo-700">
               {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Package className="mr-2 size-4" />}
               Tạo phiếu trả hàng
             </Button>

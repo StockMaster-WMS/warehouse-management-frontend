@@ -191,9 +191,37 @@ export function useInventoryPageLogic() {
     };
   }, [displayProductsById]);
 
+  const matchesStockKeyword = useCallback((item: StockExpanded) => {
+    const keyword = debouncedKeyword.toLowerCase();
+    if (!keyword) return true;
+
+    const searchable = [
+      item.product?.sku,
+      item.product?.name,
+      item.productSku,
+      item.productName,
+      item.location?.code,
+      item.location?.name,
+      item.locationCode,
+      item.warehouse?.code,
+      item.warehouse?.name,
+      item.warehouseCode,
+      item.lotNumber,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return searchable.includes(keyword);
+  }, [debouncedKeyword]);
+
   // ── Unified display items ──
   const displayItems = useMemo(() => {
-    if (activeTab === "low-stock") return lowStockItems.map(withProductFallback);
+    if (activeTab === "low-stock") {
+      return lowStockItems
+        .map(withProductFallback)
+        .filter(matchesStockKeyword);
+    }
     if (activeTab === "near-expiry") {
       return nearExpiryItems.map(item => ({
         ...item,
@@ -206,16 +234,15 @@ export function useInventoryPageLogic() {
           minQty: displayProductsById.get(item.productId)?.minStockQty ?? null,
         },
         updatedAt: new Date().toISOString(),
-      } as StockExpanded));
+      } as StockExpanded)).filter(matchesStockKeyword);
     }
     return stockList.map(withProductFallback);
-  }, [activeTab, stockList, lowStockItems, nearExpiryItems, displayProductsById, withProductFallback]);
+  }, [activeTab, stockList, lowStockItems, nearExpiryItems, displayProductsById, withProductFallback, matchesStockKeyword]);
 
   const displayTotalElements = useMemo(() => {
-    if (activeTab === "low-stock") return lowStockItems.length;
-    if (activeTab === "near-expiry") return nearExpiryItems.length;
+    if (activeTab === "low-stock" || activeTab === "near-expiry") return displayItems.length;
     return stockTotalElements;
-  }, [activeTab, stockTotalElements, lowStockItems.length, nearExpiryItems.length]);
+  }, [activeTab, stockTotalElements, displayItems.length]);
 
   const displayTotalPages = useMemo(() => {
     if (activeTab === "low-stock") return 1;

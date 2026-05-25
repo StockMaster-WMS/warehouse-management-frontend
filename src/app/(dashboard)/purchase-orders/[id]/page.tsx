@@ -71,11 +71,13 @@ import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import {
   useCreateInboundReceiptMutation,
   useGetInboundReceiptsByPoQuery,
+  useLazyGetInboundLocationSuggestionsQuery,
 } from "@/store/services/inbound.service";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import { PermissionControl, useHasPermissions } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
-import type { InboundReceipt } from "@/types/inbound-receipt";
+import type { InboundLocationSuggestion, InboundReceipt } from "@/types/inbound-receipt";
 
 const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
@@ -178,9 +180,10 @@ export default function PurchaseOrderDetailPage() {
 
   /* ── GRN dialog state ── */
   const [grnOpen, setGrnOpen] = useState(false);
-  const [grnLocationId, setGrnLocationId] = useState("");
   const [grnNote, setGrnNote] = useState("");
-  const [grnLines, setGrnLines] = useState<{ poItemId: string; receivedQty: string; note: string }[]>([]);
+  const [grnLines, setGrnLines] = useState<{ poItemId: string; receivedQty: string; locationId: string; note: string }[]>([]);
+  const [grnLocationSuggestions, setGrnLocationSuggestions] = useState<Record<string, InboundLocationSuggestion[]>>({});
+  const [grnLocationLoading, setGrnLocationLoading] = useState<Record<string, boolean>>({});
 
   /* ── Putaway dialog state ── */
   const [putawayOpen, setPutawayOpen] = useState(false);
@@ -193,6 +196,7 @@ export default function PurchaseOrderDetailPage() {
   const [cancelPo, { isLoading: cancellingPo }] = useCancelPurchaseOrderMutation();
   const [deletePo, { isLoading: deletingPo }] = useDeletePurchaseOrderMutation();
   const [createGrn, { isLoading: creatingGrn }] = useCreateInboundReceiptMutation();
+  const [loadInboundLocationSuggestions] = useLazyGetInboundLocationSuggestionsQuery();
   const [completePutawayTask, { isLoading: completingPutaway }] = useCompletePutawayTaskMutation();
 
   const detail = detailRes?.data;
@@ -241,20 +245,54 @@ export default function PurchaseOrderDetailPage() {
 
   /* ── Open GRN dialog ── */
   function openGrn() {
-    const lines: { poItemId: string; receivedQty: string; note: string }[] = [];
+    const lines: { poItemId: string; receivedQty: string; locationId: string; note: string }[] = [];
     for (const item of items) {
       if (Number(item.orderedQty ?? 0) - Number(item.receivedQty ?? 0) > 0) {
-        lines.push({ poItemId: item.id, receivedQty: "", note: "" });
+        lines.push({ poItemId: item.id, receivedQty: "", locationId: "", note: "" });
       }
     }
     setGrnLines(lines);
-    setGrnLocationId("");
+    setGrnLocationSuggestions({});
+    setGrnLocationLoading({});
     setGrnNote("");
     setGrnOpen(true);
   }
 
-  function updateGrnLine(poItemId: string, field: "receivedQty" | "note", value: string) {
+  function updateGrnLine(poItemId: string, field: "receivedQty" | "locationId" | "note", value: string) {
     setGrnLines((prev) => prev.map((l) => l.poItemId === poItemId ? { ...l, [field]: value } : l));
+  }
+
+  async function loadGrnLineLocations(poItemId: string) {
+    if (!poItemId || grnLocationSuggestions[poItemId]?.length || grnLocationLoading[poItemId]) {
+      return;
+    }
+    setGrnLocationLoading((prev) => ({ ...prev, [poItemId]: true }));
+    try {
+      const res = await loadInboundLocationSuggestions({
+        poItemId,
+        limit: 20,
+      }).unwrap();
+      setGrnLocationSuggestions((prev) => ({ ...prev, [poItemId]: res.data ?? [] }));
+      if ((res.data ?? []).length === 0) {
+        console.info("Không có vị trí phù hợp cho poItemId", poItemId);
+      }
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không tải được gợi ý vị trí nhập hàng"));
+    } finally {
+      setGrnLocationLoading((prev) => ({ ...prev, [poItemId]: false }));
+    }
+  }
+
+  function grnLocationOptions(poItemId: string) {
+    return (grnLocationSuggestions[poItemId] ?? []).map((loc) => ({
+      value: loc.locationId,
+      label: `${loc.locationCode} - ${loc.locationType ?? "STORAGE"}${loc.zone ? ` - Zone ${loc.zone}` : ""}`,
+      hint: loc.existingProductLocation
+        ? `Vị trí cũ của sản phẩm · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`
+        : loc.emptyLocation
+          ? "Vị trí trống"
+          : `Vị trí phù hợp · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`,
+    }));
   }
 
   /* ── Actions ── */
@@ -288,13 +326,19 @@ export default function PurchaseOrderDetailPage() {
 
   async function handleSubmitGrn(e: React.FormEvent) {
     e.preventDefault();
-    const validLines: { poItemId: string; receivedQty: number; note?: string }[] = [];
+    const validLines: { poItemId: string; receivedQty: number; locationId: string; note?: string }[] = [];
     for (const line of grnLines) {
       const qty = Number(line.receivedQty.replace(",", "."));
       if (!qty || Number.isNaN(qty) || qty <= 0) continue;
+      if (!line.locationId.trim()) {
+        const item = items.find((row) => row.id === line.poItemId);
+        toast.error(`Vui lòng chọn vị trí nhập cho ${item?.productSku ?? "dòng hàng"}`);
+        return;
+      }
       validLines.push({
         poItemId: line.poItemId,
         receivedQty: qty,
+        locationId: line.locationId.trim(),
         ...(line.note.trim() ? { note: line.note.trim() } : {}),
       });
     }
@@ -312,12 +356,10 @@ export default function PurchaseOrderDetailPage() {
       }
     }
 
-    if (!grnLocationId.trim()) { toast.error("Vui lòng chọn vị trí nhận hàng"); return; }
-
     try {
       const res = await createGrn({
         purchaseOrderId: id,
-        locationId: grnLocationId.trim(),
+        locationId: null,
         ...(grnNote.trim() ? { note: grnNote.trim() } : {}),
         items: validLines,
       }).unwrap();
@@ -829,9 +871,9 @@ export default function PurchaseOrderDetailPage() {
 
       {/* ── GRN Dialog ── */}
       <Dialog open={grnOpen} onOpenChange={setGrnOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl rounded-2xl">
-          <form onSubmit={handleSubmitGrn}>
-            <DialogHeader>
+        <DialogContent className="!flex max-h-[92vh] !w-[calc(100vw-48px)] !max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-2xl p-0 xl:!max-w-[1280px]">
+          <form onSubmit={handleSubmitGrn} className="flex min-h-0 flex-1 flex-col">
+            <DialogHeader className="shrink-0 border-b border-slate-200 px-6 py-5">
               <DialogTitle className="flex items-center gap-2">
                 <PackagePlus className="size-5 text-indigo-600" />
                 Tạo phiếu nhập kho (GRN)
@@ -841,7 +883,7 @@ export default function PurchaseOrderDetailPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-5 py-4">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
               {/* Lines table */}
               <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
                 <Table>
@@ -852,6 +894,7 @@ export default function PurchaseOrderDetailPage() {
                       <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
                       <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
                       <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 text-indigo-600 dark:text-indigo-400">Nhập lần này ★</TableHead>
+                      <TableHead className="min-w-56 p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-indigo-600 dark:text-indigo-400">Vị trí nhập ★</TableHead>
                       <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ghi chú</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -882,6 +925,26 @@ export default function PurchaseOrderDetailPage() {
                             />
                           </TableCell>
                           <TableCell className="p-3">
+                            <SearchableSelect
+                              options={grnLocationOptions(line.poItemId)}
+                              value={line.locationId}
+                              onValueChange={(locationId) => updateGrnLine(line.poItemId, "locationId", locationId)}
+                              onOpenChange={(open) => {
+                              if (open) void loadGrnLineLocations(line.poItemId);
+                              }}
+                              placeholder="Chọn vị trí nhập..."
+                              searchPlaceholder="Tìm mã vị trí..."
+                              emptyText="Không có vị trí phù hợp trong kho của đơn nhập này"
+                              dialogTitle={`Chọn vị trí nhập cho ${item.productSku}`}
+                              loading={Boolean(grnLocationLoading[line.poItemId])}
+                              disabled={!selectedWhId}
+                              className={cn(
+                                "h-8 rounded-lg text-xs",
+                                entered > 0 && !line.locationId && "border-rose-400 ring-1 ring-rose-200",
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="p-3">
                             <Input
                               value={line.note}
                               onChange={(e) => updateGrnLine(line.poItemId, "note", e.target.value)}
@@ -896,40 +959,8 @@ export default function PurchaseOrderDetailPage() {
                 </Table>
               </div>
 
-              {/* Location + Note */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                    Vị trí nhận hàng <span className="text-rose-500">*</span>
-                  </label>
-                  {locationOptions.length === 0 ? (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
-                      Kho này chưa có vị trí nào. Vui lòng tạo vị trí trước.
-                    </p>
-                  ) : (
-                    <Select
-                      value={grnLocationId || "__empty__"}
-                      onValueChange={(v) => setGrnLocationId(!v || v === "__empty__" ? "" : v)}
-                    >
-                      <SelectTrigger className="rounded-xl h-10">
-                        <span className="truncate text-sm">
-                          {grnLocationId
-                            ? (locationOptions.find((l) => l.id === grnLocationId)?.code ??
-                              grnLocationId)
-                            : "Chọn vị trí nhận hàng…"}
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {locationOptions.map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
-                            {loc.code ?? loc.id}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                <div>
+              {/* Note */}
+              <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                     Ghi chú phiếu nhập <span className="text-slate-400 font-normal text-xs">(tuỳ chọn)</span>
                   </label>
@@ -940,11 +971,10 @@ export default function PurchaseOrderDetailPage() {
                     rows={2}
                     className="rounded-xl text-sm resize-none"
                   />
-                </div>
               </div>
             </div>
 
-            <DialogFooter className="gap-2">
+            <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none border-t border-slate-200 bg-white px-6 pb-8 pt-5 gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setGrnOpen(false)} className="rounded-xl">Hủy</Button>
               <Button type="submit" size="sm" disabled={creatingGrn} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 gap-1.5">
                 {creatingGrn ? <Loader2 className="size-4 animate-spin" /> : <PackagePlus className="size-4" />}

@@ -6,6 +6,8 @@ export interface PickingItem {
   productId: string;
   locationId: string;
   warehouseId?: string | null;
+  warehouseCode?: string | null;
+  warehouseName?: string | null;
   lotNumber?: string | null;
   qtyToPick: number;
   qtyPicked?: number | null;

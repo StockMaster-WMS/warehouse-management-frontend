@@ -39,7 +39,7 @@ export function OrderItemPickingBlock({
     warehouseId,
     productsById,
 }: OrderItemPickingBlockProps) {
-    const { data: picksRes, isFetching: picksLoading } = useGetPickingItemsQuery({
+    const { data: picksRes, isFetching: picksLoading, refetch: refetchPicks } = useGetPickingItemsQuery({
         soItemId: soItem.id,
         page: 0,
         size: 50,
@@ -50,13 +50,14 @@ export function OrderItemPickingBlock({
     const [updatePicking, { isLoading: updatingPick }] = useUpdatePickingItemMutation();
     const [deletePicking, { isLoading: deletingPick }] = useDeletePickingItemMutation();
     const [creatingFromStockId, setCreatingFromStockId] = useState<string | null>(null);
+    const [pendingCreateQty, setPendingCreateQty] = useState(0);
     const [deleteTarget, setDeleteTarget] = useState<PickingItem | null>(null);
 
     const allowPickingMutation = salesOrderStatus === "PICKING";
     const allowDeletePicking = salesOrderStatus === "PICKING";
     const summary = useMemo(() => computePickedSummary(soItem, picks), [soItem, picks]);
     const product = productsById.get(soItem.productId);
-    const remainingQty = Math.max(0, Number(soItem.orderedQty ?? 0) - summary.totalToPick);
+    const remainingQty = Math.max(0, Number(soItem.orderedQty ?? 0) - summary.totalToPick - pendingCreateQty);
 
     const { data: stockRes, isFetching: stocksLoading, isError: stocksError, error: stocksErr } = useGetStocksQuery(
         {
@@ -97,6 +98,7 @@ export function OrderItemPickingBlock({
         }
 
         setCreatingFromStockId(row.id);
+        setPendingCreateQty((qty) => qty + qtyToPick);
         try {
             const res = await createPicking({
                 soItemId: soItem.id,
@@ -114,9 +116,11 @@ export function OrderItemPickingBlock({
             }
 
             toast.success(`Đã tạo lệnh lấy hàng từ ${getRowLabel(row)}`);
+            await refetchPicks();
         } catch (err) {
             toast.error(apiErrMessage(err));
         } finally {
+            setPendingCreateQty((qty) => Math.max(0, qty - qtyToPick));
             setCreatingFromStockId(null);
         }
     }
@@ -241,7 +245,7 @@ export function OrderItemPickingBlock({
                                         const available = Number(row.qtyAvailable ?? 0);
                                         const suggestedQty = Math.min(available, remainingQty);
                                         const locationLabel = getRowLabel(row);
-                                        const canCreate = !creatingPick && !creatingFromStockId && suggestedQty > 0;
+                                        const canCreate = !creatingPick && !creatingFromStockId && pendingCreateQty <= 0 && suggestedQty > 0;
 
                                         return (
                                             <div

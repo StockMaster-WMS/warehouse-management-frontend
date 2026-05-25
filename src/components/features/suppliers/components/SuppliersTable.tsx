@@ -31,6 +31,12 @@ import {
   type Supplier,
 } from "@/types/supplier";
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
+}
+
 type SuppliersTableProps = {
   rows: Supplier[];
   page: number;
@@ -78,7 +84,7 @@ export function SuppliersTable({
         <p className="ui-updating-banner">Đang cập nhật dữ liệu…</p>
       ) : null}
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
+        <table className="min-w-250 w-full text-left">
           <thead className="ui-table-header">
             <tr>
               <th className="ui-label px-6 py-4">Nhà cung cấp</th>
@@ -86,6 +92,7 @@ export function SuppliersTable({
               <th className="ui-label px-6 py-4">Thanh toán / Giao hàng</th>
               <th className="ui-label px-6 py-4">Địa chỉ</th>
               <th className="ui-label px-6 py-4 text-center">Trạng thái</th>
+              <th className="ui-label px-6 py-4">Tạo lúc</th>
               <th className="ui-label px-6 py-4 text-right" />
             </tr>
           </thead>
@@ -112,6 +119,9 @@ export function SuppliersTable({
                   <td className="px-6 py-4 text-center">
                     <Skeleton className="mx-auto h-5 w-16 rounded-full" />
                   </td>
+                  <td className="px-6 py-4">
+                    <Skeleton className="h-3 w-28" />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <Skeleton className="ml-auto size-8 rounded-lg" />
                   </td>
@@ -119,7 +129,7 @@ export function SuppliersTable({
               ))
             ) : isError ? (
               <tr>
-                <td colSpan={6} className="p-0">
+                <td colSpan={7} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không tải được danh sách"
@@ -135,7 +145,7 @@ export function SuppliersTable({
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-0">
+                <td colSpan={7} className="p-0">
                   <EmptyState
                     icon={Building2}
                     title="Chưa có nhà cung cấp"
@@ -201,6 +211,9 @@ export function SuppliersTable({
                       <StatusBadge tone={statusTone(supplier.status)}>
                         {supplierStatusLabel(supplier.status)}
                       </StatusBadge>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-xs text-muted-foreground">
+                      {formatDateTime(supplier.createdAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>

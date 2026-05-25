@@ -1,11 +1,11 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -27,12 +27,26 @@ const EMPTY_DATA = [
 ];
 
 export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
   const chartData = data?.length ? data : EMPTY_DATA;
 
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => setChartWidth(Math.max(1, Math.floor(node.clientWidth)));
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="h-60 w-full min-w-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+    <div ref={containerRef} className="h-60 min-h-60 w-full min-w-0">
+      {chartWidth > 0 ? (
+        <LineChart width={chartWidth} height={240} data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis
             dataKey="name"
@@ -77,7 +91,7 @@ export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
             activeDot={{ r: 4 }}
           />
         </LineChart>
-      </ResponsiveContainer>
+      ) : null}
     </div>
   );
 }

@@ -2,12 +2,12 @@
 
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useEffect, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -16,7 +16,22 @@ import {
 import type { RevenueTrend } from "./revenue-trend-chart";
 
 export function RevenueTrendChartInner({ data }: { data?: RevenueTrend[] }) {
-  if (!data) return <div className="h-64 w-full" />;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => setChartWidth(Math.max(1, Math.floor(node.clientWidth)));
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  if (!data) return <div className="h-64 min-h-64 w-full" />;
 
   const chartData = data.map((item) => ({
     id: item.date,
@@ -26,9 +41,9 @@ export function RevenueTrendChartInner({ data }: { data?: RevenueTrend[] }) {
   const latestId = chartData.at(-1)?.id;
 
   return (
-    <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+    <div ref={containerRef} className="h-64 min-h-64 w-full min-w-0">
+      {chartWidth > 0 ? (
+        <BarChart width={chartWidth} height={256} data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="name"
@@ -66,7 +81,7 @@ export function RevenueTrendChartInner({ data }: { data?: RevenueTrend[] }) {
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      ) : null}
     </div>
   );
 }

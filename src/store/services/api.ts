@@ -35,10 +35,21 @@ const axiosBaseQuery =
       return { data: result.data };
     } catch (axiosError) {
       const err = axiosError as AxiosError;
+      let errorData: unknown = err.response?.data || err.message;
+
+      if (typeof Blob !== "undefined" && errorData instanceof Blob) {
+        try {
+          const text = await errorData.text();
+          errorData = text || err.message;
+        } catch {
+          errorData = err.message;
+        }
+      }
+
       return {
         error: {
           status: err.response?.status,
-          data: err.response?.data || err.message,
+          data: errorData,
         },
       };
     }
