@@ -53,6 +53,9 @@ export default function ReportsPage() {
   const [exportReportSummary, { isFetching: isExporting }] = useLazyExportReportSummaryQuery();
   const warehouses = warehousesData?.data?.content ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
+  const selectedWarehouseLabel = selectedWarehouse
+    ? `${selectedWarehouse.name}${selectedWarehouse.code ? ` (${selectedWarehouse.code})` : ""}`
+    : "Tất cả kho được phép";
   const rangeLabel = fromDate || toDate
     ? `${fromDate || "tự động"} đến ${toDate || "hôm nay"}`
     : period === "year"
@@ -190,12 +193,17 @@ export default function ReportsPage() {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Kho xuất báo cáo</p>
           <Select
+            name="reportWarehouseId"
             value={warehouseId}
             onValueChange={(value) => setWarehouseId(value ?? ALL_WAREHOUSES)}
             disabled={isWarehousesFetching || isFetching}
           >
-            <SelectTrigger className="h-10 rounded-lg">
-              <SelectValue placeholder="Tất cả kho" />
+            <SelectTrigger
+              id="report-warehouse"
+              aria-label="Kho xuất báo cáo"
+              className="h-10 rounded-lg"
+            >
+              <span className="truncate text-left">{selectedWarehouseLabel}</span>
             </SelectTrigger>
             <SelectContent className="rounded-lg">
               <SelectItem value={ALL_WAREHOUSES}>Tất cả kho được phép</SelectItem>
@@ -210,20 +218,28 @@ export default function ReportsPage() {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Từ ngày</p>
           <Input
+            id="report-from-date"
+            name="fromDate"
             type="date"
+            aria-label="Từ ngày"
             value={fromDate}
             onChange={(event) => setFromDate(event.target.value)}
             className="h-10 rounded-lg"
           />
+          <p className="text-[11px] text-muted-foreground">Định dạng ngày theo trình duyệt, dữ liệu lưu dạng yyyy-mm-dd.</p>
         </div>
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Đến ngày</p>
           <Input
+            id="report-to-date"
+            name="toDate"
             type="date"
+            aria-label="Đến ngày"
             value={toDate}
             onChange={(event) => setToDate(event.target.value)}
             className="h-10 rounded-lg"
           />
+          <p className="text-[11px] text-muted-foreground">Ví dụ: 2026-05-25.</p>
         </div>
         <Button
           type="button"

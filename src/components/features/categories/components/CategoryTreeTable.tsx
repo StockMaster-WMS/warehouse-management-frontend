@@ -285,6 +285,7 @@ export function CategoryTreeTable({
                             <Button
                               variant="ghost"
                               size="icon-sm"
+                              aria-label={`Mở hành động cho nhóm hàng ${cat.name}`}
                               className="size-8 rounded-lg"
                             >
                               <MoreHorizontal className="size-4" />
@@ -461,6 +462,7 @@ export function CategoryTreeTable({
                         <DropdownMenuTrigger
                           render={
                             <Button variant="outline" size="icon-lg" className="size-10 rounded-lg">
+                              <span className="sr-only">Mở hành động cho nhóm hàng {cat.name}</span>
                               <MoreHorizontal className="size-4" />
                             </Button>
                           }

@@ -121,11 +121,12 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         <div className="space-y-4">
             {/* Province */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-province" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Tỉnh / Thành phố
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Select
+                    name="provinceCode"
                     value={address.provinceCode}
                     onValueChange={(val) => {
                         if (val) {
@@ -136,7 +137,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     required={required}
                     disabled={loadingProvinces || provinces.length === 0}
                 >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="address-province" aria-label="Tỉnh hoặc thành phố" className="w-full">
                         <SelectValue placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"}>
                             {getOptionLabel(provinces, address.provinceCode)}
                         </SelectValue>
@@ -151,11 +152,12 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
             {/* Ward */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-ward" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Phường / Xã
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Select
+                    name="wardCode"
                     value={address.wardCode}
                     onValueChange={(val) => {
                         if (val) {
@@ -166,7 +168,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     required={required}
                     disabled={!address.provinceCode || wards.length === 0}
                 >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="address-ward" aria-label="Phường hoặc xã" className="w-full">
                         <SelectValue placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : wards.length === 0 ? "Đang tải..." : "Chọn phường/xã"}>
                             {getOptionLabel(wards, address.wardCode)}
                         </SelectValue>
@@ -181,11 +183,14 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
             {/* Street */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-street" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Số nhà, tên đường
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Input
+                    id="address-street"
+                    name="street"
+                    autoComplete="street-address"
                     value={address.street}
                     onChange={e => setAddress(a => ({ ...a, street: e.target.value }))}
                     required={required}
