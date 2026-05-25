@@ -226,7 +226,6 @@ export default function ReportsPage() {
             onChange={(event) => setFromDate(event.target.value)}
             className="h-10 rounded-lg"
           />
-          <p className="text-[11px] text-muted-foreground">Định dạng ngày theo trình duyệt, dữ liệu lưu dạng yyyy-mm-dd.</p>
         </div>
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Đến ngày</p>
@@ -239,7 +238,6 @@ export default function ReportsPage() {
             onChange={(event) => setToDate(event.target.value)}
             className="h-10 rounded-lg"
           />
-          <p className="text-[11px] text-muted-foreground">Ví dụ: 2026-05-25.</p>
         </div>
         <Button
           type="button"

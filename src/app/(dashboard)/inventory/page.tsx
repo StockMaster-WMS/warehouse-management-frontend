@@ -98,12 +98,12 @@ export default function InventoryPage() {
         title="Theo dõi tồn kho"
         description="Giám sát tồn kho theo kho, vị trí, cảnh báo tồn thấp và hàng sắp hết hạn."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-xl border-slate-200"
+              className="flex-1 gap-1.5 rounded-xl border-slate-200 sm:flex-none"
               onClick={() => setHistoryOpen(true)}
             >
               <History className="size-4 text-indigo-600" />
@@ -113,6 +113,7 @@ export default function InventoryPage() {
               type="button"
               variant="outline"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={
                 logic.activeTab === "near-expiry"
                   ? logic.handleExportNearExpiry
@@ -142,6 +143,7 @@ export default function InventoryPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="flex-1 sm:flex-none"
                 onClick={() => logic.openAdjustDialog("qty")}
               >
                 <Wrench className="mr-1.5 size-4" />
@@ -151,6 +153,7 @@ export default function InventoryPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="flex-1 sm:flex-none"
                 onClick={() => logic.openAdjustDialog("reserved")}
               >
                 <Wrench className="mr-1.5 size-4" />
