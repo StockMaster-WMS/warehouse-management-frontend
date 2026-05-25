@@ -126,6 +126,7 @@ export type {
   PutawayTaskStatus,
   PatchPutawayTaskPayload,
   CompletePutawayPayload,
+  PutawayLocationSuggestion,
 } from "@/types/putaway";
 
 export type { LocationOption } from "@/types/location";

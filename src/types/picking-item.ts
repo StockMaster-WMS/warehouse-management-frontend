@@ -15,6 +15,7 @@ export interface PickingItem {
   pickSequence?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  completedAt?: string | null;
   salesOrderNumber?: string | null;
   assigneeId?: string | null;
   

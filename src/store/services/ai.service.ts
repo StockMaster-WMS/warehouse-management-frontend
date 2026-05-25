@@ -1,13 +1,15 @@
 import { baseApi } from "./api";
 import { getToken, setAccessToken } from "@/lib/auth-token";
-import { axiosInstance } from "@/lib/axios-instance";
+import { axiosInstance, scheduleAccessTokenRefresh } from "@/lib/axios-instance";
 import { API_BASE_URL } from "@/lib/constants";
 import type { ApiResponse } from "@/types/api";
 
 type RefreshResponse = {
   accessToken?: string;
+  accessTokenExpiresIn?: number;
   data?: {
     accessToken?: string;
+    accessTokenExpiresIn?: number;
   };
 };
 
@@ -44,9 +46,11 @@ export type UpdateAiCloudKeyRequest = {
 async function refreshAccessToken() {
   const response = await axiosInstance.post<RefreshResponse>("/auth/refresh", {});
   const token = response.data.data?.accessToken ?? response.data.accessToken ?? "";
+  const expiresIn = response.data.data?.accessTokenExpiresIn ?? response.data.accessTokenExpiresIn;
 
   if (token) {
     setAccessToken(token);
+    scheduleAccessTokenRefresh(expiresIn);
   }
 
   return token;

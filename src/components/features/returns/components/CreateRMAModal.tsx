@@ -22,18 +22,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useGetCustomersQuery } from "@/store/services/customer.service";
-import { useGetLocationsListQuery } from "@/store/services/location.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import {
   useCreateReturnRequestMutation,
   useGetReturnableReceiptDetailsQuery,
   useGetReturnableReceiptsByCustomerQuery,
+  useGetSupplierReturnProductsQuery,
+  useLazyGetSupplierReturnLocationsQuery,
 } from "@/store/services/return.service";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { apiErrMessage } from "@/types/api";
 import type { Customer } from "@/types/customer";
-import type { CreateReturnRequestPayload, ReturnType } from "@/types/returns";
+import type { CreateReturnRequestPayload, ReturnType, SupplierReturnLocation } from "@/types/returns";
 
 interface CreateRMAModalProps {
   open: boolean;
@@ -70,11 +71,30 @@ function formatNumber(value: number | null | undefined) {
   return Number(value ?? 0).toLocaleString("vi-VN");
 }
 
+function formatDate(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("vi-VN");
+}
+
+function supplierLocationHint(location: SupplierReturnLocation) {
+  const parts = [`Tồn khả dụng: ${formatNumber(location.qtyAvailable)}`];
+  if (location.lotNumber) parts.push(`Lô ${location.lotNumber}`);
+  if (location.expiryDate) parts.push(`HSD ${formatDate(location.expiryDate)}`);
+  if (location.zone) parts.push(`Zone ${location.zone}`);
+  return parts.join(" · ");
+}
+
 export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   const [createRMA, { isLoading: isCreating }] = useCreateReturnRequestMutation();
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [supplierProductSearch, setSupplierProductSearch] = useState("");
+  const [supplierLocationsByProduct, setSupplierLocationsByProduct] = useState<Record<string, SupplierReturnLocation[]>>({});
+  const [loadingSupplierLocations, setLoadingSupplierLocations] = useState<Record<string, boolean>>({});
   const debouncedCustomerKeyword = useDebouncedValue(customerSearch.trim());
+  const debouncedSupplierProductKeyword = useDebouncedValue(supplierProductSearch.trim());
 
   const { data: customersRes, isLoading: isLoadingCustomers, isFetching: isFetchingCustomers } = useGetCustomersQuery({
     page: 0,
@@ -110,10 +130,15 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     skip: returnType !== "CUSTOMER" || !salesOrderId,
   });
 
-  const { data: locationsRes, isLoading: isLoadingLocations } = useGetLocationsListQuery(
-    { page: 0, size: 300, warehouseId },
-    { skip: returnType !== "SUPPLIER" || !warehouseId },
+  const { data: supplierProductsRes, isLoading: isLoadingSupplierProducts, isFetching: isFetchingSupplierProducts } = useGetSupplierReturnProductsQuery(
+    {
+      warehouseId,
+      supplierId: supplierId ?? "",
+      keyword: debouncedSupplierProductKeyword || undefined,
+    },
+    { skip: returnType !== "SUPPLIER" || !warehouseId || !supplierId },
   );
+  const [loadSupplierReturnLocations] = useLazyGetSupplierReturnLocationsQuery();
 
   const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
@@ -159,14 +184,14 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     [productsRes],
   );
 
-  const locationOptions = useMemo(
+  const supplierProductOptions = useMemo(
     () =>
-      (locationsRes?.data?.content ?? []).map((location) => ({
-        value: location.id,
-        label: location.code,
-        hint: [location.zone, location.aisle, location.rack].filter(Boolean).join(" · "),
+      (supplierProductsRes?.data ?? []).map((product) => ({
+        value: product.productId,
+        label: `${product.sku} - ${product.name}`,
+        hint: `${formatNumber(product.totalQtyAvailable)} khả dụng · ${formatNumber(product.locationCount)} vị trí · ${product.supplierName}`,
       })),
-    [locationsRes],
+    [supplierProductsRes],
   );
 
   useEffect(() => {
@@ -199,6 +224,9 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     if (!nextOpen) form.reset(DEFAULT_VALUES);
     if (!nextOpen) {
       setCustomerSearch("");
+      setSupplierProductSearch("");
+      setSupplierLocationsByProduct({});
+      setLoadingSupplierLocations({});
       setSelectedCustomer(null);
     }
     onOpenChange(nextOpen);
@@ -211,8 +239,11 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
       ...DEFAULT_VALUES,
       returnType: nextType,
       reason: nextType === "SUPPLIER" ? "Trả nhà cung cấp" : "Khách trả hàng",
-      lines: nextType === "SUPPLIER" ? [{ productId: "", expectedQty: 1, lotNumber: "", locationId: "" }] : [],
+      lines: nextType === "SUPPLIER" ? [{ productId: "", expectedQty: 1, lotNumber: "", locationId: "", maxReturnQty: undefined }] : [],
     });
+    setSupplierProductSearch("");
+    setSupplierLocationsByProduct({});
+    setLoadingSupplierLocations({});
   };
 
   const handleCustomerChange = (nextCustomerId: string) => {
@@ -225,6 +256,62 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
     setSelectedCustomer(nextCustomer);
     form.setValue("customerName", nextCustomer?.name ?? "");
     replace([]);
+  };
+
+  const resetSupplierLines = () => {
+    replace([{ productId: "", expectedQty: 1, lotNumber: "", locationId: "", maxReturnQty: undefined }]);
+    setSupplierLocationsByProduct({});
+    setLoadingSupplierLocations({});
+    setSupplierProductSearch("");
+  };
+
+  const handleSupplierWarehouseChange = (nextWarehouseId: string) => {
+    form.setValue("warehouseId", nextWarehouseId);
+    if (returnType === "SUPPLIER") resetSupplierLines();
+  };
+
+  const handleSupplierChange = (nextSupplierId: string) => {
+    form.setValue("supplierId", nextSupplierId);
+    if (returnType === "SUPPLIER") resetSupplierLines();
+  };
+
+  const loadSupplierLocations = async (productId: string) => {
+    if (!warehouseId || !supplierId || !productId) return [];
+    if (supplierLocationsByProduct[productId]) return supplierLocationsByProduct[productId];
+
+    setLoadingSupplierLocations((prev) => ({ ...prev, [productId]: true }));
+    try {
+      const response = await loadSupplierReturnLocations({ warehouseId, supplierId, productId }).unwrap();
+      const data = response.data ?? [];
+      setSupplierLocationsByProduct((prev) => ({ ...prev, [productId]: data }));
+      return data;
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không tải được vị trí tồn của sản phẩm"));
+      return [];
+    } finally {
+      setLoadingSupplierLocations((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const handleSupplierProductChange = async (index: number, productId: string) => {
+    form.setValue(`lines.${index}.productId`, productId);
+    form.setValue(`lines.${index}.locationId`, "");
+    form.setValue(`lines.${index}.lotNumber`, "");
+    form.setValue(`lines.${index}.maxReturnQty`, undefined);
+    await loadSupplierLocations(productId);
+  };
+
+  const handleSupplierLocationChange = (index: number, productId: string, locationId: string) => {
+    const location = supplierLocationsByProduct[productId]?.find((item) => item.locationId === locationId);
+    form.setValue(`lines.${index}.locationId`, locationId);
+    form.setValue(`lines.${index}.lotNumber`, location?.lotNumber ?? "");
+    form.setValue(`lines.${index}.maxReturnQty`, location?.maxReturnQty);
+
+    const currentQty = Number(form.getValues(`lines.${index}.expectedQty`) ?? 1);
+    if (location?.maxReturnQty != null) {
+      const clampedQty = Math.max(1, Math.min(currentQty || 1, Number(location.maxReturnQty)));
+      form.setValue(`lines.${index}.expectedQty`, clampedQty);
+    }
   };
 
   const validateCustomerReturn = (data: CreateReturnRequestPayload) => {
@@ -262,6 +349,9 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
         if (data.lines.some((line) => !line.productId)) return toast.error("Vui lòng chọn sản phẩm");
         if (data.lines.some((line) => Number(line.expectedQty) <= 0)) return toast.error("Số lượng dự kiến phải lớn hơn 0");
         if (data.lines.some((line) => !line.locationId)) return toast.error("Phiếu trả NCC cần chọn vị trí xuất trả cho từng dòng");
+        if (data.lines.some((line) => line.maxReturnQty != null && Number(line.expectedQty) > Number(line.maxReturnQty))) {
+          return toast.error("Số lượng trả không được vượt tồn khả dụng tại vị trí đã chọn");
+        }
       }
 
       await createRMA({
@@ -405,7 +495,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                           name="warehouseId"
                           control={form.control}
                           render={({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={(value) => handleSupplierWarehouseChange(value ?? "")} value={field.value || ""}>
                               <SelectTrigger>
                                 <span className={cn("truncate text-sm", !selectedWarehouse && "text-muted-foreground")}>
                                   {isLoadingWarehouses
@@ -433,7 +523,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                           name="supplierId"
                           control={form.control}
                           render={({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <Select onValueChange={(value) => handleSupplierChange(value ?? "")} value={field.value || ""}>
                               <SelectTrigger>
                                 <span className={cn("truncate text-sm", !selectedSupplier && "text-muted-foreground")}>
                                   {isLoadingSuppliers
@@ -489,7 +579,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                     variant="outline"
                     size="sm"
                     className="h-10 rounded-lg border-indigo-200 bg-indigo-50/50 font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50"
-                    onClick={() => append({ productId: "", expectedQty: 1, lotNumber: "", locationId: "" })}
+                    onClick={() => append({ productId: "", expectedQty: 1, lotNumber: "", locationId: "", maxReturnQty: undefined })}
                     disabled={returnType === "CUSTOMER" && !salesOrderId}
                   >
                     <Plus className="mr-2 size-4" />
@@ -510,6 +600,14 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                       const fromOrder = Boolean(line?.salesOrderItemId);
                       const returnableQty = Number(line?.returnableQty ?? 0);
                       const orderItem = receiptDetailsRes?.data?.items.find((item) => item.salesOrderItemId === line?.salesOrderItemId);
+                      const supplierLineProductId = line?.productId || "";
+                      const supplierLineLocations = supplierLocationsByProduct[supplierLineProductId] ?? [];
+                      const supplierLineLocationOptions = supplierLineLocations.map((location) => ({
+                        value: location.locationId,
+                        label: location.locationCode,
+                        hint: supplierLocationHint(location),
+                      }));
+                      const maxReturnQty = Number(line?.maxReturnQty ?? 0);
 
                       return (
                         <div key={field.id} className="group relative rounded-lg border border-slate-200 bg-slate-50/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/30">
@@ -528,10 +626,23 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                   render={({ field: subField }) => (
                                     <SearchableSelect
                                       value={subField.value || ""}
-                                      onValueChange={subField.onChange}
-                                      options={productOptions}
-                                      loading={isLoadingProducts}
-                                      placeholder="Chọn sản phẩm"
+                                      onValueChange={(productId) => {
+                                        if (returnType === "SUPPLIER") void handleSupplierProductChange(index, productId);
+                                        else subField.onChange(productId);
+                                      }}
+                                      options={returnType === "SUPPLIER" ? supplierProductOptions : productOptions}
+                                      loading={returnType === "SUPPLIER" ? isLoadingSupplierProducts || isFetchingSupplierProducts : isLoadingProducts}
+                                      disabled={returnType === "SUPPLIER" && (!warehouseId || !supplierId)}
+                                      placeholder={
+                                        returnType === "SUPPLIER" && (!warehouseId || !supplierId)
+                                          ? "Chọn kho và nhà cung cấp trước"
+                                          : "Chọn sản phẩm"
+                                      }
+                                      searchPlaceholder="Tìm theo SKU hoặc tên sản phẩm..."
+                                      emptyText={returnType === "SUPPLIER" ? "Không có sản phẩm tồn kho thuộc nhà cung cấp này" : "Không tìm thấy sản phẩm"}
+                                      serverSearch={returnType === "SUPPLIER"}
+                                      searchQuery={returnType === "SUPPLIER" ? supplierProductSearch : undefined}
+                                      onSearchChange={returnType === "SUPPLIER" ? setSupplierProductSearch : undefined}
                                       dialogTitle="Chọn sản phẩm trả hàng"
                                     />
                                   )}
@@ -563,11 +674,16 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                   render={({ field: subField }) => (
                                     <SearchableSelect
                                       value={subField.value || ""}
-                                      onValueChange={subField.onChange}
-                                      options={locationOptions}
-                                      loading={isLoadingLocations}
-                                      disabled={!warehouseId}
-                                      placeholder="Chọn vị trí"
+                                      onValueChange={(locationId) => handleSupplierLocationChange(index, supplierLineProductId, locationId)}
+                                      options={supplierLineLocationOptions}
+                                      loading={Boolean(loadingSupplierLocations[supplierLineProductId])}
+                                      disabled={!supplierLineProductId}
+                                      placeholder={supplierLineProductId ? "Chọn vị trí xuất trả" : "Chọn sản phẩm trước"}
+                                      searchPlaceholder="Tìm theo mã vị trí, lô..."
+                                      emptyText="Sản phẩm không còn tồn khả dụng trong kho này"
+                                      onOpenChange={(isOpen) => {
+                                        if (isOpen && supplierLineProductId) void loadSupplierLocations(supplierLineProductId);
+                                      }}
                                       dialogTitle="Chọn vị trí xuất trả"
                                     />
                                   )}
@@ -582,15 +698,23 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                               <Input
                                 type="number"
                                 min={1}
-                                max={fromOrder ? returnableQty : undefined}
+                                max={returnType === "SUPPLIER" && maxReturnQty > 0 ? maxReturnQty : fromOrder ? returnableQty : undefined}
                                 className="h-10 rounded-lg bg-white"
                                 {...form.register(`lines.${index}.expectedQty`, { valueAsNumber: true })}
                               />
+                              {returnType === "SUPPLIER" && maxReturnQty > 0 ? (
+                                <p className="text-xs text-muted-foreground">Tối đa: {formatNumber(maxReturnQty)}</p>
+                              ) : null}
                             </div>
 
                             <div className="space-y-2 md:col-span-1">
                               <Label className="text-xs">Số lô</Label>
-                              <Input className="bg-white" placeholder="Không bắt buộc" {...form.register(`lines.${index}.lotNumber`)} />
+                              <Input
+                                className="bg-white"
+                                placeholder={returnType === "SUPPLIER" ? "Theo vị trí" : "Không bắt buộc"}
+                                disabled={returnType === "SUPPLIER"}
+                                {...form.register(`lines.${index}.lotNumber`)}
+                              />
                             </div>
 
                             <div className="flex items-end justify-end md:col-span-1">

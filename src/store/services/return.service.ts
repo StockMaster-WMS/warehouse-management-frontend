@@ -15,6 +15,8 @@ import type {
   ReturnSourceType,
   ReturnStatus,
   ReturnType,
+  SupplierReturnLocation,
+  SupplierReturnProduct,
 } from "@/types/returns";
 import type { Location } from "@/types/location";
 
@@ -43,6 +45,18 @@ export type GetReturnReportParams = {
 export type GetReturnLocationsParams = {
   warehouseId: string;
   condition?: string;
+};
+
+export type GetSupplierReturnProductsParams = {
+  warehouseId: string;
+  supplierId: string;
+  keyword?: string;
+};
+
+export type GetSupplierReturnLocationsParams = {
+  warehouseId: string;
+  supplierId: string;
+  productId: string;
 };
 
 function buildReturnRequestsQueryParams(params: GetReturnRequestsParams) {
@@ -335,6 +349,46 @@ const returnApi = baseApi.injectEndpoints({
       ],
     }),
 
+    getSupplierReturnProducts: builder.query<
+      ApiResponse<SupplierReturnProduct[]>,
+      GetSupplierReturnProductsParams
+    >({
+      query: ({ warehouseId, supplierId, keyword }) => ({
+        url: "/rma/supplier-return/products",
+        method: "GET",
+        params: {
+          warehouseId,
+          supplierId,
+          ...(keyword?.trim() ? { keyword: keyword.trim() } : {}),
+        },
+      }),
+      transformResponse: (response: ApiResponse<SupplierReturnProduct[]> | SupplierReturnProduct[]) =>
+        Array.isArray(response)
+          ? { success: true, message: "OK", data: response, timestamp: new Date().toISOString() }
+          : response,
+      providesTags: (_result, _error, arg) => [
+        { type: "ReturnRequest" as const, id: `SUPPLIER-PRODUCTS-${arg.warehouseId}-${arg.supplierId}` },
+      ],
+    }),
+
+    getSupplierReturnLocations: builder.query<
+      ApiResponse<SupplierReturnLocation[]>,
+      GetSupplierReturnLocationsParams
+    >({
+      query: ({ warehouseId, supplierId, productId }) => ({
+        url: "/rma/supplier-return/locations",
+        method: "GET",
+        params: { warehouseId, supplierId, productId },
+      }),
+      transformResponse: (response: ApiResponse<SupplierReturnLocation[]> | SupplierReturnLocation[]) =>
+        Array.isArray(response)
+          ? { success: true, message: "OK", data: response, timestamp: new Date().toISOString() }
+          : response,
+      providesTags: (_result, _error, arg) => [
+        { type: "ReturnRequest" as const, id: `SUPPLIER-LOCATIONS-${arg.warehouseId}-${arg.supplierId}-${arg.productId}` },
+      ],
+    }),
+
     receiveReturn: builder.mutation<
       ApiResponse<ReturnRequest>,
       { id: string; body: ReceiveReturnPayload }
@@ -434,6 +488,8 @@ export const {
   useGetReturnableReceiptsByCustomerQuery,
   useGetReturnableReceiptDetailsQuery,
   useGetReturnLocationsQuery,
+  useGetSupplierReturnProductsQuery,
+  useLazyGetSupplierReturnLocationsQuery,
   useReceiveReturnMutation,
   useDispositionReturnItemMutation,
   useApproveReturnRequestMutation,

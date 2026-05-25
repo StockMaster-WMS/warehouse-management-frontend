@@ -12,6 +12,8 @@ export type UserRole = "WAREHOUSE_STAFF" | "WAREHOUSE_MANAGER" | "REPORT_VIEWER"
 // HttpOnly Cookie: refreshToken sẽ được backend set, không trả về trong body
 export interface LoginResponse {
     accessToken: string;
+    accessTokenExpiresIn?: number;
+    refreshTokenExpiresIn?: number;
     user?: {
         id: string;
         username: string;
@@ -35,6 +37,8 @@ export interface ChangePasswordRequest {
 // Refresh token được gửi tự động qua cookie, backend không cần nhận refreshToken từ body
 export interface RefreshTokenResponse {
     accessToken: string;
+    accessTokenExpiresIn?: number;
+    refreshTokenExpiresIn?: number;
     // refreshToken: ở HttpOnly cookie
 }
 

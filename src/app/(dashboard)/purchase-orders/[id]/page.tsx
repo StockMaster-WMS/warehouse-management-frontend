@@ -57,7 +57,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { apiErrMessage } from "@/types/api";
+import { apiErrMessage, apiErrStatus } from "@/types/api";
 import {
   useApprovePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,
@@ -74,7 +74,7 @@ import {
   useLazyGetInboundLocationSuggestionsQuery,
 } from "@/store/services/inbound.service";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
+import { ADMIN_MANAGER_ROLES, INBOUND_RECEIVE_ROLES } from "@/lib/access-control";
 import { PermissionControl, useHasPermissions } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundLocationSuggestion, InboundReceipt } from "@/types/inbound-receipt";
@@ -168,11 +168,13 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 export default function PurchaseOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const canManagePurchaseOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
+  const canReceiveInbound = useHasPermissions(INBOUND_RECEIVE_ROLES);
 
   const {
     data: detailRes,
     isLoading: detailLoading,
     isError: detailError,
+    error: detailLoadError,
     refetch,
   } = useGetPurchaseOrderDetailQuery(id, { skip: !id });
 
@@ -217,7 +219,7 @@ export default function PurchaseOrderDetailPage() {
   const poStatus = po?.status ?? "";
   const isDraft = poStatus === "DRAFT";
   const canApprove = canManagePurchaseOrder && isDraft && items.length > 0;
-  const canReceive = poStatus === "APPROVED" || poStatus === "PARTIAL";
+  const canReceive = canReceiveInbound && (poStatus === "APPROVED" || poStatus === "PARTIAL");
   const canCancel = canManagePurchaseOrder && (poStatus === "DRAFT" || poStatus === "APPROVED");
 
   /* ── Warehouses & Suppliers ── */
@@ -302,7 +304,13 @@ export default function PurchaseOrderDetailPage() {
       const res = await approvePo(id).unwrap();
       if (!res.success) { toast.error(res.message || "Duyệt đơn nhập thất bại"); return; }
       toast.success(res.message || "Đã duyệt đơn nhập"); refetch();
-    } catch (err) { toast.error(apiErrMessage(err)); }
+    } catch (err) {
+      toast.error(
+        apiErrStatus(err) === 403 || apiErrStatus(err) === "403"
+          ? "Bạn chưa được phân quyền thao tác kho của đơn nhập này"
+          : apiErrMessage(err),
+      );
+    }
   }
 
   async function handleCancel() {
@@ -499,7 +507,11 @@ export default function PurchaseOrderDetailPage() {
       ) : detailError || !po || !detail ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <AlertCircle className="size-8 text-rose-400" />
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Không tải được đơn nhập hàng</p>
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {apiErrStatus(detailLoadError) === 403 || apiErrStatus(detailLoadError) === "403"
+              ? "Bạn chưa được phân quyền thao tác kho của đơn nhập này"
+              : "Không tải được đơn nhập hàng"}
+          </p>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="rounded-xl">Thử lại</Button>
         </div>
       ) : (
