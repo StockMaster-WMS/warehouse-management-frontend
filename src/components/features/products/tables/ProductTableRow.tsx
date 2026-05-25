@@ -286,6 +286,7 @@ export const ProductTableRow = memo(function ProductTableRow({
                       <Button
                         variant="outline"
                         size="sm"
+                        aria-label={`Mở thêm hành động cho sản phẩm ${product.name}`}
                         className="rounded-lg px-3"
                       >
                         <MoreHorizontal className="size-4" />

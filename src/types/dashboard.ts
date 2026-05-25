@@ -35,8 +35,20 @@ export interface DashboardActivity {
   createdAt: string;
 }
 
+export interface DashboardOperations {
+  pendingPickingOrders: number;
+  overduePickingTasks: number;
+  lowStockItems: number;
+  nearExpiryLots: number;
+  cycleCountAccuracy: number;
+  completedOrdersToday: number;
+  outboundOrdersWithoutPicking: number;
+  largeVarianceCycleCountItems: number;
+}
+
 export interface DashboardSummary {
   metrics: DashboardMetric[];
+  operations?: DashboardOperations;
   flow: DashboardFlowPoint[];
   notices: DashboardNotice[];
   recentActivities?: DashboardActivity[];

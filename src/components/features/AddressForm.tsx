@@ -121,7 +121,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         <div className="space-y-4">
             {/* Province */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-province" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Tỉnh / Thành phố
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
@@ -145,7 +145,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
             {/* Ward */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-ward" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Phường / Xã
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
@@ -169,11 +169,14 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
             {/* Street */}
             <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label htmlFor="address-street" className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                     Số nhà, tên đường
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
                 <Input
+                    id="address-street"
+                    name="street"
+                    autoComplete="street-address"
                     value={address.street}
                     onChange={e => setAddress(a => ({ ...a, street: e.target.value }))}
                     required={required}

@@ -48,7 +48,7 @@ export function SearchToolbar({
         </div>
 
         {right && (
-          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+          <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             {right}
           </div>
         )}

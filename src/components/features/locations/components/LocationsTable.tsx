@@ -171,7 +171,7 @@ export function LocationsTable({
             {canManageLocations && selectedLocations.length > 0 ? (
                 <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/95 px-4 py-3 backdrop-blur dark:border-indigo-900/40 dark:bg-indigo-950/90">
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={clearSelection} className="size-7">
+                        <Button type="button" variant="ghost" size="icon-sm" aria-label="Bỏ chọn tất cả vị trí" onClick={clearSelection} className="size-7">
                             <X className="size-4" />
                         </Button>
                         <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
@@ -303,7 +303,10 @@ export function LocationsTable({
                                         {/* Col 5: Actions - 3-dot menu */}
                                         <TableCell className="px-4 py-3 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+                                                <DropdownMenuTrigger
+                                                    aria-label={`Mở hành động cho vị trí ${locationCode}`}
+                                                    className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+                                                >
                                                     <MoreHorizontal className="size-4" />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-40">
@@ -430,11 +433,11 @@ export function LocationsTable({
                                           
                                           <div className="flex items-center gap-1">
                                               {canManageLocations ? (
-                                                  <Button type="button" variant="outline" size="icon-lg" className="size-10" onClick={() => onEdit(location)}>
+                                                  <Button type="button" variant="outline" size="icon-lg" aria-label={`Sửa vị trí ${locationCode}`} className="size-10" onClick={() => onEdit(location)}>
                                                       <Pencil className="size-3.5" />
                                                   </Button>
                                               ) : null}
-                                              <Button type="button" variant="outline" size="icon-lg" onClick={() => onPrintBarcode(location)} className="size-10 text-indigo-600">
+                                              <Button type="button" variant="outline" size="icon-lg" aria-label={`In mã vạch vị trí ${locationCode}`} onClick={() => onPrintBarcode(location)} className="size-10 text-indigo-600">
                                                   <Printer className="size-3.5" />
                                               </Button>
                                               {canManageLocations ? (
@@ -442,6 +445,7 @@ export function LocationsTable({
                                                       type="button"
                                                       variant="outline"
                                                       size="icon-lg"
+                                                      aria-label={`Xóa vị trí ${locationCode}`}
                                                       className="size-10 text-rose-600 hover:text-rose-600"
                                                       onClick={() => onDelete(location)}
                                                   >

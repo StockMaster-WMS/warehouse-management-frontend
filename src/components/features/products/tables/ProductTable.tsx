@@ -120,8 +120,8 @@ export function ProductTable({
                 </p>
             ) : null}
             <div className="overflow-x-auto">
-                <Table className="min-w-300 text-left">
-                    <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                <Table className="min-w-0 text-left md:min-w-300">
+                    <TableHeader className="hidden sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90 md:table-header-group">
                         <TableRow>
                             <TableHead className="w-12 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 STT

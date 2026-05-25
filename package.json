@@ -55,6 +55,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^29.0.1",
+    "puppeteer": "^25.0.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.1",

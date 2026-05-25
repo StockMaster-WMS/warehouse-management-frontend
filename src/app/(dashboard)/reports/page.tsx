@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Download, AlertCircle, TrendingUp, ShoppingBag, CheckCircle, ArrowUpRight, Loader2 } from "lucide-react";
+import {
+  Download,
+  AlertCircle,
+  TrendingUp,
+  ShoppingBag,
+  CheckCircle,
+  ArrowUpRight,
+  Loader2,
+  Clock,
+  PackageCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,11 +63,24 @@ export default function ReportsPage() {
   const [exportReportSummary, { isFetching: isExporting }] = useLazyExportReportSummaryQuery();
   const warehouses = warehousesData?.data?.content ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
+  const selectedWarehouseLabel = selectedWarehouse
+    ? `${selectedWarehouse.name}${selectedWarehouse.code ? ` (${selectedWarehouse.code})` : ""}`
+    : "Tất cả kho được phép";
   const rangeLabel = fromDate || toDate
     ? `${fromDate || "tự động"} đến ${toDate || "hôm nay"}`
     : period === "year"
       ? `năm ${selectedYear}`
       : activePeriod.description.toLowerCase();
+  const unshippedOrders = Math.max(0, (summary?.activeOrders ?? 0) - (summary?.shippedOrders ?? 0));
+  const averageRevenuePerShippedOrder = (summary?.shippedOrders ?? 0) > 0
+    ? Math.round((summary?.totalRevenue ?? 0) / (summary?.shippedOrders ?? 1))
+    : 0;
+  const topSku = summary?.topSkus?.[0];
+  const bestRevenuePoint = summary?.revenueTrend?.reduce((best, item) => {
+    if (!best || (item.revenue ?? 0) > (best.revenue ?? 0)) return item;
+    return best;
+  }, undefined as { date: string; revenue: number } | undefined);
+  const revenueDays = summary?.revenueTrend?.filter((item) => (item.revenue ?? 0) > 0).length ?? 0;
 
   const handleExportReport = async () => {
     try {
@@ -190,12 +213,17 @@ export default function ReportsPage() {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Kho xuất báo cáo</p>
           <Select
+            name="reportWarehouseId"
             value={warehouseId}
             onValueChange={(value) => setWarehouseId(value ?? ALL_WAREHOUSES)}
             disabled={isWarehousesFetching || isFetching}
           >
-            <SelectTrigger className="h-10 rounded-lg">
-              <SelectValue placeholder="Tất cả kho" />
+            <SelectTrigger
+              id="report-warehouse"
+              aria-label="Kho xuất báo cáo"
+              className="h-10 rounded-lg"
+            >
+              <span className="truncate text-left">{selectedWarehouseLabel}</span>
             </SelectTrigger>
             <SelectContent className="rounded-lg">
               <SelectItem value={ALL_WAREHOUSES}>Tất cả kho được phép</SelectItem>
@@ -210,7 +238,10 @@ export default function ReportsPage() {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Từ ngày</p>
           <Input
+            id="report-from-date"
+            name="fromDate"
             type="date"
+            aria-label="Từ ngày"
             value={fromDate}
             onChange={(event) => setFromDate(event.target.value)}
             className="h-10 rounded-lg"
@@ -219,7 +250,10 @@ export default function ReportsPage() {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Đến ngày</p>
           <Input
+            id="report-to-date"
+            name="toDate"
             type="date"
+            aria-label="Đến ngày"
             value={toDate}
             onChange={(event) => setToDate(event.target.value)}
             className="h-10 rounded-lg"
@@ -241,7 +275,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 md:gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 md:gap-6 xl:grid-cols-5">
         <StatCard
           label="Tổng doanh thu"
           value={`${(summary?.totalRevenue ?? 0).toLocaleString('vi-VN')} ₫`}
@@ -263,6 +297,56 @@ export default function ReportsPage() {
           accentClassName="bg-emerald-600"
           description={`${summary?.shippedOrders ?? 0}/${summary?.activeOrders ?? 0} đơn hoạt động`}
         />
+        <StatCard
+          label="Doanh thu / đơn xuất"
+          value={`${averageRevenuePerShippedOrder.toLocaleString("vi-VN")} ₫`}
+          icon={PackageCheck}
+          accentClassName="bg-cyan-600"
+          description="Bình quân trên đơn đã xuất"
+        />
+        <StatCard
+          label="Đơn chưa hoàn tất"
+          value={unshippedOrders.toLocaleString("vi-VN")}
+          icon={Clock}
+          accentClassName={unshippedOrders > 0 ? "bg-rose-500" : "bg-emerald-600"}
+          description="Đơn hoạt động còn trong quy trình"
+        />
+      </div>
+
+      <div className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm lg:grid-cols-3">
+        <div>
+          <p className="text-xs font-bold uppercase text-muted-foreground">Ngày doanh thu cao nhất</p>
+          <p className="mt-2 text-base font-semibold text-foreground">
+            {bestRevenuePoint && bestRevenuePoint.revenue > 0
+              ? new Date(bestRevenuePoint.date).toLocaleDateString("vi-VN")
+              : "Chưa có doanh thu"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {bestRevenuePoint && bestRevenuePoint.revenue > 0
+              ? `${bestRevenuePoint.revenue.toLocaleString("vi-VN")} ₫, ${revenueDays} ngày/tháng có phát sinh.`
+              : "Không có đơn đã xuất trong kỳ đang chọn."}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-muted-foreground">SKU nổi bật</p>
+          <p className="mt-2 text-base font-semibold text-foreground">{topSku?.productSku ?? "Chưa có SKU"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {topSku
+              ? `${(topSku.totalQty ?? 0).toLocaleString("vi-VN")} đơn vị, doanh thu ${(topSku.totalRevenue ?? 0).toLocaleString("vi-VN")} ₫.`
+              : "Chưa có dòng hàng xuất để xếp hạng."}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-muted-foreground">Nhận định vận hành</p>
+          <p className="mt-2 text-base font-semibold text-foreground">
+            {unshippedOrders > 0 ? "Cần theo dõi đơn chưa hoàn tất" : "Luồng đơn đang ổn định"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {unshippedOrders > 0
+              ? `Còn ${unshippedOrders.toLocaleString("vi-VN")} đơn hoạt động chưa xuất xong trong phạm vi báo cáo.`
+              : "Không còn đơn hoạt động tồn đọng trong kỳ báo cáo."}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2">
