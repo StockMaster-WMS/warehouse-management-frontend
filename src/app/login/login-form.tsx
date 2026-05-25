@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useReducer } from "react";
+import { FormEvent, useEffect, useReducer } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Warehouse } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
   getDefaultPathForRoles,
   getUserRoles,
 } from "@/lib/access-control";
+import { scheduleAccessTokenRefresh } from "@/lib/axios-instance";
 import { clearExplicitLogout, saveToken } from "@/lib/auth-token";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
@@ -115,6 +117,14 @@ export function LoginForm() {
   const [form, updateForm] = useReducer(loginFormReducer, undefined, createInitialState);
   const [login, { isLoading, error }] = useLoginMutation();
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const message = window.sessionStorage.getItem("auth-session-expired-message");
+    if (!message) return;
+    window.sessionStorage.removeItem("auth-session-expired-message");
+    toast.error(message);
+  }, []);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -125,6 +135,7 @@ export function LoginForm() {
       const result = await login(credentials).unwrap();
       clearExplicitLogout();
       const token = saveToken(result.accessToken);
+      scheduleAccessTokenRefresh(result.accessTokenExpiresIn);
 
       if (!token) {
         throw new Error("Login response missing accessToken");

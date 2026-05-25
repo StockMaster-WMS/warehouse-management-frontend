@@ -8,6 +8,7 @@ import {
   getDefaultPathForRoles,
   getUserRoles,
 } from "@/lib/access-control";
+import { scheduleAccessTokenRefresh } from "@/lib/axios-instance";
 import {
   clearAccessToken,
   clearExplicitLogout,
@@ -67,6 +68,7 @@ export function AuthGuard({
       .unwrap()
       .then((res) => {
         const token = setAccessToken(res.accessToken);
+        scheduleAccessTokenRefresh(res.accessTokenExpiresIn);
         if (!token) {
           clearAccessToken();
           replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`);

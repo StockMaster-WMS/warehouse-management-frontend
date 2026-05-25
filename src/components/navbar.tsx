@@ -34,6 +34,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { getRoleLabel, getUserRoles } from "@/lib/access-control";
 import { PermissionControl } from "@/components/permission-control";
 import { clearToken, markExplicitLogout } from "@/lib/auth-token";
+import { clearAccessTokenRefreshTimer } from "@/lib/axios-instance";
 import { useAppDispatch } from "@/store/hooks";
 import { baseApi } from "@/store/services/api";
 import { useGetCurrentUserQuery, useLogoutMutation } from "@/store/services/auth.service";
@@ -109,6 +110,7 @@ export function Navbar() {
   const clearClientSession = () => {
     markExplicitLogout();
     clearToken();
+    clearAccessTokenRefreshTimer();
     dispatch(baseApi.util.resetApiState());
     if (typeof window !== "undefined") {
       window.location.replace("/login");

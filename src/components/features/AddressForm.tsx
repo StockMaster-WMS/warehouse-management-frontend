@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
+import { SearchableSelect } from "../ui/searchable-select";
 
 interface AddressFormProps {
     value?: AddressValue;
@@ -125,7 +125,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     Tỉnh / Thành phố
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
-                <Select
+                <SearchableSelect
                     value={address.provinceCode}
                     onValueChange={(val) => {
                         if (val) {
@@ -133,20 +133,14 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                             setAddress(a => ({ ...a, provinceCode: val, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
                         }
                     }}
-                    required={required}
+                    options={provinces}
+                    dialogTitle="Chọn tỉnh / thành phố"
+                    placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"}
+                    searchPlaceholder="Tìm tỉnh/thành..."
+                    emptyText="Không có tỉnh/thành phù hợp"
                     disabled={loadingProvinces || provinces.length === 0}
-                >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"}>
-                            {getOptionLabel(provinces, address.provinceCode)}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                        {provinces.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                    className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                />
             </div>
 
             {/* Ward */}
@@ -155,7 +149,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     Phường / Xã
                     {required && <span className="ml-1 text-rose-500">*</span>}
                 </label>
-                <Select
+                <SearchableSelect
                     value={address.wardCode}
                     onValueChange={(val) => {
                         if (val) {
@@ -163,20 +157,14 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                             setAddress(a => ({ ...a, wardCode: val, wardName }));
                         }
                     }}
-                    required={required}
+                    options={wards}
+                    dialogTitle="Chọn phường / xã"
+                    placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : wards.length === 0 ? "Đang tải..." : "Chọn phường/xã"}
+                    searchPlaceholder="Tìm phường/xã..."
+                    emptyText="Không có phường/xã phù hợp"
                     disabled={!address.provinceCode || wards.length === 0}
-                >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : wards.length === 0 ? "Đang tải..." : "Chọn phường/xã"}>
-                            {getOptionLabel(wards, address.wardCode)}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                        {wards.map((w) => (
-                            <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                    className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
+                />
             </div>
 
             {/* Street */}
