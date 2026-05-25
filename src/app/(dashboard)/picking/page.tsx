@@ -1,18 +1,15 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { OverviewTab } from "./overview-tab";
 import { OperationTab } from "./operation-tab";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Smartphone } from "lucide-react";
 import { useHasPermissions } from "@/components/permission-control";
 import { PICKING_ASSIGN_ROLES } from "@/lib/access-control";
 
 function PickingPageContent() {
-    const [isMobileMode, setIsMobileMode] = useState(false);
     const searchParams = useSearchParams();
     const itemId = searchParams.get("itemId");
     const canCoordinatePicking = useHasPermissions(PICKING_ASSIGN_ROLES);
@@ -29,61 +26,14 @@ function PickingPageContent() {
 
     return (
         <div className="flex h-full flex-col bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
-            {/* ── Mobile overlay ──────────────────────────────────────────── */}
-            {isMobileMode && (
-                <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 animate-in fade-in duration-200 dark:bg-slate-950">
-                    {/* Mobile top bar */}
-                    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/90">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-                                <Smartphone className="size-4" />
-                            </div>
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-500 leading-none">
-                                    StockMaster
-                                </div>
-                                <div className="font-black text-sm uppercase tracking-wider text-slate-900 leading-tight dark:text-slate-100">
-                                    Chế độ lấy hàng
-                                </div>
-                            </div>
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsMobileMode(false)}
-                            className="h-9 gap-2 rounded-xl border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
-                        >
-                            <Monitor className="size-3.5" />
-                            Về Desktop
-                        </Button>
-                    </div>
-
-                    {/* Mobile content */}
-                    <div className="flex-1 overflow-y-auto">
-                        <OperationTab />
-                    </div>
-                </div>
-            )}
-
-            {/* ── Desktop layout ───────────────────────────────────────────── */}
             <PageHeader
                 title="Quản lý lấy hàng"
                 description="Theo dõi và điều phối lệnh lấy hàng xuất kho theo đơn bán"
                 actions={
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="hidden sm:flex h-7 gap-1.5 border-slate-200 bg-white text-xs font-semibold text-slate-600">
-                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Đang vận hành
-                        </Badge>
-                        <Button
-                            onClick={() => setIsMobileMode(true)}
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100 gap-2"
-                        >
-                            <Smartphone className="size-4" />
-                            Chế độ Mobile
-                        </Button>
-                    </div>
+                    <Badge variant="outline" className="hidden h-7 gap-1.5 border-slate-200 bg-white text-xs font-semibold text-slate-600 sm:flex">
+                        <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        Đang vận hành
+                    </Badge>
                 }
             />
 
