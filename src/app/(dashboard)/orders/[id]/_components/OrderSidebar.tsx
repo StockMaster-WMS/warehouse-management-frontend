@@ -3,11 +3,11 @@
 import { Loader2, Play, Box, Truck, Trash2, Printer, ClipboardCheck, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { salesOrderStatusLabel } from "@/types/sales-order";
 import type { SalesOrderStatus } from "@/types/sales-order";
 import { cn } from "@/lib/utils";
+import { DetailSection } from "@/components/detail-page";
 
 function statusBadgeClass(status: SalesOrderStatus): string {
   switch (status) {
@@ -21,6 +21,8 @@ function statusBadgeClass(status: SalesOrderStatus): string {
       return "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200";
     case "SHIPPED":
       return "border-purple-200 bg-purple-50 text-purple-700";
+    case "COMPLETED":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
     case "ON_HOLD":
       return "border-rose-200 bg-rose-50 text-rose-700";
     case "CANCELLED":
@@ -39,6 +41,7 @@ type OrderSidebarProps = {
   onStartPicking: () => void;
   onMarkPacked: () => void;
   onMarkShipped: () => void;
+  onCompleteOrder: () => void;
   onConfirmOrder: () => void;
   onCancelOrder: () => void;
   onOpenPrint: () => void;
@@ -54,6 +57,7 @@ export function OrderSidebar({
   onStartPicking,
   onMarkPacked,
   onMarkShipped,
+  onCompleteOrder,
   onConfirmOrder,
   onCancelOrder,
   onOpenPrint,
@@ -61,18 +65,14 @@ export function OrderSidebar({
 }: OrderSidebarProps) {
   return (
     <aside className="lg:sticky lg:top-5 lg:self-start">
-      <Card className="gap-0 py-0 shadow-sm overflow-hidden border-border/50">
-        <CardHeader className="gap-2 border-b border-border/70 bg-slate-50/70 pb-3 pt-4 dark:bg-slate-900/30">
-          <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Trạng thái vận hành</CardTitle>
+      <DetailSection title="Trạng thái vận hành" icon={<AlertCircle className="size-4" />}>
+        <div className="space-y-4">
           <div className="flex flex-row items-center justify-between gap-2">
             <Badge variant="outline" className={cn("rounded-md px-2.5 py-0.5 text-[11px] font-bold", statusBadgeClass(status))}>
               {salesOrderStatusLabel(status)}
             </Badge>
             <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{lineCount} dòng hàng</span>
           </div>
-        </CardHeader>
-
-        <CardContent className="pb-4 pt-4">
           <div className="grid gap-2.5">
             {canManageOrder && status === "DRAFT" ? (
               <Button 
@@ -122,6 +122,18 @@ export function OrderSidebar({
               </Button>
             ) : null}
 
+            {canManageOrder && status === "SHIPPED" ? (
+              <Button
+                type="button"
+                onClick={onCompleteOrder}
+                disabled={isExecuting}
+                className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              >
+                {isExecuting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ClipboardCheck className="mr-2 size-4" />}
+                Hoàn tất đơn xuất
+              </Button>
+            ) : null}
+
             <Separator className="my-1.5 opacity-50" />
 
             <div className="grid grid-cols-2 gap-2">
@@ -154,7 +166,7 @@ export function OrderSidebar({
                   variant="outline"
                   size="sm"
                   className="justify-center text-xs h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
-                  disabled={isExecuting || status === "CANCELLED" || status === "SHIPPED"}
+                  disabled={isExecuting || status === "CANCELLED" || status === "SHIPPED" || status === "COMPLETED"}
                   onClick={onCancelOrder}
                 >
                   {isExecuting ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <XCircle className="mr-1.5 size-3.5" />}
@@ -164,16 +176,16 @@ export function OrderSidebar({
             </div>
           </div>
           
-          <div className="mt-4 rounded-lg bg-slate-50 p-2.5 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+          <div className="rounded-lg border border-border bg-muted/45 p-2.5">
             <div className="flex items-start gap-2">
-              <AlertCircle className="size-3.5 text-slate-400 mt-0.5" />
-              <p className="text-[10px] leading-relaxed text-slate-500">
+              <AlertCircle className="mt-0.5 size-3.5 text-muted-foreground" />
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
                 Chỉ cho phép thêm/sửa hàng khi đơn ở trạng thái <strong>NHÁP</strong> hoặc <strong>SẴN SÀNG</strong>. Các bước vận hành tiếp theo sẽ tự động khóa dữ liệu.
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </DetailSection>
     </aside>
   );
 }

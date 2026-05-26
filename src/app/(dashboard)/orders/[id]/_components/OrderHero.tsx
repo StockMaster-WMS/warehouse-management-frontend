@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import type { SalesOrder } from "@/types/sales-order";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { OrderEditDialog } from "./OrderEditDialog";
+import { DetailSection } from "@/components/detail-page";
 
 type WarehouseOption = { value: string; label: string };
 
@@ -30,14 +30,15 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
     { key: "PICKING", label: "Lấy hàng", icon: Search },
     { key: "PACKED", label: "Đóng gói", icon: Box },
     { key: "SHIPPED", label: "Xuất kho", icon: Truck },
-    { key: "DONE", label: "Hoàn tất", icon: CheckCircle2 },
+    { key: "COMPLETED", label: "Hoàn tất", icon: CheckCircle2 },
   ];
   const statusStepIndex: Record<string, number> = {
     DRAFT: 0,
     PENDING: 1,
     PICKING: 2,
     PACKED: 3,
-    SHIPPED: 5,
+    SHIPPED: 4,
+    COMPLETED: 5,
   };
 
   const currentStepIndex = so.status === "CANCELLED" ? -1 : statusStepIndex[so.status] ?? -1;
@@ -47,13 +48,11 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
   };
 
   return (
-    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-      <CardHeader className="gap-3 border-b border-border/70 bg-slate-50/70 pb-4 pt-5 dark:bg-slate-900/30">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tổng quan đơn xuất</CardTitle>
-            <CardDescription className="text-xs">Thông tin cốt lõi, trạng thái và các điểm điều phối quan trọng.</CardDescription>
-          </div>
+    <DetailSection
+      title="Tổng quan đơn xuất"
+      description="Thông tin cốt lõi, trạng thái và các điểm điều phối quan trọng."
+      icon={<Package className="size-4" />}
+      headerAction={
           <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
             <Badge
               variant="outline"
@@ -66,13 +65,12 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             </Badge>
             {isFetching ? <span className="text-[11px] text-muted-foreground">Đang đồng bộ…</span> : null}
           </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4 pb-5 pt-4">
+      }
+    >
+      <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mã đơn</p>
+            <p className="ui-label">Mã đơn</p>
             <p className="mt-1 text-xl font-black tracking-tight text-foreground">
               {so.soNumber || `SO-${so.id.slice(0, 8)}`}
             </p>
@@ -99,7 +97,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             <div className="flex items-start gap-2">
               <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Khách hàng</p>
+                <p className="ui-label">Khách hàng</p>
                 <p className="mt-0.5 font-semibold leading-snug">{so.customerName}</p>
               </div>
             </div>
@@ -108,7 +106,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             <div className="flex items-start gap-2">
               <Building2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Kho xuất</p>
+                <p className="ui-label">Kho xuất</p>
                 <p className="mt-0.5 font-semibold leading-snug" title={so.warehouseId}>
                   {warehouseLabel}
                 </p>
@@ -119,7 +117,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             <div className="flex items-start gap-2">
               <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Địa chỉ giao hàng</p>
+                <p className="ui-label">Địa chỉ giao hàng</p>
                 <p className="mt-0.5 leading-snug text-foreground/90">{formatShippingShort(so.shippingAddress)}</p>
               </div>
             </div>
@@ -129,7 +127,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
               <div className="flex items-start gap-2">
                 <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">SĐT người nhận</p>
+                  <p className="ui-label">SĐT người nhận</p>
                   <p className="mt-0.5 leading-snug text-foreground/90">{so.shippingAddress.phone}</p>
                 </div>
               </div>
@@ -139,7 +137,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             <div className="flex items-start gap-2">
               <Package className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Quy mô đơn</p>
+                <p className="ui-label">Quy mô đơn</p>
                 <p className="mt-0.5 leading-snug text-foreground/90">
                   <span className="font-semibold tabular-nums">{lineCount}</span> dòng hàng
                 </p>
@@ -150,7 +148,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
 
         {so.status !== "CANCELLED" ? (
           <div className="pt-2 pb-5 mt-2">
-            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tiến trình vận hành</p>
+            <p className="ui-label mb-5">Tiến trình vận hành</p>
             <div className="relative flex items-center justify-between px-2 sm:px-6">
               <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-slate-100 dark:bg-slate-800" />
               <div 
@@ -161,7 +159,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
                 const Icon = step.icon;
                 const isActive = index === currentStepIndex;
                 const isPast = index < currentStepIndex;
-                const isCompleted = isPast || (so.status === "SHIPPED" && isActive);
+                const isCompleted = isPast || (so.status === "COMPLETED" && isActive);
                 return (
                   <div key={step.key} className="relative flex flex-col items-center">
                     <div className={cn(
@@ -186,7 +184,7 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
             <span className="font-semibold">Đơn hàng này đã bị hủy.</span>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </DetailSection>
   );
 }

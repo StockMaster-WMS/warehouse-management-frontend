@@ -9,7 +9,6 @@ export const MOVEMENT_TYPE_OPTIONS = [
   { value: "INBOUND", label: "Nhập kho" },
   { value: "OUTBOUND", label: "Xuất kho" },
   { value: "RESERVE", label: "Giữ chỗ" },
-  { value: "RELEASE", label: "Nhả chỗ" },
 ] as const;
 
 export type AdjustFormState = {

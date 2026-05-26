@@ -3,18 +3,37 @@
 import { useSalesOrderDetailLogic } from "@/components/features/orders";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { OrderDetailSkeleton } from "./OrderDetailSkeleton";
 import { OrderDetailError } from "./OrderDetailError";
 import { OrderHero } from "./OrderHero";
 import { OrderSidebar } from "./OrderSidebar";
 import { OrderLinesSection } from "./OrderLinesSection";
 import { OrderPickingSection } from "./OrderPickingSection";
-import { LayoutGrid, ListChecks, ScanBarcode } from "lucide-react";
+import { LayoutGrid, ListChecks, RefreshCw, ScanBarcode } from "lucide-react";
 import { useState } from "react";
 import { OrderPrintModal } from "./OrderPrintModal";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import { useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
+import {
+  DetailPageHeader,
+  DetailPageLayout,
+  DetailStatusBadge,
+  type StatusConfig,
+} from "@/components/detail-page";
+import { salesOrderStatusLabel } from "@/types/sales-order";
+
+const SALES_ORDER_STATUS_CONFIG: Record<string, StatusConfig> = {
+  DRAFT: { label: "Bản nháp", color: "slate" },
+  PENDING: { label: "Sẵn sàng", color: "blue" },
+  ON_HOLD: { label: "Tạm dừng", color: "rose" },
+  PICKING: { label: "Đang lấy hàng", color: "amber" },
+  PACKED: { label: "Đã đóng gói", color: "emerald" },
+  SHIPPED: { label: "Đã xuất kho", color: "indigo" },
+  COMPLETED: { label: "Hoàn tất", color: "emerald" },
+  CANCELLED: { label: "Đã hủy", color: "slate" },
+};
 
 type OrderDetailViewProps = {
   salesOrderId: string;
@@ -24,7 +43,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
   const canManageOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "delete" | "ship";
+    type: "delete" | "ship" | "complete";
     title: string;
     description: string;
     confirmText: string;
@@ -49,25 +68,56 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
+    onCompleteOrder,
     onConfirmOrder,
     onCancelOrder,
   } = useSalesOrderDetailLogic(salesOrderId);
 
   if (isLoading) {
-    return <OrderDetailSkeleton />;
+    return (
+      <DetailPageLayout>
+        <OrderDetailSkeleton />
+      </DetailPageLayout>
+    );
   }
 
   if (isError || !so) {
-    return <OrderDetailError error={error} onRetry={() => refetch()} />;
+    return (
+      <DetailPageLayout>
+        <OrderDetailError error={error} onRetry={() => refetch()} />
+      </DetailPageLayout>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-8xl space-y-4">
+    <DetailPageLayout>
+      <DetailPageHeader
+        backHref="/orders"
+        backLabel="Đơn xuất"
+        eyebrow="Chi tiết đơn xuất"
+        title={so.customerName || "Đơn xuất"}
+        code={so.soNumber || `SO-${so.id.slice(0, 8).toUpperCase()}`}
+        status={
+          <DetailStatusBadge
+            status={so.status}
+            statusConfig={SALES_ORDER_STATUS_CONFIG}
+            fallback={salesOrderStatusLabel(so.status)}
+          />
+        }
+        description="Theo dõi tiến trình xử lý, dòng hàng, lấy hàng và thao tác vận hành trong một màn hình."
+        actions={
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={isFetching ? "mr-2 size-4 animate-spin" : "mr-2 size-4"} />
+            Làm mới
+          </Button>
+        }
+      />
+
       <Tabs defaultValue="overview" className="space-y-4">
-        <div className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="ui-surface space-y-3 p-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-              {so.status}
+            <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {salesOrderStatusLabel(so.status)}
             </Badge>
           </div>
 
@@ -133,6 +183,13 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
                 confirmText: "Xác nhận xuất",
                 variant: "info"
               })}
+              onCompleteOrder={() => setConfirmAction({
+                type: "complete",
+                title: "Hoàn tất đơn xuất",
+                description: "Đơn hàng đã xuất kho sẽ được chuyển sang trạng thái HOÀN TẤT. Bạn có chắc chắn muốn tiếp tục?",
+                confirmText: "Hoàn tất",
+                variant: "info"
+              })}
               onConfirmOrder={onConfirmOrder}
               onCancelOrder={onCancelOrder}
               onOpenPrint={() => setIsPrintModalOpen(true)}
@@ -177,6 +234,7 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
           if (!confirmAction) return;
           if (confirmAction.type === "delete") await onDeleteSalesOrder();
           else if (confirmAction.type === "ship") await onMarkShipped();
+          else if (confirmAction.type === "complete") await onCompleteOrder();
         }}
         title={confirmAction?.title}
         description={confirmAction?.description}
@@ -184,6 +242,6 @@ export function OrderDetailView({ salesOrderId }: OrderDetailViewProps) {
         variant={confirmAction?.variant}
         itemName={confirmAction?.type === "delete" ? `Đơn hàng: ${so.soNumber}` : undefined}
       />
-    </div>
+    </DetailPageLayout>
   );
 }

@@ -144,12 +144,6 @@ export function ProductTable({
                             <TableHead className="w-25 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 NCC chính
                             </TableHead>
-                            <TableHead className="w-24 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                Tồn hiện tại
-                            </TableHead>
-                            <TableHead className="w-24 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                Khả dụng
-                            </TableHead>
                             <TableHead className="w-30 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 Trạng thái
                             </TableHead>

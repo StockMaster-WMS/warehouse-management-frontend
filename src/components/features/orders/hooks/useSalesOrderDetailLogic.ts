@@ -171,6 +171,16 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     await runOrderAction("mark-shipped", "Đã xuất kho", "Xuất kho thất bại");
   };
 
+  const onCompleteOrder = async () => {
+    if (!so) return;
+    if (so.status !== "SHIPPED") {
+      toast.error("Chỉ hoàn tất đơn sau khi đã xuất kho.");
+      return;
+    }
+
+    await runOrderAction("complete", "Đã hoàn tất đơn xuất", "Hoàn tất đơn thất bại");
+  };
+
   const onCancelOrder = async () => {
     await runOrderAction("cancel", "Đã hủy đơn hàng", "Hủy đơn thất bại");
   };
@@ -194,6 +204,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
     onStartPicking,
     onMarkPacked,
     onMarkShipped,
+    onCompleteOrder,
     onConfirmOrder,
     onCancelOrder,
   };

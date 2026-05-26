@@ -1,6 +1,6 @@
 import type { SoItem } from "./so-item";
 
-export type SalesOrderStatus = "DRAFT" | "PENDING" | "ON_HOLD" | "PICKING" | "PACKED" | "SHIPPED" | "CANCELLED";
+export type SalesOrderStatus = "DRAFT" | "PENDING" | "ON_HOLD" | "PICKING" | "PACKED" | "SHIPPED" | "COMPLETED" | "CANCELLED";
 
 export type SalesOrderAction = 
   | "confirm" 
@@ -8,6 +8,7 @@ export type SalesOrderAction =
   | "resume" 
   | "mark-packed" 
   | "mark-shipped" 
+  | "complete"
   | "hold" 
   | "cancel";
 
@@ -51,6 +52,7 @@ export function salesOrderStatusLabel(status: SalesOrderStatus | null | undefine
     case "PICKING": return "Đang lấy hàng";
     case "PACKED": return "Đã đóng gói";
     case "SHIPPED": return "Đã xuất kho";
+    case "COMPLETED": return "Hoàn tất";
     case "CANCELLED": return "Đã hủy";
     case "ON_HOLD": return "Tạm dừng";
     default: return status ?? "—";
@@ -64,6 +66,7 @@ export function salesOrderStatusColor(status: SalesOrderStatus | null | undefine
     case "PICKING": return "bg-amber-50 text-amber-600";
     case "PACKED": return "bg-emerald-50 text-emerald-600 font-medium";
     case "SHIPPED": return "bg-purple-50 text-purple-600";
+    case "COMPLETED": return "bg-emerald-50 text-emerald-700 font-medium";
     case "CANCELLED": return "bg-slate-100 text-slate-500";
     case "ON_HOLD": return "bg-rose-50 text-rose-600";
     default: return "bg-slate-100 text-slate-500";

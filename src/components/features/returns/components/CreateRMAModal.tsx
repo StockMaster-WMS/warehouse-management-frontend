@@ -115,6 +115,17 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
   const warehouseId = useWatch({ control: form.control, name: "warehouseId" });
   const supplierId = useWatch({ control: form.control, name: "supplierId" });
   const lines = useWatch({ control: form.control, name: "lines" }) ?? [];
+  const hasInvalidReturnQty = lines.some((line) => {
+    const expectedQty = Number(line?.expectedQty ?? 0);
+    if (!Number.isFinite(expectedQty) || expectedQty <= 0) return true;
+    if (returnType === "CUSTOMER" && line?.returnableQty != null) {
+      return expectedQty > Number(line.returnableQty);
+    }
+    if (returnType === "SUPPLIER" && line?.maxReturnQty != null) {
+      return expectedQty > Number(line.maxReturnQty);
+    }
+    return false;
+  });
 
   const currentCustomer =
     customersRes?.data?.content?.find((customer) => customer.id === customerId) ??
@@ -377,7 +388,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-3xl">
+      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-6xl">
         <div className="border-b border-slate-200 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
           <DialogHeader className="gap-2 text-left">
             <div className="flex items-center gap-3">
@@ -396,7 +407,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex max-h-[calc(92vh-5rem)] flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto bg-slate-50/60 p-6 dark:bg-slate-950/30">
-            <div className="space-y-5">
+            <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
               <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Loại phiếu</Label>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -564,7 +575,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                   </div>
               </section>
 
-              <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
                   <div>
                     <h3 className="text-sm font-semibold">Danh sách sản phẩm</h3>
@@ -608,9 +619,21 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                         hint: supplierLocationHint(location),
                       }));
                       const maxReturnQty = Number(line?.maxReturnQty ?? 0);
+                      const expectedQty = Number(line?.expectedQty ?? 0);
+                      const exceedsCustomerQty = returnType === "CUSTOMER" && fromOrder && expectedQty > returnableQty;
+                      const exceedsSupplierQty = returnType === "SUPPLIER" && maxReturnQty > 0 && expectedQty > maxReturnQty;
+                      const invalidQty = exceedsCustomerQty || exceedsSupplierQty || expectedQty <= 0;
 
                       return (
-                        <div key={field.id} className="group relative rounded-lg border border-slate-200 bg-slate-50/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/30">
+                        <div
+                          key={field.id}
+                          className={cn(
+                            "group relative rounded-lg border bg-slate-50/70 p-4 shadow-sm dark:bg-slate-950/30",
+                            invalidQty
+                              ? "border-rose-300 bg-rose-50/60 dark:border-rose-900/60 dark:bg-rose-950/20"
+                              : "border-slate-200 dark:border-slate-800",
+                          )}
+                        >
                           <div className="grid gap-4 md:grid-cols-12">
                             <div className="space-y-2 md:col-span-5">
                               <Label className="text-xs">Sản phẩm</Label>
@@ -705,6 +728,15 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                               {returnType === "SUPPLIER" && maxReturnQty > 0 ? (
                                 <p className="text-xs text-muted-foreground">Tối đa: {formatNumber(maxReturnQty)}</p>
                               ) : null}
+                              {exceedsSupplierQty ? (
+                                <p className="text-xs font-medium text-rose-600">
+                                  Vượt tồn khả dụng tại vị trí xuất trả.
+                                </p>
+                              ) : exceedsCustomerQty ? (
+                                <p className="text-xs font-medium text-rose-600">
+                                  Vượt số lượng còn có thể trả từ đơn xuất.
+                                </p>
+                              ) : null}
                             </div>
 
                             <div className="space-y-2 md:col-span-1">
@@ -741,7 +773,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
 
           <DialogFooter className="mx-0 mb-0 flex min-h-[76px] shrink-0 items-center justify-end gap-3 rounded-none border-t border-slate-200 bg-white px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900">
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>Hủy</Button>
-            <Button type="submit" disabled={isCreating || isLoadingReceiptDetails} className="h-10 min-w-[170px] rounded-lg bg-indigo-600 font-semibold hover:bg-indigo-700">
+            <Button type="submit" disabled={isCreating || isLoadingReceiptDetails || hasInvalidReturnQty} className="h-10 min-w-[170px] rounded-lg bg-indigo-600 font-semibold hover:bg-indigo-700">
               {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Package className="mr-2 size-4" />}
               Tạo phiếu trả hàng
             </Button>

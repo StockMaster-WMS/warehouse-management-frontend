@@ -2,7 +2,6 @@
 import {
   clearToken,
   getToken,
-  markExplicitLogout,
   setAccessToken,
 } from "@/lib/auth-token";
 import { API_BASE_URL } from "@/lib/constants";
@@ -55,7 +54,6 @@ export function clearAccessTokenRefreshTimer() {
 }
 
 function redirectToLogin() {
-  markExplicitLogout();
   clearToken();
   clearAccessTokenRefreshTimer();
 

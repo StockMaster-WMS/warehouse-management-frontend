@@ -278,7 +278,7 @@ export default function PurchaseOrdersPage() {
               <ShoppingCart className="size-3.5" />
               Sắp xếp vào kho
             </Button>
-            {canManagePurchaseOrder ? (
+            {canReceiveInbound ? (
               <Button
                 render={<Link href="/purchase-orders/new" />}
                 nativeButton={false}
@@ -534,7 +534,7 @@ export default function PurchaseOrdersPage() {
                         title="Chưa có đơn nhập"
                         description="Chưa có đơn nhập nào trong hệ thống hoặc cụm từ tìm kiếm không trùng khớp."
                         action={
-                          canManagePurchaseOrder ? (
+                          canReceiveInbound ? (
                             <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm" className="bg-indigo-600">
                               Tạo đơn đầu tiên
                             </Button>

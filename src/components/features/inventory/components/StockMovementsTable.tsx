@@ -73,7 +73,7 @@ function TableSkeleton() {
     <>
       {Array.from({ length: 8 }).map((_, i) => (
         <TableRow key={`sk-${i}`}>
-          {Array.from({ length: 9 }).map((__, j) => (
+          {Array.from({ length: 10 }).map((__, j) => (
             <TableCell key={`sk-${i}-${j}`} className="p-3">
               <Skeleton className="h-4 w-full" />
             </TableCell>
@@ -109,7 +109,7 @@ export function StockMovementsTable({
       ) : null}
 
       <div className="overflow-x-auto">
-        <Table className="min-w-237.5 text-left">
+        <Table className="min-w-[65rem] text-left">
           <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
             <TableRow>
               <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -117,6 +117,9 @@ export function StockMovementsTable({
               </TableHead>
               <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Loại
+              </TableHead>
+              <TableHead className="min-w-48 p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Sản phẩm
               </TableHead>
               <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Kho
@@ -147,7 +150,7 @@ export function StockMovementsTable({
               <TableSkeleton />
             ) : errorMessage ? (
               <TableRow>
-                <TableCell colSpan={9} className="p-0">
+                <TableCell colSpan={10} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải lịch sử biến động"
@@ -165,11 +168,11 @@ export function StockMovementsTable({
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="p-0">
+                <TableCell colSpan={10} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Chưa có lịch sử biến động"
-                    description="Các thao tác nhập/xuất/giữ chỗ/nhả chỗ sẽ được ghi nhận tại đây."
+                    description="Các thao tác nhập kho, xuất kho và giữ chỗ sẽ được ghi nhận tại đây."
                     className="py-10"
                   />
                 </TableCell>
@@ -190,6 +193,16 @@ export function StockMovementsTable({
                   </TableCell>
                   <TableCell className="p-3">
                     <MovementTypeBadge type={item.movementType} />
+                  </TableCell>
+                  <TableCell className="p-3">
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {item.productName || "Chưa có tên sản phẩm"}
+                      </div>
+                      <div className="font-mono text-xs text-slate-500">
+                        {item.productSku || item.productId}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="p-3">
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -240,7 +253,7 @@ export function StockMovementsTable({
                         {item.reservedChange.toLocaleString("vi-VN")}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400">,</span>
+                      <span className="text-xs text-slate-400">—</span>
                     )}
                   </TableCell>
                   <TableCell className="p-3">

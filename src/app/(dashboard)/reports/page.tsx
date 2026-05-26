@@ -101,11 +101,6 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExportPdf = () => {
-    toast.info("Đang mở hộp thoại in. Chọn 'Lưu thành PDF' để tải báo cáo.");
-    window.print();
-  };
-
   const scrollToRevenueDetail = () => {
     document.getElementById("revenue-detail")?.scrollIntoView({
       behavior: "smooth",
@@ -174,10 +169,6 @@ export default function ReportsPage() {
             >
               {isExporting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Download className="mr-2 size-4" />}
               Tải báo cáo Excel
-            </Button>
-            <Button size="sm" variant="outline" className="shadow-sm" onClick={handleExportPdf}>
-              <Download className="mr-2 size-4" />
-              Tải báo cáo PDF
             </Button>
           </div>
         }
@@ -328,11 +319,11 @@ export default function ReportsPage() {
           </p>
         </div>
         <div>
-          <p className="text-xs font-bold uppercase text-muted-foreground">SKU nổi bật</p>
-          <p className="mt-2 text-base font-semibold text-foreground">{topSku?.productSku ?? "Chưa có SKU"}</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">Sản phẩm nổi bật</p>
+          <p className="mt-2 text-base font-semibold text-foreground">{topSku?.productName ?? topSku?.productSku ?? "Chưa có sản phẩm"}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {topSku
-              ? `${(topSku.totalQty ?? 0).toLocaleString("vi-VN")} đơn vị, doanh thu ${(topSku.totalRevenue ?? 0).toLocaleString("vi-VN")} ₫.`
+              ? `${topSku.productSku} · ${(topSku.totalQty ?? 0).toLocaleString("vi-VN")} đơn vị, doanh thu ${(topSku.totalRevenue ?? 0).toLocaleString("vi-VN")} ₫.`
               : "Chưa có dòng hàng xuất để xếp hạng."}
           </p>
         </div>

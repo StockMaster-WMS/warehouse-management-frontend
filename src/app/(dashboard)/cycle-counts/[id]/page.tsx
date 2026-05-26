@@ -19,8 +19,6 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -46,6 +44,15 @@ import { cn } from "@/lib/utils";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import { useHasPermissions } from "@/components/permission-control";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DetailPageLayout,
+  DetailBreadcrumb,
+  DetailSection,
+  DetailStatusBadge,
+  DetailSkeleton,
+  DetailErrorState,
+} from "@/components/detail-page";
+import type { StatusConfig } from "@/components/detail-page";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
 
@@ -62,6 +69,20 @@ const STATUS_LABEL: Partial<Record<CycleCountStatus, string>> = {
   OPEN: "Đã mở",
   COUNTING: "Đang kiểm",
   REVIEW: "Chờ duyệt",
+};
+
+const CYCLE_COUNT_STATUS_CONFIG: Record<string, StatusConfig> = {
+  PENDING: { label: "Chờ bắt đầu", color: "slate" },
+  IN_PROGRESS: { label: "Đang kiểm kê", color: "blue" },
+  PENDING_REVIEW: { label: "Chờ duyệt", color: "amber" },
+  APPROVED: { label: "Đã duyệt", color: "emerald" },
+  RECOUNT_REQUIRED: { label: "Cần kiểm lại", color: "amber" },
+  CANCELLED: { label: "Đã huỷ", color: "rose" },
+  COMPLETED: { label: "Chờ duyệt", color: "amber" },
+  DRAFT: { label: "Nháp", color: "slate" },
+  OPEN: { label: "Đã mở", color: "blue" },
+  COUNTING: { label: "Đang kiểm", color: "blue" },
+  REVIEW: { label: "Chờ duyệt", color: "amber" },
 };
 
 function getStatusBadgeClass(status: CycleCountStatus) {
@@ -307,24 +328,23 @@ export default function CycleCountDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/cycle-counts" backLabel="Kiểm kê" />
+        <DetailSkeleton />
+      </DetailPageLayout>
     );
   }
 
   if (!count) {
     return (
-      <EmptyState
-        icon={AlertTriangle}
-        title="Không tìm thấy đợt kiểm kê"
-        description="Đợt kiểm kê này không tồn tại hoặc đã bị xoá."
-        action={
-          <Button variant="outline" onClick={() => push("/cycle-counts")}>
-            Quay lại danh sách
-          </Button>
-        }
-      />
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/cycle-counts" backLabel="Kiểm kê" />
+        <DetailErrorState
+          message="Đợt kiểm kê này không tồn tại hoặc đã bị xoá."
+          backHref="/cycle-counts"
+          backLabel="Quay lại danh sách"
+        />
+      </DetailPageLayout>
     );
   }
 
@@ -339,21 +359,12 @@ export default function CycleCountDetailPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => push("/cycle-counts")}
-          className="-ml-2 h-8"
-        >
-          <ArrowLeft className="mr-2 size-4" />
-          Quay lại danh sách
-        </Button>
-        <ChevronRight className="size-4" />
-        <span className="font-mono text-xs">{count.countNumber || count.id}</span>
-      </div>
+    <DetailPageLayout>
+      <DetailBreadcrumb
+        backHref="/cycle-counts"
+        backLabel="Kiểm kê"
+        currentLabel={count.countNumber || count.id}
+      />
 
       {/* Page Header with action buttons */}
       <PageHeader
@@ -470,24 +481,27 @@ export default function CycleCountDetailPage() {
       />
 
       {/* Status info banner */}
-      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="flex-1 grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trạng thái</p>
-            <span className={cn("mt-1 inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold", getStatusBadgeClass(status))}>
-              {STATUS_LABEL[status] ?? status}
-            </span>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trạng thái</p>
+            <div className="mt-1">
+              <DetailStatusBadge
+                status={status}
+                statusConfig={CYCLE_COUNT_STATUS_CONFIG}
+              />
+            </div>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phạm vi</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Phạm vi</p>
             <p className="mt-1 font-medium">{count.scope ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Ngày tạo</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ngày tạo</p>
             <p className="mt-1 font-medium">{formatDate(count.createdAt)}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hoàn thành</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Hoàn thành</p>
             <p className="mt-1 font-medium">{formatDate(count.completedAt)}</p>
           </div>
         </div>
@@ -510,24 +524,7 @@ export default function CycleCountDetailPage() {
       )}
 
       {/* Counting table */}
-      <Card className="overflow-hidden border-indigo-100 shadow-sm dark:border-indigo-900/30">
-        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ClipboardCheck className="size-5 text-primary" />
-              <CardTitle className="text-base">Bảng ghi nhận số đếm</CardTitle>
-            </div>
-            <Badge variant="outline" className={cn("font-bold text-xs", getStatusBadgeClass(status))}>
-              {STATUS_LABEL[status] ?? status}
-            </Badge>
-          </div>
-          <CardDescription>
-            {counting
-              ? "Nhập số lượng thực tế đếm được tại vị trí. Chênh lệch sẽ tự động được tính."
-              : "Bảng dữ liệu kiểm kê — chỉ chỉnh sửa khi đợt đang ở trạng thái Đang kiểm kê."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <DetailSection title="Bảng ghi nhận số đếm" icon={ClipboardCheck}>
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
@@ -637,26 +634,20 @@ export default function CycleCountDetailPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-40 text-center">
-                    <EmptyState
-                      icon={canStart(status) ? Info : AlertTriangle}
-                      title={
-                        canStart(status)
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <AlertTriangle className="size-8 text-muted-foreground/30 mb-2" />
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        {canStart(status)
                           ? "Chưa bắt đầu kiểm kê"
-                          : "Chưa có dữ liệu dòng kiểm"
-                      }
-                      description={
-                        canStart(status)
-                          ? "Bấm 'Bắt đầu kiểm kê' để hệ thống quét tồn kho và sinh danh sách kiểm kê."
-                          : "Hệ thống chưa sinh dữ liệu cho đợt này. Bấm 'Làm mới' để thử lại."
-                      }
-                    />
+                          : "Chưa có dữ liệu dòng kiểm"}
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+      </DetailSection>
 
       {/* Bottom action bar — only show during counting phase */}
       {counting && hasLines && (
@@ -740,6 +731,6 @@ export default function CycleCountDetailPage() {
           </Button>
         </div>
       )}
-    </div>
+    </DetailPageLayout>
   );
 }

@@ -152,7 +152,7 @@ export function CreateCycleCountModal({
   );
   const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsListQuery(
     { warehouseId, size: 1000 },
-    { skip: !warehouseId || (mode !== "MANUAL" && scope !== "LOCATION") }
+    { skip: !warehouseId || (mode !== "MANUAL" && !["ZONE", "LOCATION"].includes(scope)) }
   );
 
   const productOptions = (productsRes?.data?.content ?? []).map(p => ({
@@ -166,6 +166,14 @@ export function CreateCycleCountModal({
     label: `${l.zone} - ${l.aisle}-${l.rack}-${l.level}-${l.bin}`,
     hint: l.id.substring(0, 8)
   }));
+  const zoneOptions = Array.from(
+    new Set((locationsRes?.data?.content ?? []).map((location) => String(location.zone || "").trim()).filter(Boolean)),
+  ).sort((left, right) => left.localeCompare(right, "vi", { sensitivity: "base" }))
+    .map((zone) => ({
+      value: zone,
+      label: zone,
+      hint: "Khu vực trong kho",
+    }));
   const plannedCountText = mode === "MANUAL"
     ? `${manualItems.length.toLocaleString("vi-VN")} dòng sản phẩm/vị trí`
     : scope === "WAREHOUSE"
@@ -182,6 +190,10 @@ export function CreateCycleCountModal({
       reset(createDefaultValues());
     }
   }, [open, reset]);
+
+  useEffect(() => {
+    setValue("scopeValue", "");
+  }, [scope, warehouseId, setValue]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) reset(createDefaultValues());
@@ -416,10 +428,23 @@ export function CreateCycleCountModal({
                         </Label>
 
                         {scope === "ZONE" ? (
-                          <Input
-                            {...register("scopeValue")}
-                            placeholder="VD: ZONE-A..."
-                            className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                          <Controller
+                            control={control}
+                            name="scopeValue"
+                            render={({ field }) => (
+                              <SearchableSelect
+                                dialogTitle="Chọn khu vực kiểm kê"
+                                options={zoneOptions}
+                                value={field.value || ""}
+                                onValueChange={field.onChange}
+                                placeholder="Chọn khu vực..."
+                                searchPlaceholder="Tìm khu vực..."
+                                emptyText="Kho này chưa có khu vực nào"
+                                className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                                loading={locationsLoading}
+                                disabled={!warehouseId}
+                              />
+                            )}
                           />
                         ) : scope === "LOCATION" ? (
                           <Controller
