@@ -56,14 +56,14 @@ const REASON_OPTIONS = [
 ];
 
 const DEFAULT_VALUES: CreateReturnRequestPayload = {
-  returnType: "CUSTOMER",
+  returnType: "SUPPLIER",
   customerId: "",
   customerName: "",
   salesOrderId: "",
   supplierId: "",
   warehouseId: "",
-  reason: "Khách trả hàng",
-  lines: [],
+  reason: "Trả nhà cung cấp",
+  lines: [{ productId: "", expectedQty: 1, lotNumber: "", locationId: "", maxReturnQty: undefined }],
   note: "",
 };
 

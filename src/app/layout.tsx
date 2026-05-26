@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/opengraph-image",
+        url: "/opengraph-image.svg",
         width: 1200,
         height: 630,
         alt: "StockMaster WMS - phan mem quan ly kho",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/opengraph-image"],
+    images: ["/opengraph-image.svg"],
   },
   robots: {
     index: true,
@@ -76,8 +76,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/icon",
-    apple: "/icon",
+    icon: "/icon.svg",
+    apple: "/icon.svg",
   },
   appleWebApp: {
     capable: true,
@@ -126,7 +126,7 @@ export default function RootLayout({
               name: "StockMaster WMS",
               description: "Phần mềm quản lý kho hàng thông minh số 1 Việt Nam",
               url: getSiteUrl(),
-              logo: `${getSiteUrl()}/icon`,
+              logo: `${getSiteUrl()}/icon.svg`,
               sameAs: [
                 "https://warehouse.ryon.website",
               ],

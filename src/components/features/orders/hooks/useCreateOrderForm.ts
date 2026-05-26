@@ -65,7 +65,7 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
     wardName: "",
   });
   const [country, setCountry] = useState("VN");
-  const [warehouseId, setWarehouseId] = useState(warehouseIdFromUrl);
+  const [warehouseId, setWarehouseIdState] = useState(warehouseIdFromUrl);
   const [priority, setPriority] = useState("5");
   const [errors, setErrors] = useState<NewOrderFormErrors>({});
   const [addressFormKey, setAddressFormKey] = useState(0);
@@ -110,6 +110,10 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
 
   const clearFieldError = (field: keyof NewOrderFormErrors) => {
     setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const setWarehouseId = (nextWarehouseId: string) => {
+    setWarehouseIdState(nextWarehouseId);
   };
 
   const handleCustomerChange = (nextCustomerId: string) => {
@@ -192,8 +196,15 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
         return;
       }
 
+      const orderId = res.data?.id;
+      if (!orderId) {
+        toast.error("Đã tạo đơn xuất nhưng không nhận được mã đơn để mở chi tiết.");
+        return;
+      }
+
       toast.success(res.message || "Đã tạo đơn xuất thành công");
-      push(`/orders/${res.data.id}`);
+
+      push(`/orders/${orderId}`);
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể tạo đơn xuất"));
     }
