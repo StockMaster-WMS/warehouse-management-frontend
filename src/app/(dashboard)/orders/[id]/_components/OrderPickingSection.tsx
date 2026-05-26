@@ -11,11 +11,12 @@ type OrderPickingSectionProps = {
   salesOrderStatus: string;
   warehouseId: string;
   productsById: Map<string, Product>;
+  embedded?: boolean;
 };
 
-export function OrderPickingSection({ soItems, salesOrderStatus, warehouseId, productsById }: OrderPickingSectionProps) {
+export function OrderPickingSection({ soItems, salesOrderStatus, warehouseId, productsById, embedded = false }: OrderPickingSectionProps) {
   return (
-    <Card className="gap-0 py-0 shadow-sm">
+    <Card className={embedded ? "gap-0 rounded-none border-0 bg-transparent p-0 py-0 shadow-none" : "gap-0 py-0 shadow-sm"}>
       <CardHeader className="flex flex-row flex-wrap items-start gap-3 pb-3 pt-5">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-emerald-500/20 bg-emerald-500/5">
           <ScanLine className="size-4 text-emerald-700 dark:text-emerald-400" />

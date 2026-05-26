@@ -13,6 +13,7 @@ type DetailPageHeaderProps = {
   backHref?: string;
   backLabel?: string;
   className?: string;
+  children?: React.ReactNode;
 };
 
 export function DetailPageHeader({
@@ -25,6 +26,7 @@ export function DetailPageHeader({
   backHref,
   backLabel = "Quay lại",
   className,
+  children,
 }: DetailPageHeaderProps) {
   return (
     <header className={cn("ui-surface overflow-hidden", className)}>
@@ -70,6 +72,7 @@ export function DetailPageHeader({
           </div>
         ) : null}
       </div>
+      {children ? <div className="border-t border-border p-4 sm:p-5">{children}</div> : null}
     </header>
   );
 }

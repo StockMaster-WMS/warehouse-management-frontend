@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { createElement, isValidElement } from "react";
 
-type DetailIcon = React.ReactNode | React.ComponentType<{ className?: string }>;
+type DetailIcon = React.ReactNode | React.ElementType<{ className?: string }>;
 
 type DetailSectionProps = {
   /** Optional icon element (usually a lucide icon) */
@@ -17,15 +18,20 @@ type DetailSectionProps = {
   padded?: boolean;
   /** Extra className for the outer container */
   className?: string;
+  /** Render without the standard card surface */
+  surface?: boolean;
 };
 
 function renderIcon(icon: DetailIcon) {
-  if (typeof icon === "function") {
-    const Icon = icon;
-    return <Icon className="size-4" />;
+  if (isValidElement(icon)) {
+    return icon;
   }
 
-  return icon;
+  if (typeof icon === "function" || (typeof icon === "object" && icon !== null && "render" in icon)) {
+    return createElement(icon as React.ElementType<{ className?: string }>, { className: "size-4" });
+  }
+
+  return null;
 }
 
 export function DetailSection({
@@ -36,11 +42,13 @@ export function DetailSection({
   children,
   padded = true,
   className,
+  surface = true,
 }: DetailSectionProps) {
   return (
     <section
       className={cn(
-        "ui-surface overflow-hidden",
+        "overflow-hidden",
+        surface && "ui-surface",
         className,
       )}
     >

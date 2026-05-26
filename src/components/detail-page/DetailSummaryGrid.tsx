@@ -32,6 +32,7 @@ type DetailSummaryItemProps = {
   helper?: React.ReactNode;
   mono?: boolean;
   className?: string;
+  surface?: boolean;
 };
 
 export function DetailSummaryItem({
@@ -41,9 +42,10 @@ export function DetailSummaryItem({
   helper,
   mono,
   className,
+  surface = true,
 }: DetailSummaryItemProps) {
   return (
-    <div className={cn("ui-surface p-4", className)}>
+    <div className={cn(surface ? "ui-surface p-4" : "p-3", className)}>
       <div className="flex items-start gap-3">
         {icon ? (
           <span className="ui-icon-tile size-9 text-primary">{icon}</span>

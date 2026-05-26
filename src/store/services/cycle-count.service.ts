@@ -161,7 +161,7 @@ const cycleCountApi = baseApi.injectEndpoints({
     }),
 
     getCycleCountById: builder.query<ApiResponse<CycleCount>, string>({
-      query: (id) => ({ url: `/cycle-counts/${id}`, method: "GET" }),
+      query: (id) => ({ url: `/cycle-counts/${id}`, method: "GET", timeout: 120_000 }),
       transformResponse: normalizeCycleCountResponse,
       providesTags: (_r, _e, id) => [{ type: "CycleCount" as const, id }],
     }),
@@ -170,6 +170,7 @@ const cycleCountApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/cycle-counts",
         method: "POST",
+        timeout: 120_000,
         data: {
           warehouseId: body.warehouseId,
           description: body.description,
@@ -200,6 +201,7 @@ const cycleCountApi = baseApi.injectEndpoints({
       query: ({ id, results }) => ({
         url: `/cycle-counts/${id}/record`,
         method: "POST",
+        timeout: 120_000,
         data: { results },
       }),
       transformResponse: normalizeCycleCountResponse,

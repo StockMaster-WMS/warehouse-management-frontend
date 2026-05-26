@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ClipboardList, FileDown, FileUp, Loader2, PackagePlus, Pencil, Trash2 } from "lucide-react";
+import { ClipboardList, FileSpreadsheet, Loader2, PackagePlus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
 import { OrderLineEditDialog } from "./OrderLineEditDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetProductsQuery } from "@/store/services/product.service";
-import { downloadAoAAsXlsx, readXlsxFirstSheetMatrix } from "@/lib/xlsx-utils";
+import { SoExcelImportDialog } from "./SoExcelImportDialog";
 
 type OrderLinesSectionProps = {
   salesOrder: SalesOrder;
@@ -30,9 +30,10 @@ type OrderLinesSectionProps = {
   products: Product[];
   itemsFetching: boolean;
   canManageOrder?: boolean;
+  embedded?: boolean;
 };
 
-export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching, canManageOrder = false }: OrderLinesSectionProps) {
+export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching, canManageOrder = false, embedded = false }: OrderLinesSectionProps) {
   const [createSoItem, { isLoading: creatingLine }] = useCreateSoItemMutation();
   const [updateSoItem, { isLoading: updatingLine }] = useUpdateSoItemMutation();
   const [deleteSoItem, { isLoading: deletingLine }] = useDeleteSoItemMutation();
@@ -45,7 +46,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
   const [selectedLineProduct, setSelectedLineProduct] = useState<Product | null>(null);
   const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
   const [editingLine, setEditingLine] = useState<SoItem | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const debouncedProductKeyword = useDebouncedValue(productSearch.trim());
 
   const {
@@ -361,183 +362,63 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
     }
   }
 
-  function findImportProduct(raw: string) {
-    const key = raw.trim().toLowerCase();
-    if (!key) return null;
-    return importProducts.find((p) =>
-      String(p.id).toLowerCase() === key ||
-      String(p.sku ?? "").toLowerCase() === key ||
-      String(p.name ?? "").trim().toLowerCase() === key
-    ) ?? null;
-  }
-
-  async function onDownloadImportTemplate() {
-    await downloadAoAAsXlsx(
-      "sales-order-lines-template.xlsx",
-      "Lines",
-      [
-        ["productSku", "orderedQty", "unitPrice"],
-        ["SKU-001", 5, 120000],
-      ],
-    );
-  }
-
-  async function onImportLinesFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!allowLineMutation) {
-      toast.error("Chỉ được nhập dòng khi đơn đang NHÁP hoặc SẴN SÀNG.");
-      return;
-    }
-    if (!salesOrder.warehouseId) {
-      toast.error("Đơn xuất chưa có kho, không thể lọc sản phẩm theo tồn kho.");
-      return;
-    }
-    if (importProductsLoading) {
-      toast.error("Đang tải danh sách sản phẩm theo kho, thử lại sau vài giây.");
-      return;
-    }
-
-    try {
-      const matrix = await readXlsxFirstSheetMatrix(await file.arrayBuffer());
-      const [headers = [], ...rows] = matrix;
-      const headerMap = new Map(headers.map((h, index) => [h.trim().toLowerCase(), index]));
-      const productCol = headerMap.get("productsku") ?? headerMap.get("sku") ?? headerMap.get("productid") ?? headerMap.get("product");
-      const qtyCol = headerMap.get("orderedqty") ?? headerMap.get("qty") ?? headerMap.get("quantity") ?? headerMap.get("soluong");
-      const priceCol = headerMap.get("unitprice") ?? headerMap.get("price") ?? headerMap.get("dongia");
-
-      if (productCol == null || qtyCol == null) {
-        toast.error("File cần có cột productSku/sku và orderedQty/qty.");
-        return;
-      }
-
-      const existingByProductId = new Map(soItems.map((item) => [String(item.productId), item]));
-      let nextNumber = soItems.length === 0 ? 1 : Math.max(...soItems.map((item) => item.lineNumber)) + 1;
-      let successCount = 0;
-      const issues: string[] = [];
-
-      for (const [rowIndex, row] of rows.entries()) {
-        if (!row.some((cell) => cell.trim())) continue;
-        const excelLine = rowIndex + 2;
-        const product = findImportProduct(row[productCol] ?? "");
-        const qty = parsePositiveNumber(row[qtyCol] ?? "");
-        const rawPrice = priceCol != null ? row[priceCol] ?? "" : "";
-        const parsedPrice = rawPrice.trim() ? Number(rawPrice.replace(",", ".")) : undefined;
-        const unitPrice = typeof parsedPrice === "number" && Number.isFinite(parsedPrice) && parsedPrice >= 0
-          ? parsedPrice
-          : undefined;
-
-        if (!product) {
-          issues.push(`Dòng ${excelLine}: không tìm thấy sản phẩm trong kho đã chọn.`);
-          continue;
-        }
-        if (qty == null) {
-          issues.push(`Dòng ${excelLine}: số lượng không hợp lệ.`);
-          continue;
-        }
-
-        const existing = existingByProductId.get(String(product.id));
-        if (existing) {
-          await updateSoItem({
-            id: existing.id,
-            body: {
-              salesOrderId: salesOrder.id,
-              lineNumber: existing.lineNumber,
-              productId: String(product.id),
-              productSku: String(product.sku ?? ""),
-              orderedQty: Number(existing.orderedQty || 0) + qty,
-              unitPrice: unitPrice ?? existing.unitPrice ?? undefined,
-            },
-          }).unwrap();
-          existing.orderedQty = Number(existing.orderedQty || 0) + qty;
-        } else {
-          const res = await createSoItem({
-            salesOrderId: salesOrder.id,
-            lineNumber: nextNumber,
-            productId: String(product.id),
-            productSku: String(product.sku ?? ""),
-            orderedQty: qty,
-            ...(unitPrice != null ? { unitPrice } : {}),
-          }).unwrap();
-          if (res.data) {
-            existingByProductId.set(String(product.id), res.data);
-          }
-          nextNumber += 1;
-        }
-        successCount += 1;
-      }
-
-      if (successCount > 0) {
-        toast.success(`Đã nhập ${successCount} dòng hàng từ file.`);
-      }
-      if (issues.length > 0) {
-        toast.warning(`${issues.length} dòng chưa nhập được. ${issues.slice(0, 2).join(" ")}`);
-      }
-      if (successCount === 0 && issues.length === 0) {
-        toast.error("File không có dòng dữ liệu.");
-      }
-    } catch (err) {
-      toast.error(apiErrMessage(err, "Không đọc được file nhập dòng hàng."));
-    }
-  }
-
   return (
     <>
     <OrderLineEditDialog open={editingLine != null} onOpenChange={(o) => !o && setEditingLine(null)} line={editingLine} />
-    <Card className="gap-0 py-0 shadow-sm">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3 pt-5">
+    <SoExcelImportDialog
+      salesOrder={salesOrder}
+      soItems={soItems}
+      importProducts={importProducts}
+      importProductsLoading={importProductsLoading}
+      open={importDialogOpen}
+      onOpenChange={setImportDialogOpen}
+    />
+    <Card className={embedded ? "gap-0 rounded-none border-0 bg-transparent p-0 py-0 shadow-none" : "gap-0 py-0 shadow-sm"}>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
         <div className="flex min-w-0 gap-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-primary/5">
             <ClipboardList className="size-4 text-primary" />
           </div>
           <div>
             <CardTitle className="text-base">Dòng hàng</CardTitle>
-            <CardDescription>Thêm / xóa dòng khi đơn ở trạng thái NHÁP hoặc SẴN SÀNG.</CardDescription>
+            <CardDescription>Quản lý sản phẩm, số lượng và đơn giá của đơn xuất.</CardDescription>
           </div>
         </div>
-        <Badge variant="secondary" className="rounded-md tabular-nums">
-          {soItems.length}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="rounded-md tabular-nums">
+            {soItems.length}
+          </Badge>
+          {canManageOrder ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setImportDialogOpen(true)}
+              disabled={!allowLineMutation || importProductsLoading}
+              title={allowLineMutation ? "Nhập từ Excel" : "Chỉ import khi đơn xuất ở trạng thái Nháp hoặc Sẵn sàng"}
+              className="rounded-xl gap-1.5 text-xs border-slate-200"
+            >
+              <FileSpreadsheet className="size-3.5" />
+              Nhập từ Excel
+            </Button>
+          ) : null}
+        </div>
       </CardHeader>
 
       <Separator />
 
-      <CardContent className="space-y-4 pb-5 pt-4">
+      <CardContent className="space-y-3 px-4 pb-4 pt-3 sm:px-5">
         {canManageOrder ? (
-        <form onSubmit={onAddLine} className="rounded-lg border border-border bg-muted/30 p-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            className="sr-only"
-            onChange={onImportLinesFile}
-          />
+        <form onSubmit={onAddLine} className="border-b border-border pb-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <PackagePlus className="size-4 text-primary" />
-              <p className="text-xs font-bold uppercase text-muted-foreground">Thêm dòng</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onDownloadImportTemplate}>
-                <FileDown className="mr-1.5 size-3.5" />
-                Mẫu file
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!allowLineMutation || importProductsLoading}
-              >
-                <FileUp className="mr-1.5 size-3.5" />
-                Nhập file
-              </Button>
+              <p className="text-xs font-bold uppercase text-muted-foreground">Thêm dòng mới</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <div className="space-y-1.5 md:col-span-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4 lg:grid-cols-[minmax(280px,1fr)_160px_160px_auto] lg:items-start">
+            <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
               <label className="text-[11px] font-bold uppercase text-muted-foreground">Sản phẩm *</label>
               <SearchableSelect
                 value={lineProductId}
@@ -613,15 +494,13 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                 placeholder="0"
               />
             </div>
-          </div>
 
-
-
-          <div className="mt-3 flex justify-end">
-            <Button type="submit" size="sm" disabled={!allowLineMutation || creatingLine || creatingLineAndPicking || updatingLine}>
-              {creatingLine || creatingLineAndPicking || updatingLine ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Thêm dòng
-            </Button>
+            <div className="flex items-end md:col-span-4 lg:col-span-1 lg:h-[62px]">
+              <Button type="submit" size="sm" className="w-full lg:w-auto" disabled={!allowLineMutation || creatingLine || creatingLineAndPicking || updatingLine}>
+                {creatingLine || creatingLineAndPicking || updatingLine ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                Thêm dòng
+              </Button>
+            </div>
           </div>
         </form>
         ) : null}
@@ -629,16 +508,16 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
         {itemsFetching ? <p className="text-xs text-slate-400">Đang tải dòng…</p> : null}
 
         {soItems.length === 0 ? (
-          <p className="text-sm text-slate-500">Chưa có dòng hàng.</p>
+          <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-sm text-slate-500">Chưa có dòng hàng.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-lg border border-border">
             {soItems.map((l) => (
               <div
                 key={l.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
+                className="flex flex-col gap-3 border-b border-border bg-card px-3 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     Line #{l.lineNumber} · {productsById.get(l.productId)?.name ?? "Sản phẩm"}{" "}
                     <span className="text-xs font-mono text-muted-foreground">({l.productSku})</span>
                   </p>
@@ -653,11 +532,12 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                   </p>
                 </div>
                 {canManageOrder ? (
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 gap-1 self-end sm:self-auto">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="h-8"
                       disabled={!allowLineMutation}
                       onClick={() => setEditingLine(l)}
                     >
@@ -668,7 +548,7 @@ export function OrderLinesSection({ salesOrder, soItems, products, itemsFetching
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="text-rose-600"
+                      className="h-8 text-rose-600"
                       disabled={!allowLineMutation || deletingLine}
                       onClick={() => onDeleteLine(l)}
                     >
