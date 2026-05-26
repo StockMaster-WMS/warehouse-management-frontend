@@ -31,7 +31,7 @@ import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateCycleCountMutation } from "@/store/services/cycle-count.service";
 import { useGetProductsQuery } from "@/store/services/product.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
-import { useGetUsersQuery } from "@/store/services/user-management.service";
+import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
 import type { CreateCycleCountPayload } from "@/types/cycle-count";
@@ -113,15 +113,6 @@ export function CreateCycleCountModal({
     size: 100,
   });
   const [createCycleCount, { isLoading: isSubmitting }] = useCreateCycleCountMutation();
-  const { data: staffRes, isLoading: staffLoading } = useGetUsersQuery({
-    page: 0,
-    size: 200,
-    role: "WAREHOUSE_STAFF",
-    active: true,
-    sort: "fullName",
-    sortDir: "asc",
-  }, { skip: !open });
-
   const {
     register,
     handleSubmit,
@@ -139,6 +130,10 @@ export function CreateCycleCountModal({
   const scopeValue = useWatch({ control, name: "scopeValue" });
   const warehouseId = useWatch({ control, name: "warehouseId" });
   const manualItems = useWatch({ control, name: "items" }) ?? [];
+  const { data: staffRes, isLoading: staffLoading } = useGetWarehouseStaffQuery(
+    { warehouseId: warehouseId || undefined },
+    { skip: !open },
+  );
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -239,7 +234,7 @@ export function CreateCycleCountModal({
   };
 
   const warehouses = warehousesRes?.data?.content ?? [];
-  const staffUsers = staffRes?.data?.content ?? [];
+  const staffUsers = staffRes?.data ?? [];
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
   const selectedStaffId = useWatch({ control, name: "assignedTo" });
   const selectedStaff = staffUsers.find((user) => user.id === selectedStaffId);

@@ -73,7 +73,7 @@ function TableSkeleton() {
     <>
       {Array.from({ length: 8 }).map((_, i) => (
         <TableRow key={`sk-${i}`}>
-          {Array.from({ length: 10 }).map((__, j) => (
+          {Array.from({ length: 9 }).map((__, j) => (
             <TableCell key={`sk-${i}-${j}`} className="p-3">
               <Skeleton className="h-4 w-full" />
             </TableCell>
@@ -113,9 +113,6 @@ export function StockMovementsTable({
           <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
             <TableRow>
               <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Thời gian
-              </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Loại
               </TableHead>
               <TableHead className="min-w-48 p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -139,8 +136,8 @@ export function StockMovementsTable({
               <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Giữ chỗ ±
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Ghi chú
+              <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Thời gian
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -150,7 +147,7 @@ export function StockMovementsTable({
               <TableSkeleton />
             ) : errorMessage ? (
               <TableRow>
-                <TableCell colSpan={10} className="p-0">
+                <TableCell colSpan={9} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Không thể tải lịch sử biến động"
@@ -168,7 +165,7 @@ export function StockMovementsTable({
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="p-0">
+                <TableCell colSpan={9} className="p-0">
                   <EmptyState
                     icon={AlertCircle}
                     title="Chưa có lịch sử biến động"
@@ -186,11 +183,6 @@ export function StockMovementsTable({
                     "odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70",
                   )}
                 >
-                  <TableCell className="p-3">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
-                      {formatDateTimeFull(item.createdAt)}
-                    </span>
-                  </TableCell>
                   <TableCell className="p-3">
                     <MovementTypeBadge type={item.movementType} />
                   </TableCell>
@@ -256,9 +248,9 @@ export function StockMovementsTable({
                       <span className="text-xs text-slate-400">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="p-3">
+                  <TableCell className="p-3 text-right">
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      {item.reason || "—"}
+                      {formatDateTimeFull(item.createdAt)}
                     </span>
                   </TableCell>
                 </TableRow>

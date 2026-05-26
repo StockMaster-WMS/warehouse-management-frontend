@@ -27,6 +27,22 @@ function getOptionLabel(list: SelectOption[], value: string) {
     return list.find((item) => item.value === value)?.label || "";
 }
 
+function normalizeAddressName(value: string) {
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\b(tinh|thanh pho|tp|phuong|xa|thi tran)\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function findOptionValueByLabel(list: SelectOption[], label: string) {
+    const normalizedLabel = normalizeAddressName(label);
+    if (!normalizedLabel) return "";
+    return list.find((item) => normalizeAddressName(item.label) === normalizedLabel)?.value || "";
+}
+
 function withSelectedOption(options: SelectOption[], value: string, label: string) {
     if (!value || options.some((item) => item.value === value)) return options;
     return [{ value, label: label || value }, ...options];
@@ -146,6 +162,32 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         void loadWardsForProvince();
         return () => { active = false; };
     }, [address.provinceCode, address.provinceName, provinces]);
+
+    useEffect(() => {
+        if (address.provinceCode || !address.provinceName || provinces.length === 0) return;
+
+        const provinceCode = findOptionValueByLabel(provinces, address.provinceName);
+        if (!provinceCode) return;
+
+        setAddress((current) =>
+            current.provinceCode || current.provinceName !== address.provinceName
+                ? current
+                : { ...current, provinceCode }
+        );
+    }, [address.provinceCode, address.provinceName, provinces]);
+
+    useEffect(() => {
+        if (address.wardCode || !address.wardName || wards.length === 0) return;
+
+        const wardCode = findOptionValueByLabel(wards, address.wardName);
+        if (!wardCode) return;
+
+        setAddress((current) =>
+            current.wardCode || current.wardName !== address.wardName
+                ? current
+                : { ...current, wardCode }
+        );
+    }, [address.wardCode, address.wardName, wards]);
 
     // Propagate changes
     useEffect(() => {
