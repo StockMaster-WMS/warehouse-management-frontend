@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
@@ -145,6 +146,12 @@ export default function InboundPage() {
   }, [status, warehouseId]);
 
   const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0 || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error("Không tải được danh sách phiếu nhập.");
+    }
+  }, [isError]);
 
   const clearFilters = () => {
     setKeyword("");
@@ -451,7 +458,7 @@ export default function InboundPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={FileText}
-                      title="Chưa có phiếu nhập"
+                      title="Chưa có phiếu nhập kho."
                       description="Chưa có phiếu nhập kho nào hoặc không khớp với kết quả tìm kiếm."
                       action={
                         <PermissionControl allowedRoles={INBOUND_RECEIVE_ROLES}>

@@ -58,7 +58,7 @@ import {
   useApprovePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,
   useCompletePutawayTaskMutation,
-  useCreatePoItemMutation,
+  useAddPurchaseOrderItemMutation,
   useDeletePoItemMutation,
   useDeletePurchaseOrderMutation,
   useGetProductsForPoQuery,
@@ -220,7 +220,7 @@ export default function PurchaseOrderDetailPage() {
   const [cancelPo, { isLoading: cancellingPo }] = useCancelPurchaseOrderMutation();
   const [deletePo, { isLoading: deletingPo }] = useDeletePurchaseOrderMutation();
   const [updatePo, { isLoading: updatingPo }] = useUpdatePurchaseOrderMutation();
-  const [createLine, { isLoading: savingLine }] = useCreatePoItemMutation();
+  const [addPurchaseOrderItem, { isLoading: savingLine }] = useAddPurchaseOrderItemMutation();
   const [deleteLine, { isLoading: deletingLine }] = useDeletePoItemMutation();
   const [createGrn, { isLoading: creatingGrn }] = useCreateInboundReceiptMutation();
   const [loadInboundLocationSuggestions] = useLazyGetInboundLocationSuggestionsQuery();
@@ -243,6 +243,7 @@ export default function PurchaseOrderDetailPage() {
 
   const poStatus = po?.status ?? "";
   const isDraft = poStatus === "DRAFT";
+  const canEditDraftLines = isDraft && (canManagePurchaseOrder || canReceiveInbound);
   const canApprove = canManagePurchaseOrder && isDraft && items.length > 0;
   const canReceive = canReceiveInbound && (poStatus === "APPROVED" || poStatus === "PARTIAL");
   const canCancel = canManagePurchaseOrder && (poStatus === "DRAFT" || poStatus === "APPROVED");
@@ -301,11 +302,6 @@ export default function PurchaseOrderDetailPage() {
     () => products.find((product) => product.id === lineProductId),
     [lineProductId, products],
   );
-  const nextLineNumber = useMemo(() => {
-    if (items.length === 0) return 1;
-    return Math.max(...items.map((item) => item.lineNumber)) + 1;
-  }, [items]);
-
   /* ── Locations ── */
   const selectedWhId = po?.warehouseId ?? "";
   const { data: whLocRes } = useGetLocationsListQuery(
@@ -371,7 +367,7 @@ export default function PurchaseOrderDetailPage() {
   }
 
   function openEditHeaderDialog() {
-    if (!po || !isDraft) return;
+    if (!po || !isDraft || !canManagePurchaseOrder) return;
     setEditSupplierId(po.supplierId ?? "");
     setEditWarehouseId(po.warehouseId ?? "");
     setEditOrderDate(po.orderDate ?? "");
@@ -383,7 +379,7 @@ export default function PurchaseOrderDetailPage() {
 
   async function handleUpdateHeader(e: React.FormEvent) {
     e.preventDefault();
-    if (!po || !isDraft) return;
+    if (!po || !isDraft || !canManagePurchaseOrder) return;
     setEditHeaderErrors({});
     const parsed = headerSchema.safeParse({
       supplierId: editSupplierId,
@@ -442,7 +438,7 @@ export default function PurchaseOrderDetailPage() {
 
   async function handleAddLine(e: React.FormEvent) {
     e.preventDefault();
-    if (!po || !isDraft) return;
+    if (!po || !canEditDraftLines) return;
     setLineErrors({});
     const parsed = lineSchema.safeParse({
       productId: lineProductId,
@@ -479,35 +475,38 @@ export default function PurchaseOrderDetailPage() {
       if (!Number.isNaN(value)) unitPrice = value;
     }
 
-    const usedNumbers = new Set(items.map((item) => item.lineNumber));
-    let lineNumber = nextLineNumber;
-    while (usedNumbers.has(lineNumber)) lineNumber += 1;
-
     try {
-      const res = await createLine({
+      const res = await addPurchaseOrderItem({
         purchaseOrderId: po.id,
-        lineNumber,
         productId: selectedProduct.id,
         productSku: selectedProduct.sku,
+        productName: selectedProduct.name,
         orderedQty: qty,
-        ...(unitPrice != null ? { unitPrice } : {}),
+        unitPrice: unitPrice ?? 0,
       }).unwrap();
       if (!res.success) {
         toast.error(res.message || "Thêm dòng thất bại");
         return;
       }
-      toast.success(res.message || "Đã thêm dòng");
+      toast.success("Đã thêm dòng hàng vào đơn nhập.");
       setLineProductId("");
       setLineQty("");
       setLinePrice("");
       refetch();
     } catch (err) {
-      toast.error(apiErrMessage(err, "Không thể thêm dòng hàng"));
+      const message = apiErrMessage(err, "Không thể thêm dòng hàng");
+      if (message.includes("DRAFT") || message.includes("Nháp")) {
+        toast.error("Chỉ có thể thêm/sửa dòng hàng khi đơn nhập đang ở trạng thái Nháp.");
+      } else if (message.includes("trùng") || message.includes("tồn tại")) {
+        toast.error("Số dòng đã tồn tại.");
+      } else {
+        toast.error(message);
+      }
     }
   }
 
   async function handleDeleteLine(item: PoItem) {
-    if (!po || !isDraft) return;
+    if (!po || !canEditDraftLines) return;
     try {
       const res = await deleteLine({ id: item.id, purchaseOrderId: po.id }).unwrap();
       if (!res.success) {
@@ -524,6 +523,10 @@ export default function PurchaseOrderDetailPage() {
   /* ── Actions ── */
   async function handleApprove() {
     if (!id) return;
+    if (items.length === 0) {
+      toast.error("Cần thêm ít nhất một dòng hàng trước khi duyệt đơn nhập.");
+      return;
+    }
     try {
       const res = await approvePo(id).unwrap();
       if (!res.success) { toast.error(res.message || "Duyệt đơn nhập thất bại"); return; }
@@ -686,12 +689,13 @@ export default function PurchaseOrderDetailPage() {
               </Button>
             )}
 
-            {isDraft && canApprove && (
+            {canManagePurchaseOrder && isDraft && (
               <Button
                 onClick={handleApprove}
-                disabled={approvingPo}
+                disabled={approvingPo || !canApprove}
                 size="sm"
                 className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                title={!canApprove ? "Cần thêm ít nhất một dòng hàng trước khi duyệt đơn nhập." : undefined}
               >
                 {approvingPo ? <Loader2 className="size-4 animate-spin" /> : <ClipboardCheck className="size-4" />}
                 Duyệt đơn nhập
@@ -810,9 +814,10 @@ export default function PurchaseOrderDetailPage() {
             />
           </DetailSummaryGrid>
 
-          {canManagePurchaseOrder && isDraft ? (
+          {canEditDraftLines ? (
             <PoLinesSection
               purchaseOrderId={po.id}
+              canImportExcel={canEditDraftLines}
               lines={items}
               itemsLoading={detailLoading}
               lineProductId={lineProductId}
@@ -935,8 +940,25 @@ export default function PurchaseOrderDetailPage() {
                     <TableBody>
                       {items.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="py-12 text-center text-sm text-slate-400">
-                            Chưa có dòng hàng nào.
+                          <TableCell colSpan={7} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                              <ShoppingCart className="size-8 text-slate-300 dark:text-slate-600" />
+                              <div>
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Đơn nhập chưa có dòng hàng.</p>
+                                <p className="mt-1 text-xs text-slate-400">Bạn có thể bổ sung sản phẩm trước khi duyệt đơn.</p>
+                              </div>
+                              {canEditDraftLines ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700"
+                                  onClick={() => document.getElementById("po-line-product")?.focus()}
+                                >
+                                  <PackagePlus className="mr-1.5 size-4" />
+                                  Thêm dòng hàng
+                                </Button>
+                              ) : null}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ) : (

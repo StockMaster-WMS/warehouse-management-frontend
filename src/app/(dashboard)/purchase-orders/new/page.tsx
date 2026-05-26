@@ -30,7 +30,6 @@ const headerSchema = z.object({
   warehouseId: z.string().min(1, "Chọn kho"),
   orderDate: z.string().min(1, "Chọn ngày đặt"),
   expectedDate: z.string().optional(),
-  totalAmountStr: z.string().optional(),
 });
 
 const lineSchema = z.object({
@@ -44,11 +43,9 @@ export default function NewPurchaseOrderPage() {
   const [warehouseId, setWarehouseId] = useState("");
   const [orderDate, setOrderDate] = useState("");
   const [expectedDate, setExpectedDate] = useState("");
-  const [totalAmountStr, setTotalAmountStr] = useState("");
   const [headerErrors, setHeaderErrors] = useState<Record<string, string>>({});
 
   const [purchaseOrderId, setPurchaseOrderId] = useState<string | null>(null);
-  const [savedPoNumber, setSavedPoNumber] = useState<string | null>(null);
   const [savedStatus, setSavedStatus] = useState<string | null>(null);
 
   const [lineProductId, setLineProductId] = useState("");
@@ -174,7 +171,6 @@ export default function NewPurchaseOrderPage() {
       warehouseId,
       orderDate,
       expectedDate: expectedDate || undefined,
-      totalAmountStr,
     });
     if (!parsed.success) {
       const err: Record<string, string> = {};
@@ -189,16 +185,6 @@ export default function NewPurchaseOrderPage() {
       return;
     }
 
-    let totalAmount: number | undefined;
-    if (parsed.data.totalAmountStr?.trim()) {
-      const n = Number(parsed.data.totalAmountStr.replace(",", "."));
-      if (Number.isNaN(n)) {
-        setHeaderErrors({ totalAmountStr: "Số tiền không hợp lệ" });
-        toast.error("Tổng tiền không hợp lệ");
-        return;
-      }
-      totalAmount = n;
-    }
 
     try {
       const res = await createPo({
@@ -208,7 +194,6 @@ export default function NewPurchaseOrderPage() {
         ...(parsed.data.expectedDate?.trim()
           ? { expectedDate: parsed.data.expectedDate.trim() }
           : {}),
-        ...(totalAmount != null ? { totalAmount } : {}),
       }).unwrap();
 
       if (!res.success) {
@@ -217,7 +202,6 @@ export default function NewPurchaseOrderPage() {
       }
       const po = res.data;
       setPurchaseOrderId(po.id);
-      setSavedPoNumber(po.poNumber);
       setSavedStatus(po.status ?? "DRAFT");
       toast.success(`Tạo đơn nhập thành công: ${po.poNumber}`);
     } catch (err) {
@@ -335,14 +319,9 @@ export default function NewPurchaseOrderPage() {
         setOrderDate={setOrderDate}
         expectedDate={expectedDate}
         setExpectedDate={setExpectedDate}
-        totalAmountStr={totalAmountStr}
-        setTotalAmountStr={setTotalAmountStr}
         headerErrors={headerErrors}
         headerLocked={headerLocked}
         savingHeader={savingHeader}
-        savedPoNumber={savedPoNumber}
-        savedStatus={savedStatus}
-        purchaseOrderId={purchaseOrderId}
         suppliers={suppliers}
         supplierOptions={supplierOptions}
         warehouses={warehouses}
@@ -354,6 +333,7 @@ export default function NewPurchaseOrderPage() {
 
       <PoLinesSection
         purchaseOrderId={purchaseOrderId}
+        canImportExcel={savedStatus === "DRAFT"}
         lines={lines}
         itemsLoading={itemsLoading}
         lineProductId={lineProductId}

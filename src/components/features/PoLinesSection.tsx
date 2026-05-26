@@ -20,6 +20,7 @@ import type { PoItem } from "@/types/purchase-order";
 
 export interface PoLinesSectionProps {
   purchaseOrderId: string | null;
+  canImportExcel?: boolean;
   lines: PoItem[];
   itemsLoading: boolean;
   lineProductId: string;
@@ -44,6 +45,7 @@ export interface PoLinesSectionProps {
 
 export function PoLinesSection({
   purchaseOrderId,
+  canImportExcel,
   lines,
   itemsLoading,
   lineProductId,
@@ -67,6 +69,7 @@ export function PoLinesSection({
 }: PoLinesSectionProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const locked = !purchaseOrderId;
+  const importEnabled = Boolean(purchaseOrderId && (canImportExcel ?? true));
 
   return (
     <div className={cn(
@@ -107,6 +110,8 @@ export function PoLinesSection({
             variant="outline"
             size="sm"
             onClick={() => setImportDialogOpen(true)}
+            disabled={!importEnabled}
+            title={importEnabled ? "Nhập từ Excel" : "Chỉ import khi đơn nhập ở trạng thái Nháp"}
             className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
             <FileSpreadsheet className="size-3.5" />
@@ -173,6 +178,8 @@ export function PoLinesSection({
                       className="text-rose-700 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg"
                       disabled={isDeletingLine}
                       onClick={() => onDeleteLine(row)}
+                      aria-label="Xóa dòng hàng"
+                      title="Xóa dòng hàng"
                     >
                       <Trash2 className="size-3.5" />
                     </Button>
@@ -280,7 +287,7 @@ export function PoLinesSection({
         </form>
       </div>
 
-      {purchaseOrderId && (
+      {purchaseOrderId && importEnabled && (
         <PoExcelImportDialog
           purchaseOrderId={purchaseOrderId}
           open={importDialogOpen}
