@@ -250,6 +250,8 @@ export default function DashboardPage() {
     ...orderedMetrics,
     ...metrics.filter((metric) => !orderedMetrics.some((item) => item.key === metric.key)),
   ];
+  const metricsToRender: Array<DashboardMetric | null> =
+    isLoading && !summary ? Array.from({ length: 4 }, () => null) : dashboardMetrics;
 
   const riskItems = useMemo(() => [
     {
@@ -356,8 +358,8 @@ export default function DashboardPage() {
           ) : null}
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-            {(isLoading && !summary ? Array.from({ length: 4 }) : dashboardMetrics).map((metric, index) => (
-              metric ? <KpiCard key={metric.key} metric={metric as DashboardMetric} /> : (
+            {metricsToRender.map((metric, index) => (
+              metric ? <KpiCard key={metric.key} metric={metric} /> : (
                 <div key={`metric-skeleton-${index}`} className="h-32 animate-pulse rounded-lg border border-border bg-muted/50" />
               )
             ))}
