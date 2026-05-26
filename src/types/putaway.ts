@@ -59,5 +59,16 @@ export interface PatchPutawayTaskPayload {
 export interface CompletePutawayPayload {
   id: string;
   purchaseOrderId?: string;
-  body: { actualLocationId: string };
+  body?: { actualLocationId?: string };
+}
+
+export interface PutawayLocationSuggestion {
+  locationId: string;
+  locationCode: string;
+  locationType?: string | null;
+  zone?: string | null;
+  currentSuggested?: boolean | null;
+  existingProductLocation?: boolean | null;
+  emptyLocation?: boolean | null;
+  qtyOnHand?: number | null;
 }

@@ -84,6 +84,15 @@ function pickingLocationParts(item: PickingItem) {
     };
 }
 
+function pickingItemDoneAt(item: PickingItem) {
+    const timestamp = Date.parse(item.completedAt || "");
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function completedOrderSortValue(order: PickingOrder) {
+    return Math.max(...order.items.map(pickingItemDoneAt), 0);
+}
+
 export function OperationTab() {
     const router = useRouter();
     const pathname = usePathname();
@@ -105,6 +114,9 @@ export function OperationTab() {
         isFetching: isPickedFetching,
     } = useGetPickingItemsQuery({
         status: "PICKED",
+        sort: "completedAt",
+        sortDir: "desc",
+        page: 0,
         size: 50,
     });
 
@@ -135,7 +147,14 @@ export function OperationTab() {
     }, [pendingItems, pickedItems]);
     const orders = useMemo(() => groupPickingOrders(allItems, orderSort), [allItems, orderSort]);
     const pendingOrders = useMemo(() => groupPickingOrders(pendingItems, orderSort), [pendingItems, orderSort]);
-    const completedOrders = useMemo(() => groupPickingOrders(pickedItems, orderSort), [pickedItems, orderSort]);
+    const completedOrders = useMemo(() => {
+        return groupPickingOrders(pickedItems, "sequence")
+            .sort((a, b) => completedOrderSortValue(b) - completedOrderSortValue(a))
+            .map((order, index) => ({
+                ...order,
+                priority: (index === 0 ? "high" : index === 1 ? "medium" : "low") as PickingOrder["priority"],
+            }));
+    }, [pickedItems]);
     const locationQueue = useMemo(() => groupPickingLocations(pendingItems), [pendingItems]);
 
     const displayedOrders = orderTab === "completed" ? completedOrders : pendingOrders;

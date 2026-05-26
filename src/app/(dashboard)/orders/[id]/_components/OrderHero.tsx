@@ -24,25 +24,23 @@ type OrderHeroProps = {
 export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isFetching }: OrderHeroProps) {
   const [editOpen, setEditOpen] = useState(false);
 
-  const steps = ["DRAFT", "CONFIRMED", "PICKING", "PACKED", "SHIPPED", "DELIVERED"];
-  const stepIcons: Record<string, LucideIcon> = {
-    DRAFT: Clock,
-    CONFIRMED: CheckCircle2,
-    PICKING: Search,
-    PACKED: Box,
-    SHIPPED: Truck,
-    DELIVERED: CheckCircle2,
-  };
-  const stepLabels: Record<string, string> = {
-    DRAFT: "Nháp",
-    CONFIRMED: "Xác nhận",
-    PICKING: "Lấy hàng",
-    PACKED: "Đóng gói",
-    SHIPPED: "Xuất kho",
-    DELIVERED: "Hoàn tất",
+  const steps: Array<{ key: string; label: string; icon: LucideIcon }> = [
+    { key: "DRAFT", label: "Nháp", icon: Clock },
+    { key: "PENDING", label: "Xác nhận", icon: CheckCircle2 },
+    { key: "PICKING", label: "Lấy hàng", icon: Search },
+    { key: "PACKED", label: "Đóng gói", icon: Box },
+    { key: "SHIPPED", label: "Xuất kho", icon: Truck },
+    { key: "DONE", label: "Hoàn tất", icon: CheckCircle2 },
+  ];
+  const statusStepIndex: Record<string, number> = {
+    DRAFT: 0,
+    PENDING: 1,
+    PICKING: 2,
+    PACKED: 3,
+    SHIPPED: 5,
   };
 
-  const currentStepIndex = so.status === "CANCELLED" ? -1 : steps.indexOf(so.status);
+  const currentStepIndex = so.status === "CANCELLED" ? -1 : statusStepIndex[so.status] ?? -1;
   const getProgressPercentage = () => {
     if (currentStepIndex <= 0) return 0;
     return (currentStepIndex / (steps.length - 1)) * 100;
@@ -160,22 +158,23 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
                 style={{ width: `${getProgressPercentage()}%` }} 
               />
               {steps.map((step, index) => {
-                const Icon = stepIcons[step];
+                const Icon = step.icon;
                 const isActive = index === currentStepIndex;
                 const isPast = index < currentStepIndex;
+                const isCompleted = isPast || (so.status === "SHIPPED" && isActive);
                 return (
-                  <div key={step} className="relative flex flex-col items-center">
+                  <div key={step.key} className="relative flex flex-col items-center">
                     <div className={cn(
                       "flex size-8 relative z-10 items-center justify-center rounded-full border-2 bg-background transition-colors",
-                      isActive ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : isPast ? "border-indigo-500 bg-indigo-500 text-white" : "border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600"
+                      isCompleted ? "border-indigo-500 bg-indigo-500 text-white" : isActive ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600"
                     )}>
                       <Icon className="size-4" />
                     </div>
                     <span className={cn(
                       "absolute -bottom-6 w-24 text-center text-[10px] font-semibold uppercase tracking-wider",
-                      isActive ? "text-indigo-600 dark:text-indigo-400" : isPast ? "text-slate-600 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"
+                      isCompleted ? "text-slate-600 dark:text-slate-300" : isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                     )}>
-                      {stepLabels[step]}
+                      {step.label}
                     </span>
                   </div>
                 )

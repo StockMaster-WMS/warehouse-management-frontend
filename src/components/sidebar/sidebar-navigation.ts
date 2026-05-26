@@ -26,6 +26,7 @@ import {
 import {
   AUDIT_LOG_ROLES,
   ADMIN_MANAGER_ROLES,
+  INBOUND_RECEIVE_ROLES,
   INVENTORY_READ_ROLES,
   MANAGEMENT_READ_ROLES,
   MANAGEMENT_OPERATION_ROLES,
@@ -112,7 +113,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     label: "Nhập kho",
     className: "mt-2",
     items: [
-      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, roles: MANAGEMENT_OPERATION_ROLES },
+      { label: "Đơn nhập hàng", href: "/purchase-orders", icon: FileStack, roles: INBOUND_RECEIVE_ROLES },
       { label: "Phiếu nhập kho", href: "/inbound", icon: ReceiptText, roles: READ_OPERATION_ROLES },
       { label: "Xếp hàng lên kệ", href: "/putaway", icon: ScanLine, roles: WAREHOUSE_OPERATION_ROLES },
     ],

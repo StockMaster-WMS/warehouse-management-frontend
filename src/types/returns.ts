@@ -114,6 +114,7 @@ export type CreateReturnLinePayload = {
   expectedQty: number;
   lotNumber?: string;
   locationId?: string;
+  maxReturnQty?: number;
   shippedQty?: number;
   alreadyReturnedQty?: number;
   returnableQty?: number;
@@ -180,4 +181,28 @@ export type ReturnReport = {
   totalSupplierReturnedQty: number;
   topSuppliers: ReturnReportBucket[];
   topReasons: ReturnReportBucket[];
+};
+
+export type SupplierReturnProduct = {
+  productId: string;
+  sku: string;
+  name: string;
+  supplierId: string;
+  supplierName: string;
+  totalQtyAvailable: number;
+  locationCount: number;
+};
+
+export type SupplierReturnLocation = {
+  stockLevelId: string;
+  locationId: string;
+  locationCode: string;
+  zone?: string | null;
+  productId: string;
+  lotNumber?: string | null;
+  expiryDate?: string | null;
+  qtyOnHand: number;
+  qtyReserved: number;
+  qtyAvailable: number;
+  maxReturnQty: number;
 };

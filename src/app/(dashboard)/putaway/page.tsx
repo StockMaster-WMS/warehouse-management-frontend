@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { z } from "zod";
 import {
   Loader2,
   MapPin,
@@ -59,17 +58,15 @@ import {
   useGetLocationsQuery,
   useGetPoItemByIdQuery,
   useGetPoItemsQuery,
-  useGetPurchaseOrderDetailQuery,
   useGetPutawayTasksQuery,
+  useLazyGetPutawayLocationSuggestionsQuery,
   usePatchPutawayTaskMutation,
 } from "@/store/services/purchase-order.service";
 import { useGetLocationsByIdsQuery } from "@/store/services/location.service";
 import type { PoItem, PutawayTask } from "@/types/purchase-order";
+import type { PutawayLocationSuggestion } from "@/types/putaway";
 import type { Location, LocationOption } from "@/types/location";
 
-const completeSchema = z.object({
-  actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
-});
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
   PENDING: {
@@ -105,11 +102,6 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
-}
 
 const EMPTY_PUTAWAY_TASKS: PutawayTask[] = [];
 
@@ -119,10 +111,13 @@ function putawayErrorMessage(error: unknown) {
   if (
     normalized.includes("không thuộc kho") ||
     normalized.includes("not belong") ||
+    normalized.includes("invalid") ||
+    normalized.includes("không hợp lệ") ||
+    normalized.includes("vị trí") ||
     normalized.includes("same warehouse") ||
     normalized.includes("warehouse")
   ) {
-    return "Vị trí lưu kho không thuộc kho của phiếu nhập. Vui lòng chọn vị trí trong đúng kho.";
+    return "Vị trí xếp hàng không hợp lệ hoặc không thuộc kho của phiếu nhập.";
   }
   return message;
 }
@@ -163,6 +158,26 @@ function locationLabel(loc: Location | LocationOption) {
     optionalName ||
     `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`
   );
+}
+
+function putawaySuggestionOption(suggestion: PutawayLocationSuggestion): SearchableSelectOption {
+  const badges = [
+    suggestion.currentSuggested ? "Vị trí hiện tại" : null,
+    suggestion.existingProductLocation ? "Vị trí cũ của sản phẩm" : null,
+    suggestion.emptyLocation ? "Vị trí trống" : null,
+    Number(suggestion.qtyOnHand ?? 0) > 0 ? `Tồn: ${suggestion.qtyOnHand}` : null,
+  ].filter(Boolean);
+  const details = [
+    suggestion.locationType,
+    suggestion.zone ? `Zone ${suggestion.zone}` : null,
+    ...badges,
+  ].filter(Boolean);
+
+  return {
+    value: suggestion.locationId,
+    label: suggestion.locationCode || suggestion.locationId,
+    hint: details.length ? details.join(" · ") : suggestion.locationId,
+  };
 }
 
 function putawayProductInfo(task: PutawayTask, poItem?: PoItem) {
@@ -222,6 +237,7 @@ function PutawayTaskRow({
   const { productSku, productName, quantity } = putawayProductInfo(task, poItem);
   const sourceLabel = putawaySourceLabel(task);
   const canComplete = task.status === "PENDING" || task.status === "IN_PROGRESS";
+  const canEdit = canCoordinatePutaway && canComplete;
 
   return (
     <TableRow
@@ -291,9 +307,6 @@ function PutawayTaskRow({
           </span>
         ) : <span className="text-slate-400 text-xs">,</span>}
       </TableCell>
-      <TableCell className="whitespace-nowrap px-3 py-4 text-xs text-slate-500 dark:text-slate-400">
-        {formatDateTime(task.createdAt)}
-      </TableCell>
       <TableCell className="py-4 pl-3 pr-6 text-right">
         <div className="flex items-center justify-end gap-1.5">
           {canCoordinatePutaway ? (
@@ -302,8 +315,8 @@ function PutawayTaskRow({
               variant="outline"
               size="sm"
               className="h-8 px-2.5 text-xs rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700"
-              onClick={() => onEdit(task)}
-              disabled={patching}
+              onClick={() => canEdit && onEdit(task)}
+              disabled={patching || !canEdit}
             >
               Sửa
             </Button>
@@ -396,79 +409,80 @@ export default function PutawayPage() {
   const [completeTask, { isLoading: completing }] = useCompletePutawayTaskMutation();
   const [patchTask, { isLoading: patching }] = usePatchPutawayTaskMutation();
 
-  const activeTaskPurchaseOrderId =
-    activeTask?.purchaseOrderId ??
-    (activeTask?.poItemId ? poItemMap.get(activeTask.poItemId)?.purchaseOrderId : undefined);
-  const { data: activePoDetailRes, isLoading: activePoLoading } = useGetPurchaseOrderDetailQuery(
-    activeTaskPurchaseOrderId ?? "",
-    { skip: !activeTaskPurchaseOrderId || Boolean(activeTask?.warehouseId) },
+  const [loadPutawaySuggestions, { data: putawaySuggestionsRes, isLoading: suggestionsLoading, isFetching: suggestionsFetching }] =
+    useLazyGetPutawayLocationSuggestionsQuery();
+  const putawaySuggestions = useMemo(() => putawaySuggestionsRes?.data ?? [], [putawaySuggestionsRes]);
+  const putawaySuggestionOptions = useMemo<SearchableSelectOption[]>(() =>
+    putawaySuggestions.map(putawaySuggestionOption),
+    [putawaySuggestions],
   );
-  const activeWarehouseId =
-    activeTask?.warehouseId ??
-    activePoDetailRes?.data?.purchaseOrder?.warehouseId ??
-    "";
-  const {
-    data: activeLocationsRes,
-    isLoading: activeLocationsLoading,
-    isFetching: activeLocationsFetching,
-  } = useGetLocationsQuery(
-    { warehouseId: activeWarehouseId },
-    { skip: !activeWarehouseId },
-  );
-  const activeLocationOptions = useMemo<SearchableSelectOption[]>(() => {
-    return (activeLocationsRes?.data ?? []).map((loc) => {
-      const label =
-        loc.code ||
-        loc.name ||
-        `${loc.zone ?? ""}${loc.aisle ?? ""}-${loc.rack ?? ""}${loc.level != null ? "/" + loc.level : ""}${loc.bin ? "/" + loc.bin : ""}`;
-      const hintParts = [
-        loc.zone ? `Zone ${loc.zone}` : null,
-        loc.aisle ? `Aisle ${loc.aisle}` : null,
-        loc.rack ? `Rack ${loc.rack}` : null,
-        loc.bin ? `Bin ${loc.bin}` : null,
-      ].filter(Boolean);
 
-      return {
-        value: loc.id,
-        label,
-        hint: hintParts.length ? hintParts.join(" · ") : loc.id,
-      };
-    });
-  }, [activeLocationsRes]);
+  async function loadSuggestionsForTask(task: PutawayTask) {
+    try {
+      const res = await loadPutawaySuggestions({ id: task.id, limit: 30 }).unwrap();
+      const suggestions = res.data ?? [];
+      return suggestions.find((item) => item.currentSuggested)?.locationId
+        ?? suggestions.find((item) => item.locationId === task.suggestedLocationId)?.locationId
+        ?? task.suggestedLocationId
+        ?? "";
+    } catch (err) {
+      toast.error(putawayErrorMessage(err));
+      return task.suggestedLocationId ?? "";
+    }
+  }
 
-  function openComplete(t: PutawayTask) {
+  async function openComplete(t: PutawayTask) {
     setActiveTask(t);
-    setActualLocationId(t.actualLocationId ?? t.suggestedLocationId ?? "");
+    setActualLocationId("");
     setCompleteErrors({});
     setCompleteOpen(true);
+    await loadSuggestionsForTask(t);
   }
 
-  function openEdit(t: PutawayTask) {
+  async function openEdit(t: PutawayTask) {
+    if (t.status === "COMPLETED" || t.status === "CANCELLED") {
+      toast.error("Không thể sửa nhiệm vụ đã hoàn tất hoặc đã hủy.");
+      return;
+    }
     setActiveTask(t);
     setEditSuggested(t.suggestedLocationId ?? "");
-    setEditStatus(typeof t.status === "string" ? t.status : "PENDING");
+    setEditStatus(t.status === "IN_PROGRESS" ? "IN_PROGRESS" : "PENDING");
     setEditOpen(true);
+    const currentSuggested = await loadSuggestionsForTask(t);
+    setEditSuggested(currentSuggested);
   }
+
 
   async function submitComplete(e: React.FormEvent) {
     e.preventDefault();
     if (!activeTask) return;
     setCompleteErrors({});
-    const parsed = completeSchema.safeParse({ actualLocationId: actualLocationId.trim() });
-    if (!parsed.success) {
-      const err: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const k = String(issue.path[0] ?? "form");
-        if (!err[k]) err[k] = issue.message;
-      }
-      setCompleteErrors(err);
+
+    const selectedLocationId = actualLocationId.trim();
+    const suggestedLocationId =
+      activeTask.suggestedLocationId?.trim() ||
+      putawaySuggestions.find((item) => item.currentSuggested)?.locationId ||
+      "";
+    const suggestionIds = new Set(putawaySuggestions.map((item) => item.locationId));
+
+    if (!selectedLocationId && !suggestedLocationId) {
+      setCompleteErrors({ actualLocationId: "Chọn vị trí thực tế hoặc cập nhật vị trí gợi ý trước khi hoàn tất." });
       return;
     }
+    if (selectedLocationId && !suggestionIds.has(selectedLocationId)) {
+      setCompleteErrors({ actualLocationId: "Chỉ được chọn vị trí trong danh sách backend gợi ý." });
+      return;
+    }
+
+    const body = selectedLocationId && selectedLocationId !== suggestedLocationId
+      ? { actualLocationId: selectedLocationId }
+      : {};
+
     try {
       const res = await completeTask({
         id: activeTask.id,
         purchaseOrderId: activeTask.purchaseOrderId ?? undefined,
-        body: { actualLocationId: parsed.data.actualLocationId },
+        body,
       }).unwrap();
       if (!res.success) {
         toast.error((res as { message?: string }).message || "Hoàn tất thất bại");
@@ -482,6 +496,7 @@ export default function PutawayPage() {
     }
   }
 
+
   async function submitEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!activeTask) return;
@@ -489,16 +504,29 @@ export default function PutawayPage() {
       toast.error("Bạn không có quyền thực hiện thao tác này.");
       return;
     }
+    if (activeTask.status === "COMPLETED" || activeTask.status === "CANCELLED") {
+      toast.error("Không thể sửa nhiệm vụ đã hoàn tất hoặc đã hủy.");
+      return;
+    }
+
+    const nextSuggested = editSuggested.trim();
+    const suggestionIds = new Set(putawaySuggestions.map((item) => item.locationId));
+    if (nextSuggested && !suggestionIds.has(nextSuggested)) {
+      toast.error("Chỉ được chọn vị trí trong danh sách backend gợi ý.");
+      return;
+    }
+
+    const body: { status: PutawayTask["status"]; suggestedLocationId?: string | null } = {
+      status: editStatus === "IN_PROGRESS" ? "IN_PROGRESS" : "PENDING",
+    };
+    if (nextSuggested !== (activeTask.suggestedLocationId ?? "")) {
+      body.suggestedLocationId = nextSuggested || null;
+    }
 
     try {
       const res = await patchTask({
         id: activeTask.id,
-        body: {
-          status: editStatus as PutawayTask["status"],
-          ...(editSuggested.trim()
-            ? { suggestedLocationId: editSuggested.trim() }
-            : { suggestedLocationId: null }),
-        },
+        body,
       }).unwrap();
       if (!res.success) {
         toast.error(res.message || "Cập nhật thất bại");
@@ -511,6 +539,7 @@ export default function PutawayPage() {
       toast.error(putawayErrorMessage(err));
     }
   }
+
 
   /* ── Quick stats ── */
   const stats = useMemo(() => ({
@@ -640,7 +669,6 @@ export default function PutawayPage() {
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
                 <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
-                <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tạo lúc</TableHead>
                 <TableHead className="py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -744,25 +772,24 @@ export default function PutawayPage() {
             <div className="py-4 space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">
-                  Vị trí thực tế <span className="text-rose-500">*</span>
+                  Vị trí thực tế nếu khác gợi ý
                 </label>
                 <SearchableSelect
                   value={actualLocationId}
                   onValueChange={setActualLocationId}
-                  options={activeLocationOptions}
-                  loading={activePoLoading || activeLocationsLoading || activeLocationsFetching}
-                  disabled={!activeWarehouseId}
+                  options={putawaySuggestionOptions}
+                  loading={suggestionsLoading || suggestionsFetching}
                   error={Boolean(completeErrors.actualLocationId)}
-                  placeholder="Chọn vị trí thực tế"
+                  placeholder={activeTask?.suggestedLocationId ? "Dùng vị trí gợi ý hiện tại" : "Chọn vị trí thực tế"}
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
-                  emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
+                  emptyText="Không có vị trí phù hợp cho nhiệm vụ này"
                   dialogTitle="Chọn vị trí đặt hàng thực tế"
                   icon={<MapPin className="size-4" />}
                 />
                 {completeErrors.actualLocationId && (
                   <p className="mt-1 text-xs text-rose-600">{completeErrors.actualLocationId}</p>
                 )}
-                <p className="mt-1.5 text-xs text-slate-400">Chọn vị trí đã đặt sản phẩm vào. Mã vị trí sẽ được gửi về backend bằng ID.</p>
+                <p className="mt-1.5 text-xs text-slate-400">Để trống nếu dùng vị trí gợi ý hiện tại. Nếu chọn vị trí khác, FE sẽ gửi actualLocationId cho backend.</p>
               </div>
             </div>
 
@@ -808,7 +835,6 @@ export default function PutawayPage() {
                   <SelectContent className="rounded-xl">
                     <SelectItem value="PENDING" className="rounded-lg">Chờ xử lý</SelectItem>
                     <SelectItem value="IN_PROGRESS" className="rounded-lg">Đang thực hiện</SelectItem>
-                    <SelectItem value="CANCELLED" className="rounded-lg">Đã hủy</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -817,12 +843,11 @@ export default function PutawayPage() {
                 <SearchableSelect
                   value={editSuggested}
                   onValueChange={setEditSuggested}
-                  options={activeLocationOptions}
-                  loading={activePoLoading || activeLocationsLoading || activeLocationsFetching}
-                  disabled={!activeWarehouseId}
+                  options={putawaySuggestionOptions}
+                  loading={suggestionsLoading || suggestionsFetching}
                   placeholder="Chọn vị trí gợi ý"
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
-                  emptyText={activeWarehouseId ? "Không có vị trí phù hợp trong kho của phiếu nhập" : "Không xác định được kho của nhiệm vụ"}
+                  emptyText="Không có vị trí phù hợp cho nhiệm vụ này"
                   dialogTitle="Chọn vị trí gợi ý"
                   icon={<MapPin className="size-4" />}
                 />

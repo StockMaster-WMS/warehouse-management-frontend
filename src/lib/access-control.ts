@@ -150,8 +150,8 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
   { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
-  { pattern: "/purchase-orders/:id", roles: MANAGEMENT_OPERATION_ROLES },
-  { pattern: "/purchase-orders", roles: MANAGEMENT_OPERATION_ROLES },
+  { pattern: "/purchase-orders/:id", roles: INBOUND_RECEIVE_ROLES },
+  { pattern: "/purchase-orders", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/putaway", roles: WAREHOUSE_OPERATION_ROLES },
 
   { pattern: "/orders/new", roles: ADMIN_MANAGER_ROLES },
