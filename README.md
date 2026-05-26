@@ -134,7 +134,7 @@ Frontend gọi API qua Axios và RTK Query. Token đăng nhập được gắn v
 Authorization: Bearer <accessToken>
 ```
 
-Khi backend trả về `401`, ứng dụng sẽ xóa token local và chuyển người dùng về trang đăng nhập.
+Khi backend trả về `401`, ứng dụng sẽ gọi `/auth/refresh` bằng HttpOnly refresh cookie, lưu access token mới và thử lại request cũ. Nếu refresh thất bại hoặc cookie không được gửi, ứng dụng mới chuyển người dùng về trang đăng nhập.
 
 Nếu frontend gọi API trực tiếp sang domain khác, backend cần cấu hình CORS cho origin frontend, ví dụ:
 
@@ -188,3 +188,4 @@ Trước khi deploy, kiểm tra lại:
 - `NEXT_PUBLIC_API_BASE_URL` trỏ đúng backend production
 - `NEXT_PUBLIC_SITE_URL` trỏ đúng domain frontend
 - Backend đã cho phép CORS từ domain frontend
+- Backend set refresh cookie đúng môi trường HTTPS: `AUTH_COOKIE_SECURE=true` và `AUTH_COOKIE_SAME_SITE=None` nếu frontend/backend khác site

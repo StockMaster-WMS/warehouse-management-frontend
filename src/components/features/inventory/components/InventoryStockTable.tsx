@@ -51,8 +51,8 @@ function TableSkeleton() {
 
 function getStockTone(item: StockExpanded) {
   const minQty = item.product?.minQty;
+  if (item.qtyAvailable <= 0) return "critical";
   if (minQty == null || minQty <= 0) return "normal";
-  if (item.qtyAvailable <= 0 || item.qtyAvailable <= minQty * 0.5) return "critical";
   if (item.qtyAvailable < minQty) return "warning";
   return "normal";
 }

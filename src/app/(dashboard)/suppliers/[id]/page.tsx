@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   Building2,
   Edit2,
   Hash,
@@ -19,11 +18,8 @@ import {
   ShieldAlert,
   Trash2,
   Loader2,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { DeleteConfirmDialog } from "@/components/features/DeleteConfirmDialog";
 import {
@@ -51,10 +47,20 @@ import type { SupplierStatus } from "@/types/supplier";
 import {
   getSupplierDisplayName,
   supplierStatusLabel,
-  supplierStatusClass,
 } from "@/types/supplier";
 import { useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
+import {
+  DetailPageLayout,
+  DetailBreadcrumb,
+  DetailSection,
+  DetailInfoField,
+  DetailStatusBadge,
+  DetailSkeleton,
+  DetailErrorState,
+  DetailGrid,
+} from "@/components/detail-page";
+import type { StatusConfig } from "@/components/detail-page";
 
 /* ── helpers ── */
 const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
@@ -74,33 +80,15 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
-function InfoRow({
-  icon: Icon,
-  label,
-  value,
-  mono,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | null | undefined;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3 py-2.5">
-      <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          {label}
-        </p>
-        <p
-          className={`mt-0.5 text-sm text-slate-900 dark:text-white ${mono ? "font-mono" : ""}`}
-        >
-          {value?.trim() || "—"}
-        </p>
-      </div>
-    </div>
-  );
-}
+/* ── Status config using shared badge ── */
+const SUPPLIER_STATUS_CONFIG: Record<string, StatusConfig> = {
+  active: { label: "Đang hoạt động", color: "emerald" },
+  ACTIVE: { label: "Đang hoạt động", color: "emerald" },
+  inactive: { label: "Ngừng hoạt động", color: "slate" },
+  INACTIVE: { label: "Ngừng hoạt động", color: "slate" },
+  suspended: { label: "Tạm ngưng", color: "amber" },
+  SUSPENDED: { label: "Tạm ngưng", color: "amber" },
+};
 
 /* ── Change Status Dialog (reusable within detail) ── */
 function ChangeStatusDialog({
@@ -147,7 +135,7 @@ function ChangeStatusDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <label className="text-xs font-bold uppercase text-slate-500">
+          <label className="text-xs font-bold uppercase text-muted-foreground">
             Trạng thái mới
           </label>
           <Select
@@ -173,7 +161,7 @@ function ChangeStatusDialog({
           <Button
             onClick={handleSubmit}
             disabled={isLoading || newStatus === normalized}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Xác nhận
@@ -231,280 +219,198 @@ export default function SupplierDetailPage() {
   /* ── Loading ── */
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 pb-20">
-        <PageHeader
-          title="Chi tiết nhà cung cấp"
-          description="Đang tải…"
-          actions={
-            <Button
-              render={<Link href="/suppliers" />}
-              nativeButton={false}
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-full"
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-          }
-        />
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="space-y-6 md:col-span-2">
-            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-5 w-60" />
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-5 w-36" />
-            </div>
-            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-5 w-52" />
-              <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-5 w-64" />
-            </div>
-          </div>
-          <div className="space-y-6">
-            <Skeleton className="h-32 w-full rounded-2xl" />
-            <Skeleton className="h-40 w-full rounded-2xl" />
-          </div>
-        </div>
-      </div>
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/suppliers" backLabel="Nhà cung cấp" />
+        <DetailSkeleton />
+      </DetailPageLayout>
     );
   }
 
   /* ── Error / Not found ── */
   if (isError || !supplier) {
     return (
-      <div className="w-full space-y-6 pb-20">
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/suppliers" backLabel="Nhà cung cấp" />
         <PageHeader
           title="Chi tiết nhà cung cấp"
           description="Không tìm thấy"
-          actions={
-            <Button
-              render={<Link href="/suppliers" />}
-              nativeButton={false}
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-full"
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-          }
         />
-        <div className="flex flex-col items-center gap-4 py-20 text-slate-500">
-          <AlertCircle className="size-10 text-rose-400" />
-          <p className="text-sm">
-            {apiErrMessage(error, "Không tìm thấy nhà cung cấp.")}
-          </p>
-          <Button
-            render={<Link href="/suppliers" />}
-            nativeButton={false}
-            variant="outline"
-            size="sm"
-          >
-            Về danh sách
-          </Button>
-        </div>
-      </div>
+        <DetailErrorState
+          message={apiErrMessage(error, "Không tìm thấy nhà cung cấp.")}
+          backHref="/suppliers"
+          backLabel="Về danh sách"
+          onRetry={() => window.location.reload()}
+        />
+      </DetailPageLayout>
     );
   }
 
   return (
-    <div className="w-full space-y-4 pb-20 sm:space-y-6">
+    <DetailPageLayout>
+      <DetailBreadcrumb
+        backHref="/suppliers"
+        backLabel="Nhà cung cấp"
+        currentLabel={supplier.code}
+      />
+
       <PageHeader
         title="Chi tiết nhà cung cấp"
         description={`${supplier.name} (${supplier.code})`}
-        actions={
-          <Button
-            render={<Link href="/suppliers" />}
-            nativeButton={false}
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full hover:bg-slate-100"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-        }
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {/* ── Left: Info ── */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Business info */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Building2 className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin doanh nghiệp
-              </h3>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              <InfoRow icon={Hash} label="Mã NCC" value={supplier.code} mono />
-              <InfoRow
-                icon={Building2}
-                label="Tên nhà cung cấp"
-                value={supplier.name}
-              />
-              <InfoRow
-                icon={Hash}
-                label="Mã số thuế"
-                value={supplier.taxCode}
-                mono
-              />
-              <div className="flex items-start gap-3 py-2.5">
-                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-slate-400" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Trạng thái
-                  </p>
-                  <div className="mt-1">
-                    <Badge
-                      variant="secondary"
-                      className={`font-normal ${supplierStatusClass(supplier.status)}`}
-                    >
-                      {supplierStatusLabel(supplier.status)}
-                    </Badge>
-                  </div>
+      <DetailGrid
+        sidebar={
+          <>
+            {/* Status & Timestamps */}
+            <DetailSection
+              icon={<CalendarDays className="size-4" />}
+              title="Trạng thái & Lịch sử"
+            >
+              <div className="mb-4">
+                <DetailStatusBadge
+                  status={supplier.status}
+                  statusConfig={SUPPLIER_STATUS_CONFIG}
+                />
+              </div>
+              <div className="space-y-1 divide-y divide-border">
+                <DetailInfoField
+                  label="Ngày tạo"
+                  value={formatDate(supplier.createdAt)}
+                />
+                <DetailInfoField
+                  label="Cập nhật lần cuối"
+                  value={formatDate(supplier.updatedAt)}
+                />
+              </div>
+            </DetailSection>
+
+            {/* Actions */}
+            {canManageSupplier ? (
+              <DetailSection title="Hành động">
+                <div className="flex flex-col gap-3">
+                  <Button
+                    render={<Link href={`/suppliers/${id}/edit`} />}
+                    nativeButton={false}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Edit2 className="mr-2 size-4" />
+                    Sửa thông tin
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setStatusOpen(true)}
+                  >
+                    <ShieldAlert className="mr-2 size-4" />
+                    Đổi trạng thái
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                    disabled={hasPo}
+                    onClick={() => setDeleteOpen(true)}
+                    title={
+                      hasPo
+                        ? "Không thể xóa NCC đang có đơn nhập hàng"
+                        : "Xóa nhà cung cấp"
+                    }
+                  >
+                    <Trash2 className="mr-2 size-4" />
+                    Xóa nhà cung cấp
+                  </Button>
+                  {hasPo && (
+                    <p className="text-center text-[11px] text-amber-600">
+                      Không thể xóa, nhà cung cấp đang có đơn nhập hàng.
+                    </p>
+                  )}
                 </div>
-              </div>
-            </div>
+              </DetailSection>
+            ) : null}
+          </>
+        }
+      >
+        {/* Business info */}
+        <DetailSection
+          icon={<Building2 className="size-4" />}
+          title="Thông tin doanh nghiệp"
+        >
+          <div className="divide-y divide-border">
+            <DetailInfoField
+              icon={<Hash className="size-4" />}
+              label="Mã NCC"
+              value={supplier.code}
+              mono
+            />
+            <DetailInfoField
+              icon={<Building2 className="size-4" />}
+              label="Tên nhà cung cấp"
+              value={supplier.name}
+            />
+            <DetailInfoField
+              icon={<Hash className="size-4" />}
+              label="Mã số thuế"
+              value={supplier.taxCode}
+              mono
+            />
           </div>
+        </DetailSection>
 
-          {/* Contact info */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Phone className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                Thông tin liên hệ
-              </h3>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              <InfoRow
-                icon={Briefcase}
-                label="Người liên hệ"
-                value={supplier.contactName}
-              />
-              <InfoRow
-                icon={Phone}
-                label="Số điện thoại"
-                value={supplier.contactPhone}
-              />
-              <InfoRow
-                icon={Mail}
-                label="Email"
-                value={supplier.contactEmail}
-              />
-              <InfoRow icon={MapPin} label="Địa chỉ" value={supplier.address} />
-            </div>
+        {/* Contact info */}
+        <DetailSection
+          icon={<Phone className="size-4" />}
+          title="Thông tin liên hệ"
+        >
+          <div className="divide-y divide-border">
+            <DetailInfoField
+              icon={<Briefcase className="size-4" />}
+              label="Người liên hệ"
+              value={supplier.contactName}
+            />
+            <DetailInfoField
+              icon={<Phone className="size-4" />}
+              label="Số điện thoại"
+              value={supplier.contactPhone}
+            />
+            <DetailInfoField
+              icon={<Mail className="size-4" />}
+              label="Email"
+              value={supplier.contactEmail}
+            />
+            <DetailInfoField
+              icon={<MapPin className="size-4" />}
+              label="Địa chỉ"
+              value={supplier.address}
+            />
           </div>
+        </DetailSection>
 
-          {/* Terms */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <Clock className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                Điều khoản
-              </h3>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              <InfoRow
-                icon={Clock}
-                label="Thời hạn thanh toán"
-                value={
-                  supplier.paymentTerms != null
-                    ? `${supplier.paymentTerms} ngày`
-                    : null
-                }
-              />
-              <InfoRow
-                icon={Truck}
-                label="Thời gian giao hàng"
-                value={
-                  supplier.leadTimeDays != null
-                    ? `${supplier.leadTimeDays} ngày`
-                    : null
-                }
-              />
-            </div>
+        {/* Terms */}
+        <DetailSection
+          icon={<Clock className="size-4" />}
+          title="Điều khoản"
+        >
+          <div className="divide-y divide-border">
+            <DetailInfoField
+              icon={<Clock className="size-4" />}
+              label="Thời hạn thanh toán"
+              value={
+                supplier.paymentTerms != null
+                  ? `${supplier.paymentTerms} ngày`
+                  : null
+              }
+            />
+            <DetailInfoField
+              icon={<Truck className="size-4" />}
+              label="Thời gian giao hàng"
+              value={
+                supplier.leadTimeDays != null
+                  ? `${supplier.leadTimeDays} ngày`
+                  : null
+              }
+            />
           </div>
-        </div>
-
-        {/* ── Right sidebar ── */}
-        <div className="space-y-6">
-          {/* Timestamps */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="mb-4 flex items-center gap-2 border-b pb-4 dark:border-slate-800">
-              <CalendarDays className="size-4 text-indigo-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                Lịch sử
-              </h3>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Ngày tạo
-                </p>
-                <p className="mt-0.5 text-slate-900 dark:text-white">
-                  {formatDate(supplier.createdAt)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Cập nhật lần cuối
-                </p>
-                <p className="mt-0.5 text-slate-900 dark:text-white">
-                  {formatDate(supplier.updatedAt)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          {canManageSupplier ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <h3 className="mb-4 border-b pb-4 text-sm font-semibold uppercase tracking-wider text-slate-900 dark:border-slate-800 dark:text-white">
-                Hành động
-              </h3>
-              <div className="flex flex-col gap-3">
-                <Button
-                  render={<Link href={`/suppliers/${id}/edit`} />}
-                  nativeButton={false}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <Edit2 className="mr-2 size-4" />
-                  Sửa thông tin
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setStatusOpen(true)}
-                >
-                  <ShieldAlert className="mr-2 size-4" />
-                  Đổi trạng thái
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
-                  disabled={hasPo}
-                  onClick={() => setDeleteOpen(true)}
-                  title={
-                    hasPo
-                      ? "Không thể xóa NCC đang có đơn nhập hàng"
-                      : "Xóa nhà cung cấp"
-                  }
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  Xóa nhà cung cấp
-                </Button>
-                {hasPo && (
-                  <p className="text-center text-[11px] text-amber-600">
-                    Không thể xóa, nhà cung cấp đang có đơn nhập hàng.
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </div>
+        </DetailSection>
+      </DetailGrid>
 
       {/* Dialogs */}
       {canManageSupplier ? (
@@ -525,6 +431,6 @@ export default function SupplierDetailPage() {
         title="Xóa nhà cung cấp"
         description="Bạn có chắc muốn xóa nhà cung cấp này? Hành động này không thể hoàn tác."
       />
-    </div>
+    </DetailPageLayout>
   );
 }

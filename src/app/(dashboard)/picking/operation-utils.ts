@@ -34,6 +34,15 @@ function sequenceValue(item: PickingItem) {
   return Number(item.pickSequence ?? Number.MAX_SAFE_INTEGER);
 }
 
+function orderPriorityValue(item: PickingItem) {
+  return Number(item.salesOrderPriority ?? 5);
+}
+
+function orderCreatedValue(item: PickingItem) {
+  const timestamp = Date.parse(item.salesOrderCreatedAt || "");
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+}
+
 function compareItemsBySequence(a: PickingItem, b: PickingItem) {
   const sequenceDiff = sequenceValue(a) - sequenceValue(b);
   if (sequenceDiff !== 0) return sequenceDiff;
@@ -88,7 +97,11 @@ export function groupPickingOrders(
     if (sort === "location") {
       return firstLocation(a).localeCompare(firstLocation(b), "vi", { numeric: true });
     }
-    return sequenceValue(a.items[0]) - sequenceValue(b.items[0]);
+    const priorityDiff = orderPriorityValue(a.items[0]) - orderPriorityValue(b.items[0]);
+    if (priorityDiff !== 0) return priorityDiff;
+    const sequenceDiff = sequenceValue(a.items[0]) - sequenceValue(b.items[0]);
+    if (sequenceDiff !== 0) return sequenceDiff;
+    return orderCreatedValue(a.items[0]) - orderCreatedValue(b.items[0]);
   });
 
   return orders.map((order, index) => ({ ...order, priority: priorityForIndex(index) }));

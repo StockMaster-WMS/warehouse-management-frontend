@@ -4,7 +4,9 @@ export interface RevenueTrend {
 }
 
 export interface TopSku {
+  productId?: string;
   productSku: string;
+  productName?: string | null;
   totalQty: number;
   totalRevenue: number;
 }

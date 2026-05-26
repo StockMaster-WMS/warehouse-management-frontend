@@ -7,6 +7,7 @@ export const ORDER_STATUS_FILTER_OPTIONS = [
   "Đã lấy đủ",
   "Đã đóng gói",
   "Đã xuất kho",
+  "Hoàn tất",
 ] as const;
 
 export const ORDER_STATUS_LABEL_TO_API: Record<string, string> = {
@@ -15,4 +16,5 @@ export const ORDER_STATUS_LABEL_TO_API: Record<string, string> = {
   "Đã lấy đủ": "PICKED",
   "Đã đóng gói": "PACKED",
   "Đã xuất kho": "SHIPPED",
+  "Hoàn tất": "COMPLETED",
 };

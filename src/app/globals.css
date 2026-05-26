@@ -200,6 +200,89 @@
   }
 }
 
+@layer utilities {
+  /*
+   * Compatibility bridge for legacy screens that still use light-only Tailwind
+   * palette utilities. Explicit dark:* classes keep priority because their
+   * generated selectors are more specific than these :where() rules.
+   */
+  .dark :where(.bg-white) {
+    background-color: var(--card);
+  }
+
+  .dark :where(.bg-slate-50, .bg-gray-50, .bg-zinc-50) {
+    background-color: color-mix(in oklch, var(--muted) 55%, transparent);
+  }
+
+  .dark :where(.bg-slate-100, .bg-gray-100, .bg-zinc-100) {
+    background-color: var(--muted);
+  }
+
+  .dark :where(.border-slate-100, .border-slate-200, .border-gray-100, .border-gray-200, .border-zinc-100, .border-zinc-200) {
+    border-color: var(--border);
+  }
+
+  .dark :where(.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-zinc-900, .text-zinc-800, .text-black) {
+    color: var(--foreground);
+  }
+
+  .dark :where(.text-slate-700, .text-slate-600, .text-gray-700, .text-gray-600, .text-zinc-700, .text-zinc-600) {
+    color: color-mix(in oklch, var(--foreground) 82%, transparent);
+  }
+
+  .dark :where(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400, .text-zinc-500, .text-zinc-400) {
+    color: var(--muted-foreground);
+  }
+
+  .dark :where(.bg-blue-50) {
+    background-color: oklch(0.32 0.08 250 / 42%);
+  }
+
+  .dark :where(.bg-indigo-50) {
+    background-color: oklch(0.32 0.09 275 / 42%);
+  }
+
+  .dark :where(.bg-purple-50) {
+    background-color: oklch(0.32 0.09 305 / 42%);
+  }
+
+  .dark :where(.bg-emerald-50, .bg-green-50) {
+    background-color: oklch(0.31 0.08 150 / 42%);
+  }
+
+  .dark :where(.bg-amber-50, .bg-yellow-50, .bg-orange-50) {
+    background-color: oklch(0.34 0.08 75 / 42%);
+  }
+
+  .dark :where(.bg-rose-50, .bg-red-50) {
+    background-color: oklch(0.32 0.09 25 / 42%);
+  }
+
+  .dark :where(.text-blue-600, .text-blue-700) {
+    color: oklch(0.78 0.12 250);
+  }
+
+  .dark :where(.text-indigo-600, .text-indigo-700) {
+    color: oklch(0.79 0.13 275);
+  }
+
+  .dark :where(.text-purple-600, .text-purple-700) {
+    color: oklch(0.80 0.13 305);
+  }
+
+  .dark :where(.text-emerald-600, .text-emerald-700, .text-green-600, .text-green-700) {
+    color: oklch(0.79 0.13 150);
+  }
+
+  .dark :where(.text-amber-600, .text-amber-700, .text-yellow-600, .text-yellow-700, .text-orange-600, .text-orange-700) {
+    color: oklch(0.82 0.13 75);
+  }
+
+  .dark :where(.text-rose-600, .text-rose-700, .text-red-600, .text-red-700) {
+    color: oklch(0.78 0.14 25);
+  }
+}
+
 @keyframes navbar-marquee {
   0% {
     transform: translateX(0);

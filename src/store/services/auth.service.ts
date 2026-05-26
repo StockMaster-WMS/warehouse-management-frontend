@@ -20,7 +20,9 @@ export interface LoginResponse {
         email: string;
         name?: string;
         fullName?: string;
-        roles: UserRole;
+        roles: UserRole | string;
+        warehouseIds?: string[];
+        warehouseNames?: string[];
     };
 }
 

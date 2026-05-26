@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { z } from "zod";
 import {
-  ArrowLeft,
   Loader2,
   CheckCircle2,
   Ban,
@@ -19,7 +17,6 @@ import {
   MapPin,
   FileText,
   PackageCheck,
-  AlertCircle,
   TrendingUp,
   ReceiptText,
   Activity,
@@ -32,7 +29,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -78,6 +74,15 @@ import { ADMIN_MANAGER_ROLES, INBOUND_RECEIVE_ROLES } from "@/lib/access-control
 import { PermissionControl, useHasPermissions } from "@/components/permission-control";
 import type { PutawayTask } from "@/types/purchase-order";
 import type { InboundLocationSuggestion, InboundReceipt } from "@/types/inbound-receipt";
+import {
+  DetailErrorState,
+  DetailPageHeader,
+  DetailPageLayout,
+  DetailStatusBadge,
+  DetailSummaryGrid,
+  DetailSummaryItem,
+  type StatusConfig,
+} from "@/components/detail-page";
 
 const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
@@ -89,32 +94,12 @@ function formatDateTime(value?: string | null) {
 }
 
 /* ── Status configs ────────────────────────────────────────────────── */
-const PO_STATUS: Record<string, { label: string; cls: string; dotCls: string }> = {
-  DRAFT: {
-    label: "Nháp",
-    cls: "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    dotCls: "bg-slate-400",
-  },
-  APPROVED: {
-    label: "Đã duyệt",
-    cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
-    dotCls: "bg-blue-500",
-  },
-  PARTIAL: {
-    label: "Nhận một phần",
-    cls: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
-    dotCls: "bg-amber-500",
-  },
-  COMPLETED: {
-    label: "Hoàn tất",
-    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
-    dotCls: "bg-emerald-500",
-  },
-  CANCELLED: {
-    label: "Đã hủy",
-    cls: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900",
-    dotCls: "bg-rose-500",
-  },
+const PO_STATUS_CONFIG: Record<string, StatusConfig> = {
+  DRAFT: { label: "Nháp", color: "slate" },
+  APPROVED: { label: "Đã duyệt", color: "blue" },
+  PARTIAL: { label: "Nhận một phần", color: "amber" },
+  COMPLETED: { label: "Hoàn tất", color: "emerald" },
+  CANCELLED: { label: "Đã hủy", color: "rose" },
 };
 
 const GRN_STATUS: Record<string, { label: string; cls: string }> = {
@@ -152,15 +137,15 @@ const completeSchema = z.object({
 /* ── InfoRow helper ─────────────────────────────────────────────────── */
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3.5 py-3.5 border-b border-slate-50 last:border-0 dark:border-slate-800/60 group">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 text-slate-500 shadow-sm dark:from-slate-800 dark:to-slate-800/60 dark:text-slate-400 group-hover:from-indigo-50 group-hover:to-slate-50 group-hover:text-indigo-600 transition-all dark:group-hover:from-indigo-950/40 dark:group-hover:text-indigo-400">
+    <div className="group flex items-center gap-3.5 border-b border-border py-3.5 last:border-0">
+      <div className="ui-icon-tile size-8 group-hover:text-primary">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-        <div className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{value}</div>
+        <p className="ui-label">{label}</p>
+        <div className="mt-0.5 truncate text-sm font-semibold text-foreground">{value}</div>
       </div>
-      <ChevronRight className="size-3.5 text-slate-200 dark:text-slate-700 shrink-0" />
+      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/35" />
     </div>
   );
 }
@@ -413,35 +398,36 @@ export default function PurchaseOrderDetailPage() {
 
   if (!id) return <p className="text-sm text-rose-600">Thiếu mã đơn.</p>;
 
-  const poStatusCfg = PO_STATUS[poStatus];
   const progressPct = progress && progress.totalOrderedQty > 0
     ? Math.min(100, (progress.totalReceivedQty / progress.totalOrderedQty) * 100)
     : 0;
 
   return (
-    <div className="space-y-5 pb-16">
+    <DetailPageLayout>
       {/* ── Header ── */}
-      <PageHeader
-        title="Chi tiết đơn mua hàng"
-        description={po ? `Mã đơn nhập: ${po.poNumber}` : "Đang tải…"}
+      <DetailPageHeader
+        backHref="/purchase-orders"
+        backLabel="Đơn nhập"
+        eyebrow="Chi tiết đơn nhập"
+        title={supplierName || "Đơn mua hàng"}
+        code={po?.poNumber}
+        status={
+          po ? (
+            <DetailStatusBadge
+              status={poStatus}
+              statusConfig={PO_STATUS_CONFIG}
+              fallback={poStatus}
+            />
+          ) : null
+        }
+        description="Theo dõi đặt hàng, nhận hàng GRN, xếp kệ và lịch sử xử lý của đơn nhập."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              render={<Link href="/purchase-orders" />}
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              className="rounded-xl gap-1.5 text-xs border-slate-200"
-            >
-              <ArrowLeft className="size-3.5" />
-              Danh sách
-            </Button>
-
             {canReceive && (
               <Button
                 onClick={openGrn}
                 size="sm"
-                className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm gap-1.5"
+                className="gap-1.5"
               >
                 <PackagePlus className="size-4" />
                 Nhập hàng
@@ -453,7 +439,7 @@ export default function PurchaseOrderDetailPage() {
                 onClick={handleApprove}
                 disabled={approvingPo}
                 size="sm"
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-sm gap-1.5"
+                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
               >
                 {approvingPo ? <Loader2 className="size-4 animate-spin" /> : <ClipboardCheck className="size-4" />}
                 Duyệt đơn nhập
@@ -466,7 +452,7 @@ export default function PurchaseOrderDetailPage() {
                 size="sm"
                 onClick={handleCancel}
                 disabled={cancellingPo}
-                className="rounded-xl gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-950/20"
+                className="gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-400 dark:hover:bg-amber-950/20"
               >
                 {cancellingPo ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
                 Hủy đơn nhập
@@ -480,7 +466,7 @@ export default function PurchaseOrderDetailPage() {
                   size="sm"
                   onClick={handleDelete}
                   disabled={deletingPo}
-                  className="rounded-xl gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
+                  className="gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/20"
                 >
                   {deletingPo ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                   Xóa đơn nhập
@@ -496,119 +482,95 @@ export default function PurchaseOrderDetailPage() {
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
             {["supplier", "warehouse", "expected-date", "status"].map((key) => (
-              <div key={key} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <div key={key} className="ui-surface p-5">
                 <Skeleton className="h-3 w-16 mb-2 rounded" />
                 <Skeleton className="h-6 w-20 rounded" />
               </div>
             ))}
           </div>
-          <Skeleton className="h-80 w-full rounded-2xl" />
+          <Skeleton className="h-80 w-full rounded-lg" />
         </div>
       ) : detailError || !po || !detail ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <AlertCircle className="size-8 text-rose-400" />
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            {apiErrStatus(detailLoadError) === 403 || apiErrStatus(detailLoadError) === "403"
+        <DetailErrorState
+          message={
+            apiErrStatus(detailLoadError) === 403 || apiErrStatus(detailLoadError) === "403"
               ? "Bạn chưa được phân quyền thao tác kho của đơn nhập này"
-              : "Không tải được đơn nhập hàng"}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="rounded-xl">Thử lại</Button>
-        </div>
+              : "Không tải được đơn nhập hàng"
+          }
+          backHref="/purchase-orders"
+          backLabel="Về danh sách"
+          onRetry={() => refetch()}
+        />
       ) : (
         <>
           {/* ── Summary Strip ── */}
-          <div className="grid gap-3 md:grid-cols-4">
+          <DetailSummaryGrid>
             {/* Status card */}
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900/80">
-              <div className="absolute right-3 top-3 opacity-[0.07]">
-                <ShoppingCart className="size-14 text-slate-600 dark:text-slate-300" />
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Trạng thái đơn</p>
-              {poStatusCfg ? (
-                <>
-                  <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-sm", poStatusCfg.cls)}>
-                    <span className={cn("size-2 rounded-full animate-pulse", poStatusCfg.dotCls)} />
-                    {poStatusCfg.label}
-                  </span>
-                  <p className="mt-2.5 text-xs text-slate-400 font-mono truncate">{po.poNumber}</p>
-                </>
-              ) : <span className="text-sm text-slate-500">{poStatus}</span>}
-            </div>
+            <DetailSummaryItem
+              label="Trạng thái đơn"
+              value={
+                <DetailStatusBadge
+                  status={poStatus}
+                  statusConfig={PO_STATUS_CONFIG}
+                  fallback={poStatus}
+                />
+              }
+              helper={po.poNumber}
+              icon={<ShoppingCart className="size-4" />}
+              mono
+            />
 
             {/* Order Date */}
-            <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-5 shadow-sm dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-slate-900">
-              <div className="absolute right-3 top-3 opacity-10">
-                <CalendarDays className="size-14 text-indigo-600" />
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 dark:text-indigo-500 mb-1">Ngày đặt hàng</p>
-              <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-200 tabular-nums leading-tight">
-                {po.orderDate?.split("-").slice(1).join("/") ?? "—"}
-              </p>
-              <p className="text-xs text-indigo-400 font-semibold">{po.orderDate?.split("-")[0]}</p>
-              {po.expectedDate && (
-                <div className="mt-2 inline-flex items-center gap-1 rounded-lg bg-indigo-100/70 px-2 py-1 text-xs text-indigo-600 font-semibold dark:bg-indigo-900/30 dark:text-indigo-400">
-                  <Clock className="size-3" />
-                  Dự kiến: {po.expectedDate}
-                </div>
-              )}
-            </div>
+            <DetailSummaryItem
+              label="Ngày đặt hàng"
+              value={po.orderDate ?? "—"}
+              helper={po.expectedDate ? `Dự kiến: ${po.expectedDate}` : undefined}
+              icon={<CalendarDays className="size-4" />}
+            />
 
             {/* Progress */}
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/40 p-5 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-slate-900">
-              <div className="absolute right-3 top-3 opacity-10">
-                <Activity className="size-14 text-emerald-600" />
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 dark:text-emerald-600 mb-1">Tiến độ nhập</p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black tabular-nums text-emerald-700 dark:text-emerald-300">
-                  {progress?.totalReceivedQty ?? 0}
-                </span>
-                <span className="text-emerald-400 text-sm font-medium">/ {progress?.totalOrderedQty ?? 0}</span>
-              </div>
-              <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-700",
-                    progressPct >= 100 ? "bg-emerald-500" : progressPct > 0 ? "bg-emerald-400" : "bg-emerald-200"
-                  )}
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <p className="text-xs text-emerald-500 font-semibold mt-1">{Math.round(progressPct)}% hoàn thành</p>
-            </div>
+            <DetailSummaryItem
+              label="Tiến độ nhập"
+              value={`${progress?.totalReceivedQty ?? 0} / ${progress?.totalOrderedQty ?? 0}`}
+              helper={
+                <div className="mt-2">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-700",
+                        progressPct >= 100 ? "bg-emerald-500" : progressPct > 0 ? "bg-emerald-400" : "bg-muted-foreground/20"
+                      )}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-muted-foreground">{Math.round(progressPct)}% hoàn thành</p>
+                </div>
+              }
+              icon={<Activity className="size-4" />}
+            />
 
             {/* Total */}
-            <div className="relative overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50/40 p-5 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:to-slate-900">
-              <div className="absolute right-3 top-3 opacity-10">
-                <DollarSign className="size-14 text-violet-600" />
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-violet-500 dark:text-violet-600 mb-1">Tổng tiền đơn</p>
-              {displayTotal != null ? (
-                <>
-                  <p className="text-2xl font-black tabular-nums text-violet-900 dark:text-violet-200 leading-tight">
-                    {displayTotal.toLocaleString("vi-VN")}
-                  </p>
-                  <p className="text-sm text-violet-400 font-bold">VNĐ</p>
-                </>
-              ) : (
-                <p className="text-2xl font-black text-violet-300 dark:text-violet-700">,</p>
-              )}
-            </div>
-          </div>
+            <DetailSummaryItem
+              label="Tổng tiền đơn"
+              value={displayTotal != null ? displayTotal.toLocaleString("vi-VN") : "—"}
+              helper={displayTotal != null ? "VNĐ" : undefined}
+              icon={<DollarSign className="size-4" />}
+            />
+          </DetailSummaryGrid>
 
           {/* ── Tabs ── */}
           <Tabs defaultValue="info" className="space-y-0">
-            <TabsList className="flex h-auto w-full rounded-t-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-0">
+            <TabsList className="ui-surface flex h-auto w-full overflow-hidden rounded-b-none p-0">
               <TabsTrigger
                 value="info"
-                className="relative flex-1 rounded-none first:rounded-tl-2xl px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none border-b-2 border-transparent px-5 py-3.5 text-xs font-semibold text-primary transition-all data-[state=active]:border-primary data-[state=active]:bg-muted/70 data-[state=active]:text-primary data-[state=active]:shadow-none"
               >
                 <FileText className="size-3.5 mr-1.5 inline-block" />
                 Thông tin đơn nhập
               </TabsTrigger>
               <TabsTrigger
                 value="items"
-                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none border-b-2 border-transparent px-5 py-3.5 text-xs font-semibold text-primary transition-all data-[state=active]:border-primary data-[state=active]:bg-muted/70 data-[state=active]:text-primary data-[state=active]:shadow-none"
               >
                 <ShoppingCart className="size-3.5 mr-1.5 inline-block" />
                 Dòng hàng
@@ -616,7 +578,7 @@ export default function PurchaseOrderDetailPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="receipts"
-                className="relative flex-1 rounded-none px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none border-b-2 border-transparent px-5 py-3.5 text-xs font-semibold text-primary transition-all data-[state=active]:border-primary data-[state=active]:bg-muted/70 data-[state=active]:text-primary data-[state=active]:shadow-none"
               >
                 <ReceiptText className="size-3.5 mr-1.5 inline-block" />
                 Phiếu nhập
@@ -624,7 +586,7 @@ export default function PurchaseOrderDetailPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="putaway"
-                className="relative flex-1 rounded-none last:rounded-tr-2xl px-5 py-3.5 text-xs font-semibold text-indigo-700 transition-all data-[state=active]:text-indigo-700 data-[state=active]:bg-indigo-50/50 data-[state=active]:shadow-none dark:text-indigo-700 dark:data-[state=active]:text-indigo-400 dark:data-[state=active]:bg-indigo-950/20 border-b-2 border-transparent data-[state=active]:border-indigo-600"
+                className="relative flex-1 rounded-none border-b-2 border-transparent px-5 py-3.5 text-xs font-semibold text-primary transition-all data-[state=active]:border-primary data-[state=active]:bg-muted/70 data-[state=active]:text-primary data-[state=active]:shadow-none"
               >
                 <TrendingUp className="size-3.5 mr-1.5 inline-block" />
                 Sắp xếp kho
@@ -634,8 +596,8 @@ export default function PurchaseOrderDetailPage() {
 
             {/* ── Tab 1: PO Info ── */}
             <TabsContent value="info" className="mt-0">
-              <div className="rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-50 dark:divide-slate-800/60">
+              <div className="ui-surface overflow-hidden rounded-t-none">
+                <div className="grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
                   <div className="px-6 py-3">
                     <InfoRow
                       icon={<FileText className="size-3.5" />}
@@ -678,18 +640,18 @@ export default function PurchaseOrderDetailPage() {
 
             {/* ── Tab 2: PO Items ── */}
             <TabsContent value="items" className="mt-0">
-              <div className="overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="ui-surface overflow-hidden rounded-t-none">
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                      <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                        <TableHead className="py-3.5 pl-5 pr-3 w-12 text-[11px] font-bold uppercase tracking-wider text-slate-400">#</TableHead>
-                        <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã hàng / tên SP</TableHead>
-                        <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">SL đặt</TableHead>
-                        <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đã nhận</TableHead>
-                        <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Còn lại</TableHead>
-                        <TableHead className="px-3 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Đơn giá</TableHead>
-                        <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tiến độ</TableHead>
+                    <TableHeader className="ui-table-header">
+                      <TableRow>
+                        <TableHead className="ui-label w-12 py-3.5 pl-5 pr-3">#</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5">Mã hàng / tên SP</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5 text-right">SL đặt</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5 text-right">Đã nhận</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5 text-right">Còn lại</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5 text-right">Đơn giá</TableHead>
+                        <TableHead className="ui-label px-3 py-3.5">Tiến độ</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -708,7 +670,7 @@ export default function PurchaseOrderDetailPage() {
                           return (
                             <TableRow
                               key={row.id}
-                              className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 dark:border-slate-800/60 dark:hover:bg-slate-800/30"
+                              className="ui-table-row"
                             >
                               <TableCell className="py-3.5 pl-5 pr-3 text-xs font-bold text-slate-400">{idx + 1}</TableCell>
                               <TableCell className="px-3 py-3.5">
@@ -748,7 +710,7 @@ export default function PurchaseOrderDetailPage() {
 
             {/* ── Tab 3: Inbound Receipts ── */}
             <TabsContent value="receipts" className="mt-0">
-              <div className="overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="ui-surface overflow-hidden rounded-t-none">
                 {receipts.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
                     <FileText className="size-8 text-slate-300 dark:text-slate-600" />
@@ -763,18 +725,18 @@ export default function PurchaseOrderDetailPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                        <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                          <TableHead className="py-3.5 pl-5 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã phiếu GRN</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày nhập</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Ghi chú</TableHead>
-                          <TableHead className="px-3 py-3.5 pr-5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày tạo</TableHead>
+                      <TableHeader className="ui-table-header">
+                        <TableRow>
+                          <TableHead className="ui-label py-3.5 pl-5 pr-3">Mã phiếu GRN</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Ngày nhập</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Trạng thái</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Ghi chú</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5 pr-5 text-right">Ngày tạo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {receipts.map((r) => (
-                          <TableRow key={r.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 dark:border-slate-800/60 dark:hover:bg-slate-800/30">
+                          <TableRow key={r.id} className="ui-table-row">
                             <TableCell className="py-3.5 pl-5 pr-3">
                               <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-400">{r.receiptNumber}</span>
                             </TableCell>
@@ -797,7 +759,7 @@ export default function PurchaseOrderDetailPage() {
 
             {/* ── Tab 4: Putaway Tasks ── */}
             <TabsContent value="putaway" className="mt-0">
-              <div className="overflow-hidden rounded-b-2xl border border-t-0 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="ui-surface overflow-hidden rounded-t-none">
                 {tasks.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-14 text-center">
                     <MapPin className="size-8 text-slate-300 dark:text-slate-600" />
@@ -807,13 +769,13 @@ export default function PurchaseOrderDetailPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                        <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                          <TableHead className="py-3.5 pl-5 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã nhiệm vụ</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí gợi ý</TableHead>
-                          <TableHead className="px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Vị trí thực tế</TableHead>
-                          <TableHead className="py-3.5 pl-3 pr-5 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+                      <TableHeader className="ui-table-header">
+                        <TableRow>
+                          <TableHead className="ui-label py-3.5 pl-5 pr-3">Mã nhiệm vụ</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Trạng thái</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Vị trí gợi ý</TableHead>
+                          <TableHead className="ui-label px-3 py-3.5">Vị trí thực tế</TableHead>
+                          <TableHead className="ui-label py-3.5 pl-3 pr-5 text-right">Thao tác</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -825,7 +787,7 @@ export default function PurchaseOrderDetailPage() {
                             <TableRow
                               key={task.id}
                               className={cn(
-                                "border-b border-slate-50 last:border-0 dark:border-slate-800/60",
+                                "ui-table-row",
                                 task.status === "COMPLETED" ? "opacity-60" : "hover:bg-slate-50/60 dark:hover:bg-slate-800/30",
                               )}
                             >
@@ -1054,6 +1016,6 @@ export default function PurchaseOrderDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </DetailPageLayout>
   );
 }

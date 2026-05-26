@@ -17,6 +17,8 @@ export interface PickingItem {
   updatedAt?: string | null;
   completedAt?: string | null;
   salesOrderNumber?: string | null;
+  salesOrderPriority?: number | null;
+  salesOrderCreatedAt?: string | null;
   assigneeId?: string | null;
   
   // Extended fields from detailed API

@@ -14,7 +14,6 @@ import {
   clearExplicitLogout,
   hasExplicitLogoutSnapshot,
   hasClientAccessTokenSnapshot,
-  markExplicitLogout,
   setAccessToken,
   subscribeToAccessTokenChanges,
 } from "@/lib/auth-token";
@@ -77,8 +76,8 @@ export function AuthGuard({
       .catch((error) => {
         clearAccessToken();
         if (isRefreshDeniedError(error)) {
-          markExplicitLogout();
-          replace("/login");
+          clearExplicitLogout();
+          replace("/login?reason=session-expired");
           return;
         }
         clearExplicitLogout();
