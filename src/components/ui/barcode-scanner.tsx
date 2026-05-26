@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeScannerState, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import {
+  Html5Qrcode,
+  Html5QrcodeScannerState,
+  Html5QrcodeSupportedFormats,
+} from "html5-qrcode";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +24,10 @@ function isIgnorableScannerStopError(error: unknown) {
 async function safelyClearScanner(scanner: Html5Qrcode) {
   try {
     const state = scanner.getState();
-    if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+    if (
+      state === Html5QrcodeScannerState.SCANNING ||
+      state === Html5QrcodeScannerState.PAUSED
+    ) {
       await scanner.stop();
     }
   } catch (error) {
@@ -36,15 +43,25 @@ async function safelyClearScanner(scanner: Html5Qrcode) {
   }
 }
 
-export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }: BarcodeScannerProps) {
+export function BarcodeScanner({
+  onScanSuccess,
+  onScanError,
+  className,
+  qrbox,
+}: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerId = useId().replace(/:/g, "");
   const hasScannedRef = useRef(false);
+  const duplicateScanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const onScanSuccessRef = useRef(onScanSuccess);
   const onScanErrorRef = useRef(onScanError);
   const [error, setError] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+    const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(
+      window.location.hostname,
+    );
     if (!window.isSecureContext && !isLocalhost) {
       return "Camera yêu cầu kết nối bảo mật (HTTPS). Vui lòng kiểm tra lại địa chỉ truy cập.";
     }
@@ -77,7 +94,9 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
           }
 
           const backCamera =
-            cameras.find((camera) => /back|rear|environment|sau/i.test(camera.label)) || cameras[cameras.length - 1];
+            cameras.find((camera) =>
+              /back|rear|environment|sau/i.test(camera.label),
+            ) || cameras[cameras.length - 1];
           const config = {
             fps: 10,
             qrbox: qrbox ?? { width: 250, height: 180 },
@@ -104,11 +123,25 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
               if (hasScannedRef.current) return;
               hasScannedRef.current = true;
               onScanSuccessRef.current(decodedText);
+              if (duplicateScanTimerRef.current) {
+                clearTimeout(duplicateScanTimerRef.current);
+              }
+              duplicateScanTimerRef.current = setTimeout(() => {
+                hasScannedRef.current = false;
+                duplicateScanTimerRef.current = null;
+              }, 1200);
             },
             (errorMessage) => {
-              if (errorMessage?.includes("NotAllowedError") || errorMessage?.includes("permission")) {
-                console.error("BarcodeScanner: Permission denied", errorMessage);
-                if (onScanErrorRef.current) onScanErrorRef.current(errorMessage);
+              if (
+                errorMessage?.includes("NotAllowedError") ||
+                errorMessage?.includes("permission")
+              ) {
+                console.error(
+                  "BarcodeScanner: Permission denied",
+                  errorMessage,
+                );
+                if (onScanErrorRef.current)
+                  onScanErrorRef.current(errorMessage);
               }
             },
           );
@@ -118,10 +151,14 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
           if (/HTML Element with id=.*not found/i.test(message)) return;
           console.error("BarcodeScanner: Error during initialization", err);
           if (err instanceof DOMException && err.name === "NotAllowedError") {
-            setError("Trình duyệt đang chặn quyền camera. Hãy cấp quyền Camera rồi tải lại trang.");
+            setError(
+              "Trình duyệt đang chặn quyền camera. Hãy cấp quyền Camera rồi tải lại trang.",
+            );
             return;
           }
-          setError("Không thể khởi tạo máy quét. Hãy kiểm tra quyền camera hoặc dùng localhost/HTTPS.");
+          setError(
+            "Không thể khởi tạo máy quét. Hãy kiểm tra quyền camera hoặc dùng localhost/HTTPS.",
+          );
         }
       })();
     }, 250);
@@ -129,6 +166,10 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      if (duplicateScanTimerRef.current) {
+        clearTimeout(duplicateScanTimerRef.current);
+        duplicateScanTimerRef.current = null;
+      }
       if (scannerRef.current) {
         const scanner = scannerRef.current;
         scannerRef.current = null;
@@ -143,14 +184,23 @@ export function BarcodeScanner({ onScanSuccess, onScanError, className, qrbox }:
     return (
       <div className="flex flex-col items-center justify-center gap-y-3 rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
         <AlertCircle className="size-10 text-red-500" />
-        <p className="text-xs font-bold text-red-900 leading-relaxed">{error}</p>
-        <p className="text-[10px] text-red-600">Nếu bạn đang test qua IP, hãy sử dụng Localhost trên máy tính.</p>
+        <p className="text-xs font-bold text-red-900 leading-relaxed">
+          {error}
+        </p>
+        <p className="text-[10px] text-red-600">
+          Nếu bạn đang test qua IP, hãy sử dụng Localhost trên máy tính.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className={cn("relative flex min-h-[300px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-950 shadow-inner", className)}>
+    <div
+      className={cn(
+        "relative flex min-h-[300px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-950 shadow-inner",
+        className,
+      )}
+    >
       <div id={scannerId} className="w-full"></div>
     </div>
   );
