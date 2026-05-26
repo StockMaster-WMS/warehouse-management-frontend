@@ -82,31 +82,13 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     ],
   },
   {
-    label: "Kho & tồn kho",
+    label: "Vận hành kho",
     className: "mt-2",
     items: [
       { label: "Theo dõi tồn kho", href: "/inventory", icon: Boxes, roles: INVENTORY_READ_ROLES },
       { label: "Kho hàng", href: "/warehouses", icon: Warehouse, roles: MANAGEMENT_READ_ROLES },
       { label: "Vị trí lưu trữ", href: "/locations", icon: MapPin, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Kiểm kê kho", href: "/cycle-counts", icon: ClipboardCheck, roles: WAREHOUSE_OPERATION_ROLES },
-    ],
-  },
-  {
-    label: "Danh mục",
-    className: "mt-2",
-    items: [
-      {
-        label: "Sản phẩm & mã hàng",
-        href: "/products",
-        icon: Package,
-        roles: MANAGEMENT_OPERATION_ROLES,
-        children: [
-          { label: "Danh sách sản phẩm", href: "/products", icon: PackageSearch, color: "indigo", roles: MANAGEMENT_OPERATION_ROLES },
-          { label: "Nhóm hàng", href: "/categories", icon: Tags, color: "violet", roles: ADMIN_MANAGER_ROLES },
-        ],
-      },
-      { label: "Khách hàng", href: "/customers", icon: Users2, roles: ADMIN_MANAGER_ROLES },
-      { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: ADMIN_MANAGER_ROLES },
     ],
   },
   {
@@ -125,6 +107,24 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
       { label: "Đơn xuất hàng", href: "/orders", icon: ListOrdered, roles: MANAGEMENT_OPERATION_ROLES },
       { label: "Lấy hàng", href: "/picking", icon: Scissors, roles: WAREHOUSE_OPERATION_ROLES },
       { label: "Hàng trả", href: "/returns", icon: RotateCcw, roles: READ_OPERATION_ROLES },
+    ],
+  },
+  {
+    label: "Danh mục",
+    className: "mt-2",
+    items: [
+      {
+        label: "Sản phẩm & mã hàng",
+        href: "/products",
+        icon: Package,
+        roles: MANAGEMENT_OPERATION_ROLES,
+        children: [
+          { label: "Danh sách sản phẩm", href: "/products", icon: PackageSearch, color: "indigo", roles: MANAGEMENT_OPERATION_ROLES },
+          { label: "Nhóm hàng", href: "/categories", icon: Tags, color: "violet", roles: ADMIN_MANAGER_ROLES },
+        ],
+      },
+      { label: "Khách hàng", href: "/customers", icon: Users2, roles: ADMIN_MANAGER_ROLES },
+      { label: "Nhà cung cấp", href: "/suppliers", icon: Building2, roles: ADMIN_MANAGER_ROLES },
     ],
   },
   {

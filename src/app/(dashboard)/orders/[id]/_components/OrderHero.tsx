@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { type LucideIcon, MapPin, Package, Phone, User, Building2, Clock, Search, CheckCircle2, Box, Truck } from "lucide-react";
+import { MapPin, Package, Phone, User, Building2 } from "lucide-react";
 import { formatShippingShort, salesOrderStatusColor, salesOrderStatusLabel } from "@/types/sales-order";
-import { cn } from "@/lib/utils";
 import type { SalesOrder } from "@/types/sales-order";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,39 +18,19 @@ type OrderHeroProps = {
   warehouseLabel: string;
   warehouseOptions: WarehouseOption[];
   isFetching?: boolean;
+  embedded?: boolean;
 };
 
-export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isFetching }: OrderHeroProps) {
+export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isFetching, embedded = false }: OrderHeroProps) {
   const [editOpen, setEditOpen] = useState(false);
-
-  const steps: Array<{ key: string; label: string; icon: LucideIcon }> = [
-    { key: "DRAFT", label: "Nháp", icon: Clock },
-    { key: "PENDING", label: "Xác nhận", icon: CheckCircle2 },
-    { key: "PICKING", label: "Lấy hàng", icon: Search },
-    { key: "PACKED", label: "Đóng gói", icon: Box },
-    { key: "SHIPPED", label: "Xuất kho", icon: Truck },
-    { key: "COMPLETED", label: "Hoàn tất", icon: CheckCircle2 },
-  ];
-  const statusStepIndex: Record<string, number> = {
-    DRAFT: 0,
-    PENDING: 1,
-    PICKING: 2,
-    PACKED: 3,
-    SHIPPED: 4,
-    COMPLETED: 5,
-  };
-
-  const currentStepIndex = so.status === "CANCELLED" ? -1 : statusStepIndex[so.status] ?? -1;
-  const getProgressPercentage = () => {
-    if (currentStepIndex <= 0) return 0;
-    return (currentStepIndex / (steps.length - 1)) * 100;
-  };
 
   return (
     <DetailSection
       title="Tổng quan đơn xuất"
       description="Thông tin cốt lõi, trạng thái và các điểm điều phối quan trọng."
       icon={<Package className="size-4" />}
+      surface={!embedded}
+      className={embedded ? "rounded-none" : undefined}
       headerAction={
           <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
             <Badge
@@ -146,44 +125,11 @@ export function OrderHero({ so, lineCount, warehouseLabel, warehouseOptions, isF
           </div>
         </div>
 
-        {so.status !== "CANCELLED" ? (
-          <div className="pt-2 pb-5 mt-2">
-            <p className="ui-label mb-5">Tiến trình vận hành</p>
-            <div className="relative flex items-center justify-between px-2 sm:px-6">
-              <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-slate-100 dark:bg-slate-800" />
-              <div 
-                className="absolute left-0 top-1/2 h-0.5 -translate-y-1/2 bg-indigo-500 transition-all duration-500" 
-                style={{ width: `${getProgressPercentage()}%` }} 
-              />
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                const isActive = index === currentStepIndex;
-                const isPast = index < currentStepIndex;
-                const isCompleted = isPast || (so.status === "COMPLETED" && isActive);
-                return (
-                  <div key={step.key} className="relative flex flex-col items-center">
-                    <div className={cn(
-                      "flex size-8 relative z-10 items-center justify-center rounded-full border-2 bg-background transition-colors",
-                      isCompleted ? "border-indigo-500 bg-indigo-500 text-white" : isActive ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600"
-                    )}>
-                      <Icon className="size-4" />
-                    </div>
-                    <span className={cn(
-                      "absolute -bottom-6 w-24 text-center text-[10px] font-semibold uppercase tracking-wider",
-                      isCompleted ? "text-slate-600 dark:text-slate-300" : isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
-                    )}>
-                      {step.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ) : (
+        {so.status === "CANCELLED" ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
             <span className="font-semibold">Đơn hàng này đã bị hủy.</span>
           </div>
-        )}
+        ) : null}
       </div>
     </DetailSection>
   );

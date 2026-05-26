@@ -1,17 +1,22 @@
 import Link from "next/link";
 import {
   AlertCircle,
+  CheckCircle2,
+  Clock,
+  FileText,
   MapPin,
+  PackageCheck,
   PackageX,
   MoreHorizontal,
   Eye,
   Edit2,
   Trash2,
+  Truck,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { OrdersPaginationFooter } from "./OrdersPaginationFooter";
 import {
   Table,
@@ -31,11 +36,58 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { apiErrMessage } from "@/types/api";
-import { statusTone } from "@/lib/design-system";
+import { cn } from "@/lib/utils";
 import { formatShippingShort, salesOrderStatusLabel, type SalesOrder } from "@/types/sales-order";
 import { formatOrderCreatedAt } from "@/components/features/orders/utils";
 
 const SKELETON_ROWS = 5;
+
+const SALES_ORDER_STATUS_CONFIG = {
+  DRAFT: {
+    cls: "border border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400",
+    icon: <FileText className="size-3" />,
+  },
+  PENDING: {
+    cls: "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400",
+    icon: <CheckCircle2 className="size-3" />,
+  },
+  ON_HOLD: {
+    cls: "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400",
+    icon: <AlertCircle className="size-3" />,
+  },
+  PICKING: {
+    cls: "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400",
+    icon: <Clock className="size-3" />,
+  },
+  PACKED: {
+    cls: "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400",
+    icon: <PackageCheck className="size-3" />,
+  },
+  SHIPPED: {
+    cls: "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400",
+    icon: <Truck className="size-3" />,
+  },
+  COMPLETED: {
+    cls: "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400",
+    icon: <CheckCircle2 className="size-3" />,
+  },
+  CANCELLED: {
+    cls: "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400",
+    icon: <XCircle className="size-3" />,
+  },
+} as const;
+
+function SalesOrderStatusPill({ status }: { status: SalesOrder["status"] }) {
+  const cfg = SALES_ORDER_STATUS_CONFIG[status as keyof typeof SALES_ORDER_STATUS_CONFIG];
+  if (!cfg) return <span className="text-xs text-slate-400">{status ?? "—"}</span>;
+
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", cfg.cls)}>
+      {cfg.icon}
+      {salesOrderStatusLabel(status)}
+    </span>
+  );
+}
 
 function OrdersTableSkeleton() {
   return (
@@ -201,9 +253,7 @@ export function OrdersTable({
                       </div>
                     </TableCell>
                     <TableCell className="p-3 text-center">
-                      <StatusBadge tone={statusTone(item.status)}>
-                        {salesOrderStatusLabel(item.status)}
-                      </StatusBadge>
+                      <SalesOrderStatusPill status={item.status} />
                     </TableCell>
                     <TableCell className="p-3 text-right text-xs text-muted-foreground">
                       {formatOrderCreatedAt(item.createdAt)}

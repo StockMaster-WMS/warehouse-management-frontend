@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Ban,
   CheckCircle2,
-  ChevronRight,
   ClipboardCheck,
   Loader2,
   RefreshCw,
@@ -56,21 +54,6 @@ import type { StatusConfig } from "@/components/detail-page";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
 
-const STATUS_LABEL: Partial<Record<CycleCountStatus, string>> = {
-  PENDING: "Chờ bắt đầu",
-  IN_PROGRESS: "Đang kiểm kê",
-  PENDING_REVIEW: "Chờ duyệt",
-  APPROVED: "Đã duyệt",
-  RECOUNT_REQUIRED: "Cần kiểm lại",
-  CANCELLED: "Đã huỷ",
-  COMPLETED: "Chờ duyệt",
-  // legacy
-  DRAFT: "Nháp",
-  OPEN: "Đã mở",
-  COUNTING: "Đang kiểm",
-  REVIEW: "Chờ duyệt",
-};
-
 const CYCLE_COUNT_STATUS_CONFIG: Record<string, StatusConfig> = {
   PENDING: { label: "Chờ bắt đầu", color: "slate" },
   IN_PROGRESS: { label: "Đang kiểm kê", color: "blue" },
@@ -84,26 +67,6 @@ const CYCLE_COUNT_STATUS_CONFIG: Record<string, StatusConfig> = {
   COUNTING: { label: "Đang kiểm", color: "blue" },
   REVIEW: { label: "Chờ duyệt", color: "amber" },
 };
-
-function getStatusBadgeClass(status: CycleCountStatus) {
-  switch (status) {
-    case "APPROVED":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300";
-    case "IN_PROGRESS":
-    case "COUNTING":
-    case "OPEN":
-      return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300";
-    case "COMPLETED":
-    case "PENDING_REVIEW":
-    case "RECOUNT_REQUIRED":
-    case "REVIEW":
-      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
-    case "CANCELLED":
-      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300";
-    default:
-      return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400";
-  }
-}
 
 /** Can user enter counts? */
 function isCountingPhase(status: CycleCountStatus) {
