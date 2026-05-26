@@ -2,7 +2,9 @@ import type { XlsxImportPreviewConfig } from "@/lib/xlsx-import-preview";
 import type { AoA } from "@/lib/xlsx-utils";
 
 export const PO_PRODUCT_IMPORT_HEADERS = [
+  "sku",
   "name",
+  "productId",
   "categoryId",
   "categoryCode",
   "baseUnit",
@@ -19,13 +21,12 @@ export const PO_PRODUCT_IMPORT_HEADERS = [
 export const PO_PRODUCT_XLSX_SHEET_NAME = "ImportSanPham";
 
 export const PO_PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
-  expectedHeaders: PO_PRODUCT_IMPORT_HEADERS.filter(
-    (h) => h !== "categoryId" && h !== "categoryCode" && h !== "supplierCode",
-  ),
-  requiredRowFields: ["name", "baseUnit", "orderedQty"],
-  requireAnyHeaderInEachGroup: [["categoryId", "categoryCode"]],
-  requireAnyValueInEachRowGroup: [["categoryId", "categoryCode"]],
+  expectedHeaders: ["orderedQty"],
+  requireAnyHeaderInEachGroup: [["productId", "sku", "name"]],
+  requireAnyValueInEachRowGroup: [["productId", "sku", "name"]],
   fieldLabels: {
+    sku: "Mã hàng",
+    productId: "UUID sản phẩm",
     name: "Tên sản phẩm",
     categoryId: "UUID danh mục",
     categoryCode: "Mã danh mục (DM-…)",
@@ -43,12 +44,30 @@ export const PO_PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
 
 export function getPoProductImportTemplateAoA(): AoA {
   const headerRow = [...PO_PRODUCT_IMPORT_HEADERS];
-  const exampleRow = [
-    "Sản phẩm mẫu (xóa dòng này)",
+  const existingProductRow = [
+    "HOME-00194",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "10",
+    "50000",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ];
+  const newProductRow = [
+    "",
+    "Sản phẩm mẫu mới",
+    "",
     "thay-bang-uuid-danh-muc",
     "",
     "cai",
-    "100",
+    "10",
     "50000",
     "0123456789012",
     "",
@@ -57,5 +76,5 @@ export function getPoProductImportTemplateAoA(): AoA {
     "5",
     "3",
   ];
-  return [headerRow, exampleRow];
+  return [headerRow, existingProductRow, newProductRow];
 }

@@ -40,7 +40,6 @@ import type {
   DashboardActivity,
   DashboardMetric,
   DashboardNoticeType,
-  DashboardOperations,
   DashboardPeriod,
 } from "@/types/dashboard";
 
@@ -93,24 +92,6 @@ function calcDelta(current: number, previous: number) {
   if (previous === 0) return current > 0 ? "+100%" : "0%";
   const percent = ((current - previous) / previous) * 100;
   return `${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`;
-}
-
-function healthScore(operations?: DashboardOperations) {
-  if (!operations) return 100;
-  const penalties =
-    Math.min(24, operations.overduePickingTasks * 6) +
-    Math.min(22, operations.lowStockItems * 3) +
-    Math.min(16, operations.nearExpiryLots * 2) +
-    Math.min(16, operations.outboundOrdersWithoutPicking * 4) +
-    Math.min(12, operations.largeVarianceCycleCountItems * 4) +
-    Math.max(0, 95 - operations.cycleCountAccuracy);
-  return Math.max(0, Math.round(100 - penalties));
-}
-
-function healthTone(score: number) {
-  if (score >= 88) return { label: "Ổn định", color: "text-emerald-600", bar: "bg-emerald-500" };
-  if (score >= 70) return { label: "Cần theo dõi", color: "text-amber-600", bar: "bg-amber-500" };
-  return { label: "Cần xử lý", color: "text-rose-600", bar: "bg-rose-500" };
 }
 
 function NoticeIcon({ type }: { type: DashboardNoticeType }) {
@@ -220,8 +201,6 @@ export default function DashboardPage() {
 
   const operations = summary?.operations;
   const flow = summary?.flow ?? [];
-  const score = healthScore(operations);
-  const scoreTone = healthTone(score);
   const todayFlow = flow[flow.length - 1];
   const yesterdayFlow = flow[flow.length - 2];
   const totalInbound = flow.reduce((total, item) => total + item.inbound, 0);
@@ -365,51 +344,17 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="mt-4 grid items-start gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <div className="rounded-lg border border-border bg-muted/35 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Sức khỏe vận hành</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <p className={cn("text-3xl font-semibold tabular-nums", scoreTone.color)}>{score}%</p>
-                    <span className={cn("rounded-md bg-background px-2.5 py-1 text-xs font-bold", scoreTone.color)}>
-                      {scoreTone.label}
-                    </span>
-                  </div>
-                </div>
-                <Activity className={cn("size-5 shrink-0", scoreTone.color)} />
-              </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-                <div className={cn("h-full rounded-full transition-all", scoreTone.bar)} style={{ width: `${score}%` }} />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-md bg-background/80 p-3">
-                  <p className="font-semibold text-muted-foreground">Kiểm kê chính xác</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                    {(operations?.cycleCountAccuracy ?? 100).toLocaleString("vi-VN")}%
-                  </p>
-                </div>
-                <div className="rounded-md bg-background/80 p-3">
-                  <p className="font-semibold text-muted-foreground">Hoàn thành hôm nay</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                    {formatNumber(operations?.completedOrdersToday ?? 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid content-start gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-              {riskItems.map((item) => (
-                <ActionTile
-                  key={item.label}
-                  href={item.href}
-                  icon={item.icon}
-                  label={item.label}
-                  value={formatNumber(item.value)}
-                  tone={item.tone}
-                />
-              ))}
-            </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            {riskItems.map((item) => (
+              <ActionTile
+                key={item.label}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                value={formatNumber(item.value)}
+                tone={item.tone}
+              />
+            ))}
           </div>
         </div>
       </section>

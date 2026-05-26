@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarDays, CheckCircle2, Loader2, Lock, PackagePlus, Warehouse } from "lucide-react";
+import { Building2, CalendarDays, Loader2, Lock, PackagePlus, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,14 +22,9 @@ export interface PoHeaderFormProps {
   setOrderDate: (v: string) => void;
   expectedDate: string;
   setExpectedDate: (v: string) => void;
-  totalAmountStr: string;
-  setTotalAmountStr: (v: string) => void;
   headerErrors: Record<string, string>;
   headerLocked: boolean;
   savingHeader: boolean;
-  savedPoNumber: string | null;
-  savedStatus: string | null;
-  purchaseOrderId: string | null;
   suppliers: { id: string | number; name: string }[];
   supplierOptions: { value: string; label: string }[];
   warehouses: WarehouseType[];
@@ -61,14 +56,9 @@ export function PoHeaderForm({
   setOrderDate,
   expectedDate,
   setExpectedDate,
-  totalAmountStr,
-  setTotalAmountStr,
   headerErrors,
   headerLocked,
   savingHeader,
-  savedPoNumber,
-  savedStatus,
-  purchaseOrderId,
   supplierOptions,
   warehouses,
   suppliersErr,
@@ -98,21 +88,6 @@ export function PoHeaderForm({
       </div>
 
       <div className="p-6">
-        {/* Success Banner */}
-        {headerLocked && savedPoNumber && (
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
-            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-                Đã tạo đơn: <span className="font-mono">{savedPoNumber}</span>
-              </p>
-              <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70 font-mono truncate">
-                ID: {purchaseOrderId} · Trạng thái: {savedStatus}
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* Supplier */}
           <div>
@@ -204,23 +179,6 @@ export function PoHeaderForm({
                 className="pl-9 rounded-xl h-10"
               />
             </div>
-          </div>
-
-          {/* Total Amount */}
-          <div className="md:col-span-2">
-            <FieldLabel>Tổng tiền ước tính <span className="text-slate-400 font-normal text-xs">(tuỳ chọn)</span></FieldLabel>
-            <div className="relative max-w-xs">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₫</span>
-              <Input
-                value={totalAmountStr}
-                onChange={(e) => setTotalAmountStr(e.target.value)}
-                disabled={headerLocked}
-                placeholder="0"
-                inputMode="decimal"
-                className={cn("pl-7 rounded-xl h-10", headerErrors.totalAmountStr && "border-rose-400")}
-              />
-            </div>
-            <FieldError msg={headerErrors.totalAmountStr} />
           </div>
         </div>
 
