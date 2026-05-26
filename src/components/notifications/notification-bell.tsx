@@ -111,7 +111,7 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
           >
             <Bell className={compact ? "size-4" : "size-5"} />
             {unreadCount > 0 ? (
-              <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-primary">
+              <span className="absolute right-0 top-0 inline-flex min-w-5 -translate-y-1/4 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-primary">
                 {formatUnreadBadge(unreadCount)}
               </span>
             ) : null}

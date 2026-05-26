@@ -13,6 +13,7 @@ import type {
   LocationOption,
   PatchPutawayTaskPayload,
   PoItem,
+  PutawayLocationSuggestion,
   PurchaseOrder,
   PurchaseOrderDetail,
   PutawayTask,
@@ -407,6 +408,18 @@ const purchaseOrderApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, id) => [{ type: "PutawayTask", id }],
     }),
 
+    getPutawayLocationSuggestions: builder.query<
+      ApiResponse<PutawayLocationSuggestion[]>,
+      { id: string; limit?: number }
+    >({
+      query: ({ id, limit = 30 }) => ({
+        url: `/putaway-tasks/${id}/location-suggestions`,
+        method: "GET",
+        params: { limit },
+      }),
+      providesTags: (_r, _e, arg) => [{ type: "PutawayTask", id: arg.id }],
+    }),
+
     patchPutawayTask: builder.mutation<
       ApiResponse<PutawayTask>,
       PatchPutawayTaskPayload
@@ -520,6 +533,7 @@ export const {
   useImportProductsExcelMutation,
   useGetPutawayTasksQuery,
   useGetPutawayTaskByIdQuery,
+  useLazyGetPutawayLocationSuggestionsQuery,
   usePatchPutawayTaskMutation,
   useCompletePutawayTaskMutation,
   useGetLocationsQuery,

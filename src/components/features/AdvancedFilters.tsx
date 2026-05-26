@@ -22,12 +22,12 @@ export function AdvancedFilterActions({
   className,
 }: AdvancedFilterActionsProps) {
   return (
-    <div className={cn("flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end", className)}>
+    <div className={cn("flex w-full min-w-0 flex-wrap items-center gap-2 md:w-auto md:justify-end", className)}>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="h-11 rounded-lg"
+        className="h-11 max-w-full flex-1 rounded-lg sm:flex-none"
         onClick={onToggle}
         aria-expanded={open}
       >

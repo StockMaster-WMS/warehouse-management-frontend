@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PaginationFooter } from "@/components/ui/pagination-footer";
-import { apiErrMessage } from "@/types/api";
+import { apiErrMessage, apiErrStatus } from "@/types/api";
 import type { PurchaseOrder } from "@/types/purchase-order";
 import {
   useGetPurchaseOrderDetailQuery,
@@ -111,13 +111,13 @@ function SelectPoStep({ onSelect }: { onSelect: (id: string) => void }) {
     useGetPurchaseOrdersQuery({
       page,
       size: pageSize,
-      status: statusFilter === "ALL" ? "APPROVED" : statusFilter,
+      ...(statusFilter === "ALL" ? {} : { status: statusFilter }),
       ...(debouncedKeyword.trim() ? { keyword: debouncedKeyword.trim() } : {}),
       sort: "createdAt",
       sortDir: "desc",
     });
 
-  const rows = data?.data?.content ?? [];
+  const rows = (data?.data?.content ?? []).filter((po) => po.status === "APPROVED" || po.status === "PARTIAL");
   const pagedBody = data?.data;
   const totalPages = pagedBody?.total_pages ?? 0;
   const totalElements = pagedBody?.total_elements ?? 0;
@@ -421,7 +421,11 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       toast.success(`Đã tạo phiếu nhập kho: ${res.data?.receiptNumber ?? "OK"}`);
       push(`/purchase-orders/${poId}`);
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      toast.error(
+        apiErrStatus(err) === 403 || apiErrStatus(err) === "403"
+          ? "Bạn chưa được phân quyền thao tác kho của đơn nhập này"
+          : apiErrMessage(err),
+      );
     }
   }
 

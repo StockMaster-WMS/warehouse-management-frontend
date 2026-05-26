@@ -157,8 +157,14 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   };
 
   const onMarkShipped = async () => {
+    if (!so) return;
     if (soItems.length === 0) {
       toast.error("Không thể xuất kho khi đơn chưa có dòng hàng.");
+      return;
+    }
+
+    if (so.status !== "PACKED") {
+      toast.error("Chỉ xác nhận xuất kho khi đơn đang ở trạng thái ĐÃ ĐÓNG GÓI.");
       return;
     }
 

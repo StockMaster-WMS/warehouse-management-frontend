@@ -52,6 +52,8 @@ import {
 } from "@/lib/date-range";
 import type { Supplier } from "@/types/supplier";
 import type { Warehouse } from "@/types/warehouse";
+import { ADMIN_MANAGER_ROLES, INBOUND_RECEIVE_ROLES } from "@/lib/access-control";
+import { useHasPermissions } from "@/components/permission-control";
 
 const STATUS_OPTIONS = [
   "DRAFT",
@@ -60,6 +62,8 @@ const STATUS_OPTIONS = [
   "COMPLETED",
   "CANCELLED",
 ] as const;
+
+const STAFF_STATUS_OPTIONS = ["APPROVED", "PARTIAL"] as const;
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
   DRAFT: {
@@ -115,6 +119,8 @@ function formatDateTime(value?: string | null) {
 
 
 export default function PurchaseOrdersPage() {
+  const canManagePurchaseOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
+  const canReceiveInbound = useHasPermissions(INBOUND_RECEIVE_ROLES);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
@@ -160,6 +166,11 @@ export default function PurchaseOrdersPage() {
     });
 
   const rows: PurchaseOrder[] = data?.data?.content ?? EMPTY_PURCHASE_ORDERS;
+  const visibleRows = useMemo(() => {
+    if (canManagePurchaseOrder) return rows;
+    if (!canReceiveInbound) return EMPTY_PURCHASE_ORDERS;
+    return rows.filter((row) => row.status === "APPROVED" || row.status === "PARTIAL");
+  }, [canManagePurchaseOrder, canReceiveInbound, rows]);
   const pagedBody = data?.data;
   const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes]);
   const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
@@ -194,6 +205,7 @@ export default function PurchaseOrdersPage() {
   }, [status, supplierId, warehouseId]);
 
   const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0 || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
+  const statusOptions = canManagePurchaseOrder ? STATUS_OPTIONS : STAFF_STATUS_OPTIONS;
 
   const clearFilters = () => {
     setKeyword("");
@@ -208,15 +220,15 @@ export default function PurchaseOrdersPage() {
   const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
 
   const stats = useMemo(() => {
-    const all = rows;
+    const all = visibleRows;
 
     return {
-      total: paged?.total_elements ?? all.length,
+      total: canManagePurchaseOrder ? (paged?.total_elements ?? all.length) : all.length,
       processing: all.filter((r) => r.status === "APPROVED" || r.status === "PARTIAL").length,
       completed: all.filter((r) => r.status === "COMPLETED").length,
       cancelled: all.filter((r) => r.status === "CANCELLED").length,
     };
-  }, [rows, paged?.total_elements]);
+  }, [canManagePurchaseOrder, visibleRows, paged?.total_elements]);
 
   const statsItems = useMemo<StatItem[]>(() => {
     const multiPage = (paged?.total_pages ?? 0) > 1;
@@ -266,15 +278,17 @@ export default function PurchaseOrdersPage() {
               <ShoppingCart className="size-3.5" />
               Sắp xếp vào kho
             </Button>
-            <Button
-              render={<Link href="/purchase-orders/new" />}
-              nativeButton={false}
-              size="sm"
-              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
-            >
-              <Plus className="size-4" />
-              Tạo đơn nhập
-            </Button>
+            {canManagePurchaseOrder ? (
+              <Button
+                render={<Link href="/purchase-orders/new" />}
+                nativeButton={false}
+                size="sm"
+                className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none gap-1.5"
+              >
+                <Plus className="size-4" />
+                Tạo đơn nhập
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -358,7 +372,7 @@ export default function PurchaseOrdersPage() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="" className="rounded-lg">Tất cả trạng thái</SelectItem>
-                    {STATUS_OPTIONS.map((st) => (
+                    {statusOptions.map((st) => (
                       <SelectItem key={st} value={st} className="rounded-lg">
                         {STATUS_LABEL[st] ?? st}
                       </SelectItem>
@@ -512,7 +526,7 @@ export default function PurchaseOrdersPage() {
                       />
                     </TableCell>
                   </TableRow>
-                ) : rows.length === 0 ? (
+                ) : visibleRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="py-12">
                       <EmptyState
@@ -520,15 +534,17 @@ export default function PurchaseOrdersPage() {
                         title="Chưa có đơn nhập"
                         description="Chưa có đơn nhập nào trong hệ thống hoặc cụm từ tìm kiếm không trùng khớp."
                         action={
-                          <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm" className="bg-indigo-600">
-                            Tạo đơn đầu tiên
-                          </Button>
+                          canManagePurchaseOrder ? (
+                            <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm" className="bg-indigo-600">
+                              Tạo đơn đầu tiên
+                            </Button>
+                          ) : null
                         }
                       />
                     </TableCell>
                   </TableRow>
                 ) : (
-                  rows.map((po: PurchaseOrder) => (
+                  visibleRows.map((po: PurchaseOrder) => (
                     <TableRow
                       key={po.id}
                       className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/80 dark:border-slate-800/60 dark:hover:bg-slate-800/40 transition-colors"
@@ -565,9 +581,9 @@ export default function PurchaseOrdersPage() {
 
         <PaginationFooter
           itemLabel="đơn nhập"
-          rowsCount={rows.length}
+          rowsCount={visibleRows.length}
           page={page}
-          totalElements={paged?.total_elements ?? rows.length}
+          totalElements={paged?.total_elements ?? visibleRows.length}
           totalPages={paged?.total_pages ?? 1}
           canGoPrev={canGoPrev}
           canGoNext={canGoNext}
