@@ -323,10 +323,6 @@ export default function CycleCountsPage() {
           }}
         />
       </div>
-
-      <div className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-        Quy trình kiểm kê gồm tạo đợt kiểm, sinh dòng kiểm theo tồn hệ thống, nhập số đếm thực tế và duyệt chênh lệch để điều chỉnh tồn kho.
-      </div>
     </div>
   );
 }

@@ -55,14 +55,17 @@ type WarehouseFormDialogProps = {
   editingWarehouse: Warehouse | null;
   isSubmitting: boolean;
   formState: WarehouseFormState;
-  setFormState: (updater: (prev: WarehouseFormState) => WarehouseFormState) => void;
+  setFormState: (
+    updater: (prev: WarehouseFormState) => WarehouseFormState,
+  ) => void;
   managers: WarehouseManager[];
   isManagersLoading?: boolean;
   onSubmit: () => Promise<boolean>;
 };
 
 function managerLabel(manager: WarehouseManager) {
-  const primary = manager.fullName?.trim() || manager.name?.trim() || manager.username;
+  const primary =
+    manager.fullName?.trim() || manager.name?.trim() || manager.username;
   return manager.email ? `${primary} (${manager.email})` : primary;
 }
 
@@ -95,7 +98,11 @@ export function WarehouseFormDialog({
   };
 
   const selectedManagers = formState.managerIds
-    .map((id) => managers.find((manager) => manager.id === id) ?? editingWarehouse?.managers?.find((manager) => manager.id === id))
+    .map(
+      (id) =>
+        managers.find((manager) => manager.id === id) ??
+        editingWarehouse?.managers?.find((manager) => manager.id === id),
+    )
     .filter((manager): manager is WarehouseManager => Boolean(manager));
   const selectedManagersLabel = selectedManagers.length
     ? selectedManagers.map(managerLabel).join(", ")
@@ -172,17 +179,24 @@ export function WarehouseFormDialog({
                       disabled={isSubmitting || isManagersLoading}
                       className={cn(
                         "h-auto min-h-10 w-full justify-between rounded-xl px-3 py-2 text-left font-normal",
-                        selectedManagers.length ? "text-foreground" : "text-muted-foreground",
+                        selectedManagers.length
+                          ? "text-foreground"
+                          : "text-muted-foreground",
                       )}
                     >
                       <span className="min-w-0 flex-1 truncate">
-                        {isManagersLoading ? "Đang tải danh sách quản lý..." : selectedManagersLabel}
+                        {isManagersLoading
+                          ? "Đang tải danh sách quản lý..."
+                          : selectedManagersLabel}
                       </span>
                       <ChevronDown className="ml-2 size-4 shrink-0 text-muted-foreground" />
                     </Button>
                   }
                 />
-                <DropdownMenuContent align="start" className="max-h-72 w-(--anchor-width) min-w-[22rem] overflow-y-auto rounded-xl p-2">
+                <DropdownMenuContent
+                  align="start"
+                  className="max-h-72 w-(--anchor-width) min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl p-2 sm:min-w-[22rem]"
+                >
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Chọn quản lý kho</DropdownMenuLabel>
                     {managers.length === 0 ? (
@@ -191,7 +205,9 @@ export function WarehouseFormDialog({
                       </div>
                     ) : (
                       managers.map((manager) => {
-                        const selected = formState.managerIds.includes(manager.id);
+                        const selected = formState.managerIds.includes(
+                          manager.id,
+                        );
                         return (
                           <DropdownMenuCheckboxItem
                             key={manager.id}
@@ -199,12 +215,17 @@ export function WarehouseFormDialog({
                             onCheckedChange={() => toggleManager(manager.id)}
                             className={cn(
                               "items-start rounded-lg p-2 pr-8",
-                              selected && "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300",
+                              selected &&
+                                "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300",
                             )}
                           >
                             <span className="min-w-0">
-                              <span className="block truncate font-semibold">{managerLabel(manager)}</span>
-                              <span className="block truncate text-xs text-muted-foreground">{manager.username}</span>
+                              <span className="block truncate font-semibold">
+                                {managerLabel(manager)}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {manager.username}
+                              </span>
                             </span>
                           </DropdownMenuCheckboxItem>
                         );
@@ -213,7 +234,9 @@ export function WarehouseFormDialog({
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <p className="text-[10px] text-slate-400">Có thể chọn nhiều quản lý cho một kho.</p>
+              <p className="text-[10px] text-slate-400">
+                Có thể chọn nhiều quản lý cho một kho.
+              </p>
             </div>
 
             <div className="space-y-1.5">

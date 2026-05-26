@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
-import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
+import {
+  AdvancedFilterActions,
+  AdvancedFilterPanel,
+} from "@/components/features/AdvancedFilters";
 import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
 import { TableRefreshButton } from "@/components/ui/table-refresh-button";
 import { cn } from "@/lib/utils";
@@ -52,7 +55,11 @@ import {
 } from "@/lib/date-range";
 import type { Supplier } from "@/types/supplier";
 import type { Warehouse } from "@/types/warehouse";
-import { ADMIN_MANAGER_ROLES, INBOUND_RECEIVE_ROLES } from "@/lib/access-control";
+import {
+  ADMIN_MANAGER_ROLES,
+  INBOUND_RECEIVE_ROLES,
+  PURCHASE_ORDER_MANAGE_ROLES,
+} from "@/lib/access-control";
 import { useHasPermissions } from "@/components/permission-control";
 
 const STATUS_OPTIONS = [
@@ -65,7 +72,10 @@ const STATUS_OPTIONS = [
 
 const STAFF_STATUS_OPTIONS = ["APPROVED", "PARTIAL"] as const;
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; cls: string; icon: React.ReactNode }
+> = {
   DRAFT: {
     label: "Nháp",
     cls: "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
@@ -102,9 +112,15 @@ const EMPTY_PURCHASE_ORDERS: PurchaseOrder[] = [];
 
 function StatusPill({ status }: { status: string | null | undefined }) {
   const cfg = STATUS_CONFIG[status ?? ""];
-  if (!cfg) return <span className="text-xs text-slate-400">{status ?? "—"}</span>;
+  if (!cfg)
+    return <span className="text-xs text-slate-400">{status ?? "—"}</span>;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", cfg.cls)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        cfg.cls,
+      )}
+    >
       {cfg.icon}
       {cfg.label}
     </span>
@@ -117,9 +133,9 @@ function formatDateTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
 }
 
-
 export default function PurchaseOrdersPage() {
   const canManagePurchaseOrder = useHasPermissions(ADMIN_MANAGER_ROLES);
+  const canCreatePurchaseOrder = useHasPermissions(PURCHASE_ORDER_MANAGE_ROLES);
   const canReceiveInbound = useHasPermissions(INBOUND_RECEIVE_ROLES);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -127,9 +143,14 @@ export default function PurchaseOrdersPage() {
   const [status, setStatus] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
-  const [datePreset, setDatePreset] = useState<OperationDatePreset>(DEFAULT_OPERATION_DATE_PRESET);
+  const [datePreset, setDatePreset] = useState<OperationDatePreset>(
+    DEFAULT_OPERATION_DATE_PRESET,
+  );
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
+  const dateRange = useMemo(
+    () => getOperationDateRange(datePreset),
+    [datePreset],
+  );
 
   const {
     data: suppliersRes,
@@ -169,11 +190,19 @@ export default function PurchaseOrdersPage() {
   const visibleRows = useMemo(() => {
     if (canManagePurchaseOrder) return rows;
     if (!canReceiveInbound) return EMPTY_PURCHASE_ORDERS;
-    return rows.filter((row) => row.status === "APPROVED" || row.status === "PARTIAL");
+    return rows.filter(
+      (row) => row.status === "APPROVED" || row.status === "PARTIAL",
+    );
   }, [canManagePurchaseOrder, canReceiveInbound, rows]);
   const pagedBody = data?.data;
-  const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes]);
-  const warehouses = useMemo(() => warehousesRes?.data?.content ?? [], [warehousesRes]);
+  const suppliers = useMemo(
+    () => suppliersRes?.data?.content ?? [],
+    [suppliersRes],
+  );
+  const warehouses = useMemo(
+    () => warehousesRes?.data?.content ?? [],
+    [warehousesRes],
+  );
 
   const paged = useMemo((): Pick<
     PagedResponse<PurchaseOrder>,
@@ -204,8 +233,14 @@ export default function PurchaseOrdersPage() {
     return count;
   }, [status, supplierId, warehouseId]);
 
-  const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0 || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
-  const statusOptions = canManagePurchaseOrder ? STATUS_OPTIONS : STAFF_STATUS_OPTIONS;
+  const hasAnyFilter = Boolean(
+    keyword.trim() ||
+    activeFiltersCount > 0 ||
+    datePreset !== DEFAULT_OPERATION_DATE_PRESET,
+  );
+  const statusOptions = canManagePurchaseOrder
+    ? STATUS_OPTIONS
+    : STAFF_STATUS_OPTIONS;
 
   const clearFilters = () => {
     setKeyword("");
@@ -216,15 +251,21 @@ export default function PurchaseOrdersPage() {
     setPage(0);
   };
 
-  const findSupplier = (id: string) => suppliers.find((s: Supplier) => s.id === id);
-  const findWarehouse = (id: string) => warehouses.find((w: Warehouse) => w.id === id);
+  const findSupplier = (id: string) =>
+    suppliers.find((s: Supplier) => s.id === id);
+  const findWarehouse = (id: string) =>
+    warehouses.find((w: Warehouse) => w.id === id);
 
   const stats = useMemo(() => {
     const all = visibleRows;
 
     return {
-      total: canManagePurchaseOrder ? (paged?.total_elements ?? all.length) : all.length,
-      processing: all.filter((r) => r.status === "APPROVED" || r.status === "PARTIAL").length,
+      total: canManagePurchaseOrder
+        ? (paged?.total_elements ?? all.length)
+        : all.length,
+      processing: all.filter(
+        (r) => r.status === "APPROVED" || r.status === "PARTIAL",
+      ).length,
       completed: all.filter((r) => r.status === "COMPLETED").length,
       cancelled: all.filter((r) => r.status === "CANCELLED").length,
     };
@@ -278,7 +319,7 @@ export default function PurchaseOrdersPage() {
               <ShoppingCart className="size-3.5" />
               Sắp xếp vào kho
             </Button>
-            {canReceiveInbound ? (
+            {canCreatePurchaseOrder ? (
               <Button
                 render={<Link href="/purchase-orders/new" />}
                 nativeButton={false}
@@ -313,7 +354,10 @@ export default function PurchaseOrdersPage() {
                   setPage(0);
                 }}
               />
-              <TableRefreshButton isFetching={isFetching} onRefresh={() => refetch()} />
+              <TableRefreshButton
+                isFetching={isFetching}
+                onRefresh={() => refetch()}
+              />
               <AdvancedFilterActions
                 open={advancedOpen}
                 onToggle={() => setAdvancedOpen(!advancedOpen)}
@@ -367,11 +411,15 @@ export default function PurchaseOrdersPage() {
                 >
                   <SelectTrigger className="h-10 w-44 shrink-0 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                     <span className="truncate text-sm">
-                      {status ? (STATUS_LABEL[status] ?? status) : "Tất cả trạng thái"}
+                      {status
+                        ? (STATUS_LABEL[status] ?? status)
+                        : "Tất cả trạng thái"}
                     </span>
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="" className="rounded-lg">Tất cả trạng thái</SelectItem>
+                    <SelectItem value="" className="rounded-lg">
+                      Tất cả trạng thái
+                    </SelectItem>
                     {statusOptions.map((st) => (
                       <SelectItem key={st} value={st} className="rounded-lg">
                         {STATUS_LABEL[st] ?? st}
@@ -421,7 +469,11 @@ export default function PurchaseOrdersPage() {
                       Tất cả nhà cung cấp
                     </SelectItem>
                     {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.id} className="rounded-lg">
+                      <SelectItem
+                        key={s.id}
+                        value={s.id}
+                        className="rounded-lg"
+                      >
                         {s.name} {s.code ? `(${s.code})` : ""}
                       </SelectItem>
                     ))}
@@ -469,7 +521,11 @@ export default function PurchaseOrdersPage() {
                       Tất cả kho
                     </SelectItem>
                     {warehouses.map((w) => (
-                      <SelectItem key={w.id} value={w.id} className="rounded-lg">
+                      <SelectItem
+                        key={w.id}
+                        value={w.id}
+                        className="rounded-lg"
+                      >
                         {w.name} {w.code ? `(${w.code})` : ""}
                       </SelectItem>
                     ))}
@@ -492,27 +548,55 @@ export default function PurchaseOrdersPage() {
           <div className="overflow-x-auto">
             <Table className="min-w-px text-left border-collapse">
               <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-              <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                  <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Mã đơn nhập</TableHead>
-                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />Ngày đặt</span>
+                <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
+                  <TableHead className="w-[200px] py-3.5 pl-6 pr-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Mã đơn nhập
                   </TableHead>
-                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Dự kiến</TableHead>
-                  <TableHead className="w-[180px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái</TableHead>
-                  <TableHead className="w-[170px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Tạo lúc</TableHead>
-                  <TableHead className="w-[120px] py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Thao tác</TableHead>
+                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CalendarDays className="size-3.5" />
+                      Ngày đặt
+                    </span>
+                  </TableHead>
+                  <TableHead className="w-[160px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Dự kiến
+                  </TableHead>
+                  <TableHead className="w-[180px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Trạng thái
+                  </TableHead>
+                  <TableHead className="w-[170px] px-3 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Tạo lúc
+                  </TableHead>
+                  <TableHead className="w-[120px] py-3.5 pl-3 pr-6 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Thao tác
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 6 }).map((_, i) => (
-                    <TableRow key={`po-skel-${i}`} className="border-b border-slate-100 dark:border-slate-800">
-                      <TableCell className="py-4 pl-6 pr-3"><Skeleton className="h-4 w-24 rounded" /></TableCell>
-                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
-                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-32 rounded" /></TableCell>
-                      <TableCell className="px-3 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                      <TableCell className="px-3 py-4"><Skeleton className="h-4 w-28 rounded" /></TableCell>
-                      <TableCell className="py-4 pl-3 pr-6 text-right"><Skeleton className="ml-auto h-8 w-20 rounded-lg" /></TableCell>
+                    <TableRow
+                      key={`po-skel-${i}`}
+                      className="border-b border-slate-100 dark:border-slate-800"
+                    >
+                      <TableCell className="py-4 pl-6 pr-3">
+                        <Skeleton className="h-4 w-24 rounded" />
+                      </TableCell>
+                      <TableCell className="px-3 py-4">
+                        <Skeleton className="h-4 w-32 rounded" />
+                      </TableCell>
+                      <TableCell className="px-3 py-4">
+                        <Skeleton className="h-4 w-32 rounded" />
+                      </TableCell>
+                      <TableCell className="px-3 py-4">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </TableCell>
+                      <TableCell className="px-3 py-4">
+                        <Skeleton className="h-4 w-28 rounded" />
+                      </TableCell>
+                      <TableCell className="py-4 pl-3 pr-6 text-right">
+                        <Skeleton className="ml-auto h-8 w-20 rounded-lg" />
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : isError ? (
@@ -521,8 +605,19 @@ export default function PurchaseOrdersPage() {
                       <EmptyState
                         icon={AlertCircle}
                         title="Không tải được danh sách đơn nhập"
-                        description={apiErrMessage(error, "Lỗi mạng hoặc máy chủ từ chối yêu cầu.")}
-                        action={<Button variant="outline" size="sm" onClick={() => refetch()}>Thử lại</Button>}
+                        description={apiErrMessage(
+                          error,
+                          "Lỗi mạng hoặc máy chủ từ chối yêu cầu.",
+                        )}
+                        action={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => refetch()}
+                          >
+                            Thử lại
+                          </Button>
+                        }
                       />
                     </TableCell>
                   </TableRow>
@@ -534,8 +629,13 @@ export default function PurchaseOrdersPage() {
                         title="Chưa có đơn nhập"
                         description="Chưa có đơn nhập nào trong hệ thống hoặc cụm từ tìm kiếm không trùng khớp."
                         action={
-                          canReceiveInbound ? (
-                            <Button render={<Link href="/purchase-orders/new" />} nativeButton={false} size="sm" className="bg-indigo-600">
+                          canCreatePurchaseOrder ? (
+                            <Button
+                              render={<Link href="/purchase-orders/new" />}
+                              nativeButton={false}
+                              size="sm"
+                              className="bg-indigo-600"
+                            >
                               Tạo đơn đầu tiên
                             </Button>
                           ) : null
@@ -550,10 +650,16 @@ export default function PurchaseOrdersPage() {
                       className="group border-b border-slate-50 last:border-0 hover:bg-slate-50/80 dark:border-slate-800/60 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <TableCell className="py-4 pl-6 pr-3">
-                        <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{po.poNumber}</span>
+                        <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+                          {po.poNumber}
+                        </span>
                       </TableCell>
-                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.orderDate}</TableCell>
-                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">{po.expectedDate ?? "—"}</TableCell>
+                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        {po.orderDate}
+                      </TableCell>
+                      <TableCell className="px-3 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        {po.expectedDate ?? "—"}
+                      </TableCell>
                       <TableCell className="px-3 py-4">
                         <StatusPill status={po.status} />
                       </TableCell>

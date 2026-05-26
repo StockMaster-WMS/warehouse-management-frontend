@@ -30,17 +30,15 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "ui-surface group relative overflow-hidden p-4 transition-all hover:shadow-md sm:p-5",
+        "ui-surface group relative min-w-0 overflow-hidden p-4 transition-all hover:shadow-md sm:p-5",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-2 sm:gap-3">
-        <div className="space-y-1">
-          <p className="ui-label text-xs sm:text-[11px]">
-            {label}
-          </p>
+        <div className="min-w-0 space-y-1">
+          <p className="ui-label truncate text-xs sm:text-[11px]">{label}</p>
           <div className="flex flex-col gap-1">
-            <p className="text-xl font-black tabular-nums text-foreground sm:text-2xl">
+            <p className="break-words text-xl font-black tabular-nums text-foreground sm:text-2xl">
               {value}
             </p>
             {trend ? (
@@ -48,8 +46,10 @@ export function StatCard({
                 className={cn(
                   "text-[10px] font-bold",
                   isTrend
-                    ? (positiveTrend ? "text-success" : "text-destructive")
-                    : "text-muted-foreground"
+                    ? positiveTrend
+                      ? "text-success"
+                      : "text-destructive"
+                    : "text-muted-foreground",
                 )}
               >
                 {trend}

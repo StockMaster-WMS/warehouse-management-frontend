@@ -38,16 +38,19 @@ export function OrderPrintModal({
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
     document.body.appendChild(iframe);
 
     const contentWindow = iframe.contentWindow;
     if (!contentWindow) return;
 
     let styles = "";
-    document.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
-      styles += node.outerHTML;
-    });
+    document
+      .querySelectorAll('link[rel="stylesheet"], style')
+      .forEach((node) => {
+        styles += node.outerHTML;
+      });
 
     contentWindow.document.open();
     contentWindow.document.write(`
@@ -92,53 +95,72 @@ export function OrderPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible print:p-0 print:border-none print:shadow-none min-w-[700px] bg-slate-100">
-        <DialogHeader className="print:hidden flex flex-row items-center justify-between sticky top-0 bg-slate-100 z-10 pb-4 border-b border-slate-200">
-          <div>
-            <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
+      <DialogContent className="max-h-[85vh] w-[calc(100vw-1rem)] max-w-4xl overflow-y-auto bg-slate-100 print:max-h-none print:max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="sticky top-0 z-10 flex flex-col gap-3 border-b border-slate-200 bg-slate-100 pb-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <DialogTitle className="text-lg font-bold sm:text-xl">
+              {title}
+            </DialogTitle>
             <DialogDescription>
               Nhấn nút in để tạo bản cứng cho kho lưu trữ hoặc giao hàng.
             </DialogDescription>
           </div>
-          <Button onClick={handlePrint} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+          <Button
+            onClick={handlePrint}
+            className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
+          >
             <Printer className="size-4" /> In Phiếu
           </Button>
         </DialogHeader>
 
         {/* Printable Area */}
         <div
-          className="p-8 bg-white text-black min-h-[800px] mx-auto shadow-sm border border-slate-200 print:p-0 print:m-0 print:shadow-none print:border-none w-full max-w-[210mm]"
+          className="mx-auto min-h-[640px] w-full max-w-[210mm] border border-slate-200 bg-white p-4 text-black shadow-sm print:m-0 print:min-h-[800px] print:border-none print:p-0 print:shadow-none sm:p-8"
           id="print-area"
         >
-          <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold uppercase tracking-widest">{title}</h1>
+          <div className="mb-6 flex flex-col gap-3 border-b-2 border-slate-800 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="break-words text-xl font-semibold uppercase tracking-widest sm:text-2xl">
+                {title}
+              </h1>
               <p className="font-mono mt-1 text-sm font-semibold">
-                Mã đơn: {salesOrder.soNumber || `SO-${salesOrder.id.slice(0, 8)}`}
+                Mã đơn:{" "}
+                {salesOrder.soNumber || `SO-${salesOrder.id.slice(0, 8)}`}
               </p>
             </div>
-            <div className="text-right text-sm">
-              <p suppressHydrationWarning>Ngày in: {formatDateTime(new Date())}</p>
-              <p>Kho xuất: <span className="font-semibold">{warehouseLabel}</span></p>
+            <div className="text-left text-sm sm:text-right">
+              <p suppressHydrationWarning>
+                Ngày in: {formatDateTime(new Date())}
+              </p>
+              <p>
+                Kho xuất:{" "}
+                <span className="font-semibold">{warehouseLabel}</span>
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
+          <div className="mb-8 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2 sm:gap-8">
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
                 Thông tin Khách hàng
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Khách hàng:</span>{" "}
+                <span className="font-semibold inline-block w-24">
+                  Khách hàng:
+                </span>{" "}
                 {salesOrder.customerName}
               </p>
               <p className="flex">
-                <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
+                <span className="font-semibold inline-block w-24 shrink-0">
+                  Địa chỉ:
+                </span>{" "}
                 <span>{formatShippingShort(salesOrder.shippingAddress)}</span>
               </p>
               {salesOrder.shippingAddress.phone ? (
                 <p>
-                  <span className="font-semibold inline-block w-24">SĐT nhận:</span>{" "}
+                  <span className="font-semibold inline-block w-24">
+                    SĐT nhận:
+                  </span>{" "}
                   {salesOrder.shippingAddress.phone}
                 </p>
               ) : null}
@@ -148,67 +170,88 @@ export function OrderPrintModal({
                 Thông tin Đơn hàng
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Ngày tạo:</span>{" "}
+                <span className="font-semibold inline-block w-24">
+                  Ngày tạo:
+                </span>{" "}
                 {salesOrder.createdAt
                   ? formatDateTime(salesOrder.createdAt)
                   : "—"}
               </p>
               <p>
-                <span className="font-semibold inline-block w-24">Mức ưu tiên:</span>{" "}
+                <span className="font-semibold inline-block w-24">
+                  Mức ưu tiên:
+                </span>{" "}
                 {salesOrder.priority || 0}
               </p>
             </div>
           </div>
 
-          <table className="w-full text-sm border-collapse mb-8">
-            <thead>
-              <tr className="border-y-2 border-slate-800 font-bold bg-slate-50">
-                <th className="py-2.5 px-2 text-center w-12 border-x border-slate-300">STT</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Mã SP</th>
-                <th className="py-2.5 px-2 text-left border-x border-slate-300">Tên sản phẩm</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Đặt</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thực tế</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => {
-                const prod = products.find((p) => p.sku === item.productSku);
-                return (
-                  <tr key={item.id} className="border-b border-slate-300 break-inside-avoid">
-                    <td className="p-2 text-center border-x border-slate-300">{idx + 1}</td>
-                    <td className="p-2 font-mono text-xs border-x border-slate-300">
-                      {item.productSku}
-                    </td>
-                    <td className="p-2 border-x border-slate-300">
-                      {prod?.name || item.productSku}
-                    </td>
-                    <td className="p-2 text-right border-x border-slate-300">
-                      {item.orderedQty}
-                    </td>
-                    <td className="p-2 text-right font-bold border-x border-slate-300">
-                      {item.shippedQty ?? ""}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0 print:mx-0 print:overflow-visible print:px-0">
+            <table className="w-full min-w-[620px] border-collapse text-sm print:min-w-0">
+              <thead>
+                <tr className="border-y-2 border-slate-800 bg-slate-50 font-bold">
+                  <th className="w-12 border-x border-slate-300 px-2 py-2.5 text-center">
+                    STT
+                  </th>
+                  <th className="border-x border-slate-300 px-2 py-2.5 text-left">
+                    Mã SP
+                  </th>
+                  <th className="border-x border-slate-300 px-2 py-2.5 text-left">
+                    Tên sản phẩm
+                  </th>
+                  <th className="w-24 border-x border-slate-300 px-2 py-2.5 text-right">
+                    SL Đặt
+                  </th>
+                  <th className="w-24 border-x border-slate-300 px-2 py-2.5 text-right">
+                    SL Thực tế
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, idx) => {
+                  const prod = products.find((p) => p.sku === item.productSku);
+                  return (
+                    <tr
+                      key={item.id}
+                      className="break-inside-avoid border-b border-slate-300"
+                    >
+                      <td className="border-x border-slate-300 p-2 text-center">
+                        {idx + 1}
+                      </td>
+                      <td className="border-x border-slate-300 p-2 font-mono text-xs">
+                        {item.productSku}
+                      </td>
+                      <td className="border-x border-slate-300 p-2">
+                        {prod?.name || item.productSku}
+                      </td>
+                      <td className="border-x border-slate-300 p-2 text-right">
+                        {item.orderedQty}
+                      </td>
+                      <td className="border-x border-slate-300 p-2 text-right font-bold">
+                        {item.shippedQty ?? ""}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="flex justify-between mt-16 text-center text-sm break-inside-avoid pt-12">
-            <div className="w-48">
-              <p className="font-bold mb-16">Người lập phiếu</p>
+          <div className="mt-10 grid break-inside-avoid grid-cols-1 gap-8 pt-8 text-center text-sm sm:mt-16 sm:grid-cols-3 sm:gap-4 sm:pt-12">
+            <div className="mx-auto w-48">
+              <p className="mb-12 font-bold sm:mb-16">Người lập phiếu</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
             </div>
-            <div className="w-48">
-              <p className="font-bold mb-16">Thủ kho</p>
+            <div className="mx-auto w-48">
+              <p className="mb-12 font-bold sm:mb-16">Thủ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
             </div>
-            <div className="w-48">
-              <p className="font-bold mb-16">Bên nhận hàng</p>
+            <div className="mx-auto w-48">
+              <p className="mb-12 font-bold sm:mb-16">Bên nhận hàng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
