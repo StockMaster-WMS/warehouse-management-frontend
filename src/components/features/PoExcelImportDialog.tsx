@@ -184,7 +184,7 @@ export function PoExcelImportDialog({
             Nhập dòng hàng từ Excel
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
-            Chỉ import được khi đơn nhập đang ở trạng thái Nháp. File có thể dùng sản phẩm đã có bằng SKU/productId/name, hoặc tạo sản phẩm mới nếu có đủ name, baseUnit và categoryId/categoryCode.
+            Chỉ import được khi đơn nhập đang ở trạng thái Nháp. File có thể dùng sản phẩm đã có bằng SKU, hoặc tạo sản phẩm mới nếu có đủ name, baseUnit và categoryCode.
           </DialogDescription>
         </DialogHeader>
 

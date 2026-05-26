@@ -4,8 +4,6 @@ import type { AoA } from "@/lib/xlsx-utils";
 export const PO_PRODUCT_IMPORT_HEADERS = [
   "sku",
   "name",
-  "productId",
-  "categoryId",
   "categoryCode",
   "baseUnit",
   "orderedQty",
@@ -22,13 +20,11 @@ export const PO_PRODUCT_XLSX_SHEET_NAME = "ImportSanPham";
 
 export const PO_PRODUCT_XLSX_IMPORT_CONFIG: XlsxImportPreviewConfig = {
   expectedHeaders: ["orderedQty"],
-  requireAnyHeaderInEachGroup: [["productId", "sku", "name"]],
-  requireAnyValueInEachRowGroup: [["productId", "sku", "name"]],
+  requireAnyHeaderInEachGroup: [["sku", "name"]],
+  requireAnyValueInEachRowGroup: [["sku", "name"]],
   fieldLabels: {
     sku: "Mã hàng",
-    productId: "UUID sản phẩm",
     name: "Tên sản phẩm",
-    categoryId: "UUID danh mục",
     categoryCode: "Mã danh mục (DM-…)",
     baseUnit: "Đơn vị tính",
     orderedQty: "Số lượng đặt",
@@ -49,8 +45,6 @@ export function getPoProductImportTemplateAoA(): AoA {
     "",
     "",
     "",
-    "",
-    "",
     "10",
     "50000",
     "",
@@ -63,9 +57,7 @@ export function getPoProductImportTemplateAoA(): AoA {
   const newProductRow = [
     "",
     "Sản phẩm mẫu mới",
-    "",
-    "thay-bang-uuid-danh-muc",
-    "",
+    "DM-260416000139142-780C",
     "cai",
     "10",
     "50000",
