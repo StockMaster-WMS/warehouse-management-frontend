@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { z } from "zod";
 import {
@@ -58,9 +58,13 @@ import {
   useApprovePurchaseOrderMutation,
   useCancelPurchaseOrderMutation,
   useCompletePutawayTaskMutation,
+  useCreatePoItemMutation,
+  useDeletePoItemMutation,
   useDeletePurchaseOrderMutation,
+  useGetProductsForPoQuery,
   useGetPurchaseOrderDetailQuery,
   useGetWarehousesForPoQuery,
+  useUpdatePurchaseOrderMutation,
 } from "@/store/services/purchase-order.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
 import { useGetSuppliersQuery } from "@/store/services/supplier.service";
@@ -83,6 +87,10 @@ import {
   DetailSummaryItem,
   type StatusConfig,
 } from "@/components/detail-page";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { PoLinesSection } from "@/components/features/PoLinesSection";
+import type { Product } from "@/types/product";
+import type { PoItem } from "@/types/purchase-order";
 
 const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
@@ -134,6 +142,20 @@ const completeSchema = z.object({
   actualLocationId: z.string().min(1, "Chọn vị trí thực tế"),
 });
 
+const headerSchema = z.object({
+  supplierId: z.string().min(1, "Chọn nhà cung cấp"),
+  warehouseId: z.string().min(1, "Chọn kho"),
+  orderDate: z.string().min(1, "Chọn ngày đặt"),
+  expectedDate: z.string().optional(),
+  totalAmountStr: z.string().optional(),
+});
+
+const lineSchema = z.object({
+  productId: z.string().min(1, "Chọn sản phẩm"),
+  orderedQtyStr: z.string().min(1, "Nhập số lượng"),
+  unitPriceStr: z.string().optional(),
+});
+
 /* ── InfoRow helper ─────────────────────────────────────────────────── */
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
@@ -178,18 +200,36 @@ export default function PurchaseOrderDetailPage() {
   const [actualLocationId, setActualLocationId] = useState("");
   const [putawayErrors, setPutawayErrors] = useState<Record<string, string>>({});
 
+  /* ── Draft editing state ── */
+  const [editHeaderOpen, setEditHeaderOpen] = useState(false);
+  const [editSupplierId, setEditSupplierId] = useState("");
+  const [editWarehouseId, setEditWarehouseId] = useState("");
+  const [editOrderDate, setEditOrderDate] = useState("");
+  const [editExpectedDate, setEditExpectedDate] = useState("");
+  const [editTotalAmountStr, setEditTotalAmountStr] = useState("");
+  const [editHeaderErrors, setEditHeaderErrors] = useState<Record<string, string>>({});
+  const [lineProductId, setLineProductId] = useState("");
+  const [lineQty, setLineQty] = useState("");
+  const [linePrice, setLinePrice] = useState("");
+  const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
+  const [productSearch, setProductSearch] = useState("");
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim());
+
   /* ── Mutations ── */
   const [approvePo, { isLoading: approvingPo }] = useApprovePurchaseOrderMutation();
   const [cancelPo, { isLoading: cancellingPo }] = useCancelPurchaseOrderMutation();
   const [deletePo, { isLoading: deletingPo }] = useDeletePurchaseOrderMutation();
+  const [updatePo, { isLoading: updatingPo }] = useUpdatePurchaseOrderMutation();
+  const [createLine, { isLoading: savingLine }] = useCreatePoItemMutation();
+  const [deleteLine, { isLoading: deletingLine }] = useDeletePoItemMutation();
   const [createGrn, { isLoading: creatingGrn }] = useCreateInboundReceiptMutation();
   const [loadInboundLocationSuggestions] = useLazyGetInboundLocationSuggestionsQuery();
   const [completePutawayTask, { isLoading: completingPutaway }] = useCompletePutawayTaskMutation();
 
   const detail = detailRes?.data;
   const po = detail?.purchaseOrder;
-  const items = detail?.items ?? [];
-  const tasks = detail?.putawayTasks ?? [];
+  const items = useMemo(() => detail?.items ?? [], [detail?.items]);
+  const tasks = useMemo(() => detail?.putawayTasks ?? [], [detail?.putawayTasks]);
   const progress = detail?.progress;
   const receipts: InboundReceipt[] = receiptsRes?.data ?? [];
 
@@ -214,9 +254,57 @@ export default function PurchaseOrderDetailPage() {
     po?.warehouseName || warehouses.find((w) => w.id === po?.warehouseId)?.name || po?.warehouseId || "—";
 
   const { data: suppliersRes } = useGetSuppliersQuery({ page: 0, size: 200 });
-  const suppliers = suppliersRes?.data?.content ?? [];
+  const suppliers = useMemo(() => suppliersRes?.data?.content ?? [], [suppliersRes?.data?.content]);
   const supplierName =
     po?.supplierName || suppliers.find((s) => s.id === po?.supplierId)?.name || po?.supplierId || "—";
+  const supplierOptions = useMemo(
+    () => suppliers.map((supplier) => ({
+      value: supplier.id,
+      label: supplier.name,
+      hint: [supplier.code, supplier.contactPhone, supplier.contactEmail].filter(Boolean).join(" · "),
+    })),
+    [suppliers],
+  );
+
+  const { data: productsRes, isFetching: productsLoading, isError: productsErr } = useGetProductsForPoQuery({
+    ...(debouncedProductSearch ? { keyword: debouncedProductSearch } : {}),
+  });
+  const { data: allProductsRes } = useGetProductsForPoQuery({ size: 200 });
+  const products = useMemo(
+    () =>
+      (productsRes?.data?.content ?? []).map((product: Product) => ({
+        id: String(product.id),
+        sku: product.sku,
+        name: product.name,
+      })),
+    [productsRes],
+  );
+  const productOptions = useMemo(
+    () => products.map((product) => ({
+      value: product.id,
+      label: product.name,
+      hint: product.sku,
+    })),
+    [products],
+  );
+  const productNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const product of allProductsRes?.data?.content ?? []) {
+      map.set(String(product.id), product.name);
+    }
+    for (const product of products) {
+      map.set(product.id, product.name);
+    }
+    return map;
+  }, [allProductsRes, products]);
+  const selectedProduct = useMemo(
+    () => products.find((product) => product.id === lineProductId),
+    [lineProductId, products],
+  );
+  const nextLineNumber = useMemo(() => {
+    if (items.length === 0) return 1;
+    return Math.max(...items.map((item) => item.lineNumber)) + 1;
+  }, [items]);
 
   /* ── Locations ── */
   const selectedWhId = po?.warehouseId ?? "";
@@ -276,10 +364,161 @@ export default function PurchaseOrderDetailPage() {
       label: `${loc.locationCode} - ${loc.locationType ?? "STORAGE"}${loc.zone ? ` - Zone ${loc.zone}` : ""}`,
       hint: loc.existingProductLocation
         ? `Vị trí cũ của sản phẩm · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`
-        : loc.emptyLocation
+      : loc.emptyLocation
           ? "Vị trí trống"
           : `Vị trí phù hợp · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`,
     }));
+  }
+
+  function openEditHeaderDialog() {
+    if (!po || !isDraft) return;
+    setEditSupplierId(po.supplierId ?? "");
+    setEditWarehouseId(po.warehouseId ?? "");
+    setEditOrderDate(po.orderDate ?? "");
+    setEditExpectedDate(po.expectedDate ?? "");
+    setEditTotalAmountStr(po.totalAmount != null ? String(po.totalAmount) : "");
+    setEditHeaderErrors({});
+    setEditHeaderOpen(true);
+  }
+
+  async function handleUpdateHeader(e: React.FormEvent) {
+    e.preventDefault();
+    if (!po || !isDraft) return;
+    setEditHeaderErrors({});
+    const parsed = headerSchema.safeParse({
+      supplierId: editSupplierId,
+      warehouseId: editWarehouseId,
+      orderDate: editOrderDate,
+      expectedDate: editExpectedDate || undefined,
+      totalAmountStr: editTotalAmountStr,
+    });
+
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "form");
+        if (!nextErrors[key]) nextErrors[key] = issue.message;
+      }
+      setEditHeaderErrors(nextErrors);
+      toast.error(nextErrors.supplierId ?? nextErrors.warehouseId ?? nextErrors.orderDate ?? "Kiểm tra thông tin đơn nhập");
+      return;
+    }
+
+    let totalAmount: number | null | undefined;
+    if (parsed.data.totalAmountStr?.trim()) {
+      const value = Number(parsed.data.totalAmountStr.replace(",", "."));
+      if (Number.isNaN(value)) {
+        setEditHeaderErrors({ totalAmountStr: "Tổng tiền không hợp lệ" });
+        toast.error("Tổng tiền không hợp lệ");
+        return;
+      }
+      totalAmount = value;
+    } else {
+      totalAmount = null;
+    }
+
+    try {
+      const res = await updatePo({
+        id: po.id,
+        body: {
+          supplierId: parsed.data.supplierId,
+          warehouseId: parsed.data.warehouseId,
+          orderDate: parsed.data.orderDate,
+          expectedDate: parsed.data.expectedDate?.trim() || null,
+          totalAmount,
+        },
+      }).unwrap();
+      if (!res.success) {
+        toast.error(res.message || "Cập nhật đơn nhập thất bại");
+        return;
+      }
+      toast.success("Đã cập nhật đơn nhập");
+      setEditHeaderOpen(false);
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể cập nhật đơn nhập"));
+    }
+  }
+
+  async function handleAddLine(e: React.FormEvent) {
+    e.preventDefault();
+    if (!po || !isDraft) return;
+    setLineErrors({});
+    const parsed = lineSchema.safeParse({
+      productId: lineProductId,
+      orderedQtyStr: lineQty,
+      unitPriceStr: linePrice,
+    });
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "form");
+        if (!nextErrors[key]) nextErrors[key] = issue.message;
+      }
+      setLineErrors(nextErrors);
+      toast.error("Kiểm tra dòng hàng");
+      return;
+    }
+
+    const qty = Number(parsed.data.orderedQtyStr.replace(",", "."));
+    if (!(qty > 0) || Number.isNaN(qty)) {
+      setLineErrors({ orderedQtyStr: "Số lượng phải > 0" });
+      toast.error("Số lượng phải > 0");
+      return;
+    }
+
+    if (!selectedProduct) {
+      setLineErrors({ productId: "Chọn sản phẩm hợp lệ" });
+      toast.error("Chọn sản phẩm hợp lệ");
+      return;
+    }
+
+    let unitPrice: number | undefined;
+    if (parsed.data.unitPriceStr?.trim()) {
+      const value = Number(parsed.data.unitPriceStr.replace(",", "."));
+      if (!Number.isNaN(value)) unitPrice = value;
+    }
+
+    const usedNumbers = new Set(items.map((item) => item.lineNumber));
+    let lineNumber = nextLineNumber;
+    while (usedNumbers.has(lineNumber)) lineNumber += 1;
+
+    try {
+      const res = await createLine({
+        purchaseOrderId: po.id,
+        lineNumber,
+        productId: selectedProduct.id,
+        productSku: selectedProduct.sku,
+        orderedQty: qty,
+        ...(unitPrice != null ? { unitPrice } : {}),
+      }).unwrap();
+      if (!res.success) {
+        toast.error(res.message || "Thêm dòng thất bại");
+        return;
+      }
+      toast.success(res.message || "Đã thêm dòng");
+      setLineProductId("");
+      setLineQty("");
+      setLinePrice("");
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể thêm dòng hàng"));
+    }
+  }
+
+  async function handleDeleteLine(item: PoItem) {
+    if (!po || !isDraft) return;
+    try {
+      const res = await deleteLine({ id: item.id, purchaseOrderId: po.id }).unwrap();
+      if (!res.success) {
+        toast.error((res as { message?: string }).message || "Xóa dòng thất bại");
+        return;
+      }
+      toast.success("Đã xóa dòng");
+      refetch();
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xóa dòng hàng"));
+    }
   }
 
   /* ── Actions ── */
@@ -423,6 +662,19 @@ export default function PurchaseOrderDetailPage() {
         description="Theo dõi đặt hàng, nhận hàng GRN, xếp kệ và lịch sử xử lý của đơn nhập."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {canManagePurchaseOrder && isDraft ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={openEditHeaderDialog}
+                className="gap-1.5"
+              >
+                <FileText className="size-4" />
+                Sửa thông tin
+              </Button>
+            ) : null}
+
             {canReceive && (
               <Button
                 onClick={openGrn}
@@ -557,6 +809,32 @@ export default function PurchaseOrderDetailPage() {
               icon={<DollarSign className="size-4" />}
             />
           </DetailSummaryGrid>
+
+          {canManagePurchaseOrder && isDraft ? (
+            <PoLinesSection
+              purchaseOrderId={po.id}
+              lines={items}
+              itemsLoading={detailLoading}
+              lineProductId={lineProductId}
+              setLineProductId={setLineProductId}
+              lineQty={lineQty}
+              setLineQty={setLineQty}
+              linePrice={linePrice}
+              setLinePrice={setLinePrice}
+              lineErrors={lineErrors}
+              productOptions={productOptions}
+              productsErr={productsErr}
+              productsLoading={productsLoading}
+              productSearch={productSearch}
+              setProductSearch={setProductSearch}
+              selectedProduct={selectedProduct}
+              savingLine={savingLine}
+              isDeletingLine={deletingLine}
+              onAddLine={handleAddLine}
+              onDeleteLine={handleDeleteLine}
+              productNameMap={productNameMap}
+            />
+          ) : null}
 
           {/* ── Tabs ── */}
           <Tabs defaultValue="info" className="space-y-0">
@@ -842,6 +1120,108 @@ export default function PurchaseOrderDetailPage() {
           </Tabs>
         </>
       )}
+
+      {/* ── Edit Draft Header Dialog ── */}
+      <Dialog open={editHeaderOpen} onOpenChange={setEditHeaderOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <form onSubmit={handleUpdateHeader}>
+            <DialogHeader>
+              <DialogTitle>Sửa thông tin đơn nhập nháp</DialogTitle>
+              <DialogDescription>
+                Chỉ đơn nhập ở trạng thái Nháp mới được sửa nhà cung cấp, kho nhận, ngày và tổng tiền.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="ui-label">Nhà cung cấp</label>
+                <SearchableSelect
+                  value={editSupplierId}
+                  onValueChange={setEditSupplierId}
+                  options={supplierOptions}
+                  placeholder="Chọn nhà cung cấp"
+                  searchPlaceholder="Tìm nhà cung cấp..."
+                  emptyText="Không tìm thấy nhà cung cấp"
+                  dialogTitle="Chọn nhà cung cấp"
+                  error={Boolean(editHeaderErrors.supplierId)}
+                />
+                {editHeaderErrors.supplierId ? (
+                  <p className="text-xs text-rose-600">{editHeaderErrors.supplierId}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="ui-label">Kho nhận</label>
+                <Select value={editWarehouseId} onValueChange={(value) => setEditWarehouseId(value ?? "")}>
+                  <SelectTrigger className={cn(editHeaderErrors.warehouseId && "border-rose-400")}>
+                    <span className="truncate text-sm">
+                      {editWarehouseId
+                        ? warehouses.find((warehouse) => warehouse.id === editWarehouseId)?.name ?? editWarehouseId
+                        : "Chọn kho nhận"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} {warehouse.code ? `(${warehouse.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editHeaderErrors.warehouseId ? (
+                  <p className="text-xs text-rose-600">{editHeaderErrors.warehouseId}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="ui-label">Ngày đặt hàng</label>
+                <Input
+                  type="date"
+                  value={editOrderDate}
+                  onChange={(event) => setEditOrderDate(event.target.value)}
+                  className={cn(editHeaderErrors.orderDate && "border-rose-400")}
+                />
+                {editHeaderErrors.orderDate ? (
+                  <p className="text-xs text-rose-600">{editHeaderErrors.orderDate}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="ui-label">Ngày dự kiến nhận</label>
+                <Input
+                  type="date"
+                  value={editExpectedDate}
+                  onChange={(event) => setEditExpectedDate(event.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <label className="ui-label">Tổng tiền ước tính</label>
+                <Input
+                  value={editTotalAmountStr}
+                  onChange={(event) => setEditTotalAmountStr(event.target.value)}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className={cn("max-w-xs", editHeaderErrors.totalAmountStr && "border-rose-400")}
+                />
+                {editHeaderErrors.totalAmountStr ? (
+                  <p className="text-xs text-rose-600">{editHeaderErrors.totalAmountStr}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setEditHeaderOpen(false)}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={updatingPo}>
+                {updatingPo ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                Lưu thay đổi
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* ── GRN Dialog ── */}
       <Dialog open={grnOpen} onOpenChange={setGrnOpen}>
