@@ -202,7 +202,7 @@ export default function InboundPage() {
         setPrintData(result.data);
         const w = findWarehouse(result.data.warehouseId);
         const nextLocationLabel = await resolvePrintLocationLabel(result.data);
-        setWarehouseLabel(w ? `${w.name}${w.code ? ` (${w.code})` : ""}` : "—");
+        setWarehouseLabel(w?.name || "—");
         setLocationLabel(nextLocationLabel);
         setPrintModalOpen(true);
       }
@@ -487,7 +487,6 @@ export default function InboundPage() {
                         <span className="text-sm font-semibold text-foreground">
                           {r.receiptNumber}
                         </span>
-                        <span className="font-mono text-[11px] text-muted-foreground">{r.id.slice(0, 8)}...</span>
                       </div>
                     </TableCell>
 

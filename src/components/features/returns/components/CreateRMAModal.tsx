@@ -223,7 +223,9 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
           productId: item.productId,
           salesOrderItemId: item.salesOrderItemId,
           expectedQty: Number(item.returnableQty ?? 0),
-          lotNumber: "",
+          lotNumber: item.lotNumber ?? "",
+          locationId: item.locationId ?? "",
+          locationCode: item.locationCode ?? null,
           shippedQty: Number(item.shippedQty ?? 0),
           alreadyReturnedQty: Number(item.alreadyReturnedQty ?? 0),
           returnableQty: Number(item.returnableQty ?? 0),
@@ -610,7 +612,12 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                       const line = lines[index];
                       const fromOrder = Boolean(line?.salesOrderItemId);
                       const returnableQty = Number(line?.returnableQty ?? 0);
-                      const orderItem = receiptDetailsRes?.data?.items.find((item) => item.salesOrderItemId === line?.salesOrderItemId);
+                      const orderItem = receiptDetailsRes?.data?.items.find(
+                        (item) =>
+                          item.salesOrderItemId === line?.salesOrderItemId &&
+                          (item.locationId ?? "") === (line?.locationId ?? "") &&
+                          (item.lotNumber ?? "") === (line?.lotNumber ?? ""),
+                      ) ?? receiptDetailsRes?.data?.items.find((item) => item.salesOrderItemId === line?.salesOrderItemId);
                       const supplierLineProductId = line?.productId || "";
                       const supplierLineLocations = supplierLocationsByProduct[supplierLineProductId] ?? [];
                       const supplierLineLocationOptions = supplierLineLocations.map((location) => ({
@@ -674,7 +681,7 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                             </div>
 
                             {returnType === "CUSTOMER" && fromOrder ? (
-                              <div className="grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs md:col-span-3">
+                              <div className="grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-3 text-xs md:col-span-3">
                                 <div>
                                   <div className="text-muted-foreground">Đã giao</div>
                                   <strong>{formatNumber(line.shippedQty)}</strong>
@@ -686,6 +693,10 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                                 <div>
                                   <div className="text-muted-foreground">Còn trả</div>
                                   <strong className="text-emerald-700">{formatNumber(line.returnableQty)}</strong>
+                                </div>
+                                <div className="col-span-2 border-t border-slate-100 pt-2">
+                                  <div className="text-muted-foreground">Vị trí xuất</div>
+                                  <strong>{line.locationCode || orderItem?.locationCode || "Chưa xác định"}</strong>
                                 </div>
                               </div>
                             ) : returnType === "SUPPLIER" ? (
@@ -743,8 +754,8 @@ export function CreateRMAModal({ open, onOpenChange }: CreateRMAModalProps) {
                               <Label className="text-xs">Số lô</Label>
                               <Input
                                 className="bg-white"
-                                placeholder={returnType === "SUPPLIER" ? "Theo vị trí" : "Không bắt buộc"}
-                                disabled={returnType === "SUPPLIER"}
+                                placeholder={returnType === "SUPPLIER" || fromOrder ? "Theo vị trí" : "Không bắt buộc"}
+                                disabled={returnType === "SUPPLIER" || fromOrder}
                                 {...form.register(`lines.${index}.lotNumber`)}
                               />
                             </div>

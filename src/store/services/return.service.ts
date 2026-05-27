@@ -123,6 +123,9 @@ export type CustomerReturnReceiptItem = {
   productId: string;
   productSku: string;
   productName: string;
+  locationId?: string | null;
+  locationCode?: string | null;
+  lotNumber?: string | null;
   shippedQty: number;
   alreadyReturnedQty: number;
   returnableQty: number;
@@ -303,6 +306,7 @@ const returnApi = baseApi.injectEndpoints({
               salesOrderItemId: line.salesOrderItemId || undefined,
               expectedQty: line.expectedQty,
               lotNumber: line.lotNumber?.trim() || "",
+              locationId: line.locationId || undefined,
             })),
           },
         };

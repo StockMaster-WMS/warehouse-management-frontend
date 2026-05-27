@@ -25,13 +25,31 @@ interface BulkLocationDialogProps {
 }
 
 const ZONE_OPTIONS = [
+    { value: "STO", label: "Lưu trữ" },
+    { value: "PICK", label: "Lấy hàng" },
+    { value: "RCV", label: "Nhận hàng" },
+    { value: "QC", label: "Kiểm định" },
+    { value: "RET", label: "Hàng trả" },
     { value: "COLD", label: "Đông lạnh" },
     { value: "HEAVY", label: "Hàng nặng" },
-    { value: "BULK", label: "Hàng rời" },
-    { value: "FAST", label: "Luân chuyển nhanh" },
-    { value: "HAZMAT", label: "Hàng nguy hiểm" },
-    { value: "MAIN", label: "Vùng chính" },
+    { value: "HAZ", label: "Hàng nguy hiểm" },
 ];
+
+function sanitizeCodeSegment(value: string, fallback: string) {
+    const cleaned = value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return cleaned || fallback;
+}
+
+function inferLocationPrefix(warehouse?: Warehouse) {
+    const code = warehouse?.code?.trim().toUpperCase() || "";
+    const parts = code.split("-").filter(Boolean);
+    const normalizedParts = parts[0] === "WH" ? parts.slice(1) : parts;
+
+    return {
+        warehouseCodePrefix: sanitizeCodeSegment(normalizedParts[0] || "", "WH"),
+        areaCode: sanitizeCodeSegment(normalizedParts[1] || "", "TT"),
+    };
+}
 
 export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }: BulkLocationDialogProps) {
     const [bulkGenerate] = useBulkGenerateLocationsMutation();
@@ -39,7 +57,9 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
 
     const [form, setForm] = useState({
         warehouseId: "",
-        zone: "MAIN",
+        warehouseCodePrefix: "",
+        areaCode: "TT",
+        zone: "STO",
         aislePrefix: "A",
         aisleStart: 1,
         aisleCount: 1,
@@ -64,6 +84,8 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                     for (let bin = form.binStart; bin < form.binStart + form.binCount; bin += 1) {
                         codes.push(
                             [
+                                form.warehouseCodePrefix,
+                                form.areaCode,
                                 form.zone,
                                 `${form.aislePrefix}${String(aisle).padStart(2, "0")}`,
                                 `${form.rackPrefix}${String(rack).padStart(2, "0")}`,
@@ -93,14 +115,21 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
 
         const payload = {
             warehouseId: form.warehouseId,
-            zone: form.zone,
-            aislePrefix: form.aislePrefix,
+            warehouseCodePrefix: sanitizeCodeSegment(form.warehouseCodePrefix, "WH"),
+            areaCode: sanitizeCodeSegment(form.areaCode, "TT"),
+            zone: sanitizeCodeSegment(form.zone, "STO"),
+            aislePrefix: sanitizeCodeSegment(form.aislePrefix, "A"),
+            aisleStart: form.aisleStart,
             aisleCount: form.aisleCount,
-            rackPrefix: form.rackPrefix,
+            rackPrefix: sanitizeCodeSegment(form.rackPrefix, "R"),
+            rackStart: form.rackStart,
             rackCount: form.rackCount,
+            levelStart: form.levelStart,
             levelCount: form.levelCount,
-            binPrefix: form.binPrefix,
+            binPrefix: sanitizeCodeSegment(form.binPrefix, "B"),
+            binStart: form.binStart,
             binCount: form.binCount,
+            locationType: form.zone === "PICK" ? "PICKING" : "STORAGE",
         };
 
         setIsLoading(true);
@@ -136,7 +165,11 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                                 <Label className="text-xs font-bold text-slate-700 uppercase">Kho hàng *</Label>
                                 <Select
                                     value={form.warehouseId}
-                                    onValueChange={(v) => setForm(f => ({ ...f, warehouseId: v ?? "" }))}
+                                    onValueChange={(v) => {
+                                        const warehouseId = v ?? "";
+                                        const inferred = inferLocationPrefix(warehouses.find(w => w.id === warehouseId));
+                                        setForm(f => ({ ...f, warehouseId, ...inferred }));
+                                    }}
                                 >
                                     <SelectTrigger className="h-10 rounded-sm border-slate-200 bg-white">
                                         <SelectValue>
@@ -152,11 +185,31 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase">Mã kho trong vị trí *</Label>
+                                    <Input
+                                        placeholder="VD: HCM, HN"
+                                        className="h-10 rounded-sm border-slate-200 bg-white font-mono text-sm uppercase"
+                                        value={form.warehouseCodePrefix}
+                                        onChange={e => setForm(f => ({ ...f, warehouseCodePrefix: e.target.value.toUpperCase() }))}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-700 uppercase">Khu/Area *</Label>
+                                    <Input
+                                        placeholder="VD: TT, BB"
+                                        className="h-10 rounded-sm border-slate-200 bg-white font-mono text-sm uppercase"
+                                        value={form.areaCode}
+                                        onChange={e => setForm(f => ({ ...f, areaCode: e.target.value.toUpperCase() }))}
+                                    />
+                                </div>
+                            </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-700 uppercase">Vùng (Zone)</Label>
+                                <Label className="text-xs font-bold text-slate-700 uppercase">Zone</Label>
                                 <Select
                                     value={form.zone}
-                                    onValueChange={(v) => setForm(f => ({ ...f, zone: v ?? "MAIN" }))}
+                                    onValueChange={(v) => setForm(f => ({ ...f, zone: v ?? "STO" }))}
                                 >
                                     <SelectTrigger className="h-10 rounded-sm border-slate-200 bg-white">
                                         <SelectValue>
@@ -185,6 +238,10 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                                     <Input placeholder="VD: A" className="h-9 text-sm rounded-sm border-slate-200" value={form.aislePrefix} onChange={e => setForm(f => ({ ...f, aislePrefix: e.target.value }))} />
                                 </div>
                                 <div className="space-y-1">
+                                    <span className="text-[9px] text-slate-400 font-medium">Bắt đầu</span>
+                                    <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200" value={form.aisleStart} onChange={e => setForm(f => ({ ...f, aisleStart: Number(e.target.value) }))} />
+                                </div>
+                                <div className="space-y-1">
                                     <span className="text-[9px] text-indigo-600 font-bold uppercase">Số lượng</span>
                                     <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200 font-bold" value={form.aisleCount} onChange={e => setForm(f => ({ ...f, aisleCount: Number(e.target.value) }))} />
                                 </div>
@@ -200,6 +257,10 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                                     <Input placeholder="VD: R" className="h-9 text-sm rounded-sm border-slate-200" value={form.rackPrefix} onChange={e => setForm(f => ({ ...f, rackPrefix: e.target.value }))} />
                                 </div>
                                 <div className="space-y-1">
+                                    <span className="text-[9px] text-slate-400 font-medium">Bắt đầu</span>
+                                    <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200" value={form.rackStart} onChange={e => setForm(f => ({ ...f, rackStart: Number(e.target.value) }))} />
+                                </div>
+                                <div className="space-y-1">
                                     <span className="text-[9px] text-indigo-600 font-bold uppercase">Số lượng</span>
                                     <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200 font-bold" value={form.rackCount} onChange={e => setForm(f => ({ ...f, rackCount: Number(e.target.value) }))} />
                                 </div>
@@ -211,8 +272,8 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                             <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tầng (Level)</Label>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                    <span className="text-[9px] text-slate-400 font-medium">Ký tự trước</span>
-                                    <div className="h-9 flex items-center bg-slate-50 px-3 text-[10px] text-slate-400 font-medium rounded-sm border border-slate-100 italic">Số thuần túy</div>
+                                    <span className="text-[9px] text-slate-400 font-medium">Bắt đầu</span>
+                                    <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200" value={form.levelStart} onChange={e => setForm(f => ({ ...f, levelStart: Number(e.target.value) }))} />
                                 </div>
                                 <div className="space-y-1">
                                     <span className="text-[9px] text-indigo-600 font-bold uppercase">Số lượng</span>
@@ -228,6 +289,10 @@ export function BulkLocationDialog({ open, onOpenChange, warehouses, onSuccess }
                                 <div className="space-y-1">
                                     <span className="text-[9px] text-slate-400 font-medium">Tiền tố</span>
                                     <Input placeholder="VD: B" className="h-9 text-sm rounded-sm border-slate-200" value={form.binPrefix} onChange={e => setForm(f => ({ ...f, binPrefix: e.target.value }))} />
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="text-[9px] text-slate-400 font-medium">Bắt đầu</span>
+                                    <Input type="number" min={1} className="h-9 text-sm rounded-sm border-slate-200" value={form.binStart} onChange={e => setForm(f => ({ ...f, binStart: Number(e.target.value) }))} />
                                 </div>
                                 <div className="space-y-1">
                                     <span className="text-[9px] text-indigo-600 font-bold uppercase">Số lượng</span>

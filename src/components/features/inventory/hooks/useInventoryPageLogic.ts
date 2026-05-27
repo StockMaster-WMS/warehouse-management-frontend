@@ -301,6 +301,12 @@ export function useInventoryPageLogic() {
     if (!adjustForm.warehouseId.trim()) { toast.error("Vui lòng chọn kho"); return false; }
     if (!adjustForm.locationId.trim()) { toast.error("Vui lòng chọn vị trí"); return false; }
     if (!adjustForm.productId.trim()) { toast.error("Vui lòng chọn sản phẩm"); return false; }
+    const selectedProduct = adjustProducts.find((product) => product.id === adjustForm.productId);
+    const requiresLot = selectedProduct?.isLotTracked || selectedProduct?.isExpiryTracked;
+    if (requiresLot && !adjustForm.lotNumber.trim()) {
+      toast.error("Sản phẩm này theo dõi lô/hạn sử dụng, vui lòng nhập số lô");
+      return false;
+    }
 
     try {
       if (adjustType === "qty") {
