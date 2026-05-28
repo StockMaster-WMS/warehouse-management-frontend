@@ -11,6 +11,7 @@ import {
     LocationsFilters,
     LocationsStats,
     LocationsTable,
+    LocationCodeGuide,
     useLocationsPageLogic,
 } from "@/components/features/locations";
 import { apiErrMessage } from "@/types/api";
@@ -162,6 +163,8 @@ export default function LocationsPage() {
                 filteredCount={locations.length}
                 isLoading={isLocationsLoading}
             />
+
+            <LocationCodeGuide />
 
             <LocationsFilters
                 searchInput={searchInput}

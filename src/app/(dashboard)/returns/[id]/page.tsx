@@ -255,7 +255,7 @@ export default function RMADetailPage() {
     lines.every(
       (line) => Number(line.receivedQty ?? 0) <= 0 || Boolean(line.dispositionAction),
     );
-  const canReceive = isCustomerReturn && rma.status === "APPROVED";
+  const canReceive = isCustomerReturn && ["APPROVED", "RECEIVED"].includes(rma.status);
   const canApprove = canManageReturn && rma?.status === "REQUESTED";
   const canComplete =
     canManageReturn &&
@@ -319,7 +319,7 @@ export default function RMADetailPage() {
   const openDispositionDialog = (line: ReturnLine) => {
     setDispositionLine(line);
     setDispositionAction("RESTOCK");
-    setDispositionLocationId("");
+    setDispositionLocationId(line.returnLocationId ?? "");
     setDispositionSupplierId("");
     setDispositionNote("");
   };
@@ -520,6 +520,10 @@ export default function RMADetailPage() {
                       <div>
                         <p className="text-sm font-semibold">{line.productName || "Sản phẩm"}</p>
                         <p className="font-mono text-xs text-muted-foreground">{line.productSku || line.productId}</p>
+                        <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                          {line.returnLocationCode ? <p>Vị trí xuất ban đầu: {line.returnLocationCode}</p> : null}
+                          {line.receivedLocationCode ? <p>Vị trí RMA nhận trả: {line.receivedLocationCode}</p> : null}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="p-3 text-right tabular-nums">{line.expectedQty}</TableCell>
@@ -535,7 +539,7 @@ export default function RMADetailPage() {
                       )}
                     </TableCell>
                     <TableCell className="p-3 text-right">
-                      {canManageReturn && Number(line.receivedQty ?? 0) > 0 ? (
+                      {canManageReturn && Number(line.receivedQty ?? 0) > 0 && !line.dispositionAction ? (
                         <Button size="sm" variant="outline" onClick={() => openDispositionDialog(line)}>
                           Xử lý
                         </Button>
@@ -599,6 +603,11 @@ export default function RMADetailPage() {
               <div className="mt-1 text-xs text-muted-foreground">
                 Đã nhận: {dispositionLine?.receivedQty ?? 0} · Vị trí RMA: {dispositionLine?.receivedLocationCode || "--"}
               </div>
+              {dispositionLine?.returnLocationCode ? (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Vị trí xuất ban đầu: {dispositionLine.returnLocationCode}
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -634,6 +643,9 @@ export default function RMADetailPage() {
                   emptyText="Không có vị trí bán được phù hợp"
                   loading={restockLocationsLoading}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Nếu hàng còn bán được, nên nhập lại về vị trí xuất ban đầu hoặc vị trí STORAGE/PICKING phù hợp.
+                </p>
               </div>
             ) : null}
 

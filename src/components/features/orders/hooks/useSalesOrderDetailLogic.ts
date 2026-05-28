@@ -76,7 +76,7 @@ export function useSalesOrderDetailLogic(salesOrderId: string) {
   const warehouseLabel = useMemo(() => {
     const warehouse = currentWarehouseRes?.data;
     if (!warehouse) return "-";
-    return warehouse.code ? `${warehouse.name} (${warehouse.code})` : warehouse.name;
+    return warehouse.name;
   }, [currentWarehouseRes]);
 
   const [deleteSalesOrder, { isLoading: deletingOrder }] = useDeleteSalesOrderMutation();

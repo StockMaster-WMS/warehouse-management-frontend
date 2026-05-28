@@ -114,6 +114,7 @@ export type CreateReturnLinePayload = {
   expectedQty: number;
   lotNumber?: string;
   locationId?: string;
+  locationCode?: string | null;
   maxReturnQty?: number;
   shippedQty?: number;
   alreadyReturnedQty?: number;

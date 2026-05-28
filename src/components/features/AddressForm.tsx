@@ -48,6 +48,28 @@ function withSelectedOption(options: SelectOption[], value: string, label: strin
     return [{ value, label: label || value }, ...options];
 }
 
+const EMPTY_ADDRESS: AddressValue = {
+    street: "",
+    provinceCode: "",
+    provinceName: "",
+    districtCode: "",
+    districtName: "",
+    wardCode: "",
+    wardName: "",
+};
+
+function isSameAddress(a: AddressValue, b: AddressValue) {
+    return (
+        a.street === b.street &&
+        a.provinceCode === b.provinceCode &&
+        a.provinceName === b.provinceName &&
+        a.districtCode === b.districtCode &&
+        a.districtName === b.districtName &&
+        a.wardCode === b.wardCode &&
+        a.wardName === b.wardName
+    );
+}
+
 async function loadProvinceOptions(): Promise<SelectOption[]> {
     const response = await fetch("https://provinces.open-api.vn/api/v2/p/");
     if (!response.ok) throw new Error("Không tải được danh sách tỉnh/thành");
@@ -93,28 +115,18 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
     const [loadingProvinces, setLoadingProvinces] = useState(true);
     const [loadingWards, setLoadingWards] = useState(false);
     const [address, setAddress] = useState<AddressValue>(
-        value || { street: "", provinceCode: "", provinceName: "", districtCode: "", districtName: "", wardCode: "", wardName: "" }
+        value || EMPTY_ADDRESS
     );
     const provinceOptions = withSelectedOption(provinces, address.provinceCode, address.provinceName);
     const wardOptions = withSelectedOption(wards, address.wardCode, address.wardName);
-
-    useEffect(() => {
-        if (!value) return;
-        setAddress((current) => {
-            if (
-                current.street === value.street &&
-                current.provinceCode === value.provinceCode &&
-                current.provinceName === value.provinceName &&
-                current.districtCode === value.districtCode &&
-                current.districtName === value.districtName &&
-                current.wardCode === value.wardCode &&
-                current.wardName === value.wardName
-            ) {
-                return current;
-            }
-            return value;
-        });
-    }, [value]);
+    const hasValue = Boolean(value);
+    const valueStreet = value?.street ?? "";
+    const valueProvinceCode = value?.provinceCode ?? "";
+    const valueProvinceName = value?.provinceName ?? "";
+    const valueDistrictCode = value?.districtCode ?? "";
+    const valueDistrictName = value?.districtName ?? "";
+    const valueWardCode = value?.wardCode ?? "";
+    const valueWardName = value?.wardName ?? "";
 
     useEffect(() => {
         let active = true;
@@ -191,9 +203,31 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
     // Propagate changes
     useEffect(() => {
+        if (hasValue) {
+            const currentValue: AddressValue = {
+                street: valueStreet,
+                provinceCode: valueProvinceCode,
+                provinceName: valueProvinceName,
+                districtCode: valueDistrictCode,
+                districtName: valueDistrictName,
+                wardCode: valueWardCode,
+                wardName: valueWardName,
+            };
+            if (isSameAddress(address, currentValue)) return;
+        }
         onChange?.(address);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [address]);
+    }, [
+        address,
+        hasValue,
+        valueStreet,
+        valueProvinceCode,
+        valueProvinceName,
+        valueDistrictCode,
+        valueDistrictName,
+        valueWardCode,
+        valueWardName,
+    ]);
 
     return (
         <div className="space-y-4">

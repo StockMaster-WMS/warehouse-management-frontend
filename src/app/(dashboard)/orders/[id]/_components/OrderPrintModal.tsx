@@ -24,6 +24,15 @@ type OrderPrintModalProps = {
   title?: string;
 };
 
+function HeaderInfoLine({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[72px_1fr] gap-2 text-left leading-snug">
+      <span className="font-semibold text-slate-700">{label}:</span>
+      <span className="min-w-0 break-words font-semibold">{value || "—"}</span>
+    </div>
+  );
+}
+
 export function OrderPrintModal({
   open,
   onOpenChange,
@@ -31,7 +40,7 @@ export function OrderPrintModal({
   warehouseLabel,
   items,
   products,
-  title = "Phiếu Xuất Kho / Packing List",
+  title = "Phiếu Xuất Kho",
 }: OrderPrintModalProps) {
   const handlePrint = () => {
     const printContent = document.getElementById("print-area");
@@ -95,8 +104,8 @@ export function OrderPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] w-[calc(100vw-1rem)] max-w-4xl overflow-y-auto bg-slate-100 print:max-h-none print:max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:w-[calc(100vw-2rem)]">
-        <DialogHeader className="sticky top-0 z-10 flex flex-col gap-3 border-b border-slate-200 bg-slate-100 pb-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
+      <DialogContent className="max-h-[90vh] !w-[calc(210mm+2rem)] !max-w-[calc(100vw-1rem)] overflow-auto bg-slate-100 print:max-h-none print:!w-auto print:!max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:!max-w-[calc(210mm+2rem)]">
+        <DialogHeader className="sticky top-0 z-10 flex flex-col gap-3 border-b border-slate-200 bg-slate-100 pb-4 pr-10 print:hidden sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <DialogTitle className="text-lg font-bold sm:text-xl">
               {title}
@@ -115,10 +124,10 @@ export function OrderPrintModal({
 
         {/* Printable Area */}
         <div
-          className="mx-auto min-h-[640px] w-full max-w-[210mm] border border-slate-200 bg-white p-4 text-black shadow-sm print:m-0 print:min-h-[800px] print:border-none print:p-0 print:shadow-none sm:p-8"
+          className="mx-auto flex min-h-[297mm] w-[210mm] flex-col overflow-hidden border border-slate-200 bg-white p-[12mm] text-black shadow-sm print:m-0 print:min-h-[297mm] print:border-none print:p-0 print:shadow-none"
           id="print-area"
         >
-          <div className="mb-6 flex flex-col gap-3 border-b-2 border-slate-800 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-6 grid grid-cols-[1fr_285px] items-end gap-6 border-b-2 border-slate-800 pb-4">
             <div className="min-w-0">
               <h1 className="break-words text-xl font-semibold uppercase tracking-widest sm:text-2xl">
                 {title}
@@ -128,14 +137,12 @@ export function OrderPrintModal({
                 {salesOrder.soNumber || `SO-${salesOrder.id.slice(0, 8)}`}
               </p>
             </div>
-            <div className="text-left text-sm sm:text-right">
-              <p suppressHydrationWarning>
-                Ngày in: {formatDateTime(new Date())}
-              </p>
-              <p>
-                Kho xuất:{" "}
-                <span className="font-semibold">{warehouseLabel}</span>
-              </p>
+            <div className="space-y-1 rounded-sm bg-slate-50 px-3 py-2 text-sm">
+              <HeaderInfoLine
+                label="Ngày in"
+                value={<span suppressHydrationWarning>{formatDateTime(new Date())}</span>}
+              />
+              <HeaderInfoLine label="Kho xuất" value={warehouseLabel} />
             </div>
           </div>
 
@@ -186,23 +193,30 @@ export function OrderPrintModal({
             </div>
           </div>
 
-          <div className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0 print:mx-0 print:overflow-visible print:px-0">
-            <table className="w-full min-w-[620px] border-collapse text-sm print:min-w-0">
+          <div className="mb-8 overflow-hidden print:overflow-visible">
+            <table className="w-full table-fixed border-collapse text-xs sm:text-sm">
+              <colgroup>
+                <col className="w-[9%]" />
+                <col className="w-[20%]" />
+                <col className="w-[43%]" />
+                <col className="w-[14%]" />
+                <col className="w-[14%]" />
+              </colgroup>
               <thead>
                 <tr className="border-y-2 border-slate-800 bg-slate-50 font-bold">
-                  <th className="w-12 border-x border-slate-300 px-2 py-2.5 text-center">
+                  <th className="border-x border-slate-300 px-1.5 py-2 text-center sm:px-2 sm:py-2.5">
                     STT
                   </th>
-                  <th className="border-x border-slate-300 px-2 py-2.5 text-left">
+                  <th className="border-x border-slate-300 px-1.5 py-2 text-left sm:px-2 sm:py-2.5">
                     Mã SP
                   </th>
-                  <th className="border-x border-slate-300 px-2 py-2.5 text-left">
+                  <th className="border-x border-slate-300 px-1.5 py-2 text-left sm:px-2 sm:py-2.5">
                     Tên sản phẩm
                   </th>
-                  <th className="w-24 border-x border-slate-300 px-2 py-2.5 text-right">
+                  <th className="border-x border-slate-300 px-1.5 py-2 text-right sm:px-2 sm:py-2.5">
                     SL Đặt
                   </th>
-                  <th className="w-24 border-x border-slate-300 px-2 py-2.5 text-right">
+                  <th className="border-x border-slate-300 px-1.5 py-2 text-right sm:px-2 sm:py-2.5">
                     SL Thực tế
                   </th>
                 </tr>
@@ -215,19 +229,19 @@ export function OrderPrintModal({
                       key={item.id}
                       className="break-inside-avoid border-b border-slate-300"
                     >
-                      <td className="border-x border-slate-300 p-2 text-center">
+                      <td className="border-x border-slate-300 p-1.5 text-center sm:p-2">
                         {idx + 1}
                       </td>
-                      <td className="border-x border-slate-300 p-2 font-mono text-xs">
+                      <td className="break-words border-x border-slate-300 p-1.5 font-mono text-[11px] sm:p-2 sm:text-xs">
                         {item.productSku}
                       </td>
-                      <td className="border-x border-slate-300 p-2">
+                      <td className="break-words border-x border-slate-300 p-1.5 sm:p-2">
                         {prod?.name || item.productSku}
                       </td>
-                      <td className="border-x border-slate-300 p-2 text-right">
+                      <td className="border-x border-slate-300 p-1.5 text-right sm:p-2">
                         {item.orderedQty}
                       </td>
-                      <td className="border-x border-slate-300 p-2 text-right font-bold">
+                      <td className="border-x border-slate-300 p-1.5 text-right font-bold sm:p-2">
                         {item.shippedQty ?? ""}
                       </td>
                     </tr>
@@ -237,20 +251,20 @@ export function OrderPrintModal({
             </table>
           </div>
 
-          <div className="mt-10 grid break-inside-avoid grid-cols-1 gap-8 pt-8 text-center text-sm sm:mt-16 sm:grid-cols-3 sm:gap-4 sm:pt-12">
-            <div className="mx-auto w-48">
+          <div className="mt-auto grid break-inside-avoid grid-cols-3 gap-4 pt-12 text-center text-sm">
+            <div className="mx-auto w-full max-w-48">
               <p className="mb-12 font-bold sm:mb-16">Người lập phiếu</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
             </div>
-            <div className="mx-auto w-48">
+            <div className="mx-auto w-full max-w-48">
               <p className="mb-12 font-bold sm:mb-16">Thủ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
             </div>
-            <div className="mx-auto w-48">
+            <div className="mx-auto w-full max-w-48">
               <p className="mb-12 font-bold sm:mb-16">Bên nhận hàng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)

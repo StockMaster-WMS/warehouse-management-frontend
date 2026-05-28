@@ -1,6 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,13 +21,31 @@ type InboundPrintModalProps = {
   title?: string;
 };
 
+function InfoLine({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[110px_1fr] gap-2 leading-relaxed">
+      <span className="font-semibold whitespace-nowrap">{label}:</span>
+      <span className="min-w-0 break-words">{value || "—"}</span>
+    </div>
+  );
+}
+
+function HeaderInfoLine({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[86px_1fr] gap-2 text-left leading-snug">
+      <span className="font-semibold text-slate-700">{label}:</span>
+      <span className="min-w-0 break-words font-semibold">{value || "—"}</span>
+    </div>
+  );
+}
+
 export function InboundPrintModal({
   open,
   onOpenChange,
   data,
   warehouseLabel,
   locationLabel,
-  title = "PHIẾU NHẬP KHO / GOODS RECEIPT NOTE",
+  title = "PHIẾU NHẬP KHO",
 }: InboundPrintModalProps) {
   const handlePrint = () => {
     const printContent = document.getElementById("print-area-inbound");
@@ -96,8 +115,8 @@ export function InboundPrintModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] min-w-[700px] max-w-4xl overflow-y-auto bg-muted print:max-h-none print:max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none">
-        <DialogHeader className="sticky top-0 z-10 flex flex-row items-center justify-between border-b border-border bg-muted pb-4 print:hidden">
+      <DialogContent className="max-h-[90vh] !w-[calc(210mm+1rem)] !max-w-[calc(100vw-1rem)] overflow-auto bg-muted p-2 print:max-h-none print:!w-auto print:!max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:!max-w-[calc(210mm+1rem)]">
+        <DialogHeader className="sticky top-0 z-10 flex flex-col gap-3 border-b border-border bg-muted pb-4 pr-10 print:hidden sm:flex-row sm:items-center sm:justify-between">
           <div>
             <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
             <DialogDescription>
@@ -111,77 +130,68 @@ export function InboundPrintModal({
 
         {/* Printable Area */}
         <div
-          className="p-8 bg-white text-black min-h-[800px] mx-auto shadow-sm border border-slate-200 print:p-0 print:m-0 print:shadow-none print:border-none w-full max-w-[210mm]"
+          className="mx-auto flex min-h-[297mm] w-[210mm] flex-col overflow-hidden border border-slate-200 bg-white p-[11mm] text-black shadow-sm print:m-0 print:min-h-[297mm] print:border-none print:p-0 print:shadow-none"
           id="print-area-inbound"
         >
-          <div className="flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-6">
-            <div>
+          <div className="mb-6 grid grid-cols-[1fr_285px] items-end gap-6 border-b-2 border-slate-800 pb-4">
+            <div className="min-w-0">
               <h1 className="text-2xl font-semibold uppercase tracking-widest">{title}</h1>
               <p className="font-mono mt-1 text-sm font-semibold">
                 Mã đơn: {data.receiptNumber || `GRN-${data.id.slice(0, 8)}`}
               </p>
             </div>
-            <div className="text-right text-sm">
-              <p suppressHydrationWarning>
-                Ngày in: {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
-              </p>
-              <p>Kho nhập: <span className="font-semibold">{warehouseLabel}</span></p>
-              {printableLocationLabel && (
-                <p>
-                  Khu vực/Dock: <span className="font-semibold">{printableLocationLabel}</span>
-                </p>
-              )}
+            <div className="space-y-1 rounded-sm bg-slate-50 px-3 py-2 text-sm">
+              <HeaderInfoLine
+                label="Ngày in"
+                value={
+                  <span suppressHydrationWarning>
+                    {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
+                  </span>
+                }
+              />
+              <HeaderInfoLine label="Kho nhập" value={warehouseLabel} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
+          <div className="mb-7 grid grid-cols-2 gap-8 text-sm">
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
                 Thông tin Nhà cung cấp
               </p>
-              <p>
-                <span className="font-semibold inline-block w-24">Nhà cung cấp:</span>{" "}
-                {data.supplierName || "—"}
-              </p>
-              <p className="flex">
-                <span className="font-semibold inline-block w-24 shrink-0">Địa chỉ:</span>{" "}
-                <span>{data.supplierAddress || "—"}</span>
-              </p>
-              <p>
-                <span className="font-semibold inline-block w-24">Điện thoại:</span>{" "}
-                {data.supplierPhone || "—"}
-              </p>
+              <InfoLine label="Nhà cung cấp" value={data.supplierName || "—"} />
+              <InfoLine label="Địa chỉ" value={data.supplierAddress || "—"} />
+              <InfoLine label="Điện thoại" value={data.supplierPhone || "—"} />
             </div>
             <div className="space-y-1">
               <p className="font-bold border-b border-slate-300 pb-1 mb-2 uppercase text-xs tracking-wider">
                 Thông tin Đơn nhập
               </p>
-              <p>
-                <span className="font-semibold inline-block w-28">Đơn nhập:</span>{" "}
-                {data.poNumber || "—"}
-              </p>
-              <p>
-                <span className="font-semibold inline-block w-28">Ngày nhập hàng:</span>{" "}
-                {data.receivedDate ? formatDateTime(data.receivedDate) : "—"}
-              </p>
+              <InfoLine label="Đơn nhập" value={data.poNumber || "—"} />
+              <InfoLine label="Ngày nhập" value={data.receivedDate ? formatDateTime(data.receivedDate) : "—"} />
               {data.note && (
-                <p>
-                  <span className="font-semibold inline-block w-28 align-top shrink-0">Ghi chú:</span>{" "}
-                  <span className="inline-block w-[calc(100%-7rem)]">{data.note}</span>
-                </p>
+                <InfoLine label="Ghi chú" value={data.note} />
               )}
             </div>
           </div>
 
-          <table className="w-full text-sm border-collapse mb-8">
+          <table className="mb-8 w-full table-fixed border-collapse text-[13px]">
+            <colgroup>
+              <col className="w-[7%]" />
+              <col className="w-[15%]" />
+              <col className="w-[34%]" />
+              <col className="w-[9%]" />
+              <col className="w-[10%]" />
+              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <thead>
               <tr className="border-y-2 border-slate-800 font-bold bg-slate-50">
-                <th className="py-2.5 px-2 text-center w-12 border-x border-slate-300">STT</th>
+                <th className="py-2.5 px-2 text-center border-x border-slate-300">STT</th>
                 <th className="py-2.5 px-2 text-left border-x border-slate-300">Mã SP</th>
                 <th className="py-2.5 px-2 text-left border-x border-slate-300">Tên sản phẩm</th>
-                <th className="py-2.5 px-2 text-center w-16 border-x border-slate-300">ĐVT</th>
-                <th className="py-2.5 px-2 text-right w-20 border-x border-slate-300">SL Đặt</th>
-                <th className="py-2.5 px-2 text-right w-24 border-x border-slate-300">SL Thực nhận</th>
+                <th className="py-2.5 px-2 text-center border-x border-slate-300">ĐVT</th>
+                <th className="py-2.5 px-2 text-right border-x border-slate-300">SL Đặt</th>
+                <th className="py-2.5 px-2 text-right border-x border-slate-300">SL Thực nhận</th>
                 <th className="py-2.5 px-2 text-left border-x border-slate-300">Ghi chú</th>
               </tr>
             </thead>
@@ -190,10 +200,10 @@ export function InboundPrintModal({
                 data.items.map((item, idx) => (
                   <tr key={`${item.lineNumber ?? idx}-${item.productSku ?? item.productName ?? "item"}`} className="border-b border-slate-300 break-inside-avoid">
                     <td className="p-2 text-center border-x border-slate-300">{item.lineNumber || idx + 1}</td>
-                    <td className="p-2 font-mono text-xs border-x border-slate-300">
+                    <td className="break-words p-2 font-mono text-[12px] border-x border-slate-300">
                       {item.productSku || "—"}
                     </td>
-                    <td className="p-2 border-x border-slate-300">
+                    <td className="break-words p-2 leading-snug border-x border-slate-300">
                       {item.productName || item.productSku || "—"}
                     </td>
                     <td className="p-2 text-center border-x border-slate-300">
@@ -205,7 +215,7 @@ export function InboundPrintModal({
                     <td className="p-2 text-right font-bold border-x border-slate-300">
                       {item.receivedQty ?? 0}
                     </td>
-                    <td className="p-2 text-left text-xs border-x border-slate-300">
+                    <td className="break-words p-2 text-left text-xs border-x border-slate-300">
                       {item.note || ""}
                     </td>
                   </tr>
@@ -220,21 +230,21 @@ export function InboundPrintModal({
             </tbody>
           </table>
 
-          <div className="flex justify-between mt-16 text-center text-sm break-inside-avoid pt-12">
-            <div className="w-48">
+          <div className="mt-auto grid break-inside-avoid grid-cols-3 gap-4 pt-12 text-center text-sm">
+            <div className="mx-auto w-full max-w-48">
               <p className="font-bold mb-16">Người lập phiếu</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
             </div>
-            <div className="w-48">
+            <div className="mx-auto w-full max-w-48">
               <p className="font-bold mb-16">Thủ kho</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
               </p>
               {data.receivedBy && <p className="mt-2 font-semibold text-slate-800">{data.receivedBy}</p>}
             </div>
-            <div className="w-48">
+            <div className="mx-auto w-full max-w-48">
               <p className="font-bold mb-16">Bên giao hàng</p>
               <p className="border-t border-slate-400 pt-1 text-slate-500 italic">
                 (Ký, ghi rõ họ tên)
