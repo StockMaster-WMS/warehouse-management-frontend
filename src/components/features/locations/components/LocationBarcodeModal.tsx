@@ -31,7 +31,7 @@ export function LocationBarcodeModal({
   const barcodeUrl = useMemo(() => {
     if (!barcodeValue) return "";
     const code = encodeURIComponent(barcodeValue);
-    return `https://bwipjs-api.metafloor.com/?bcid=code128&text=${code}&scale=3&height=10&rotate=N&includetext=true&textsize=8&backgroundcolor=ffffff`;
+    return `https://bwipjs-api.metafloor.com/?bcid=code128&text=${code}&scale=4&height=12&rotate=N&includetext=false&backgroundcolor=ffffff`;
   }, [barcodeValue]);
 
   const handlePrint = () => {
@@ -70,9 +70,9 @@ export function LocationBarcodeModal({
               box-sizing: border-box;
             }
             .wh-name { font-size: 7pt; font-weight: bold; margin-bottom: 1mm; color: #666; text-transform: uppercase; }
-            .loc-code { font-size: 8.5pt; font-weight: 900; margin-bottom: 1mm; line-height: 1.05; word-break: break-word; }
-            .barcode-img { width: 44mm; height: 13mm; object-fit: contain; }
-            .scan-code { font-size: 6pt; font-weight: 700; margin-top: 0.5mm; color: #555; }
+            .loc-code { font-size: 8pt; font-weight: 900; margin-bottom: 1mm; line-height: 1.05; word-break: break-word; }
+            .barcode-img { width: 44mm; height: 14mm; object-fit: contain; }
+            .scan-code { font-family: monospace; font-size: 7pt; font-weight: 800; margin-top: 0.5mm; color: #111; letter-spacing: 0.2mm; }
           </style>
         </head>
         <body>
@@ -136,7 +136,7 @@ export function LocationBarcodeModal({
              ) : (
                <div className="h-12 w-full bg-slate-100 animate-pulse" />
              )}
-             <div className="mt-0.5 font-mono text-[9px] font-bold text-slate-600">
+             <div className="mt-0.5 font-mono text-[10px] font-extrabold tracking-wide text-slate-900">
                 {barcodeValue}
              </div>
           </div>

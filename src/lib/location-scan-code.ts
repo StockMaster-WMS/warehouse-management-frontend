@@ -30,12 +30,20 @@ export function scanTextMatches(input: string, expected?: string | null) {
 export function getLocationScanCode(locationCode?: string | null) {
   const normalized = normalizeScanText(locationCode);
   if (!normalized) return "";
-  if (normalized.length <= MAX_FULL_LOCATION_BARCODE_LENGTH) return normalized;
 
   const parts = normalized.split("-").filter(Boolean);
-  if (parts.length <= LOCATION_SCAN_PART_COUNT) return normalized;
+  if (parts.length > 1) {
+    const scanParts =
+      parts.length > LOCATION_SCAN_PART_COUNT
+        ? parts.slice(-LOCATION_SCAN_PART_COUNT)
+        : parts;
 
-  return parts.slice(-LOCATION_SCAN_PART_COUNT).join("-");
+    return scanParts.join("");
+  }
+
+  if (normalized.length <= MAX_FULL_LOCATION_BARCODE_LENGTH) return normalized;
+
+  return compactScanText(normalized);
 }
 
 export function isMatchingLocationScan(input: string, expectedLocationCode: string) {
