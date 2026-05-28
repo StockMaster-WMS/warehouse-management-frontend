@@ -245,6 +245,8 @@ export default function RMADetailPage() {
   const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
   const totalExpected = Number(rma?.totalExpectedQty ?? lines.reduce((sum, line) => sum + Number(line.expectedQty ?? 0), 0));
   const totalReceived = Number(rma?.totalReceivedQty ?? lines.reduce((sum, line) => sum + Number(line.receivedQty ?? 0), 0));
+  const supplierReturnStockDeducted = isSupplierReturn && ["APPROVED", "COMPLETED"].includes(rma.status);
+  const totalSupplierExported = supplierReturnStockDeducted ? totalExpected : 0;
   const allLinesReceived =
     lines.length > 0 &&
     lines.every(
@@ -496,7 +498,10 @@ export default function RMADetailPage() {
             <DetailInfoField label="Đơn liên quan" value={rma.orderNumber || rma.orderId || rma.salesOrderId} mono />
             <DetailInfoField label="Lý do trả" value={rma.reason} />
             <DetailInfoField label="Tổng dự kiến" value={totalExpected.toLocaleString("vi-VN")} />
-            <DetailInfoField label="Đã nhận" value={totalReceived.toLocaleString("vi-VN")} />
+            <DetailInfoField
+              label={isSupplierReturn ? "Đã xuất trả" : "Đã nhận"}
+              value={(isSupplierReturn ? totalSupplierExported : totalReceived).toLocaleString("vi-VN")}
+            />
           </div>
         </DetailSection>
 
@@ -506,10 +511,10 @@ export default function RMADetailPage() {
               <TableHeader className="ui-table-header">
                 <TableRow>
                   <TableHead className="ui-label p-3">Sản phẩm</TableHead>
-                  <TableHead className="ui-label p-3 text-right">Dự kiến</TableHead>
-                  <TableHead className="ui-label p-3 text-right">Đã nhận</TableHead>
-                  <TableHead className="ui-label p-3">Tình trạng</TableHead>
-                  <TableHead className="ui-label p-3">Xử lý</TableHead>
+                  <TableHead className="ui-label p-3 text-right">{isSupplierReturn ? "SL trả" : "Dự kiến"}</TableHead>
+                  <TableHead className="ui-label p-3 text-right">{isSupplierReturn ? "Đã xuất" : "Đã nhận"}</TableHead>
+                  <TableHead className="ui-label p-3">{isSupplierReturn ? "Trạng thái xuất" : "Tình trạng"}</TableHead>
+                  <TableHead className="ui-label p-3">{isSupplierReturn ? "Kiểm định" : "Xử lý"}</TableHead>
                   <TableHead className="ui-label p-3 text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -527,10 +532,20 @@ export default function RMADetailPage() {
                       </div>
                     </TableCell>
                     <TableCell className="p-3 text-right tabular-nums">{line.expectedQty}</TableCell>
-                    <TableCell className="p-3 text-right tabular-nums">{line.receivedQty}</TableCell>
-                    <TableCell className="p-3">{CONDITION_LABEL[String(line.condition ?? "")] ?? line.condition ?? "—"}</TableCell>
+                    <TableCell className="p-3 text-right tabular-nums">
+                      {isSupplierReturn ? (supplierReturnStockDeducted ? line.expectedQty : 0) : line.receivedQty}
+                    </TableCell>
                     <TableCell className="p-3">
-                      {line.dispositionAction ? (
+                      {isSupplierReturn
+                        ? supplierReturnStockDeducted
+                          ? "Đã trừ tồn khi duyệt"
+                          : "Chờ duyệt xuất trả"
+                        : CONDITION_LABEL[String(line.condition ?? "")] ?? line.condition ?? "—"}
+                    </TableCell>
+                    <TableCell className="p-3">
+                      {isSupplierReturn ? (
+                        <span className="text-xs text-muted-foreground">Không cần kiểm định</span>
+                      ) : line.dispositionAction ? (
                         <Badge variant="outline" className={cn("border text-xs", statusClass(rma.status))}>
                           {DISPOSITION_LABEL[line.dispositionAction] ?? line.dispositionAction}
                         </Badge>

@@ -80,7 +80,7 @@ const INITIAL_OVERVIEW_STATE: OverviewState = {
     advancedOpen: false,
     page: 0,
     pageSize: 20,
-    status: "PENDING",
+    status: "all",
     datePreset: DEFAULT_OPERATION_DATE_PRESET,
     assignGroup: null,
     assignAssigneeId: "",
@@ -408,7 +408,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                                 hasAnyFilter={hasAnyFilter}
                                 onClear={() => dispatch({
                                     searchTerm: "",
-                                    status: "PENDING",
+                                    status: "all",
                                     datePreset: DEFAULT_OPERATION_DATE_PRESET,
                                     page: 0,
                                 })}
