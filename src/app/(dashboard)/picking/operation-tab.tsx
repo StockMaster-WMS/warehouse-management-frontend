@@ -45,6 +45,11 @@ import {
   useReportPickingExceptionMutation,
 } from "@/store/services/picking-item.service";
 import { playErrorSound, playSuccessSound } from "@/lib/audio-utils";
+import {
+  getLocationScanCode,
+  isMatchingLocationScan,
+  scanTextMatches,
+} from "@/lib/location-scan-code";
 import { BarcodeScanner } from "@/components/ui/barcode-scanner";
 import { taskScopeErrMessage } from "@/types/api";
 import type { PickingItem } from "@/types/picking-item";
@@ -331,9 +336,9 @@ export function OperationTab() {
       );
       return;
     }
-    if (input !== expected) {
+    if (!isMatchingLocationScan(input, expected)) {
       playErrorSound();
-      toast.error(`Sai vị trí! Cần: ${expected}`);
+      toast.error(`Sai vị trí! Cần: ${expected} hoặc ${getLocationScanCode(expected)}`);
       setScannedLoc("");
       return;
     }
@@ -350,7 +355,10 @@ export function OperationTab() {
     const expectedBarcode = (activeItem.barcodeEan13 || "")
       .trim()
       .toUpperCase();
-    if (input !== expectedSku && input !== expectedBarcode) {
+    if (
+      !scanTextMatches(input, expectedSku) &&
+      !scanTextMatches(input, expectedBarcode)
+    ) {
       playErrorSound();
       toast.error("Sai sản phẩm. Vui lòng quét lại.");
       setScannedSku("");
@@ -1445,8 +1453,8 @@ function MobileProductCard({
           </p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-[1.25fr_0.8fr] gap-2">
-        <div className="rounded-lg bg-indigo-50 p-3">
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_88px] gap-2">
+        <div className="min-w-0 rounded-lg bg-indigo-50 p-3">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600">
             <MapPin className="size-3.5" />
             Vị trí kệ
@@ -1475,7 +1483,7 @@ function MobileProductCard({
             </div>
           </div>
         </div>
-        <div className="rounded-lg bg-slate-50 p-3 text-center">
+        <div className="min-w-0 rounded-lg bg-slate-50 p-3 text-center">
           <p className="text-xs font-semibold text-slate-600">Cần lấy</p>
           <p className="mt-1 text-3xl font-bold leading-none text-slate-950">
             {activeItem.qtyToPick}
@@ -1492,9 +1500,11 @@ function MobileProductCard({
 function MobileStepCards({
   currentStep,
   pickedQty,
+  scanInputMode,
   scannedLoc,
   scannedSku,
   onManualSubmit,
+  onScanInputModeChange,
   onScanLocation,
   onScanSku,
   onShowGuide,
@@ -1504,9 +1514,11 @@ function MobileStepCards({
 }: {
   currentStep: "location" | "sku" | "qty";
   pickedQty: string;
+  scanInputMode: "camera" | "manual";
   scannedLoc: string;
   scannedSku: string;
   onManualSubmit: () => void;
+  onScanInputModeChange: (mode: "camera" | "manual") => void;
   onScanLocation: (value?: string) => void;
   onScanSku: (value?: string) => void;
   onShowGuide: () => void;
@@ -1525,8 +1537,10 @@ function MobileStepCards({
         step={1}
         value={scannedLoc}
         placeholder="Nhập mã vị trí"
+        scanInputMode={scanInputMode}
         onChange={onSetScannedLoc}
         onManualSubmit={onManualSubmit}
+        onScanInputModeChange={onScanInputModeChange}
         onScan={onScanLocation}
         onShowGuide={onShowGuide}
       />
@@ -1537,8 +1551,10 @@ function MobileStepCards({
         step={2}
         value={scannedSku}
         placeholder="Nhập mã sản phẩm"
+        scanInputMode={scanInputMode}
         onChange={onSetScannedSku}
         onManualSubmit={onManualSubmit}
+        onScanInputModeChange={onScanInputModeChange}
         onScan={onScanSku}
         onShowGuide={onShowGuide}
       />
@@ -1559,7 +1575,7 @@ function MobileStepCards({
           >
             3
           </span>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-slate-700">
               Bước 3 - Xác nhận số lượng
             </p>
@@ -1589,8 +1605,10 @@ function MobileActiveStep({
   step,
   value,
   placeholder,
+  scanInputMode,
   onChange,
   onManualSubmit,
+  onScanInputModeChange,
   onScan,
   onShowGuide,
 }: {
@@ -1600,8 +1618,10 @@ function MobileActiveStep({
   step: number;
   value: string;
   placeholder: string;
+  scanInputMode: "camera" | "manual";
   onChange: (value: string) => void;
   onManualSubmit: () => void;
+  onScanInputModeChange: (mode: "camera" | "manual") => void;
   onScan: (value?: string) => void;
   onShowGuide: () => void;
 }) {
@@ -1610,6 +1630,13 @@ function MobileActiveStep({
   const restartScanner = () => {
     setScannerKey((key) => key + 1);
     toast.info(`${scanLabel} lại.`);
+  };
+  const handleScanAction = () => {
+    if (value.trim()) {
+      onManualSubmit();
+      return;
+    }
+    restartScanner();
   };
 
   return (
@@ -1632,7 +1659,7 @@ function MobileActiveStep({
         >
           {done ? <CheckCircle2 className="size-5" /> : step}
         </span>
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-indigo-600">{label}</p>
           {!active ? (
             <p className="text-xs font-medium text-slate-500">
@@ -1669,45 +1696,99 @@ function MobileActiveStep({
         )}
       </div>
       {active ? (
-        <div className="mt-3 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-3 text-center">
+        <div className="mt-3 min-w-0 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-3 text-center">
+          <div className="mb-3 grid grid-cols-2 rounded-lg bg-white p-1 text-xs font-bold shadow-sm">
+            <button
+              type="button"
+              className={cn(
+                "flex h-9 items-center justify-center gap-1.5 rounded-md",
+                scanInputMode === "camera"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600",
+              )}
+              onClick={() => onScanInputModeChange("camera")}
+            >
+              <ScanLine className="size-3.5" />
+              Tự động
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "flex h-9 items-center justify-center gap-1.5 rounded-md",
+                scanInputMode === "manual"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600",
+              )}
+              onClick={() => onScanInputModeChange("manual")}
+            >
+              <Keyboard className="size-3.5" />
+              Thủ công
+            </button>
+          </div>
           <Barcode className="mx-auto size-8 text-indigo-600" />
           <h3 className="mt-2 text-base font-bold text-slate-700">
             Quét mã {step === 1 ? "KỆ / VỊ TRÍ" : "SẢN PHẨM"}
           </h3>
           <p className="mt-1 text-xs font-medium text-slate-500">
-            Đưa mã vạch vào vùng quét
+            {scanInputMode === "camera"
+              ? "Đưa mã vạch vào vùng quét"
+              : "Nhập mã rồi bấm xác nhận"}
           </p>
-          <div className="mt-3 overflow-hidden rounded-lg">
-            <BarcodeScanner
-              key={`mobile-scan-${step}-${scannerKey}`}
-              className="min-h-[130px] rounded-lg [&_video]:max-h-[130px] [&_video]:object-cover"
-              qrbox={{ width: 150, height: 100 }}
-              onScanSuccess={onScan}
-              onScanError={() => toast.error("Cần cấp quyền Camera để quét.")}
-            />
-          </div>
-          <Button
-            type="button"
-            className="mt-3 h-11 w-full rounded-lg bg-indigo-600 text-sm font-semibold hover:bg-indigo-700"
-            onClick={restartScanner}
+          {scanInputMode === "camera" ? (
+            <>
+              <div className="mt-3 max-w-full overflow-hidden rounded-lg">
+                <BarcodeScanner
+                  key={`mobile-scan-${step}-${scannerKey}`}
+                  className="min-h-[150px] max-w-full rounded-lg [&_*]:max-w-full [&_video]:max-h-[150px] [&_video]:w-full [&_video]:object-cover"
+                  qrbox={{ width: 220, height: 90 }}
+                  onScanSuccess={onScan}
+                  onScanError={() =>
+                    toast.error("Cần cấp quyền Camera để quét.")
+                  }
+                />
+              </div>
+              <Button
+                type="button"
+                className="mt-3 h-11 w-full rounded-lg bg-indigo-600 text-sm font-semibold hover:bg-indigo-700"
+                onClick={handleScanAction}
+              >
+                <ScanLine className="mr-2 size-4" />
+                {scanLabel}
+              </Button>
+            </>
+          ) : null}
+          <div
+            className={cn(
+              "mt-3 grid gap-2",
+              scanInputMode === "manual"
+                ? "grid-cols-1"
+                : "grid-cols-[minmax(0,1fr)_auto]",
+            )}
           >
-            <ScanLine className="mr-2 size-4" />
-            {scanLabel}
-          </Button>
-          <div className="mt-3 flex gap-2">
             <Input
               value={value}
               onChange={(event) => onChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onManualSubmit();
+              }}
               placeholder={placeholder}
-              className="h-10 bg-white text-center text-sm font-semibold"
+              className={cn(
+                "bg-white text-center font-semibold",
+                scanInputMode === "manual" ? "h-12 text-base" : "h-10 text-sm",
+              )}
             />
             <Button
               variant="outline"
-              className="h-10 shrink-0 rounded-lg bg-white px-3 text-xs font-semibold"
+              className={cn(
+                "shrink-0 rounded-lg bg-white font-semibold",
+                scanInputMode === "manual"
+                  ? "h-11 w-full text-sm"
+                  : "h-10 px-3 text-xs",
+              )}
               onClick={onManualSubmit}
             >
               <Keyboard className="mr-1.5 size-3.5" />
-              Nhập mã
+              Xác nhận
             </Button>
           </div>
           <div className="mt-3 rounded-lg bg-white/80 py-2 text-xs font-semibold text-slate-400">
@@ -1825,9 +1906,11 @@ function PickingScanFlow({
             <MobileStepCards
               currentStep={currentStep}
               pickedQty={pickedQty}
+              scanInputMode={scanInputMode}
               scannedLoc={scannedLoc}
               scannedSku={scannedSku}
               onManualSubmit={handleManualSubmit}
+              onScanInputModeChange={onScanInputModeChange}
               onScanLocation={onScanLocation}
               onScanSku={onScanSku}
               onShowGuide={() =>
