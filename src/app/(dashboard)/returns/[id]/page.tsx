@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Ban,
   CheckCircle2,
-  ChevronRight,
   ClipboardList,
   Loader2,
   Package,
@@ -18,7 +17,6 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -55,6 +53,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
+import {
+  DetailPageLayout,
+  DetailBreadcrumb,
+  DetailSection,
+  DetailInfoField,
+  DetailStatusBadge,
+  DetailSkeleton,
+  DetailErrorState,
+  DetailGrid,
+} from "@/components/detail-page";
+import type { StatusConfig } from "@/components/detail-page";
 import { useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import type { ReturnLine, ReturnStatus, ReturnType } from "@/types/returns";
@@ -64,17 +73,17 @@ const RMA_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
   timeStyle: "short",
 });
 
-const STATUS_LABEL: Record<ReturnStatus, string> = {
-  REQUESTED: "Chờ xử lý",
-  RECEIVED: "Đã nhận hàng",
-  APPROVED: "Đã duyệt",
-  REJECTED: "Từ chối",
-  COMPLETED: "Hoàn tất",
-  CANCELLED: "Đã hủy",
-  INSPECTING: "Đang kiểm",
-  RESTOCKED: "Nhập lại kho",
-  SCRAPPED: "Đã hủy hàng",
-  CLOSED: "Đã đóng",
+const RETURN_STATUS_CONFIG: Record<string, StatusConfig> = {
+  REQUESTED: { label: "Chờ xử lý", color: "blue" },
+  RECEIVED: { label: "Đã nhận hàng", color: "amber" },
+  APPROVED: { label: "Đã duyệt", color: "emerald" },
+  REJECTED: { label: "Từ chối", color: "rose" },
+  COMPLETED: { label: "Hoàn tất", color: "emerald" },
+  CANCELLED: { label: "Đã hủy", color: "rose" },
+  INSPECTING: { label: "Đang kiểm", color: "indigo" },
+  RESTOCKED: { label: "Nhập lại kho", color: "teal" },
+  SCRAPPED: { label: "Đã hủy hàng", color: "slate" },
+  CLOSED: { label: "Đã đóng", color: "slate" },
 };
 
 const RETURN_TYPE_LABEL: Record<ReturnType, string> = {
@@ -117,19 +126,16 @@ function displayCode(value?: string | null) {
 }
 
 function statusClass(status: ReturnStatus) {
-  switch (status) {
-    case "REQUESTED":
-      return "bg-blue-50 text-blue-700 border-blue-200";
-    case "RECEIVED":
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    case "APPROVED":
-    case "COMPLETED":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "REJECTED":
-    case "CANCELLED":
-      return "bg-rose-50 text-rose-700 border-rose-200";
-    default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+  const cfg = RETURN_STATUS_CONFIG[status];
+  if (!cfg) return "bg-slate-50 text-slate-700 border-slate-200";
+  switch (cfg.color) {
+    case "blue": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "amber": return "bg-amber-50 text-amber-700 border-amber-200";
+    case "emerald": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "rose": return "bg-rose-50 text-rose-700 border-rose-200";
+    case "indigo": return "bg-indigo-50 text-indigo-700 border-indigo-200";
+    case "teal": return "bg-teal-50 text-teal-700 border-teal-200";
+    default: return "bg-slate-50 text-slate-700 border-slate-200";
   }
 }
 
@@ -175,6 +181,8 @@ export default function RMADetailPage() {
   const [dispositionLocationId, setDispositionLocationId] = useState("");
   const [dispositionSupplierId, setDispositionSupplierId] = useState("");
   const [dispositionNote, setDispositionNote] = useState("");
+  const [statusDialog, setStatusDialog] = useState<"reject" | "cancel" | null>(null);
+  const [statusReason, setStatusReason] = useState("");
 
   const returnLocationCondition = receiveForm.condition?.trim() || "QUARANTINE";
   const { data: locationsRes, isLoading: locationsLoading, isFetching: locationsFetching } = useGetReturnLocationsQuery(
@@ -194,10 +202,6 @@ export default function RMADetailPage() {
         .join(" · "),
     }));
   }, [locationsRes]);
-  const locationLabelById = useMemo(() => {
-    return new Map((locationsRes?.data ?? []).map((loc) => [loc.id, loc.code]));
-  }, [locationsRes]);
-
   const { data: restockLocationsRes, isLoading: restockLocationsLoading } = useGetLocationsListQuery(
     {
       page: 0,
@@ -241,6 +245,8 @@ export default function RMADetailPage() {
   const isCompleted = rma?.status === "COMPLETED" || rma?.status === "CLOSED";
   const totalExpected = Number(rma?.totalExpectedQty ?? lines.reduce((sum, line) => sum + Number(line.expectedQty ?? 0), 0));
   const totalReceived = Number(rma?.totalReceivedQty ?? lines.reduce((sum, line) => sum + Number(line.receivedQty ?? 0), 0));
+  const supplierReturnStockDeducted = isSupplierReturn && ["APPROVED", "COMPLETED"].includes(rma.status);
+  const totalSupplierExported = supplierReturnStockDeducted ? totalExpected : 0;
   const allLinesReceived =
     lines.length > 0 &&
     lines.every(
@@ -251,7 +257,7 @@ export default function RMADetailPage() {
     lines.every(
       (line) => Number(line.receivedQty ?? 0) <= 0 || Boolean(line.dispositionAction),
     );
-  const canReceive = isCustomerReturn && rma.status === "APPROVED";
+  const canReceive = isCustomerReturn && ["APPROVED", "RECEIVED"].includes(rma.status);
   const canApprove = canManageReturn && rma?.status === "REQUESTED";
   const canComplete =
     canManageReturn &&
@@ -315,7 +321,7 @@ export default function RMADetailPage() {
   const openDispositionDialog = (line: ReturnLine) => {
     setDispositionLine(line);
     setDispositionAction("RESTOCK");
-    setDispositionLocationId("");
+    setDispositionLocationId(line.returnLocationId ?? "");
     setDispositionSupplierId("");
     setDispositionNote("");
   };
@@ -371,23 +377,25 @@ export default function RMADetailPage() {
     }
   };
 
-  const handleReject = async () => {
-    const reason = window.prompt("Nhập lý do từ chối:");
-    if (!reason?.trim()) return toast.error("Vui lòng nhập lý do từ chối");
+  const handleReject = async (reason: string) => {
+    if (!reason.trim()) return toast.error("Vui lòng nhập lý do từ chối");
     try {
       await rejectReturn({ id, reason: reason.trim() }).unwrap();
       toast.success("Đã từ chối phiếu trả hàng");
+      setStatusDialog(null);
+      setStatusReason("");
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể từ chối phiếu trả hàng"));
     }
   };
 
-  const handleCancel = async () => {
-    const reason = window.prompt("Nhập lý do hủy phiếu:");
+  const handleCancel = async (reason?: string) => {
     try {
       await cancelReturn({ id, reason: reason?.trim() || undefined }).unwrap();
       toast.success("Đã hủy phiếu trả hàng");
+      setStatusDialog(null);
+      setStatusReason("");
       refetch();
     } catch (err) {
       toast.error(apiErrMessage(err, "Không thể hủy phiếu trả hàng"));
@@ -409,256 +417,191 @@ export default function RMADetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/returns" backLabel="Phiếu trả hàng" />
+        <DetailSkeleton />
+      </DetailPageLayout>
     );
   }
 
-  if (!rma) return null;
+  if (!rma) {
+    return (
+      <DetailPageLayout>
+        <DetailBreadcrumb backHref="/returns" backLabel="Phiếu trả hàng" />
+        <DetailErrorState
+          message="Không tìm thấy phiếu trả hàng."
+          backHref="/returns"
+          backLabel="Về danh sách"
+        />
+      </DetailPageLayout>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button variant="ghost" size="sm" onClick={() => push("/returns")} className="-ml-2 h-8">
-          <ArrowLeft className="mr-2 size-4" />
-          Quay lại danh sách
-        </Button>
-        <ChevronRight className="size-4" />
-        <span className="font-mono">{displayCode(rma.rmaNumber)}</span>
-      </div>
+    <DetailPageLayout>
+      <DetailBreadcrumb
+        backHref="/returns"
+        backLabel="Phiếu trả hàng"
+        currentLabel={displayCode(rma.rmaNumber)}
+      />
 
       <PageHeader
         title={`Chi tiết phiếu trả: ${displayCode(rma.rmaNumber)}`}
         description={RETURN_TYPE_LABEL[rma.returnType]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => push("/returns")}>
+              <ArrowLeft className="mr-2 size-4" />
+              Danh sách
+            </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
-            {canReject ? <Button size="sm" variant="outline" onClick={handleReject} disabled={isRejecting}><XCircle className="mr-2 size-4" />Từ chối</Button> : null}
-            {canCancel ? <Button size="sm" variant="outline" onClick={handleCancel} disabled={isCancelling}><Ban className="mr-2 size-4" />Hủy</Button> : null}
+            {canReject ? <Button size="sm" variant="outline" onClick={() => { setStatusReason(""); setStatusDialog("reject"); }} disabled={isRejecting}><XCircle className="mr-2 size-4" />Từ chối</Button> : null}
+            {canCancel ? <Button size="sm" variant="outline" onClick={() => { setStatusReason(""); setStatusDialog("cancel"); }} disabled={isCancelling}><Ban className="mr-2 size-4" />Hủy</Button> : null}
             {canApprove ? <Button size="sm" onClick={handleApprove} disabled={isApproving}><CheckCircle2 className="mr-2 size-4" />Duyệt</Button> : null}
-            {canManageReturn && rma?.status === "APPROVED" && !isCompleted ? (
-              <Button size="sm" onClick={handleClose} disabled={isClosing || !canComplete}>Hoàn tất</Button>
-            ) : null}
+            {canComplete ? <Button size="sm" onClick={handleClose} disabled={isClosing}><CheckCircle2 className="mr-2 size-4" />Hoàn tất</Button> : null}
           </div>
         }
       />
 
-      {isCustomerReturn && rma.status === "APPROVED" && !allReceivedLinesDisposed ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-          Còn dòng hàng chưa xử lý sau kiểm định.
-        </div>
-      ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Thông tin phiếu</CardTitle>
-                <CardDescription>Thông tin đối tác, kho và lý do trả hàng.</CardDescription>
+      <DetailGrid
+        sidebar={
+          <>
+            <DetailSection title="Trạng thái & lịch sử" icon={<ClipboardList className="size-4" />}>
+              <div className="mb-4">
+                <DetailStatusBadge status={rma.status} statusConfig={RETURN_STATUS_CONFIG} />
               </div>
-              <Badge className={cn("border", statusClass(rma.status))}>{STATUS_LABEL[rma.status] ?? rma.status}</Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">{rma.returnType === "SUPPLIER" ? "Nhà cung cấp" : "Khách hàng"}</p>
-                  <p className="font-semibold">{rma.returnType === "SUPPLIER" ? rma.supplierName || "Nhà cung cấp" : rma.customerName || "Khách hàng"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Lý do</p>
-                  <p className="font-semibold text-rose-600">{rma.reason || "--"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Kho xử lý</p>
-                  <p className="flex items-center gap-1.5 font-semibold"><Warehouse className="size-4 text-zinc-400" />{warehouseLabel}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Tiến độ số lượng</p>
-                  <p className="font-semibold">
-                    {isSupplierReturn ? `${totalExpected} cần xuất trả` : `${totalReceived}/${totalExpected} đã nhận`}
-                  </p>
-                </div>
+              <div className="divide-y divide-border">
+                <DetailInfoField label="Ngày tạo" value={formatDateTime(rma.createdAt)} />
+                <DetailInfoField label="Ngày duyệt" value={formatDateTime(rma.approvedAt)} />
+                <DetailInfoField label="Ngày nhận" value={formatDateTime(rma.receivedAt)} />
+                <DetailInfoField label="Hoàn tất" value={formatDateTime(rma.completedAt)} />
               </div>
-            </CardContent>
-          </Card>
+            </DetailSection>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="size-5 text-primary" />Dòng sản phẩm</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sản phẩm</TableHead>
-                    <TableHead className="text-center">{isSupplierReturn ? "SL trả NCC" : "Dự kiến"}</TableHead>
-                    {isCustomerReturn ? (
-                      <>
-                        <TableHead className="text-center">Đã nhận</TableHead>
-                        <TableHead className="text-center">Còn lại</TableHead>
-                      </>
-                    ) : null}
-                    <TableHead>{isSupplierReturn ? "Vị trí xuất trả" : "Vị trí nhận/xuất"}</TableHead>
-                    {isCustomerReturn ? (
-                      <>
-                        <TableHead>Tình trạng</TableHead>
-                        <TableHead>Xử lý sau kiểm định</TableHead>
-                      </>
-                    ) : (
-                      <TableHead>Trạng thái xuất trả</TableHead>
-                    )}
+            <DetailSection title="Ghi chú xử lý" icon={<ClipboardList className="size-4" />}>
+              <div className="space-y-3 text-sm">
+                {rma.note ? <p className="text-foreground">{rma.note}</p> : <p className="text-muted-foreground">Không có ghi chú.</p>}
+                {rma.rejectionReason ? <p className="text-rose-600">Lý do từ chối: {rma.rejectionReason}</p> : null}
+                {rma.cancelReason ? <p className="text-rose-600">Lý do hủy: {rma.cancelReason}</p> : null}
+              </div>
+            </DetailSection>
+          </>
+        }
+      >
+        <DetailSection title="Thông tin tổng quan" icon={<Warehouse className="size-4" />}>
+          <div className="grid grid-cols-1 gap-x-6 divide-y divide-border sm:grid-cols-2 sm:divide-y-0">
+            <DetailInfoField label="Kho xử lý" value={warehouseLabel} />
+            <DetailInfoField label={isCustomerReturn ? "Khách hàng" : "Nhà cung cấp"} value={isCustomerReturn ? rma.customerName : rma.supplierName} />
+            <DetailInfoField label="Đơn liên quan" value={rma.orderNumber || rma.orderId || rma.salesOrderId} mono />
+            <DetailInfoField label="Lý do trả" value={rma.reason} />
+            <DetailInfoField label="Tổng dự kiến" value={totalExpected.toLocaleString("vi-VN")} />
+            <DetailInfoField
+              label={isSupplierReturn ? "Đã xuất trả" : "Đã nhận"}
+              value={(isSupplierReturn ? totalSupplierExported : totalReceived).toLocaleString("vi-VN")}
+            />
+          </div>
+        </DetailSection>
+
+        <DetailSection title="Dòng hàng trả" icon={<Package className="size-4" />} padded={false}>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="ui-table-header">
+                <TableRow>
+                  <TableHead className="ui-label p-3">Sản phẩm</TableHead>
+                  <TableHead className="ui-label p-3 text-right">{isSupplierReturn ? "SL trả" : "Dự kiến"}</TableHead>
+                  <TableHead className="ui-label p-3 text-right">{isSupplierReturn ? "Đã xuất" : "Đã nhận"}</TableHead>
+                  <TableHead className="ui-label p-3">{isSupplierReturn ? "Trạng thái xuất" : "Tình trạng"}</TableHead>
+                  <TableHead className="ui-label p-3">{isSupplierReturn ? "Kiểm định" : "Xử lý"}</TableHead>
+                  <TableHead className="ui-label p-3 text-right">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lines.length > 0 ? lines.map((line) => (
+                  <TableRow key={line.id} className="ui-table-row">
+                    <TableCell className="p-3">
+                      <div>
+                        <p className="text-sm font-semibold">{line.productName || "Sản phẩm"}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{line.productSku || line.productId}</p>
+                        <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                          {line.returnLocationCode ? <p>Vị trí xuất ban đầu: {line.returnLocationCode}</p> : null}
+                          {line.receivedLocationCode ? <p>Vị trí RMA nhận trả: {line.receivedLocationCode}</p> : null}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-3 text-right tabular-nums">{line.expectedQty}</TableCell>
+                    <TableCell className="p-3 text-right tabular-nums">
+                      {isSupplierReturn ? (supplierReturnStockDeducted ? line.expectedQty : 0) : line.receivedQty}
+                    </TableCell>
+                    <TableCell className="p-3">
+                      {isSupplierReturn
+                        ? supplierReturnStockDeducted
+                          ? "Đã trừ tồn khi duyệt"
+                          : "Chờ duyệt xuất trả"
+                        : CONDITION_LABEL[String(line.condition ?? "")] ?? line.condition ?? "—"}
+                    </TableCell>
+                    <TableCell className="p-3">
+                      {isSupplierReturn ? (
+                        <span className="text-xs text-muted-foreground">Không cần kiểm định</span>
+                      ) : line.dispositionAction ? (
+                        <Badge variant="outline" className={cn("border text-xs", statusClass(rma.status))}>
+                          {DISPOSITION_LABEL[line.dispositionAction] ?? line.dispositionAction}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Chưa xử lý</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="p-3 text-right">
+                      {canManageReturn && Number(line.receivedQty ?? 0) > 0 && !line.dispositionAction ? (
+                        <Button size="sm" variant="outline" onClick={() => openDispositionDialog(line)}>
+                          Xử lý
+                        </Button>
+                      ) : null}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lines.map((line) => {
-                    const locationCode =
-                      line.receivedLocationCode ||
-                      line.returnLocationCode ||
-                      (line.receivedLocationId ? locationLabelById.get(line.receivedLocationId) : null) ||
-                      (line.returnLocationId ? locationLabelById.get(line.returnLocationId) : null);
-                    const canDisposeLine =
-                      canManageReturn &&
-                      Number(line.receivedQty ?? 0) > 0 &&
-                      Boolean(line.receivedLocationId) &&
-                      !line.dispositionAction;
-                    return (
-                      <TableRow key={line.id}>
-                        <TableCell>
-                          <div className="font-medium">{line.productName || "Sản phẩm chưa xác định"}</div>
-                          <div className="text-xs font-mono text-muted-foreground">{line.productSku || line.lotNumber || "Chưa có mã hàng"}</div>
-                        </TableCell>
-                        <TableCell className="text-center font-semibold">{line.expectedQty}</TableCell>
-                        {isCustomerReturn ? (
-                          <>
-                            <TableCell className="text-center font-bold text-primary">{line.receivedQty || 0}</TableCell>
-                            <TableCell className="text-center font-semibold">{line.remainingQty ?? Math.max(0, line.expectedQty - line.receivedQty)}</TableCell>
-                          </>
-                        ) : null}
-                        <TableCell className="font-mono text-xs">{locationCode || "--"}</TableCell>
-                        {isCustomerReturn ? (
-                          <>
-                            <TableCell><Badge variant="outline">{CONDITION_LABEL[String(line.condition ?? "")] ?? line.condition ?? "--"}</Badge></TableCell>
-                            <TableCell>
-                              {line.dispositionAction ? (
-                                <div className="space-y-1">
-                                  <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
-                                    {DISPOSITION_LABEL[String(line.dispositionAction)] ?? line.dispositionAction}
-                                  </Badge>
-                                  {line.dispositionLocationCode ? <div className="text-xs text-muted-foreground">Đích: {line.dispositionLocationCode}</div> : null}
-                                  {line.dispositionAction === "RETURN_TO_SUPPLIER" && line.supplierReturnRmaId ? (
-                                    <Button
-                                      type="button"
-                                      variant="link"
-                                      className="h-auto p-0 text-xs"
-                                      onClick={() => push(`/returns/${line.supplierReturnRmaId}`)}
-                                    >
-                                      Xem phiếu trả NCC
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              ) : canDisposeLine ? (
-                                <Button type="button" size="sm" variant="outline" onClick={() => openDispositionDialog(line)}>
-                                  Xử lý
-                                </Button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Chưa sẵn sàng</span>
-                              )}
-                            </TableCell>
-                          </>
-                        ) : (
-                          <TableCell>
-                            <Badge className={cn("border", statusClass(rma.status))}>
-                              {rma.status === "APPROVED" ? "Đã duyệt xuất trả" : STATUS_LABEL[rma.status] ?? rma.status}
-                            </Badge>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">
+                      Phiếu chưa có dòng hàng.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DetailSection>
 
-        <div className="space-y-6">
-          {rma.returnType === "CUSTOMER" ? (
-            <Card className="border-primary/20 bg-primary/10">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base"><Package className="size-5 text-primary" />Nhận hàng khách trả</CardTitle>
-                <CardDescription>Cập nhật số lượng và vị trí nhận hàng trả.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Dòng hàng</Label>
-                  <SearchableSelect options={lineOptions} value={selectedLine?.id ?? ""} onValueChange={handleSelectLine} placeholder="Chọn dòng hàng..." dialogTitle="Chọn dòng hàng" disabled={!lineOptions.length || !canReceive} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tình trạng</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["GOOD", "DAMAGED", "EXPIRED", "QUARANTINE"] as const).map((condition) => (
-                      <Button key={condition} type="button" variant={receiveForm.condition === condition ? "default" : "outline"} size="sm" onClick={() => updateReceiveForm({ condition, locationId: "" })} disabled={!canReceive}>
-                        {CONDITION_LABEL[condition]}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Vị trí nhận hàng trả</Label>
-                  <SearchableSelect
-                    options={locationOptions}
-                    value={selectedLocationId}
-                    onValueChange={(locationId) => updateReceiveForm({ locationId })}
-                    placeholder="Chọn vị trí RMA phù hợp"
-                    dialogTitle="Chọn vị trí nhận hàng trả"
-                    emptyText="Không có vị trí RMA phù hợp với tình trạng đã chọn"
-                    loading={locationsLoading || locationsFetching}
-                    disabled={!canReceive || !rma?.warehouseId}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Số lượng nhận</Label>
-                  <Input type="number" value={quantityInputValue} onChange={(e) => updateReceiveForm({ actualQty: e.target.value })} min={0} max={selectedLine?.expectedQty} disabled={!canReceive} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Ghi chú</Label>
-                  <Input value={receiveForm.notes} onChange={(event) => updateReceiveForm({ notes: event.target.value })} placeholder="Ghi chú xử lý nếu có" disabled={!canReceive} />
-                </div>
-                <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleReceive} disabled={isReceiving || !canReceive || !selectedLine}>
-                  {isReceiving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
-                  Cập nhật nhận hàng
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Lịch sử xử lý</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-xs">
-              {[
-                ["Khởi tạo", rma.createdAt, rma.createdBy],
-                ["Nhận hàng", rma.receivedAt, rma.receivedBy],
-                ["Duyệt", rma.approvedAt, rma.approvedBy],
-                ["Từ chối", rma.rejectedAt, rma.rejectedBy],
-                ["Hoàn tất", rma.completedAt, rma.completedBy],
-                ["Hủy", rma.cancelledAt, rma.cancelledBy],
-              ].filter(([, time]) => time).map(([label, time, actor]) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div className="mt-1 size-2 shrink-0 rounded-full bg-emerald-500" />
-                  <div><p className="font-semibold">{label}</p><p className="text-muted-foreground">{formatDateTime(String(time))}{actor ? ` · ${actor}` : ""}</p></div>
-                </div>
-              ))}
-              {rma.rejectionReason ? <p className="text-rose-600">Lý do từ chối: {rma.rejectionReason}</p> : null}
-              {rma.cancelReason ? <p className="text-rose-600">Lý do hủy: {rma.cancelReason}</p> : null}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        {canReceive && selectedLine ? (
+          <DetailSection title="Nhận hàng trả" icon={<CheckCircle2 className="size-4" />}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+              <SearchableSelect
+                options={lineOptions}
+                value={selectedLine.id}
+                onValueChange={handleSelectLine}
+                placeholder="Chọn dòng hàng"
+                dialogTitle="Chọn dòng hàng trả"
+                emptyText="Không có dòng hàng"
+              />
+              <Input value={quantityInputValue} onChange={(event) => updateReceiveForm({ actualQty: event.target.value })} inputMode="decimal" />
+              <SearchableSelect
+                options={locationOptions}
+                value={selectedLocationId}
+                onValueChange={(locationId) => updateReceiveForm({ locationId })}
+                placeholder="Chọn vị trí RMA"
+                dialogTitle="Chọn vị trí nhận hàng trả"
+                emptyText="Không có vị trí phù hợp"
+                loading={locationsLoading || locationsFetching}
+              />
+              <Button onClick={handleReceive} disabled={isReceiving}>
+                {isReceiving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
+                Ghi nhận
+              </Button>
+            </div>
+          </DetailSection>
+        ) : null}
+      </DetailGrid>
 
       <Dialog open={Boolean(dispositionLine)} onOpenChange={(open) => !open && closeDispositionDialog()}>
         <DialogContent className="sm:max-w-lg">
@@ -675,6 +618,11 @@ export default function RMADetailPage() {
               <div className="mt-1 text-xs text-muted-foreground">
                 Đã nhận: {dispositionLine?.receivedQty ?? 0} · Vị trí RMA: {dispositionLine?.receivedLocationCode || "--"}
               </div>
+              {dispositionLine?.returnLocationCode ? (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Vị trí xuất ban đầu: {dispositionLine.returnLocationCode}
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -710,6 +658,9 @@ export default function RMADetailPage() {
                   emptyText="Không có vị trí bán được phù hợp"
                   loading={restockLocationsLoading}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Nếu hàng còn bán được, nên nhập lại về vị trí xuất ban đầu hoặc vị trí STORAGE/PICKING phù hợp.
+                </p>
               </div>
             ) : null}
 
@@ -751,6 +702,53 @@ export default function RMADetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <Dialog
+        open={Boolean(statusDialog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatusDialog(null);
+            setStatusReason("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{statusDialog === "reject" ? "Từ chối phiếu trả hàng" : "Hủy phiếu trả hàng"}</DialogTitle>
+            <DialogDescription>
+              {statusDialog === "reject"
+                ? "Nhập lý do từ chối để lưu vào lịch sử xử lý."
+                : "Có thể nhập lý do hủy để người thao tác sau nắm được bối cảnh."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label>{statusDialog === "reject" ? "Lý do từ chối" : "Lý do hủy"}</Label>
+            <Textarea
+              value={statusReason}
+              onChange={(event) => setStatusReason(event.target.value)}
+              placeholder={statusDialog === "reject" ? "Ví dụ: Không đủ điều kiện trả hàng..." : "Ví dụ: Tạo nhầm phiếu..."}
+              className="min-h-28"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => { setStatusDialog(null); setStatusReason(""); }}>Đóng</Button>
+            <Button
+              type="button"
+              variant={statusDialog === "reject" ? "destructive" : "default"}
+              onClick={() => {
+                if (statusDialog === "reject") void handleReject(statusReason);
+                if (statusDialog === "cancel") void handleCancel(statusReason);
+              }}
+              disabled={isRejecting || isCancelling || (statusDialog === "reject" && !statusReason.trim())}
+            >
+              {(isRejecting || isCancelling) ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {statusDialog === "reject" ? "Xác nhận từ chối" : "Xác nhận hủy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </DetailPageLayout>
   );
 }

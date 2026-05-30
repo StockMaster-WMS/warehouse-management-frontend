@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getLocationScanCode } from "@/lib/location-scan-code";
 import type { Location } from "@/types/location";
 
 type LocationBarcodeModalProps = {
@@ -26,11 +27,12 @@ export function LocationBarcodeModal({
   location,
   warehouseName,
 }: LocationBarcodeModalProps) {
+  const barcodeValue = getLocationScanCode(location?.code);
   const barcodeUrl = useMemo(() => {
-    if (!location?.code) return "";
-    const code = encodeURIComponent(location.code);
-    return `https://bwipjs-api.metafloor.com/?bcid=code128&text=${code}&scale=3&rotate=N&includetext=true&backgroundcolor=ffffff`;
-  }, [location?.code]);
+    if (!barcodeValue) return "";
+    const code = encodeURIComponent(barcodeValue);
+    return `https://bwipjs-api.metafloor.com/?bcid=code128&text=${code}&scale=4&height=12&rotate=N&includetext=false&backgroundcolor=ffffff`;
+  }, [barcodeValue]);
 
   const handlePrint = () => {
     const printContent = document.getElementById("barcode-print-area");
@@ -68,8 +70,9 @@ export function LocationBarcodeModal({
               box-sizing: border-box;
             }
             .wh-name { font-size: 7pt; font-weight: bold; margin-bottom: 1mm; color: #666; text-transform: uppercase; }
-            .loc-code { font-size: 11pt; font-weight: 900; margin-bottom: 1.5mm; }
-            .barcode-img { width: 44mm; height: 12mm; object-fit: contain; }
+            .loc-code { font-size: 8pt; font-weight: 900; margin-bottom: 1mm; line-height: 1.05; word-break: break-word; }
+            .barcode-img { width: 44mm; height: 14mm; object-fit: contain; }
+            .scan-code { font-family: monospace; font-size: 7pt; font-weight: 800; margin-top: 0.5mm; color: #111; letter-spacing: 0.2mm; }
           </style>
         </head>
         <body>
@@ -77,6 +80,7 @@ export function LocationBarcodeModal({
             <div class="wh-name">${warehouseName}</div>
             <div class="loc-code">${location?.code}</div>
             <img class="barcode-img" src="${barcodeUrl}" />
+            <div class="scan-code">${barcodeValue}</div>
           </div>
           <script>
             window.onload = function() {
@@ -117,11 +121,13 @@ export function LocationBarcodeModal({
              <div className="text-[8px] font-bold text-slate-500 uppercase mb-0.5 truncate w-full text-center">
                 {warehouseName}
              </div>
-             <div className="text-sm font-black mb-1">{location.code}</div>
+             <div className="mb-1 line-clamp-2 text-center text-[13px] font-black leading-tight">
+                {location.code}
+             </div>
              {barcodeUrl ? (
                <Image
                  src={barcodeUrl}
-                 alt={`Mã vạch vị trí ${location.code}`}
+                 alt={`Mã vạch vị trí ${barcodeValue}`}
                  width={176}
                  height={48}
                  className="h-12 w-full object-contain"
@@ -130,10 +136,13 @@ export function LocationBarcodeModal({
              ) : (
                <div className="h-12 w-full bg-slate-100 animate-pulse" />
              )}
+             <div className="mt-0.5 font-mono text-[10px] font-extrabold tracking-wide text-slate-900">
+                {barcodeValue}
+             </div>
           </div>
           
           <p className="mt-4 text-[10px] text-slate-400 font-medium">
-            * Nhãn bao gồm: Kho, mã vị trí và mã vạch Code 128
+            * Barcode dùng mã rút gọn để dễ quét; nhãn vẫn hiển thị mã vị trí đầy đủ.
           </p>
         </div>
 
@@ -144,7 +153,7 @@ export function LocationBarcodeModal({
             onClick={() => {
                 const link = document.createElement('a');
                 link.href = barcodeUrl;
-                link.download = `barcode-${location.code}.png`;
+                link.download = `barcode-${barcodeValue}.png`;
                 link.click();
             }}
           >

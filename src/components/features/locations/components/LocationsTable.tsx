@@ -12,6 +12,7 @@ import {
     ArrowDownToLine,
     Truck,
     X,
+    Info,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +83,48 @@ function CapacityCell({ location }: { location: Location | LocationOption }) {
                     {location.maxVolumeCm3 != null && <>{location.maxVolumeCm3} cm³</>}
                 </span>
             )}
+        </div>
+    );
+}
+
+export function LocationCodeGuide() {
+    const parts = [
+        { token: "HCM", label: "mã kho" },
+        { token: "TT", label: "khu/area" },
+        { token: "STO", label: "zone nghiệp vụ" },
+        { token: "A01", label: "dãy" },
+        { token: "R01", label: "kệ" },
+        { token: "L01", label: "tầng" },
+        { token: "B01", label: "ô/ngăn" },
+    ];
+
+    return (
+        <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 items-start gap-2">
+                    <Info className="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                            Chú thích mã vị trí
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            Ví dụ <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">HCM-TT-STO-A01-R01-L01-B01</span> được hiểu theo thứ tự:
+                        </p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                    {parts.map((part, index) => (
+                        <div
+                            key={part.token}
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                            <span className="font-mono font-bold text-slate-900 dark:text-white">{part.token}</span>
+                            <span>{part.label}</span>
+                            {index < parts.length - 1 ? <span className="text-slate-300 dark:text-slate-600">/</span> : null}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
@@ -211,7 +254,6 @@ export function LocationsTable({
                             </TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[27%]">Vị trí</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Kho & Vùng</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[13%]">Phân loại</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">TT</TableHead>
                             <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">Tạo lúc</TableHead>
                             <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
@@ -281,9 +323,9 @@ export function LocationsTable({
                                         </TableCell>
 
                                         {/* Col 3: Type */}
-                                        <TableCell className="px-4 py-3">
+                                        {/* <TableCell className="px-4 py-3">
                                             <LocationTypeBadge type={location.locationType} />
-                                        </TableCell>
+                                        </TableCell> */}
 
                                         {/* Col 4: Capacity + active state */}
                                         <TableCell className="px-4 py-3 min-w-[140px]">

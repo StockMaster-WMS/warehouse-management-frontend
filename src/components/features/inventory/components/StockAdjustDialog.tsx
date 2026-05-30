@@ -64,6 +64,8 @@ export function StockAdjustDialog({
     adjustType === "qty"
       ? "> 0: nhập thêm, < 0: trừ đi"
       : "> 0: giữ chỗ thêm, < 0: nhả chỗ";
+  const selectedProduct = products.find((product) => product.id === formState.productId);
+  const requiresLot = selectedProduct?.isLotTracked || selectedProduct?.isExpiryTracked;
 
   const warehouseItems = [
     { value: "__none__", label: "Chọn kho" },
@@ -191,14 +193,20 @@ export function StockAdjustDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Số lô (tùy chọn)</Label>
+            <Label>Số lô {requiresLot ? "*" : "(tùy chọn)"}</Label>
             <Input
               value={formState.lotNumber}
               onChange={(e) =>
                 setFormState((prev) => ({ ...prev, lotNumber: e.target.value }))
               }
               placeholder="VD: LOT-2024-001"
+              required={requiresLot}
             />
+            <p className="text-xs text-slate-500">
+              {requiresLot
+                ? "Sản phẩm này theo dõi lô/hạn sử dụng, cần nhập đúng mã lô để cộng vào dòng tồn tương ứng."
+                : "Để trống sẽ ghi vào dòng “Không lô”; muốn cộng vào lô đang có thì nhập đúng mã lô đó."}
+            </p>
           </div>
 
           <div className="space-y-1.5">

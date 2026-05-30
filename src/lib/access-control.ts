@@ -30,6 +30,8 @@ export const INBOUND_RECEIVE_ROLES = [
   "WAREHOUSE_STAFF",
 ] as const satisfies UserRole[];
 
+export const PURCHASE_ORDER_MANAGE_ROLES = ADMIN_MANAGER_ROLES;
+
 export const WAREHOUSE_OPERATION_ROLES = [
   "ADMIN",
   "WAREHOUSE_MANAGER",
@@ -94,7 +96,7 @@ function normalizeRole(role: string): UserRole | null {
 }
 
 export function getUserRoles(input: RoleInput): UserRole[] {
-  const values = Array.isArray(input) ? input : input?.split(",") ?? [];
+  const values = Array.isArray(input) ? input : (input?.split(",") ?? []);
   const roles: UserRole[] = [];
   for (const role of values) {
     const normalized = normalizeRole(role);
@@ -149,7 +151,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
 
   { pattern: "/inbound/new", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/inbound", roles: READ_OPERATION_ROLES },
-  { pattern: "/purchase-orders/new", roles: ADMIN_MANAGER_ROLES },
+  { pattern: "/purchase-orders/new", roles: PURCHASE_ORDER_MANAGE_ROLES },
   { pattern: "/purchase-orders/:id", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/purchase-orders", roles: INBOUND_RECEIVE_ROLES },
   { pattern: "/putaway", roles: WAREHOUSE_OPERATION_ROLES },
@@ -192,10 +194,13 @@ function matchRoutePattern(pattern: string, pathname: string): boolean {
   const patternParts = splitPathParts(pattern);
   const pathParts = splitPathParts(pathname);
 
-  return patternParts.length === pathParts.length && patternParts.every((part, index) => {
-    if (part.startsWith(":")) return Boolean(pathParts[index]);
-    return part === pathParts[index];
-  });
+  return (
+    patternParts.length === pathParts.length &&
+    patternParts.every((part, index) => {
+      if (part.startsWith(":")) return Boolean(pathParts[index]);
+      return part === pathParts[index];
+    })
+  );
 }
 
 export function getAllowedRolesForPath(pathname: string): readonly UserRole[] {
@@ -213,7 +218,9 @@ export function canAccessPath(
   return allowedRoles.length > 0 && hasAnyRole(userRoles, allowedRoles);
 }
 
-export function getDefaultPathForRoles(userRoles: readonly UserRole[]): string | null {
+export function getDefaultPathForRoles(
+  userRoles: readonly UserRole[],
+): string | null {
   if (hasAnyRole(userRoles, MANAGEMENT_READ_ROLES)) {
     return "/dashboard";
   }

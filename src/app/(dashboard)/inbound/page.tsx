@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { SearchToolbar } from "@/components/ui/search-toolbar";
 import { AdvancedFilterActions, AdvancedFilterPanel } from "@/components/features/AdvancedFilters";
 import { OperationDatePresetSelect } from "@/components/ui/operation-date-preset-select";
@@ -146,6 +147,12 @@ export default function InboundPage() {
 
   const hasAnyFilter = Boolean(keyword.trim() || activeFiltersCount > 0 || datePreset !== DEFAULT_OPERATION_DATE_PRESET);
 
+  useEffect(() => {
+    if (isError) {
+      toast.error("Không tải được danh sách phiếu nhập.");
+    }
+  }, [isError]);
+
   const clearFilters = () => {
     setKeyword("");
     setStatus("");
@@ -195,7 +202,7 @@ export default function InboundPage() {
         setPrintData(result.data);
         const w = findWarehouse(result.data.warehouseId);
         const nextLocationLabel = await resolvePrintLocationLabel(result.data);
-        setWarehouseLabel(w ? `${w.name}${w.code ? ` (${w.code})` : ""}` : "—");
+        setWarehouseLabel(w?.name || "—");
         setLocationLabel(nextLocationLabel);
         setPrintModalOpen(true);
       }
@@ -451,7 +458,7 @@ export default function InboundPage() {
                   <TableCell colSpan={6} className="py-12">
                     <EmptyState
                       icon={FileText}
-                      title="Chưa có phiếu nhập"
+                      title="Chưa có phiếu nhập kho."
                       description="Chưa có phiếu nhập kho nào hoặc không khớp với kết quả tìm kiếm."
                       action={
                         <PermissionControl allowedRoles={INBOUND_RECEIVE_ROLES}>
@@ -480,7 +487,6 @@ export default function InboundPage() {
                         <span className="text-sm font-semibold text-foreground">
                           {r.receiptNumber}
                         </span>
-                        <span className="font-mono text-[11px] text-muted-foreground">{r.id.slice(0, 8)}...</span>
                       </div>
                     </TableCell>
 

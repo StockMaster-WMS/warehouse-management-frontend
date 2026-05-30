@@ -91,7 +91,12 @@ function clearRememberedAccount() {
 }
 
 function safeCallbackUrl(value: string | null, fallbackUrl: string) {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/login")) {
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.startsWith("/login")
+  ) {
     return fallbackUrl;
   }
 
@@ -107,19 +112,28 @@ function getCallbackUrl(fallbackUrl: string) {
   );
 }
 
-function loginFormReducer(state: LoginFormState, patch: Partial<LoginFormState>) {
+function loginFormReducer(
+  state: LoginFormState,
+  patch: Partial<LoginFormState>,
+) {
   return { ...state, ...patch };
 }
 
 export function LoginForm() {
   const { replace } = useRouter();
   const dispatch = useAppDispatch();
-  const [form, updateForm] = useReducer(loginFormReducer, undefined, createInitialState);
+  const [form, updateForm] = useReducer(
+    loginFormReducer,
+    undefined,
+    createInitialState,
+  );
   const [login, { isLoading, error }] = useLoginMutation();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const message = window.sessionStorage.getItem("auth-session-expired-message");
+    const message = window.sessionStorage.getItem(
+      "auth-session-expired-message",
+    );
     if (!message) return;
     window.sessionStorage.removeItem("auth-session-expired-message");
     toast.error(message);
@@ -151,7 +165,9 @@ export function LoginForm() {
       const userRoles = getUserRoles(result.user?.roles);
       const defaultPath = getDefaultPathForRoles(userRoles) ?? "/dashboard";
       const callbackUrl = getCallbackUrl(defaultPath);
-      replace(canAccessPath(callbackUrl, userRoles) ? callbackUrl : defaultPath);
+      replace(
+        canAccessPath(callbackUrl, userRoles) ? callbackUrl : defaultPath,
+      );
     } catch {
       // Error handled by redux state.
     }
@@ -170,7 +186,7 @@ export function LoginForm() {
                 <CardTitle className="text-3xl font-semibold tracking-tight text-primary">
                   StockMaster
                 </CardTitle>
-                <CardDescription className="mt-2 whitespace-nowrap">
+                <CardDescription className="mt-2 text-sm leading-5 sm:whitespace-nowrap">
                   Nhập thông tin tài khoản để truy cập hệ thống quản lý kho.
                 </CardDescription>
               </div>
@@ -181,7 +197,10 @@ export function LoginForm() {
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="username" className="text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="username"
+                    className="text-sm font-medium text-foreground"
+                  >
                     {form.isEmail ? "Email" : "Tên đăng nhập"}
                   </Label>
                   <button
@@ -196,10 +215,14 @@ export function LoginForm() {
                   id="username"
                   name={form.isEmail ? "email" : "username"}
                   type={form.isEmail ? "email" : "text"}
-                  placeholder={form.isEmail ? "nguoidung@congty.vn" : "ma.nhanvien"}
+                  placeholder={
+                    form.isEmail ? "nguoidung@congty.vn" : "ma.nhanvien"
+                  }
                   autoComplete={form.isEmail ? "email" : "username"}
                   value={form.username}
-                  onChange={(event) => updateForm({ username: event.target.value })}
+                  onChange={(event) =>
+                    updateForm({ username: event.target.value })
+                  }
                   required
                   disabled={isLoading}
                   className="h-11 focus:border-primary focus:ring-primary/20"
@@ -208,7 +231,10 @@ export function LoginForm() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-foreground"
+                  >
                     Mật khẩu
                   </Label>
                   <Link
@@ -226,14 +252,18 @@ export function LoginForm() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     value={form.password}
-                    onChange={(event) => updateForm({ password: event.target.value })}
+                    onChange={(event) =>
+                      updateForm({ password: event.target.value })
+                    }
                     required
                     disabled={isLoading}
                     className="h-11 pr-10 focus:border-primary focus:ring-primary/20"
                   />
                   <button
                     type="button"
-                    onClick={() => updateForm({ showPassword: !form.showPassword })}
+                    onClick={() =>
+                      updateForm({ showPassword: !form.showPassword })
+                    }
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
                     tabIndex={-1}
                   >
@@ -268,7 +298,8 @@ export function LoginForm() {
               {error ? (
                 <div className="rounded-lg border border-destructive/20 bg-danger-soft p-3 text-sm text-destructive">
                   {typeof error === "object" && "data" in error
-                    ? ((error.data as { message?: string })?.message || "Đăng nhập thất bại")
+                    ? (error.data as { message?: string })?.message ||
+                      "Đăng nhập thất bại"
                     : "Đăng nhập thất bại"}
                 </div>
               ) : null}

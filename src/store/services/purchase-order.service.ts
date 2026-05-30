@@ -7,6 +7,7 @@ import {
 import type { Product } from "@/types/product";
 import type {
   CompletePutawayPayload,
+  AddPurchaseOrderItemPayload,
   CreatePoItemPayload,
   CreatePurchaseOrderPayload,
   ImportProductsExcelResult,
@@ -17,6 +18,7 @@ import type {
   PurchaseOrder,
   PurchaseOrderDetail,
   PutawayTask,
+  UpdatePoItemPayload,
   UpdatePurchaseOrderPayload,
 } from "@/types/purchase-order";
 import type { Warehouse } from "@/types/warehouse";
@@ -348,9 +350,28 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           type: "PoItem" as const,
           id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
         },
+        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
         { type: "PurchaseOrder", id: arg.purchaseOrderId },
       ],
     }),
+
+    addPurchaseOrderItem: builder.mutation<ApiResponse<PoItem>, AddPurchaseOrderItemPayload>({
+      query: ({ purchaseOrderId, ...body }) => ({
+        url: `/purchase-orders/${purchaseOrderId}/items`,
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        {
+          type: "PoItem" as const,
+          id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
+        },
+        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
+        { type: "PurchaseOrder", id: arg.purchaseOrderId },
+        { type: "PurchaseOrder", id: "LIST" },
+      ],
+    }),
+
     deletePoItem: builder.mutation<
       ApiResponse<unknown>,
       { id: string; purchaseOrderId: string }
@@ -361,6 +382,27 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           type: "PoItem" as const,
           id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
         },
+        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
+        { type: "PurchaseOrder", id: arg.purchaseOrderId },
+      ],
+    }),
+
+    updatePoItem: builder.mutation<
+      ApiResponse<PoItem>,
+      UpdatePoItemPayload & { purchaseOrderId: string }
+    >({
+      query: ({ id, body }) => ({
+        url: `/po-items/${id}`,
+        method: "PUT",
+        data: body,
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        { type: "PoItem", id: arg.id },
+        {
+          type: "PoItem" as const,
+          id: `PARENT-PurchaseOrder:${arg.purchaseOrderId}`,
+        },
+        { type: "PoItem", id: `PO-${arg.purchaseOrderId}` },
         { type: "PurchaseOrder", id: arg.purchaseOrderId },
       ],
     }),
@@ -480,6 +522,7 @@ const purchaseOrderApi = baseApi.injectEndpoints({
           type: "PoItem" as const,
           id: `PARENT-PurchaseOrder:${purchaseOrderId}`,
         },
+        { type: "PoItem", id: `PO-${purchaseOrderId}` },
         { type: "PurchaseOrder", id: purchaseOrderId },
         { type: "Product", id: "LIST" },
       ],
@@ -529,6 +572,8 @@ export const {
   useGetPoItemsQuery,
   useGetPoItemByIdQuery,
   useCreatePoItemMutation,
+  useAddPurchaseOrderItemMutation,
+  useUpdatePoItemMutation,
   useDeletePoItemMutation,
   useImportProductsExcelMutation,
   useGetPutawayTasksQuery,

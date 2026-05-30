@@ -83,6 +83,15 @@ export interface CreatePoItemPayload {
   unitPrice?: number;
 }
 
+export interface AddPurchaseOrderItemPayload {
+  purchaseOrderId: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  orderedQty: number;
+  unitPrice: number;
+}
+
 export interface UpdatePoItemPayload {
   id: string;
   body: {
@@ -100,18 +109,22 @@ export type PurchaseOrderListResponse = ApiResponse<
 // ---- Excel Import ----
 
 export interface ImportProductsExcelResult {
-  totalRows: number;
+  attempted?: number;
+  totalRows?: number;
   successCount: number;
   failureCount: number;
   createdItems: Array<{
-    lineNumber: number;
-    productId: string;
-    productSku: string;
-    orderedQty: number;
+    lineNumber?: number;
+    productId?: string;
+    productSku?: string;
+    sku?: string;
+    name?: string;
+    orderedQty?: number;
     unitPrice?: number | null;
   }>;
   errors: Array<{
-    row: number;
+    row?: number;
+    rowNumber?: number;
     field?: string;
     message: string;
   }>;

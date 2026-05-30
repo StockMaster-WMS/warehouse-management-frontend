@@ -20,6 +20,7 @@ import type { PoItem } from "@/types/purchase-order";
 
 export interface PoLinesSectionProps {
   purchaseOrderId: string | null;
+  canImportExcel?: boolean;
   lines: PoItem[];
   itemsLoading: boolean;
   lineProductId: string;
@@ -40,10 +41,12 @@ export interface PoLinesSectionProps {
   onAddLine: (e: React.FormEvent) => void;
   onDeleteLine: (item: PoItem) => void;
   productNameMap: Map<string, string>;
+  embedded?: boolean;
 }
 
 export function PoLinesSection({
   purchaseOrderId,
+  canImportExcel,
   lines,
   itemsLoading,
   lineProductId,
@@ -64,17 +67,21 @@ export function PoLinesSection({
   onAddLine,
   onDeleteLine,
   productNameMap,
+  embedded = false,
 }: PoLinesSectionProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const locked = !purchaseOrderId;
+  const importEnabled = Boolean(purchaseOrderId && (canImportExcel ?? true));
 
   return (
     <div className={cn(
-      "rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden",
+      embedded
+        ? "overflow-hidden border-t border-border"
+        : "rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden",
       locked && "opacity-60 pointer-events-none"
     )}>
       {/* Section Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 sm:px-5">
         <div className="flex items-center gap-2.5">
           <div className={cn(
             "flex size-8 items-center justify-center rounded-full",
@@ -107,6 +114,8 @@ export function PoLinesSection({
             variant="outline"
             size="sm"
             onClick={() => setImportDialogOpen(true)}
+            disabled={!importEnabled}
+            title={importEnabled ? "Nhập từ Excel" : "Chỉ import khi đơn nhập ở trạng thái Nháp"}
             className="rounded-xl gap-1.5 text-xs border-slate-200"
           >
             <FileSpreadsheet className="size-3.5" />
@@ -173,6 +182,8 @@ export function PoLinesSection({
                       className="text-rose-700 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg"
                       disabled={isDeletingLine}
                       onClick={() => onDeleteLine(row)}
+                      aria-label="Xóa dòng hàng"
+                      title="Xóa dòng hàng"
                     >
                       <Trash2 className="size-3.5" />
                     </Button>
@@ -185,7 +196,10 @@ export function PoLinesSection({
       </div>
 
       {/* Add Line Form */}
-      <div className="border-t border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/20 px-5 py-4">
+      <div className={cn(
+        "border-t border-slate-100 px-5 py-4 dark:border-slate-800",
+        embedded ? "bg-muted/25" : "bg-slate-50/50 dark:bg-slate-800/20",
+      )}>
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Thêm dòng hàng</p>
         <form
           onSubmit={onAddLine}
@@ -280,7 +294,7 @@ export function PoLinesSection({
         </form>
       </div>
 
-      {purchaseOrderId && (
+      {purchaseOrderId && importEnabled && (
         <PoExcelImportDialog
           purchaseOrderId={purchaseOrderId}
           open={importDialogOpen}

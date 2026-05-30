@@ -108,16 +108,6 @@ export const ProductTableRow = memo(function ProductTableRow({
           )}
         </TableCell>
         <TableCell className="p-3 text-center align-middle">
-          <span className="tabular-nums text-sm font-semibold text-foreground">
-            {formatStockValue(qtyOnHand)}
-          </span>
-        </TableCell>
-        <TableCell className="p-3 text-center align-middle">
-          <span className={isLowStock ? "tabular-nums text-sm font-semibold text-rose-600 dark:text-rose-400" : "tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400"}>
-            {formatStockValue(qtyAvailable)}
-          </span>
-        </TableCell>
-        <TableCell className="p-3 text-center align-middle">
           <StatusBadge tone={statusTone(product.status)}>
             {product.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
           </StatusBadge>

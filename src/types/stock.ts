@@ -59,6 +59,8 @@ export interface NearExpiryStockResponse {
   locationId: string;
   locationCode: string;
   productId: string;
+  productSku?: string | null;
+  productName?: string | null;
   lotNumber: string;
   expiryDate: string;
   daysLeft: number;
@@ -90,6 +92,8 @@ export interface StockMovementResponse {
   locationId: string;
   locationCode: string;
   productId: string;
+  productSku?: string | null;
+  productName?: string | null;
   lotNumber: string;
   movementType: "INBOUND" | "OUTBOUND" | "RESERVE" | "RELEASE";
   qtyChange: number;

@@ -63,14 +63,21 @@ export interface UpdateLocationRequest extends CreateLocationRequest {
 
 export interface BulkGenerateLocationsRequest {
   warehouseId: string;
+  warehouseCodePrefix?: string;
+  areaCode?: string;
   zone: string;
   aislePrefix: string;
+  aisleStart?: number;
   aisleCount: number;
   rackPrefix: string;
+  rackStart?: number;
   rackCount: number;
+  levelStart?: number;
   levelCount: number;
   binPrefix: string;
+  binStart?: number;
   binCount: number;
+  locationType?: string;
 }
 
 export type LocationResponse = ApiResponse<Location>;

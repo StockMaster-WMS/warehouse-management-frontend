@@ -1,0 +1,12 @@
+export { DetailPageLayout } from "./DetailPageLayout";
+export { DetailBreadcrumb } from "./DetailBreadcrumb";
+export { DetailSection } from "./DetailSection";
+export { DetailInfoField } from "./DetailInfoField";
+export { DetailStatusBadge } from "./DetailStatusBadge";
+export type { StatusConfig, StatusColorScheme } from "./DetailStatusBadge";
+export { DetailSkeleton } from "./DetailSkeleton";
+export { DetailErrorState } from "./DetailErrorState";
+export { DetailGrid } from "./DetailGrid";
+export { DetailPageHeader } from "./DetailPageHeader";
+export { DetailSummaryGrid, DetailSummaryItem } from "./DetailSummaryGrid";
+export { DetailTableSection } from "./DetailTableSection";

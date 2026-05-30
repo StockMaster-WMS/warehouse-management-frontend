@@ -2,14 +2,15 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 import {
-  FileSpreadsheet,
-  Download,
-  Upload,
-  Loader2,
-  CheckCircle2,
   AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Loader2,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,12 +38,11 @@ import {
   PO_PRODUCT_XLSX_SHEET_NAME,
   getPoProductImportTemplateAoA,
 } from "@/lib/po-product-xlsx";
-import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { useImportProductsExcelMutation } from "@/store/services/purchase-order.service";
+import { apiErrMessage, apiErrStatus } from "@/types/api";
 import type { ImportProductsExcelResult } from "@/types/purchase-order";
-import { apiErrMessage } from "@/types/api";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export interface PoExcelImportDialogProps {
   purchaseOrderId: string;
@@ -51,6 +51,32 @@ export interface PoExcelImportDialogProps {
 }
 
 type Step = "upload" | "preview" | "result";
+
+function normalizeImportResult(data: ImportProductsExcelResult): ImportProductsExcelResult {
+  return {
+    attempted: Number(data.attempted ?? data.totalRows ?? 0),
+    totalRows: data.totalRows,
+    successCount: Number(data.successCount ?? 0),
+    failureCount: Number(data.failureCount ?? 0),
+    createdItems: data.createdItems ?? [],
+    errors: data.errors ?? [],
+  };
+}
+
+function getImportErrorMessage(error: unknown) {
+  const status = apiErrStatus(error);
+  if (status === 403 || status === "403") {
+    return "Bạn không có quyền thao tác kho của đơn nhập này";
+  }
+  if (status === 413 || status === "413") {
+    return "File Excel vượt quá giới hạn 5MB.";
+  }
+  return apiErrMessage(error, "Không import được dòng hàng. Vui lòng kiểm tra file Excel.");
+}
+
+function getCreatedItemSku(item: ImportProductsExcelResult["createdItems"][number]) {
+  return item.productSku ?? item.sku ?? item.productId ?? item.name ?? "—";
+}
 
 export function PoExcelImportDialog({
   purchaseOrderId,
@@ -63,12 +89,7 @@ export function PoExcelImportDialog({
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportProductsExcelResult | null>(null);
-
-  const { data: categoriesRes } = useGetCategoriesQuery();
-  const categories = categoriesRes?.data?.content ?? [];
-
-  const [importExcel, { isLoading: uploading }] =
-    useImportProductsExcelMutation();
+  const [importExcel, { isLoading: uploading }] = useImportProductsExcelMutation();
 
   function resetState() {
     setStep("upload");
@@ -85,7 +106,7 @@ export function PoExcelImportDialog({
 
   async function handleDownloadTemplate() {
     await downloadAoAAsXlsx(
-      "mau-import-san-pham-po.xlsx",
+      "mau-import-dong-hang-don-nhap.xlsx",
       PO_PRODUCT_XLSX_SHEET_NAME,
       getPoProductImportTemplateAoA(),
     );
@@ -98,16 +119,15 @@ export function PoExcelImportDialog({
     if (!file) return;
 
     if (file.size > MAX_FILE_SIZE) {
-      setParseError("File vượt quá 5 MB. Vui lòng chọn file nhỏ hơn.");
+      selectedFileRef.current = null;
+      setParseError("File vượt quá 5MB. Vui lòng chọn file nhỏ hơn.");
       setStep("preview");
       return;
     }
 
-    const validTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
-    if (!validTypes.includes(file.type) && !file.name.endsWith(".xlsx")) {
-      setParseError("Chỉ chấp nhận file .xlsx (Excel).");
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      selectedFileRef.current = null;
+      setParseError("Chỉ chấp nhận file .xlsx.");
       setStep("preview");
       return;
     }
@@ -116,13 +136,12 @@ export function PoExcelImportDialog({
     setParseError(null);
 
     try {
-      const buf = await file.arrayBuffer();
       const previewData = await buildImportPreviewFromXlsx(
-        buf,
+        await file.arrayBuffer(),
         PO_PRODUCT_XLSX_IMPORT_CONFIG,
       );
       if (!previewData) {
-        setParseError("File trống hoặc không đọc được sheet / tiêu đề cột.");
+        setParseError("File trống hoặc không đọc được tiêu đề cột.");
         setStep("preview");
         return;
       }
@@ -137,40 +156,35 @@ export function PoExcelImportDialog({
   async function handleUpload() {
     const selectedFile = selectedFileRef.current;
     if (!selectedFile) return;
+
     try {
-      const res = await importExcel({
-        purchaseOrderId,
-        file: selectedFile,
-      }).unwrap();
-      const data = (res.data ?? res) as ImportProductsExcelResult;
+      const res = await importExcel({ purchaseOrderId, file: selectedFile }).unwrap();
+      const data = normalizeImportResult((res.data ?? res) as ImportProductsExcelResult);
       setResult(data);
       setStep("result");
 
       if (data.failureCount === 0) {
-        toast.success(`Import thành công ${data.successCount} sản phẩm`);
+        toast.success("Import dòng hàng thành công");
       } else {
-        toast.warning(
-          `${data.successCount} thành công, ${data.failureCount} lỗi`,
-        );
+        toast.warning(`${data.successCount} dòng thành công, ${data.failureCount} dòng lỗi`);
       }
     } catch (err) {
-      toast.error(apiErrMessage(err));
+      toast.error(getImportErrorMessage(err));
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        className="max-w-[calc(100vw-1.5rem)] gap-4 sm:max-w-2xl"
+        className="max-w-[calc(100vw-1.5rem)] gap-4 sm:max-w-3xl"
         showCloseButton
       >
         <DialogHeader className="gap-2 text-left">
           <DialogTitle className="text-lg sm:text-xl">
-            Thêm sản phẩm bằng file Excel
+            Nhập dòng hàng từ Excel
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
-            Tải file mẫu, điền thông tin sản phẩm &amp; số lượng, sau đó tải
-            lên. Hệ thống sẽ tạo sản phẩm mới và thêm vào đơn nhập.
+            Chỉ import được khi đơn nhập đang ở trạng thái Nháp. File có thể dùng sản phẩm đã có bằng SKU, hoặc tạo sản phẩm mới nếu có đủ name, baseUnit và categoryCode.
           </DialogDescription>
         </DialogHeader>
 
@@ -179,59 +193,23 @@ export function PoExcelImportDialog({
           type="file"
           accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="sr-only"
-          aria-hidden
           aria-label="Chọn file Excel"
-          tabIndex={-1}
           onChange={handleFileChange}
         />
 
-        <div className="max-h-[min(60vh,520px)] space-y-4 overflow-y-auto pr-1">
-          {/* --- Category reference table --- */}
-          {step === "upload" && categories.length > 0 && (
-            <details className="group rounded-lg border border-slate-200 dark:border-slate-700">
-              <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Danh mục sản phẩm (tham khảo UUID / mã)
-                <span className="ml-1 text-xs text-slate-400 group-open:hidden">
-                 , bấm để mở
-                </span>
-              </summary>
-              <div className="max-h-48 overflow-y-auto border-t border-slate-200 dark:border-slate-700">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-xs">Tên danh mục</TableHead>
-                      <TableHead className="text-xs">Mã (code)</TableHead>
-                      <TableHead className="text-xs">
-                        UUID (categoryId)
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((cat) => (
-                      <TableRow key={cat.id}>
-                        <TableCell className="py-1.5 text-sm">
-                          {cat.name}
-                        </TableCell>
-                        <TableCell className="py-1.5 font-mono text-xs">
-                          {cat.code}
-                        </TableCell>
-                        <TableCell
-                          className="max-w-40 truncate py-1.5 font-mono text-xs text-slate-500"
-                          title={cat.id}
-                        >
-                          {cat.id}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </details>
-          )}
-
-          {/* --- Upload step --- */}
+        <div className="max-h-[min(62vh,560px)] space-y-4 overflow-y-auto pr-1">
           {step === "upload" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                <p className="font-semibold">Mẫu tối thiểu cho sản phẩm đã có</p>
+                <p className="mt-1 font-mono text-xs">sku | orderedQty | unitPrice</p>
+                <p className="mt-1 text-xs text-slate-500">Ví dụ: HOME-00194 | 10 | 50000</p>
+                <p className="mt-3 font-semibold">Mẫu tạo sản phẩm mới</p>
+                <p className="mt-1 font-mono text-xs">
+                  name | baseUnit | categoryCode | orderedQty | unitPrice | supplierCode
+                </p>
+              </div>
+
               <button
                 type="button"
                 className="flex w-full cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-indigo-500"
@@ -241,7 +219,7 @@ export function PoExcelImportDialog({
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   Bấm để chọn file .xlsx
                 </p>
-                <p className="text-xs text-slate-500">Tối đa 5 MB</p>
+                <p className="text-xs text-slate-500">Tối đa 5MB</p>
               </button>
 
               <Button
@@ -257,11 +235,10 @@ export function PoExcelImportDialog({
             </div>
           )}
 
-          {/* --- Preview step --- */}
           {step === "preview" && (
             <>
               {parseError ? (
-                <p className="text-base font-medium text-rose-600 dark:text-rose-400">
+                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
                   {parseError}
                 </p>
               ) : preview ? (
@@ -271,7 +248,7 @@ export function PoExcelImportDialog({
                       {preview.dataRows.length}
                     </span>
                     <span className="ml-2 text-slate-600 dark:text-slate-300">
-                      dòng sản phẩm
+                      dòng hàng đọc được
                     </span>
                   </p>
 
@@ -281,12 +258,12 @@ export function PoExcelImportDialog({
                         <li key={msg}>{msg}</li>
                       ))}
                       {preview.issues.length > 10 && (
-                        <li>… và {preview.issues.length - 10} mục nữa.</li>
+                        <li>... và {preview.issues.length - 10} mục nữa.</li>
                       )}
                     </ul>
                   ) : (
                     <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                      Các cột bắt buộc đã đủ; không phát hiện lỗi dữ liệu.
+                      File có đủ cột tối thiểu. Backend sẽ kiểm tra chi tiết khi import.
                     </p>
                   )}
 
@@ -294,29 +271,29 @@ export function PoExcelImportDialog({
                     <table className="w-full min-w-130 border-collapse text-left text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80">
-                          {preview.headers.map((h, hi) => (
+                          {preview.headers.map((header, index) => (
                             <th
-                              key={`col-${hi}`}
+                              key={`${header}-${index}`}
                               className="whitespace-nowrap px-3 py-2 font-semibold text-slate-700 dark:text-slate-200"
                             >
-                              {h || "—"}
+                              {header || "—"}
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {preview.dataRows.slice(0, 5).map((row, ri) => (
+                        {preview.dataRows.slice(0, 5).map((row, rowIndex) => (
                           <tr
-                            key={`row-${ri}`}
+                            key={`preview-row-${rowIndex}`}
                             className="border-b border-slate-100 dark:border-slate-800"
                           >
-                            {preview.headers.map((_, ci) => (
+                            {preview.headers.map((_, colIndex) => (
                               <td
-                                key={`cell-${ri}-${ci}`}
+                                key={`preview-cell-${rowIndex}-${colIndex}`}
                                 className="max-w-44 truncate px-3 py-2 text-slate-800 dark:text-slate-200"
-                                title={row[ci] ?? ""}
+                                title={row[colIndex] ?? ""}
                               >
-                                {row[ci]?.trim() ? row[ci] : "—"}
+                                {row[colIndex]?.trim() ? row[colIndex] : "—"}
                               </td>
                             ))}
                           </tr>
@@ -324,17 +301,15 @@ export function PoExcelImportDialog({
                       </tbody>
                     </table>
                   </div>
+
                   {preview.dataRows.length > 5 && (
-                    <p className="text-xs text-slate-500">
-                      Hiển thị 5 dòng đầu.
-                    </p>
+                    <p className="text-xs text-slate-500">Hiển thị 5 dòng đầu.</p>
                   )}
                 </div>
               ) : null}
             </>
           )}
 
-          {/* --- Result step --- */}
           {step === "result" && result && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -345,92 +320,77 @@ export function PoExcelImportDialog({
                 )}
                 <div>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">
-                    {result.successCount} thành công
+                    {result.successCount} dòng thành công
                     {result.failureCount > 0 && (
                       <span className="ml-2 text-rose-600">
-                        {result.failureCount} lỗi
+                        {result.failureCount} dòng lỗi
                       </span>
                     )}
                   </p>
                   <p className="text-sm text-slate-500">
-                    Sản phẩm đã được tạo và thêm vào đơn nhập hàng.
+                    Đã xử lý {result.attempted ?? result.successCount + result.failureCount} dòng trong file Excel.
                   </p>
                 </div>
               </div>
 
               {result.createdItems.length > 0 && (
                 <div className="overflow-x-auto rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <table className="w-full border-collapse text-left text-sm">
-                    <thead>
-                      <tr className="border-b bg-emerald-50 dark:bg-emerald-900/30">
-                        <th className="px-3 py-2 font-semibold">Dòng</th>
-                        <th className="px-3 py-2 font-semibold">Mã hàng</th>
-                        <th className="px-3 py-2 font-semibold text-right">
-                          SL đặt
-                        </th>
-                        <th className="px-3 py-2 font-semibold text-right">
-                          Đơn giá
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.createdItems.map((item) => (
-                        <tr
-                          key={`${item.lineNumber}-${item.productSku}`}
-                          className="border-b border-slate-100 dark:border-slate-800"
-                        >
-                          <td className="px-3 py-2">{item.lineNumber}</td>
-                          <td className="px-3 py-2 font-mono text-xs">
-                            {item.productSku}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            {item.orderedQty}
-                          </td>
-                          <td className="px-3 py-2 text-right">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b bg-emerald-50 dark:bg-emerald-900/30">
+                        <TableHead>Dòng</TableHead>
+                        <TableHead>Mã hàng</TableHead>
+                        <TableHead className="text-right">SL đặt</TableHead>
+                        <TableHead className="text-right">Đơn giá</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {result.createdItems.map((item, index) => (
+                        <TableRow key={`${getCreatedItemSku(item)}-${item.lineNumber ?? index}`}>
+                          <TableCell>{item.lineNumber ?? index + 1}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {getCreatedItemSku(item)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.orderedQty ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
                             {item.unitPrice ?? "—"}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               )}
 
               {result.errors.length > 0 && (
                 <div className="overflow-x-auto rounded-lg border border-rose-200 dark:border-rose-800">
-                  <table className="w-full border-collapse text-left text-sm">
-                    <thead>
-                      <tr className="border-b bg-rose-50 dark:bg-rose-900/30">
-                        <th className="px-3 py-2 font-semibold">Dòng</th>
-                        <th className="px-3 py-2 font-semibold">Cột</th>
-                        <th className="px-3 py-2 font-semibold">Lỗi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b bg-rose-50 dark:bg-rose-900/30">
+                        <TableHead>Dòng Excel</TableHead>
+                        <TableHead>Lỗi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {result.errors.slice(0, 20).map((err) => (
-                        <tr
-                          key={`${err.row}-${err.field ?? "row"}-${err.message}`}
-                          className="border-b border-slate-100 dark:border-slate-800"
-                        >
-                          <td className="px-3 py-2">{err.row}</td>
-                          <td className="px-3 py-2">{err.field ?? "—"}</td>
-                          <td className="px-3 py-2 text-rose-700 dark:text-rose-300">
+                        <TableRow key={`${err.rowNumber ?? err.row}-${err.message}`}>
+                          <TableCell>{err.rowNumber ?? err.row ?? "—"}</TableCell>
+                          <TableCell className="text-rose-700 dark:text-rose-300">
                             {err.message}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
                       {result.errors.length > 20 && (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            className="px-3 py-2 text-xs text-slate-500"
-                          >
-                            … và {result.errors.length - 20} lỗi nữa.
-                          </td>
-                        </tr>
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-xs text-slate-500">
+                            ... và {result.errors.length - 20} lỗi nữa.
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>
@@ -466,7 +426,7 @@ export function PoExcelImportDialog({
                   {uploading ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
-                      Đang import…
+                      Đang import...
                     </>
                   ) : (
                     <>

@@ -82,9 +82,9 @@ export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
           <ReferenceLine y={0} stroke="var(--border)" />
           <Tooltip
             cursor={{ fill: "hsl(var(--muted) / 0.45)" }}
-            formatter={(value: number, name: string) => {
+            formatter={(value, name) => {
               const label = name === "inbound" ? "Nhập kho" : name === "outbound" ? "Xuất kho" : "Net flow";
-              return [viNumberFormatter.format(value), label];
+              return [viNumberFormatter.format(Number(value ?? 0)), label];
             }}
             contentStyle={{
               borderRadius: "0.75rem",

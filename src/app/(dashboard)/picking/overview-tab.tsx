@@ -80,7 +80,7 @@ const INITIAL_OVERVIEW_STATE: OverviewState = {
     advancedOpen: false,
     page: 0,
     pageSize: 20,
-    status: "PENDING",
+    status: "all",
     datePreset: DEFAULT_OPERATION_DATE_PRESET,
     assignGroup: null,
     assignAssigneeId: "",
@@ -140,6 +140,22 @@ function groupAssigneeSummary(group: GroupedPicking, assigneeNameById: Map<strin
         return `Giao cho: ${assigneeDisplayName(assigneeIds[0], assigneeNameById)}`;
     }
     return `Giao cho ${assigneeIds.length} nhân viên`;
+}
+
+function groupPriorityValue(group: GroupedPicking) {
+    return Math.min(...group.items.map((item) => Number(item.salesOrderPriority ?? 5)));
+}
+
+function groupSequenceValue(group: GroupedPicking) {
+    return Math.min(...group.items.map((item) => Number(item.pickSequence ?? Number.MAX_SAFE_INTEGER)));
+}
+
+function groupCreatedValue(group: GroupedPicking) {
+    const values = group.items.map((item) => {
+        const timestamp = Date.parse(item.salesOrderCreatedAt || "");
+        return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+    });
+    return Math.min(...values);
 }
 
 export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string | null }) {
@@ -284,6 +300,12 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                 if (a.status === "PENDING") return -1;
                 return 1;
             }
+            const priorityDiff = groupPriorityValue(a) - groupPriorityValue(b);
+            if (priorityDiff !== 0) return priorityDiff;
+            const sequenceDiff = groupSequenceValue(a) - groupSequenceValue(b);
+            if (sequenceDiff !== 0) return sequenceDiff;
+            const createdDiff = groupCreatedValue(a) - groupCreatedValue(b);
+            if (createdDiff !== 0) return createdDiff;
             return a.soNumber.localeCompare(b.soNumber);
         });
 
@@ -386,7 +408,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                                 hasAnyFilter={hasAnyFilter}
                                 onClear={() => dispatch({
                                     searchTerm: "",
-                                    status: "PENDING",
+                                    status: "all",
                                     datePreset: DEFAULT_OPERATION_DATE_PRESET,
                                     page: 0,
                                 })}

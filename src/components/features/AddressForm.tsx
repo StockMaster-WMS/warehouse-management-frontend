@@ -27,6 +27,49 @@ function getOptionLabel(list: SelectOption[], value: string) {
     return list.find((item) => item.value === value)?.label || "";
 }
 
+function normalizeAddressName(value: string) {
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\b(tinh|thanh pho|tp|phuong|xa|thi tran)\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function findOptionValueByLabel(list: SelectOption[], label: string) {
+    const normalizedLabel = normalizeAddressName(label);
+    if (!normalizedLabel) return "";
+    return list.find((item) => normalizeAddressName(item.label) === normalizedLabel)?.value || "";
+}
+
+function withSelectedOption(options: SelectOption[], value: string, label: string) {
+    if (!value || options.some((item) => item.value === value)) return options;
+    return [{ value, label: label || value }, ...options];
+}
+
+const EMPTY_ADDRESS: AddressValue = {
+    street: "",
+    provinceCode: "",
+    provinceName: "",
+    districtCode: "",
+    districtName: "",
+    wardCode: "",
+    wardName: "",
+};
+
+function isSameAddress(a: AddressValue, b: AddressValue) {
+    return (
+        a.street === b.street &&
+        a.provinceCode === b.provinceCode &&
+        a.provinceName === b.provinceName &&
+        a.districtCode === b.districtCode &&
+        a.districtName === b.districtName &&
+        a.wardCode === b.wardCode &&
+        a.wardName === b.wardName
+    );
+}
+
 async function loadProvinceOptions(): Promise<SelectOption[]> {
     const response = await fetch("https://provinces.open-api.vn/api/v2/p/");
     if (!response.ok) throw new Error("Không tải được danh sách tỉnh/thành");
@@ -44,14 +87,21 @@ async function loadProvinceOptions(): Promise<SelectOption[]> {
 }
 
 async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
-    const response = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`);
+    let response = await fetch(`https://provinces.open-api.vn/api/v2/w/?province=${provinceCode}`);
+    if (!response.ok) {
+        response = await fetch(`https://provinces.open-api.vn/api/v2/p/${provinceCode}?depth=2`);
+    }
     if (!response.ok) throw new Error("Không tải được danh sách phường/xã");
 
     const data = (await response.json()) as unknown;
-    if (!Array.isArray(data)) return [];
+    const rows = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { wards?: unknown[] } | null)?.wards)
+            ? (data as { wards: unknown[] }).wards
+            : [];
 
     const options: SelectOption[] = [];
-    for (const item of data) {
+    for (const item of rows) {
         const label = String((item as { name?: string }).name || "");
         const value = String((item as { code?: string | number }).code || "");
         if (label && value) options.push({ label, value });
@@ -63,9 +113,20 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
     const [provinces, setProvinces] = useState<SelectOption[]>([]);
     const [wards, setWards] = useState<SelectOption[]>([]);
     const [loadingProvinces, setLoadingProvinces] = useState(true);
+    const [loadingWards, setLoadingWards] = useState(false);
     const [address, setAddress] = useState<AddressValue>(
-        value || { street: "", provinceCode: "", provinceName: "", districtCode: "", districtName: "", wardCode: "", wardName: "" }
+        value || EMPTY_ADDRESS
     );
+    const provinceOptions = withSelectedOption(provinces, address.provinceCode, address.provinceName);
+    const wardOptions = withSelectedOption(wards, address.wardCode, address.wardName);
+    const hasValue = Boolean(value);
+    const valueStreet = value?.street ?? "";
+    const valueProvinceCode = value?.provinceCode ?? "";
+    const valueProvinceName = value?.provinceName ?? "";
+    const valueDistrictCode = value?.districtCode ?? "";
+    const valueDistrictName = value?.districtName ?? "";
+    const valueWardCode = value?.wardCode ?? "";
+    const valueWardName = value?.wardName ?? "";
 
     useEffect(() => {
         let active = true;
@@ -92,10 +153,13 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
         async function loadWardsForProvince() {
             try {
+                setLoadingWards(true);
                 const wardOptions = await loadWardOptions(address.provinceCode);
                 if (active) setWards(wardOptions);
             } catch {
                 if (active) setWards([]);
+            } finally {
+                if (active) setLoadingWards(false);
             }
         }
 
@@ -111,11 +175,59 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
         return () => { active = false; };
     }, [address.provinceCode, address.provinceName, provinces]);
 
+    useEffect(() => {
+        if (address.provinceCode || !address.provinceName || provinces.length === 0) return;
+
+        const provinceCode = findOptionValueByLabel(provinces, address.provinceName);
+        if (!provinceCode) return;
+
+        setAddress((current) =>
+            current.provinceCode || current.provinceName !== address.provinceName
+                ? current
+                : { ...current, provinceCode }
+        );
+    }, [address.provinceCode, address.provinceName, provinces]);
+
+    useEffect(() => {
+        if (address.wardCode || !address.wardName || wards.length === 0) return;
+
+        const wardCode = findOptionValueByLabel(wards, address.wardName);
+        if (!wardCode) return;
+
+        setAddress((current) =>
+            current.wardCode || current.wardName !== address.wardName
+                ? current
+                : { ...current, wardCode }
+        );
+    }, [address.wardCode, address.wardName, wards]);
+
     // Propagate changes
     useEffect(() => {
+        if (hasValue) {
+            const currentValue: AddressValue = {
+                street: valueStreet,
+                provinceCode: valueProvinceCode,
+                provinceName: valueProvinceName,
+                districtCode: valueDistrictCode,
+                districtName: valueDistrictName,
+                wardCode: valueWardCode,
+                wardName: valueWardName,
+            };
+            if (isSameAddress(address, currentValue)) return;
+        }
         onChange?.(address);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [address]);
+    }, [
+        address,
+        hasValue,
+        valueStreet,
+        valueProvinceCode,
+        valueProvinceName,
+        valueDistrictCode,
+        valueDistrictName,
+        valueWardCode,
+        valueWardName,
+    ]);
 
     return (
         <div className="space-y-4">
@@ -133,12 +245,13 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                             setAddress(a => ({ ...a, provinceCode: val, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
                         }
                     }}
-                    options={provinces}
+                    options={provinceOptions}
                     dialogTitle="Chọn tỉnh / thành phố"
                     placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"}
                     searchPlaceholder="Tìm tỉnh/thành..."
                     emptyText="Không có tỉnh/thành phù hợp"
-                    disabled={loadingProvinces || provinces.length === 0}
+                    disabled={loadingProvinces || provinceOptions.length === 0}
+                    loading={loadingProvinces}
                     className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
                 />
             </div>
@@ -153,16 +266,17 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     value={address.wardCode}
                     onValueChange={(val) => {
                         if (val) {
-                            const wardName = getOptionLabel(wards, val);
+                            const wardName = getOptionLabel(wardOptions, val);
                             setAddress(a => ({ ...a, wardCode: val, wardName }));
                         }
                     }}
-                    options={wards}
+                    options={wardOptions}
                     dialogTitle="Chọn phường / xã"
-                    placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : wards.length === 0 ? "Đang tải..." : "Chọn phường/xã"}
+                    placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : loadingWards ? "Đang tải..." : "Chọn phường/xã"}
                     searchPlaceholder="Tìm phường/xã..."
                     emptyText="Không có phường/xã phù hợp"
-                    disabled={!address.provinceCode || wards.length === 0}
+                    disabled={!address.provinceCode || loadingWards || wardOptions.length === 0}
+                    loading={loadingWards}
                     className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
                 />
             </div>

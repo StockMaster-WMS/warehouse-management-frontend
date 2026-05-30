@@ -1,7 +1,5 @@
 ﻿import {
   Boxes,
-  Package,
-  Lock,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -24,8 +22,6 @@ export function InventorySummaryCards({
 }: InventorySummaryCardsProps) {
   const stats: StatItem[] = summary ? [
     { label: "Tổng mã hàng", value: summary.totalSkus.toLocaleString("vi-VN"),        icon: Boxes,        color: "text-blue-500" },
-    { label: "Tồn tay",      value: summary.totalQtyOnHand.toLocaleString("vi-VN"),   icon: Package,      color: "text-slate-500" },
-    { label: "Đang giữ chỗ", value: summary.totalQtyReserved.toLocaleString("vi-VN"), icon: Lock,         color: "text-amber-500" },
     { label: "Khả dụng",     value: summary.totalQtyAvailable.toLocaleString("vi-VN"),icon: CheckCircle2, color: "text-emerald-500" },
     { 
       label: "Tồn kho thấp", 
@@ -46,7 +42,7 @@ export function InventorySummaryCards({
   return (
     <StatsGrid 
       stats={stats} 
-      cols={6} 
+      cols={4} 
       isLoading={isLoading || !summary} 
     />
   );
