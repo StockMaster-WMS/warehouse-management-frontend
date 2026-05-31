@@ -88,6 +88,7 @@ export function DeleteConfirmDialog({
           {/* Close button - custom positioned */}
           {!isLoading && (
             <button 
+              type="button"
               onClick={() => onOpenChange(false)}
               className="absolute right-4 top-4 p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >

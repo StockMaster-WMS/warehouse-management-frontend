@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { StockExpanded } from "@/types/stock";
-import { formatDate, formatDateTime } from "@/components/features/inventory/utils";
+import { formatDateTime } from "@/components/features/inventory/utils";
 
 type InventoryStockTableProps = {
   items: StockExpanded[];

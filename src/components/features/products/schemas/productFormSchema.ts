@@ -25,8 +25,8 @@ export const createProductSchema = z.object({
     isFragile: z.boolean().optional(),
     isHazmat: z.boolean().optional(),
     isHeavy: z.boolean().optional(),
-    supplierId: z.string().uuid("ID nhà cung cấp không hợp lệ").optional().or(z.literal("")),
-    createdBy: z.string().uuid("ID người tạo không hợp lệ").min(1, "Người tạo không được để trống."),
+    supplierId: z.uuid("ID nhà cung cấp không hợp lệ").optional().or(z.literal("")),
+    createdBy: z.string().min(1, "Người tạo không được để trống.").pipe(z.uuid("ID người tạo không hợp lệ")),
 });
 
 export const editProductSchema = z.object({
@@ -47,7 +47,7 @@ export const editProductSchema = z.object({
     isFragile: z.boolean().optional(),
     isHazmat: z.boolean().optional(),
     isHeavy: z.boolean().optional(),
-    supplierId: z.string().uuid("ID nhà cung cấp không hợp lệ").optional().or(z.literal("")),
+    supplierId: z.uuid("ID nhà cung cấp không hợp lệ").optional().or(z.literal("")),
     status: z.enum(["ACTIVE", "INACTIVE"]),
 });
 

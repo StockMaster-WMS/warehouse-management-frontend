@@ -87,7 +87,7 @@ const INITIAL_MESSAGE: Message = {
     "Xin chào, tôi là trợ lý thông minh vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
 };
 
-function renderInlineMarkdown(text: string) {
+function InlineMarkdown({ text }: { text: string }) {
   const nodes: ReactNode[] = [];
   const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g;
   let lastIndex = 0;
@@ -127,7 +127,7 @@ function renderInlineMarkdown(text: string) {
     nodes.push(text.slice(lastIndex));
   }
 
-  return nodes.length ? nodes : text;
+  return <>{nodes.length ? nodes : text}</>;
 }
 
 function AiMessageContent({ content }: { content: string }) {
@@ -141,7 +141,7 @@ function AiMessageContent({ content }: { content: string }) {
         const isBullet = line.trimStart().startsWith("- ");
         return (
           <p key={`${index}-${line}`} className={cn(isBullet ? "pl-4 -indent-4" : "")}>
-            {renderInlineMarkdown(line)}
+            <InlineMarkdown text={line} />
           </p>
         );
       })}
@@ -190,7 +190,10 @@ export default function AiAssistantPage() {
   const activeStreamMsgId = useRef<string | null>(null);
   const activeRequestId = useRef<string | null>(null);
   const activeTriggerRef = useRef<{ abort: () => void } | null>(null);
-  const sessionIdRef = useRef(getInitialSessionId());
+  const sessionIdRef = useRef<string | null>(null);
+  if (sessionIdRef.current === null) {
+    sessionIdRef.current = getInitialSessionId();
+  }
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const busy = isStreaming || streamingMessageId !== null;
 
@@ -263,7 +266,7 @@ export default function AiAssistantPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current);
+    window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current!);
   }, []);
 
   useEffect(() => {
@@ -316,7 +319,7 @@ export default function AiAssistantPage() {
       );
       const streamPromise = triggerStream({
         question: trimmed,
-        sessionId: sessionIdRef.current,
+        sessionId: sessionIdRef.current!,
         requestId,
         provider: selectedModel.provider,
         model: selectedModel.model,
@@ -411,7 +414,7 @@ export default function AiAssistantPage() {
       setIsStreaming(false);
 
       const cancelRequest = axiosInstance.post("/v1/ai/cancel", null, {
-        params: { sessionId: sessionIdRef.current, requestId: targetRequestId },
+        params: { sessionId: sessionIdRef.current!, requestId: targetRequestId },
       });
       void cancelRequest.catch(() => undefined);
     } catch {

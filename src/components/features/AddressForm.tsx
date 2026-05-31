@@ -48,26 +48,16 @@ function withSelectedOption(options: SelectOption[], value: string, label: strin
     return [{ value, label: label || value }, ...options];
 }
 
-const EMPTY_ADDRESS: AddressValue = {
-    street: "",
-    provinceCode: "",
-    provinceName: "",
-    districtCode: "",
-    districtName: "",
-    wardCode: "",
-    wardName: "",
-};
-
-function isSameAddress(a: AddressValue, b: AddressValue) {
-    return (
-        a.street === b.street &&
-        a.provinceCode === b.provinceCode &&
-        a.provinceName === b.provinceName &&
-        a.districtCode === b.districtCode &&
-        a.districtName === b.districtName &&
-        a.wardCode === b.wardCode &&
-        a.wardName === b.wardName
-    );
+function normalizeAddressValue(value?: Partial<AddressValue>): AddressValue {
+    return {
+        street: value?.street ?? "",
+        provinceCode: value?.provinceCode ?? "",
+        provinceName: value?.provinceName ?? "",
+        districtCode: value?.districtCode ?? "",
+        districtName: value?.districtName ?? "",
+        wardCode: value?.wardCode ?? "",
+        wardName: value?.wardName ?? "",
+    };
 }
 
 async function loadProvinceOptions(): Promise<SelectOption[]> {
@@ -112,21 +102,47 @@ async function loadWardOptions(provinceCode: string): Promise<SelectOption[]> {
 export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, required }) => {
     const [provinces, setProvinces] = useState<SelectOption[]>([]);
     const [wards, setWards] = useState<SelectOption[]>([]);
+    const [wardsProvinceCode, setWardsProvinceCode] = useState("");
     const [loadingProvinces, setLoadingProvinces] = useState(true);
     const [loadingWards, setLoadingWards] = useState(false);
-    const [address, setAddress] = useState<AddressValue>(
-        value || EMPTY_ADDRESS
+    const [loadingWardsProvinceCode, setLoadingWardsProvinceCode] = useState("");
+    const [uncontrolledAddress, setUncontrolledAddress] = useState<AddressValue>(() =>
+        normalizeAddressValue(value)
     );
+    const rawAddress = value ? normalizeAddressValue(value) : uncontrolledAddress;
+    const resolvedProvinceCode =
+        rawAddress.provinceCode || findOptionValueByLabel(provinces, rawAddress.provinceName);
+    const resolvedProvinceName =
+        getOptionLabel(provinces, resolvedProvinceCode) || rawAddress.provinceName;
+    const wardsForSelectedProvince =
+        resolvedProvinceCode && wardsProvinceCode === resolvedProvinceCode ? wards : [];
+    const resolvedWardCode =
+        rawAddress.wardCode || findOptionValueByLabel(wardsForSelectedProvince, rawAddress.wardName);
+    const resolvedWardName =
+        getOptionLabel(wardsForSelectedProvince, resolvedWardCode) || rawAddress.wardName;
+    const address: AddressValue = {
+        ...rawAddress,
+        provinceCode: resolvedProvinceCode,
+        provinceName: resolvedProvinceName,
+        wardCode: resolvedWardCode,
+        wardName: resolvedWardName,
+    };
+
     const provinceOptions = withSelectedOption(provinces, address.provinceCode, address.provinceName);
-    const wardOptions = withSelectedOption(wards, address.wardCode, address.wardName);
-    const hasValue = Boolean(value);
-    const valueStreet = value?.street ?? "";
-    const valueProvinceCode = value?.provinceCode ?? "";
-    const valueProvinceName = value?.provinceName ?? "";
-    const valueDistrictCode = value?.districtCode ?? "";
-    const valueDistrictName = value?.districtName ?? "";
-    const valueWardCode = value?.wardCode ?? "";
-    const valueWardName = value?.wardName ?? "";
+    const wardOptions = withSelectedOption(wardsForSelectedProvince, address.wardCode, address.wardName);
+    const isLoadingSelectedWards =
+        Boolean(address.provinceCode) &&
+        loadingWards &&
+        loadingWardsProvinceCode === address.provinceCode;
+
+    function commitAddress(nextAddress: AddressValue) {
+        setUncontrolledAddress(nextAddress);
+        onChange?.(nextAddress);
+    }
+
+    function updateAddress(updater: (current: AddressValue) => AddressValue) {
+        commitAddress(updater(address));
+    }
 
     useEffect(() => {
         let active = true;
@@ -145,89 +161,37 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
 
     useEffect(() => {
         if (!address.provinceCode) {
-            setWards([]);
             return;
         }
 
         let active = true;
+        const provinceCode = address.provinceCode;
 
         async function loadWardsForProvince() {
             try {
                 setLoadingWards(true);
-                const wardOptions = await loadWardOptions(address.provinceCode);
-                if (active) setWards(wardOptions);
+                setLoadingWardsProvinceCode(provinceCode);
+                const wardOptions = await loadWardOptions(provinceCode);
+                if (active) {
+                    setWards(wardOptions);
+                    setWardsProvinceCode(provinceCode);
+                }
             } catch {
-                if (active) setWards([]);
+                if (active) {
+                    setWards([]);
+                    setWardsProvinceCode(provinceCode);
+                }
             } finally {
-                if (active) setLoadingWards(false);
+                if (active) {
+                    setLoadingWards(false);
+                    setLoadingWardsProvinceCode("");
+                }
             }
         }
 
-        const provinceName = getOptionLabel(provinces, address.provinceCode);
-        if (provinceName && provinceName !== address.provinceName) {
-            setAddress((current) =>
-                current.provinceCode === address.provinceCode
-                    ? { ...current, provinceName }
-                    : current
-            );
-        }
         void loadWardsForProvince();
         return () => { active = false; };
-    }, [address.provinceCode, address.provinceName, provinces]);
-
-    useEffect(() => {
-        if (address.provinceCode || !address.provinceName || provinces.length === 0) return;
-
-        const provinceCode = findOptionValueByLabel(provinces, address.provinceName);
-        if (!provinceCode) return;
-
-        setAddress((current) =>
-            current.provinceCode || current.provinceName !== address.provinceName
-                ? current
-                : { ...current, provinceCode }
-        );
-    }, [address.provinceCode, address.provinceName, provinces]);
-
-    useEffect(() => {
-        if (address.wardCode || !address.wardName || wards.length === 0) return;
-
-        const wardCode = findOptionValueByLabel(wards, address.wardName);
-        if (!wardCode) return;
-
-        setAddress((current) =>
-            current.wardCode || current.wardName !== address.wardName
-                ? current
-                : { ...current, wardCode }
-        );
-    }, [address.wardCode, address.wardName, wards]);
-
-    // Propagate changes
-    useEffect(() => {
-        if (hasValue) {
-            const currentValue: AddressValue = {
-                street: valueStreet,
-                provinceCode: valueProvinceCode,
-                provinceName: valueProvinceName,
-                districtCode: valueDistrictCode,
-                districtName: valueDistrictName,
-                wardCode: valueWardCode,
-                wardName: valueWardName,
-            };
-            if (isSameAddress(address, currentValue)) return;
-        }
-        onChange?.(address);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        address,
-        hasValue,
-        valueStreet,
-        valueProvinceCode,
-        valueProvinceName,
-        valueDistrictCode,
-        valueDistrictName,
-        valueWardCode,
-        valueWardName,
-    ]);
+    }, [address.provinceCode]);
 
     return (
         <div className="space-y-4">
@@ -242,7 +206,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     onValueChange={(val) => {
                         if (val) {
                             const provinceName = getOptionLabel(provinces, val);
-                            setAddress(a => ({ ...a, provinceCode: val, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" }));
+                            commitAddress({ ...address, provinceCode: val, provinceName, districtCode: "", districtName: "", wardCode: "", wardName: "" });
                         }
                     }}
                     options={provinceOptions}
@@ -267,16 +231,16 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     onValueChange={(val) => {
                         if (val) {
                             const wardName = getOptionLabel(wardOptions, val);
-                            setAddress(a => ({ ...a, wardCode: val, wardName }));
+                            commitAddress({ ...address, wardCode: val, wardName });
                         }
                     }}
                     options={wardOptions}
                     dialogTitle="Chọn phường / xã"
-                    placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : loadingWards ? "Đang tải..." : "Chọn phường/xã"}
+                    placeholder={!address.provinceCode ? "Chọn tỉnh/thành trước" : isLoadingSelectedWards ? "Đang tải..." : "Chọn phường/xã"}
                     searchPlaceholder="Tìm phường/xã..."
                     emptyText="Không có phường/xã phù hợp"
-                    disabled={!address.provinceCode || loadingWards || wardOptions.length === 0}
-                    loading={loadingWards}
+                    disabled={!address.provinceCode || isLoadingSelectedWards || wardOptions.length === 0}
+                    loading={isLoadingSelectedWards}
                     className="border-slate-200 bg-slate-50/50 focus:ring-indigo-500/30"
                 />
             </div>
@@ -292,7 +256,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({ value, onChange, requi
                     name="street"
                     autoComplete="street-address"
                     value={address.street}
-                    onChange={e => setAddress(a => ({ ...a, street: e.target.value }))}
+                    onChange={e => updateAddress(a => ({ ...a, street: e.target.value }))}
                     required={required}
                     placeholder="VD: 154 Tôn Đức Thắng..."
                 />

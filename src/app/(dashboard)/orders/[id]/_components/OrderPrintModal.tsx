@@ -1,6 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +34,25 @@ function HeaderInfoLine({ label, value }: { label: string; value: React.ReactNod
   );
 }
 
+function formatDateTime(dateVal: string | Date | number) {
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "—";
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = d.getHours().toString().padStart(2, "0");
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+let clientPrintedAtSnapshot: string | null = null;
+const subscribePrintedAt = () => () => {};
+const getServerPrintedAt = () => "—";
+const getClientPrintedAt = () => {
+  clientPrintedAtSnapshot ??= formatDateTime(new Date());
+  return clientPrintedAtSnapshot;
+};
+
 export function OrderPrintModal({
   open,
   onOpenChange,
@@ -42,6 +62,12 @@ export function OrderPrintModal({
   products,
   title = "Phiếu Xuất Kho",
 }: OrderPrintModalProps) {
+  const printedAt = useSyncExternalStore(
+    subscribePrintedAt,
+    getClientPrintedAt,
+    getServerPrintedAt,
+  );
+
   const handlePrint = () => {
     const printContent = document.getElementById("print-area");
     if (!printContent) return;
@@ -91,17 +117,6 @@ export function OrderPrintModal({
     contentWindow.document.close();
   };
 
-  const formatDateTime = (dateVal: string | Date | number) => {
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "—";
-    const day = d.getDate().toString().padStart(2, "0");
-    const month = (d.getMonth() + 1).toString().padStart(2, "0");
-    const year = d.getFullYear();
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] !w-[calc(210mm+2rem)] !max-w-[calc(100vw-1rem)] overflow-auto bg-slate-100 print:max-h-none print:!w-auto print:!max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:!max-w-[calc(210mm+2rem)]">
@@ -140,7 +155,7 @@ export function OrderPrintModal({
             <div className="space-y-1 rounded-sm bg-slate-50 px-3 py-2 text-sm">
               <HeaderInfoLine
                 label="Ngày in"
-                value={<span suppressHydrationWarning>{formatDateTime(new Date())}</span>}
+                value={printedAt}
               />
               <HeaderInfoLine label="Kho xuất" value={warehouseLabel} />
             </div>

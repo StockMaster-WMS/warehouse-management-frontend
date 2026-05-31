@@ -374,11 +374,12 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
     e.preventDefault();
 
     const validLines: { poItemId: string; receivedQty: number; locationId: string; note?: string }[] = [];
+    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const [poItemId, value] of Object.entries(mergedLines)) {
       const qty = Number(value.qty.replace(",", "."));
       if (!qty || Number.isNaN(qty) || qty <= 0) continue;
       if (!value.locationId?.trim()) {
-        const item = items.find((row) => row.id === poItemId);
+        const item = itemsById.get(poItemId);
         toast.error(`Vui lòng chọn vị trí nhập cho ${item?.productSku ?? "dòng hàng"}`);
         return;
       }
@@ -395,7 +396,6 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       return;
     }
 
-    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const line of validLines) {
       const item = itemsById.get(line.poItemId);
       if (!item) continue;

@@ -413,7 +413,7 @@ export function OperationTab() {
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-4">
         <div className="size-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
         <p className="text-xs font-semibold text-slate-500">
-          Đang tải nhiệm vụ lấy hàng...
+          Đang tải nhiệm vụ lấy hàng…
         </p>
       </div>
     );
@@ -1366,7 +1366,7 @@ function DesktopOrderRail({
           </div>
         ))}
       </div>
-      <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4 text-sm font-semibold text-slate-600">
+      <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4 text-sm font-semibold text-indigo-900">
         Mẹo: Bạn có thể quét mã trên thiết bị cầm tay hoặc nhập mã sản phẩm thủ
         công.
       </div>
@@ -1847,7 +1847,7 @@ function PickingScanFlow({
 }) {
   const stepIndex =
     currentStep === "location" ? 1 : currentStep === "sku" ? 2 : 3;
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean>();
   const loc = pickingLocationParts(activeItem);
   const warehouseLabel = displayPickingWarehouse(activeItem);
   const picked = Number(activeItem.qtyPicked || 0);
@@ -1870,7 +1870,7 @@ function PickingScanFlow({
 
   return (
     <div className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
-      {isMobileViewport ? (
+      {isMobileViewport === true ? (
         <div className="min-h-screen bg-slate-50">
           <div className="bg-slate-50 px-3 pb-20 pt-2">
             <div className="flex items-center justify-between">
@@ -2088,7 +2088,7 @@ function PickingScanFlow({
                 </div>
                 <div className="border-t border-slate-100 p-5">
                   <div>
-                    <div className="mb-4 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-slate-600">
+                    <div className="mb-4 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-900">
                       <Info className="size-4 text-blue-500" />
                       {currentStep === "location"
                         ? "Quét mã vị trí kệ để bắt đầu lấy hàng"

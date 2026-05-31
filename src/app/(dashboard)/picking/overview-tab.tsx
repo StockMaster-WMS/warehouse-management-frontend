@@ -132,7 +132,9 @@ function assigneeDisplayName(assigneeId: string | null | undefined, assigneeName
 }
 
 function groupAssigneeSummary(group: GroupedPicking, assigneeNameById: Map<string, string>) {
-    const assigneeIds = Array.from(new Set(group.items.map((item) => item.assigneeId).filter(Boolean) as string[]));
+    const assigneeIds = Array.from(
+        new Set(group.items.flatMap((item) => (item.assigneeId ? [item.assigneeId] : []))),
+    );
     if (assigneeIds.length === 0) {
         return "Chưa giao nhân viên";
     }
@@ -572,7 +574,7 @@ function AssignStaffDialog({
                             ) : isStaffLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={3} className="py-10 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                        Đang tải nhân viên...
+                                        Đang tải nhân viên…
                                     </TableCell>
                                 </TableRow>
                             ) : isStaffError ? (

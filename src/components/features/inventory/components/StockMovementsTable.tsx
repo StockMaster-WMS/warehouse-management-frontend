@@ -245,7 +245,7 @@ export function StockMovementsTable({
                         {item.reservedChange.toLocaleString("vi-VN")}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-xs text-slate-400">-</span>
                     )}
                   </TableCell>
                   <TableCell className="p-3 text-right">

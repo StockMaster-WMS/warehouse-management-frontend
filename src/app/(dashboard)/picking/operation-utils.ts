@@ -81,7 +81,7 @@ export function groupPickingOrders(
   sort: PickingOrderSort = "sequence",
 ): PickingOrder[] {
   const grouped = new Map<string, PickingItem[]>();
-  [...items].sort(compareItemsBySequence).forEach((item) => {
+  items.toSorted(compareItemsBySequence).forEach((item) => {
     const key = item.salesOrderNumber || "SO chưa gắn";
     grouped.set(key, [...(grouped.get(key) ?? []), item]);
   });
@@ -109,7 +109,7 @@ export function groupPickingOrders(
 
 export function groupPickingLocations(items: PickingItem[]): PickingLocationGroup[] {
   const grouped = new Map<string, PickingItem[]>();
-  [...items].sort(compareItemsBySequence).forEach((item) => {
+  items.toSorted(compareItemsBySequence).forEach((item) => {
     const key = displayPickingLocation(item);
     grouped.set(key, [...(grouped.get(key) ?? []), item]);
   });

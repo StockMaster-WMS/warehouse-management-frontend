@@ -107,6 +107,7 @@ export function AppearanceSettingsComponent({ appearance, updateAppearance }: Ap
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
           {COLOR_OPTIONS.map((item) => (
             <button
+              type="button"
               key={item.id}
               onClick={() => updateAppearance("color", item.id)}
               className={`rounded-lg border p-3 transition-colors ${

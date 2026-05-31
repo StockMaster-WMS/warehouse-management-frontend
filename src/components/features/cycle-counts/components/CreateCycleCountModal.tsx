@@ -162,7 +162,12 @@ export function CreateCycleCountModal({
     hint: l.id.substring(0, 8)
   }));
   const zoneOptions = Array.from(
-    new Set((locationsRes?.data?.content ?? []).map((location) => String(location.zone || "").trim()).filter(Boolean)),
+    new Set(
+      (locationsRes?.data?.content ?? []).flatMap((location) => {
+        const zone = String(location.zone || "").trim();
+        return zone ? [zone] : [];
+      }),
+    ),
   ).sort((left, right) => left.localeCompare(right, "vi", { sensitivity: "base" }))
     .map((zone) => ({
       value: zone,

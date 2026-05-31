@@ -22,7 +22,7 @@ type DetailSectionProps = {
   surface?: boolean;
 };
 
-function renderIcon(icon: DetailIcon) {
+function DetailSectionIcon({ icon }: { icon: DetailIcon }) {
   if (isValidElement(icon)) {
     return icon;
   }
@@ -57,7 +57,7 @@ export function DetailSection({
         <div className="flex min-w-0 items-center gap-2.5">
           {icon ? (
             <span className="ui-icon-tile size-8 text-primary">
-              {renderIcon(icon)}
+              <DetailSectionIcon icon={icon} />
             </span>
           ) : null}
           <div className="min-w-0">

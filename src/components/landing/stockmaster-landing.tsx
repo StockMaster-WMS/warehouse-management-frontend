@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
+import {
+  AnimatePresence,
+  LazyMotion,
+  domAnimation,
+  m,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 import {
   ArrowRightCircle,
   BarChart3,
@@ -216,12 +223,18 @@ function StockMasterLogo({ dark = false }: { dark?: boolean }) {
 
 export function StockMasterLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const entranceInitial = prefersReducedMotion ? false : "hidden";
+  const menuPanelTransition = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: 0.45, ease: easeOutExpo };
 
   return (
-    <main
-      id="main-content"
-      className="min-h-svh overflow-hidden bg-slate-50 font-sans text-slate-950"
-    >
+    <LazyMotion features={domAnimation}>
+      <main
+        id="main-content"
+        className="min-h-svh overflow-hidden bg-slate-50 font-sans text-slate-950"
+      >
       <section className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
         <video
           className="absolute inset-0 h-full w-full object-cover"
@@ -230,7 +243,6 @@ export function StockMasterLanding() {
           muted
           loop
           playsInline
-          aria-hidden="true"
         />
         <div className="absolute inset-0 bg-[rgba(10,15,25,0.48)]" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,15,25,0.88)_0%,rgba(10,15,25,0.62)_42%,rgba(10,15,25,0.24)_100%)]" />
@@ -279,9 +291,9 @@ export function StockMasterLanding() {
 
         <div className="relative z-10 mx-auto flex min-h-[calc(100vh-88px)] max-w-7xl items-center px-5 pb-16 pt-[clamp(40px,8vw,72px)] sm:px-8">
           <div className="max-w-[620px]">
-            <motion.h1
+            <m.h1
               variants={fadeUp}
-              initial="hidden"
+              initial={entranceInitial}
               animate="visible"
               custom={0}
               aria-label="Kiểm soát tồn kho thông minh cho kho hàng hiện đại"
@@ -292,11 +304,11 @@ export function StockMasterLanding() {
               <Boxes className="mx-2 inline size-6 align-middle text-white" />
               thông minh cho kho hàng hiện đại
               <Truck className="ml-2 inline size-6 align-middle text-white" />
-            </motion.h1>
+            </m.h1>
 
-            <motion.p
+            <m.p
               variants={fadeUp}
-              initial="hidden"
+              initial={entranceInitial}
               animate="visible"
               custom={1}
               className="mt-6 max-w-[580px] text-[clamp(0.95rem,2.3vw,1.08rem)] leading-7 text-white/82"
@@ -304,11 +316,11 @@ export function StockMasterLanding() {
               Theo dõi tồn kho theo thời gian thực, tự động hóa nghiệp vụ kho,
               quản lý đơn nhập - xuất và nhìn rõ toàn bộ hoạt động logistics
               trong một nền tảng tập trung.
-            </motion.p>
+            </m.p>
 
-            <motion.div
+            <m.div
               variants={fadeUp}
-              initial="hidden"
+              initial={entranceInitial}
               animate="visible"
               custom={2}
               className="mt-8 flex flex-col gap-4 sm:flex-row"
@@ -326,7 +338,7 @@ export function StockMasterLanding() {
               >
                 Xem dashboard
               </Link>
-            </motion.div>
+            </m.div>
           </div>
         </div>
 
@@ -335,22 +347,26 @@ export function StockMasterLanding() {
             const Icon = stat.icon;
 
             return (
-              <motion.div
+              <m.div
                 key={stat.label}
                 variants={fadeUp}
-                initial="hidden"
+                initial={entranceInitial}
                 animate="visible"
                 custom={3 + index * 0.4}
                 className={`absolute ${stat.className}`}
               >
-                <motion.div
-                  animate={{ y: [0, -12] }}
-                  transition={{
-                    duration: stat.duration,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    ease: "easeInOut",
-                  }}
+                <m.div
+                  animate={prefersReducedMotion ? undefined : { y: [0, -12] }}
+                  transition={
+                    prefersReducedMotion
+                      ? undefined
+                      : {
+                          duration: stat.duration,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          ease: "easeInOut",
+                        }
+                  }
                   className="min-w-[230px] rounded-2xl border border-white/20 bg-white/12 px-5 py-4 text-white shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-[14px]"
                 >
                   <div className="flex items-start gap-3">
@@ -362,8 +378,8 @@ export function StockMasterLanding() {
                       <p className="mt-1 text-xs text-white/68">{stat.value}</p>
                     </div>
                   </div>
-                </motion.div>
-              </motion.div>
+                </m.div>
+              </m.div>
             );
           })}
         </div>
@@ -371,21 +387,22 @@ export function StockMasterLanding() {
         <AnimatePresence>
           {isMenuOpen ? (
             <>
-              <motion.button
+              <m.button
                 type="button"
                 className="fixed inset-0 z-40 bg-[rgba(10,15,25,0.5)] backdrop-blur"
-                initial={{ opacity: 0 }}
+                initial={prefersReducedMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                transition={prefersReducedMotion ? { duration: 0 } : undefined}
                 onClick={() => setIsMenuOpen(false)}
                 aria-label="Đóng lớp nền menu"
               />
-              <motion.aside
+              <m.aside
                 className="fixed right-0 top-0 z-50 flex h-[100dvh] w-[min(88vw,360px)] flex-col bg-[#F3F6FA] text-slate-950 shadow-[-12px_0_48px_rgba(0,0,0,0.25)]"
-                initial={{ x: "100%" }}
+                initial={prefersReducedMotion ? false : { x: "100%" }}
                 animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                exit={prefersReducedMotion ? undefined : { x: "100%" }}
+                transition={menuPanelTransition}
               >
                 <div className="flex items-center justify-between px-5 py-5">
                   <StockMasterLogo dark />
@@ -402,17 +419,21 @@ export function StockMasterLanding() {
                 <div className="flex flex-1 flex-col px-5 py-6">
                   <div className="space-y-2">
                     {navLinks.map((link, index) => (
-                      <motion.a
+                      <m.a
                         key={link.href}
                         href={link.href}
                         className="block rounded-xl px-3 py-3 text-base font-semibold text-slate-800 transition hover:bg-white"
-                        initial={{ opacity: 0, x: 16 }}
+                        initial={prefersReducedMotion ? false : { opacity: 0, x: 16 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.08 + index * 0.05 }}
+                        transition={
+                          prefersReducedMotion
+                            ? { duration: 0 }
+                            : { delay: 0.08 + index * 0.05 }
+                        }
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {link.label}
-                      </motion.a>
+                      </m.a>
                     ))}
                   </div>
                   <div className="mt-auto grid gap-3">
@@ -432,7 +453,7 @@ export function StockMasterLanding() {
                     </Link>
                   </div>
                 </div>
-              </motion.aside>
+              </m.aside>
             </>
           ) : null}
         </AnimatePresence>
@@ -648,6 +669,7 @@ export function StockMasterLanding() {
           </Link>
         </div>
       </section>
-    </main>
+      </main>
+    </LazyMotion>
   );
 }
