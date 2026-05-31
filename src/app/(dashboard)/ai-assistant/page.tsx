@@ -87,6 +87,68 @@ const INITIAL_MESSAGE: Message = {
     "Xin chào, tôi là trợ lý thông minh vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
 };
 
+function renderInlineMarkdown(text: string) {
+  const nodes: ReactNode[] = [];
+  const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const token = match[0];
+    const key = `${match.index}-${token}`;
+    if (token.startsWith("**") && token.endsWith("**")) {
+      nodes.push(
+        <strong key={key} className="font-semibold">
+          {token.slice(2, -2)}
+        </strong>,
+      );
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      nodes.push(
+        <code key={key} className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]">
+          {token.slice(1, -1)}
+        </code>,
+      );
+    } else if (token.startsWith("*") && token.endsWith("*")) {
+      nodes.push(
+        <em key={key} className="italic">
+          {token.slice(1, -1)}
+        </em>,
+      );
+    }
+
+    lastIndex = match.index + token.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length ? nodes : text;
+}
+
+function AiMessageContent({ content }: { content: string }) {
+  return (
+    <div className="break-words">
+      {content.split("\n").map((line, index) => {
+        if (!line.trim()) {
+          return <div key={`blank-${index}`} className="h-2" />;
+        }
+
+        const isBullet = line.trimStart().startsWith("- ");
+        return (
+          <p key={`${index}-${line}`} className={cn(isBullet ? "pl-4 -indent-4" : "")}>
+            {renderInlineMarkdown(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function createMessageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -544,7 +606,7 @@ function AiMessageBubble({
         )}
       >
         {message.content ? (
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <AiMessageContent content={message.content} />
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <TypingDots />
