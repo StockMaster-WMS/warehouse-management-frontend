@@ -27,7 +27,32 @@ export type AiStreamResult = {
   provider?: string;
   model?: string;
   modelConfirmed?: boolean;
+  metadata?: AiResponseMetadata;
   aborted?: boolean;
+};
+
+export type AiDisplayMetadata = {
+  type?: string;
+  title?: string;
+  columns?: string[];
+};
+
+export type AiResponseMetadata = {
+  intent?: string;
+  confidence?: number;
+  domain?: string;
+  toolName?: string;
+  rowsReturned?: number;
+  parameters?: Record<string, unknown>;
+  suggestedQuestions?: string[];
+  actions?: Array<Record<string, unknown>>;
+  intentQuality?: string;
+  needsClarification?: boolean;
+  clarificationReason?: string;
+  qualitySignals?: string[];
+  display?: AiDisplayMetadata;
+  resultRows?: Array<Record<string, unknown>>;
+  candidateSuggestions?: Array<Record<string, unknown>>;
 };
 
 export type AiCloudKeyStatus = {
@@ -103,6 +128,7 @@ export const aiApi = baseApi.injectEndpoints({
         let provider = arg.provider;
         let model = arg.model;
         let modelConfirmed = false;
+        let metadata: AiResponseMetadata | undefined;
 
         try {
           let token = getToken();
@@ -142,7 +168,7 @@ export const aiApi = baseApi.injectEndpoints({
             const publishStreamState = () => {
               dispatch(
                 aiApi.util.updateQueryData("streamAiAnswer", arg, () => {
-                  return { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed };
+                  return { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed, metadata };
                 })
               );
             };
@@ -177,6 +203,15 @@ export const aiApi = baseApi.injectEndpoints({
                 }
                 return;
               }
+              if (eventName === "metadata") {
+                try {
+                  metadata = JSON.parse(content) as AiResponseMetadata;
+                  publishStreamState();
+                } catch {
+                  // Ignore malformed metadata events; answer streaming can continue.
+                }
+                return;
+              }
               if (eventName !== "message") return;
 
               fullText += content;
@@ -202,10 +237,10 @@ export const aiApi = baseApi.injectEndpoints({
               appendEvent(buffer);
             }
           }
-          return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed } };
+          return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed, metadata } };
         } catch (err) {
           if (signal.aborted || (err instanceof DOMException && err.name === "AbortError")) {
-            return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed, aborted: true } };
+            return { data: { requestId: arg.requestId, text: fullText, provider, model, modelConfirmed, metadata, aborted: true } };
           }
           return {
             error: {

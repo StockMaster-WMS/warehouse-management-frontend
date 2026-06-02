@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
+import { AiResponseMetadata, useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
 import { axiosInstance } from "@/lib/axios-instance";
 
 interface Message {
@@ -34,6 +34,7 @@ interface Message {
   provider?: string;
   model?: string;
   modelConfirmed?: boolean;
+  metadata?: AiResponseMetadata;
 }
 
 const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
@@ -149,6 +150,144 @@ function AiMessageContent({ content }: { content: string }) {
   );
 }
 
+function AiStructuredMetadata({
+  metadata,
+  onAsk,
+}: {
+  metadata?: AiResponseMetadata;
+  onAsk: (question: string) => void;
+}) {
+  if (!metadata) return null;
+  const candidates = metadata.candidateSuggestions ?? [];
+  const rows = metadata.resultRows ?? [];
+  const display = metadata.display;
+  const columns = display?.columns?.filter((column) =>
+    rows.some((row) => row[column] !== undefined && row[column] !== null && String(row[column]).trim() !== ""),
+  ) ?? [];
+  const visibleRows = rows.slice(0, 8);
+
+  if (!candidates.length && (!visibleRows.length || !columns.length)) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3 border-t border-border/70 pt-3">
+      {candidates.length ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground">
+            {display?.title || "Có phải bạn muốn hỏi?"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {candidates.slice(0, 4).map((candidate, index) => {
+              const label = formatCandidateLabel(candidate);
+              const query = firstString(candidate, ["query", "question"]) || label;
+              return (
+                <Button
+                  key={`${label}-${index}`}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto max-w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium"
+                  onClick={() => void onAsk(query)}
+                >
+                  <span className="truncate">{label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {visibleRows.length && columns.length ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="truncate text-xs font-semibold text-muted-foreground">
+              {display?.title || "Dữ liệu trả về"}
+            </p>
+            {rows.length > visibleRows.length ? (
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                Hiển thị {visibleRows.length}/{rows.length} dòng
+              </span>
+            ) : null}
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="min-w-full table-fixed border-collapse text-xs">
+              <thead className="bg-muted/70 text-muted-foreground">
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column} className="w-36 px-3 py-2 text-left font-medium">
+                      {columnLabel(column)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border bg-background">
+                {visibleRows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {columns.map((column) => (
+                      <td key={column} className="truncate px-3 py-2 text-foreground" title={formatCell(row[column])}>
+                        {formatCell(row[column])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function firstString(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function formatCandidateLabel(candidate: Record<string, unknown>) {
+  const sku = firstString(candidate, ["sku", "code"]);
+  const name = firstString(candidate, ["product_name", "name"]);
+  if (sku && name) return `${sku} - ${name}`;
+  return sku || name || "Chọn mục này";
+}
+
+function formatCell(value: unknown) {
+  if (value === null || value === undefined || value === "") return "N/A";
+  if (typeof value === "number") return new Intl.NumberFormat("vi-VN").format(value);
+  if (typeof value === "boolean") return value ? "Có" : "Không";
+  return String(value);
+}
+
+function columnLabel(column: string) {
+  const labels: Record<string, string> = {
+    sku: "SKU",
+    product_name: "Sản phẩm",
+    warehouse_code: "Kho",
+    location_code: "Vị trí",
+    lot_number: "Lô",
+    expiry_date: "Hạn dùng",
+    days_left: "Ngày còn lại",
+    qty_on_hand: "Tồn",
+    qty_reserved: "Giữ chỗ",
+    qty_available: "Khả dụng",
+    category_name: "Danh mục",
+    status: "Trạng thái",
+    code: "Mã",
+    name: "Tên",
+    product_count: "Số SP",
+    contact_name: "Liên hệ",
+    username: "Tài khoản",
+    full_name: "Họ tên",
+    roles: "Vai trò",
+    warehouses: "Kho",
+  };
+  return labels[column] ?? column.replaceAll("_", " ");
+}
+
 function createMessageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -218,6 +357,7 @@ export default function AiAssistantPage() {
               provider: streamResult.provider || msg.provider,
               model: streamResult.model || msg.model,
               modelConfirmed: Boolean(streamResult.modelConfirmed) || msg.modelConfirmed,
+              metadata: streamResult.metadata ?? msg.metadata,
             }
           : msg
       )
@@ -333,7 +473,7 @@ export default function AiAssistantPage() {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMsgId
-                  ? { ...msg, targetContent: result.text }
+                  ? { ...msg, targetContent: result.text, metadata: result.metadata ?? msg.metadata }
                   : msg
               )
             );
@@ -359,6 +499,7 @@ export default function AiAssistantPage() {
                   provider: result.provider || msg.provider,
                   model: result.model || msg.model,
                   modelConfirmed: Boolean(result.modelConfirmed) || msg.modelConfirmed,
+                  metadata: result.metadata ?? msg.metadata,
                 }
               : msg
           )
@@ -457,6 +598,7 @@ export default function AiAssistantPage() {
           <AiMessages
             messages={messages}
             messagesEndRef={messagesEndRef}
+            onAsk={sendQuestion}
           />
           <AiComposer
             busy={busy}
@@ -568,9 +710,11 @@ function AiInfoBlock({
 function AiMessages({
   messages,
   messagesEndRef,
+  onAsk,
 }: {
   messages: Message[];
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  onAsk: (question: string) => void;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-3 py-5 sm:px-5">
@@ -579,6 +723,7 @@ function AiMessages({
           <AiMessageBubble
             key={msg.id}
             message={msg}
+            onAsk={onAsk}
           />
         ))}
         <div ref={messagesEndRef} />
@@ -589,8 +734,10 @@ function AiMessages({
 
 function AiMessageBubble({
   message,
+  onAsk,
 }: {
   message: Message;
+  onAsk: (question: string) => void;
 }) {
   const isUser = message.role === "user";
 
@@ -609,7 +756,12 @@ function AiMessageBubble({
         )}
       >
         {message.content ? (
-          <AiMessageContent content={message.content} />
+          <div className="space-y-3">
+            <AiMessageContent content={message.content} />
+            {!isUser ? (
+              <AiStructuredMetadata metadata={message.metadata} onAsk={onAsk} />
+            ) : null}
+          </div>
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <TypingDots />
