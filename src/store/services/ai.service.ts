@@ -91,14 +91,6 @@ export const aiApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<AiCloudKeyStatus[]>) => response.data,
       providesTags: [{ type: "AiConfig", id: "PROVIDERS" }],
     }),
-    getAiCloudKeyStatus: builder.query<AiCloudKeyStatus, void>({
-      query: () => ({
-        url: "/v1/ai/config/cloud-key",
-        method: "GET",
-      }),
-      transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
-      providesTags: [{ type: "AiConfig", id: "CLOUD_KEY" }],
-    }),
     updateAiCloudKey: builder.mutation<AiCloudKeyStatus, UpdateAiCloudKeyRequest>({
       query: ({ provider, apiKey }) => ({
         url: `/v1/ai/config/providers/${provider}/key`,
@@ -107,7 +99,6 @@ export const aiApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
       invalidatesTags: [
-        { type: "AiConfig", id: "CLOUD_KEY" },
         { type: "AiConfig", id: "PROVIDERS" },
       ],
     }),
@@ -118,7 +109,6 @@ export const aiApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
       invalidatesTags: [
-        { type: "AiConfig", id: "CLOUD_KEY" },
         { type: "AiConfig", id: "PROVIDERS" },
       ],
     }),
@@ -257,7 +247,6 @@ export const aiApi = baseApi.injectEndpoints({
 export const {
   useLazyStreamAiAnswerQuery,
   useGetAiProviderKeyStatusesQuery,
-  useGetAiCloudKeyStatusQuery,
   useUpdateAiCloudKeyMutation,
   useClearAiCloudKeyMutation,
 } = aiApi;

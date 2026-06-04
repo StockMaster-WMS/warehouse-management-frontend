@@ -5,7 +5,6 @@ import {
   Bot,
   Boxes,
   ClipboardList,
-  Cpu,
   Pause,
   RotateCcw,
   Send,
@@ -14,12 +13,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AiResponseMetadata, useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
@@ -30,7 +23,6 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   targetContent?: string;
-  modelLabel?: string;
   provider?: string;
   model?: string;
   modelConfirmed?: boolean;
@@ -38,41 +30,11 @@ interface Message {
 }
 
 const AI_SESSION_STORAGE_KEY = "warehouse-ai-session-id";
-const AI_MODEL_STORAGE_KEY = "warehouse-ai-model-selection";
 const TYPEWRITER_INTERVAL_MS = 16;
 const TYPEWRITER_CHARS_PER_TICK = 2;
 
-type AiModelOption = {
-  key: string;
-  label: string;
-  provider: string;
-  model: string;
-};
-
-const AI_MODEL_OPTIONS: AiModelOption[] = [
-  {
-    key: "ollama:stockmaster-ai",
-    label: "Mô hình nội bộ",
-    provider: "ollama",
-    model: "stockmaster-ai",
-  },
-  {
-    key: "gemini:gemini-2.5-flash",
-    label: "Google Gemini",
-    provider: "gemini",
-    model: "gemini-2.5-flash",
-  },
-  {
-    key: "openai:gpt-4o-mini",
-    label: "OpenAI",
-    provider: "openai",
-    model: "gpt-4o-mini",
-  },
-];
-
-function getModelOption(key: string) {
-  return AI_MODEL_OPTIONS.find((option) => option.key === key) ?? AI_MODEL_OPTIONS[0];
-}
+const AI_PROVIDER = "ollama";
+const AI_MODEL = "stockmaster-ai";
 
 const SUGGESTIONS = [
   "Tóm tắt tình hình tồn kho hôm nay",
@@ -85,7 +47,7 @@ const INITIAL_MESSAGE: Message = {
   id: "initial-assistant-message",
   role: "assistant",
   content:
-    "Xin chào, tôi là trợ lý thông minh vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
+    "Xin chào, tôi là trợ lý vận hành kho StockMaster-WMS. Bạn muốn kiểm tra tồn kho, đơn hàng hay báo cáo vận hành?",
 };
 
 function InlineMarkdown({ text }: { text: string }) {
@@ -304,15 +266,6 @@ function getInitialSessionId() {
   return window.sessionStorage.getItem(AI_SESSION_STORAGE_KEY) ?? createSessionId();
 }
 
-function getInitialModelKey() {
-  if (typeof window === "undefined") return AI_MODEL_OPTIONS[0].key;
-  const stored = window.localStorage.getItem(AI_MODEL_STORAGE_KEY);
-  if (stored === "gemini:gemini-flash-lite-latest") return "gemini:gemini-2.5-flash";
-  return stored && AI_MODEL_OPTIONS.some((option) => option.key === stored)
-    ? stored
-    : AI_MODEL_OPTIONS[0].key;
-}
-
 function getInitialMessages(): Message[] {
   return [INITIAL_MESSAGE];
 }
@@ -320,7 +273,6 @@ function getInitialMessages(): Message[] {
 export default function AiAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
-  const [selectedModelKey, setSelectedModelKey] = useState(getInitialModelKey);
   const [triggerStream, { data: streamResult, isFetching }] =
     useLazyStreamAiAnswerQuery();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -409,11 +361,6 @@ export default function AiAssistantPage() {
     window.sessionStorage.setItem(AI_SESSION_STORAGE_KEY, sessionIdRef.current!);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(AI_MODEL_STORAGE_KEY, selectedModelKey);
-  }, [selectedModelKey]);
-
   async function sendQuestion(question: string) {
     const trimmed = question.trim();
     if (!trimmed) return;
@@ -444,25 +391,12 @@ export default function AiAssistantPage() {
 
     try {
       setIsStreaming(true);
-      const selectedModel = getModelOption(selectedModelKey);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMsgId
-            ? {
-                ...msg,
-                modelLabel: selectedModel.label,
-                provider: selectedModel.provider,
-                model: selectedModel.model,
-              }
-            : msg
-        )
-      );
       const streamPromise = triggerStream({
         question: trimmed,
         sessionId: sessionIdRef.current!,
         requestId,
-        provider: selectedModel.provider,
-        model: selectedModel.model,
+        provider: AI_PROVIDER,
+        model: AI_MODEL,
       });
       activeTriggerRef.current = streamPromise;
 
@@ -603,9 +537,7 @@ export default function AiAssistantPage() {
           <AiComposer
             busy={busy}
             input={input}
-            selectedModelKey={selectedModelKey}
             onInputChange={setInput}
-            onModelChange={setSelectedModelKey}
             onCancel={cancelStream}
             onSubmit={handleSubmit}
             onSend={sendQuestion}
@@ -631,7 +563,7 @@ function AiAssistantHeader({
         </div>
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold text-foreground">
-            Trợ lý thông minh vận hành kho
+            Trợ lý vận hành kho
           </h1>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <span className={cn("size-2 rounded-full", busy ? "bg-amber-500" : "bg-emerald-500")} />
@@ -795,18 +727,14 @@ function TypingDots() {
 function AiComposer({
   busy,
   input,
-  selectedModelKey,
   onInputChange,
-  onModelChange,
   onCancel,
   onSubmit,
   onSend,
 }: {
   busy: boolean;
   input: string;
-  selectedModelKey: string;
   onInputChange: (value: string) => void;
-  onModelChange: (value: string) => void;
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSend: (question: string) => void;
@@ -849,29 +777,7 @@ function AiComposer({
           </Button>
         )}
       </div>
-      <div className="mx-auto mt-2 flex w-full max-w-4xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Select
-          value={selectedModelKey}
-          onValueChange={(value) => onModelChange(value || AI_MODEL_OPTIONS[0].key)}
-          disabled={busy}
-        >
-          <SelectTrigger
-            aria-label="Chọn mô hình trợ lý"
-            className="h-9 w-full rounded-lg bg-background sm:w-56"
-          >
-            <Cpu className="size-4 text-muted-foreground" />
-            <span className="truncate text-sm">
-              {getModelOption(selectedModelKey).label} / {getModelOption(selectedModelKey).model}
-            </span>
-          </SelectTrigger>
-          <SelectContent className="rounded-lg">
-            {AI_MODEL_OPTIONS.map((option) => (
-              <SelectItem key={option.key} value={option.key} className="rounded-lg">
-                {option.label} / {option.model}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="mx-auto mt-2 flex w-full max-w-4xl justify-end">
         <p className="text-xs text-muted-foreground">
           Nhấn Enter để gửi, Shift + Enter để xuống dòng.
         </p>

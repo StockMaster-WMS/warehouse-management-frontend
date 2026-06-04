@@ -30,7 +30,7 @@ const tabs = [
   },
   {
     key: "ai",
-    label: "Trợ lý thông minh",
+    label: "Trợ lý kho",
     description: "Khóa kết nối và nhà cung cấp",
     group: "Quản trị hệ thống",
     icon: Bot,
