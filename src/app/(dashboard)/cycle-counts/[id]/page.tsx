@@ -711,8 +711,7 @@ export default function CycleCountDetailPage() {
         subtitle={count.title || count.description || undefined}
         meta={[
           { label: "Kho", value: count.warehouseName || count.warehouseId },
-          { label: "Phạm vi", value: count.scope },
-          { label: "Khu/Vị trí", value: count.zone || count.locationId || count.productId },
+          { label: "Phạm vi", value: count.scope === "PRODUCT" ? "Sản phẩm" : count.scope === "LOCATION" ? "Vị trí" : count.scope === "ZONE" ? "Khu vực" : count.scope },
           { label: "Trạng thái", value: CYCLE_COUNT_STATUS_CONFIG[count.status]?.label ?? count.status },
           { label: "Ngày tạo", value: formatDate(count.createdAt) },
           { label: "Ngày lịch", value: formatDate(count.scheduledAt) },
@@ -720,8 +719,6 @@ export default function CycleCountDetailPage() {
         columns={[
           { key: "sku", label: "Mã hàng" },
           { key: "name", label: "Tên sản phẩm" },
-          { key: "location", label: "Vị trí" },
-          { key: "lot", label: "Lô" },
           { key: "systemQty", label: "Tồn hệ thống", align: "right" },
           { key: "countedQty", label: "Số thực tế", align: "right" },
           { key: "variance", label: "Chênh lệch", align: "right" },
@@ -738,8 +735,6 @@ export default function CycleCountDetailPage() {
           return {
             sku: line.productSku || line.productId,
             name: line.productName || "Sản phẩm chưa xác định",
-            location: line.locationCode || line.locationId,
-            lot: line.lotNumber,
             systemQty,
             countedQty,
             variance,

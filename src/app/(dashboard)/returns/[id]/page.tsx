@@ -628,20 +628,16 @@ export default function RMADetailPage() {
         columns={[
           { key: "sku", label: "Mã hàng" },
           { key: "name", label: "Tên sản phẩm" },
-          { key: "lot", label: "Lô" },
           { key: "expected", label: "Dự kiến", align: "right" },
           { key: "received", label: isSupplierReturn ? "Đã xuất" : "Đã nhận", align: "right" },
-          { key: "location", label: "Vị trí" },
           { key: "condition", label: "Tình trạng" },
           { key: "disposition", label: "Xử lý" },
         ]}
         rows={lines.map((line) => ({
           sku: line.productSku || line.productId,
           name: line.productName || "Sản phẩm chưa xác định",
-          lot: line.lotNumber,
           expected: line.expectedQty,
           received: isSupplierReturn && ["APPROVED", "COMPLETED"].includes(rma.status) ? line.expectedQty : line.receivedQty,
-          location: line.receivedLocationCode || line.returnLocationCode || line.dispositionLocationCode,
           condition: line.condition ? (CONDITION_LABEL[line.condition] ?? line.condition) : "",
           disposition: line.dispositionAction ? (DISPOSITION_LABEL[line.dispositionAction] ?? line.dispositionAction) : "",
         }))}

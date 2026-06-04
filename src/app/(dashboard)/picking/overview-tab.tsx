@@ -500,24 +500,18 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     columns={[
                         { key: "sku", label: "Mã hàng" },
                         { key: "name", label: "Tên sản phẩm" },
-                        { key: "location", label: "Vị trí" },
-                        { key: "lot", label: "Lô" },
                         { key: "barcode", label: "Mã vạch" },
                         { key: "qtyToPick", label: "Cần lấy", align: "right" },
                         { key: "qtyPicked", label: "Đã lấy", align: "right" },
-                        { key: "unit", label: "ĐVT", align: "center" },
                     ]}
                     rows={printGroup.items.map((item) => ({
                         sku: item.productSku || item.productCode || item.productId,
                         name: item.productName || "Sản phẩm chưa xác định",
-                        location: displayPickingLocation(item),
-                        lot: item.lotNumber,
                         barcode: item.barcodeEan13,
                         qtyToPick: item.qtyToPick,
                         qtyPicked: item.qtyPicked ?? 0,
-                        unit: item.baseUnit,
                     }))}
-                    note="Nhân viên lấy hàng kiểm tra đúng vị trí, lô hàng và số lượng trước khi xác nhận hoàn tất."
+                    note="Nhân viên lấy hàng kiểm tra đúng mã hàng và số lượng trước khi xác nhận hoàn tất."
                     signatures={["Người lập phiếu", "Nhân viên lấy hàng", "Thủ kho"]}
                 />
             ) : null}
