@@ -100,49 +100,51 @@ export function StockMovementsTable({
   onPageSizeChange,
   onRetry,
 }: StockMovementsTableProps) {
+  const headerCellClass = "ui-label p-3";
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="ui-surface overflow-hidden">
       {isFetching && !isLoading ? (
-        <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+        <p className="ui-updating-banner">
           Đang cập nhật dữ liệu…
         </p>
       ) : null}
 
       <div className="overflow-x-auto">
         <Table className="min-w-[65rem] text-left">
-          <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+          <TableHeader className="ui-table-header">
             <TableRow>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Loại
               </TableHead>
-              <TableHead className="min-w-48 p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "min-w-48")}>
                 Sản phẩm
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Kho
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Vị trí
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Lô
               </TableHead>
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 SL thay đổi
               </TableHead>
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 SL sau
               </TableHead>
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 Giữ chỗ ±
               </TableHead>
-              <TableHead className="p-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-right")}>
                 Thời gian
               </TableHead>
             </TableRow>
           </TableHeader>
 
-          <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <TableBody>
             {isLoading ? (
               <TableSkeleton />
             ) : errorMessage ? (
@@ -178,36 +180,33 @@ export function StockMovementsTable({
               items.map((item) => (
                 <TableRow
                   key={item.id}
-                  className={cn(
-                    "group transition-colors",
-                    "odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70",
-                  )}
+                  className="ui-table-row group"
                 >
                   <TableCell className="p-3">
                     <MovementTypeBadge type={item.movementType} />
                   </TableCell>
                   <TableCell className="p-3">
                     <div className="space-y-0.5">
-                      <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                      <div className="text-sm font-semibold text-foreground">
                         {item.productName || "Chưa có tên sản phẩm"}
                       </div>
-                      <div className="font-mono text-xs text-slate-500">
+                      <div className="font-mono text-xs text-muted-foreground">
                         {item.productSku || item.productId}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="p-3">
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <span className="text-sm font-medium text-foreground/85">
                       {item.warehouseCode}
                     </span>
                   </TableCell>
                   <TableCell className="p-3">
-                    <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <span className="font-mono text-xs font-semibold text-muted-foreground">
                       {item.locationCode}
                     </span>
                   </TableCell>
                   <TableCell className="p-3">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="text-xs text-muted-foreground">
                       {item.lotNumber || "—"}
                     </span>
                   </TableCell>
@@ -219,7 +218,7 @@ export function StockMovementsTable({
                           ? "text-emerald-600 dark:text-emerald-400"
                           : item.qtyChange < 0
                             ? "text-rose-600 dark:text-rose-400"
-                            : "text-slate-500",
+                            : "text-muted-foreground",
                       )}
                     >
                       {item.qtyChange > 0 ? "+" : ""}
@@ -227,7 +226,7 @@ export function StockMovementsTable({
                     </span>
                   </TableCell>
                   <TableCell className="p-3 text-center">
-                    <span className="tabular-nums text-sm font-medium text-slate-900 dark:text-white">
+                    <span className="tabular-nums text-sm font-medium text-foreground">
                       {item.qtyAfter.toLocaleString("vi-VN")}
                     </span>
                   </TableCell>
@@ -245,11 +244,11 @@ export function StockMovementsTable({
                         {item.reservedChange.toLocaleString("vi-VN")}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400">-</span>
+                      <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="p-3 text-right">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="text-xs text-muted-foreground">
                       {formatDateTimeFull(item.createdAt)}
                     </span>
                   </TableCell>

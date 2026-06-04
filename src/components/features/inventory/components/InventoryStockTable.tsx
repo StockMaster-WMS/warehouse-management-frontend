@@ -74,52 +74,54 @@ export function InventoryStockTable({
   onRetry,
   noContainer = false,
 }: InventoryStockTableProps) {
+  const headerCellClass = "ui-label p-3";
+
   const content = (
     <>
       {isFetching && !isLoading ? (
-        <p className="border-b border-slate-100 bg-slate-50 px-6 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40">
+        <p className="ui-updating-banner">
           Đang cập nhật dữ liệu…
         </p>
       ) : null}
 
       <div className="overflow-x-auto">
         <Table className="min-w-225 text-left">
-          <TableHeader className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/90 text-xs font-semibold text-slate-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+          <TableHeader className="ui-table-header">
             <TableRow>
-              <TableHead className="w-12 p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "w-12 text-center")}>
                 STT
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Kho
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Vị trí
               </TableHead>
-              <TableHead className="min-w-45 p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "min-w-45")}>
                 Sản phẩm
               </TableHead>
-              {/* <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {/* <TableHead className={headerCellClass}>
                 Lô
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Hạn sử dụng
               </TableHead> */}
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 Tồn tay
               </TableHead>
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 Giữ chỗ
               </TableHead>
-              <TableHead className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={cn(headerCellClass, "text-center")}>
                 Khả dụng
               </TableHead>
-              <TableHead className="p-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <TableHead className={headerCellClass}>
                 Cập nhật
               </TableHead>
             </TableRow>
           </TableHeader>
 
-          <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <TableBody>
             {isLoading ? (
               <TableSkeleton />
             ) : errorMessage ? (
@@ -160,8 +162,7 @@ export function InventoryStockTable({
                   <TableRow
                     key={item.id}
                     className={cn(
-                      "group transition-colors",
-                      "odd:bg-white even:bg-slate-50/40 hover:bg-indigo-50/40 dark:odd:bg-slate-900 dark:even:bg-slate-900/70 dark:hover:bg-slate-800/70",
+                      "ui-table-row group",
                       stockTone === "critical" &&
                         "!bg-rose-100/70 hover:!bg-rose-100/90 dark:!bg-rose-950/28 dark:hover:!bg-rose-950/36",
                       stockTone === "warning" &&
@@ -169,42 +170,42 @@ export function InventoryStockTable({
                     )}
                   >
                     <TableCell className="p-3 text-center">
-                      <span className="tabular-nums text-xs font-medium text-slate-500">
+                      <span className="tabular-nums text-xs font-medium text-muted-foreground">
                         {page * pageSize + index + 1}
                       </span>
                     </TableCell>
                     <TableCell className="p-3">
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <span className="text-sm font-medium text-foreground/85">
                         {item.warehouse?.name ?? item.warehouse?.code ?? "—"}
                       </span>
                     </TableCell>
                     <TableCell className="p-3">
-                      <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      <span className="font-mono text-xs font-semibold text-muted-foreground">
                         {item.location?.code ?? "—"}
                       </span>
                     </TableCell>
                     <TableCell className="p-3">
                       <div className="space-y-0.5">
-                        <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                        <div className="text-sm font-semibold text-foreground">
                           {productName}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-muted-foreground">
                           {productSku}
                         </div>
                       </div>
                     </TableCell>
                     {/* <TableCell className="p-3">
-                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {item.lotNumber || "Không lô"}
                       </span>
                     </TableCell>
                     <TableCell className="p-3">
-                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {formatDate(item.expiryDate)}
                       </span>
                     </TableCell> */}
                     <TableCell className="p-3 text-center">
-                      <span className="tabular-nums text-sm font-bold text-slate-900 dark:text-white">
+                      <span className="tabular-nums text-sm font-bold text-foreground">
                         {item.qtyOnHand.toLocaleString("vi-VN")}
                       </span>
                     </TableCell>
@@ -228,7 +229,7 @@ export function InventoryStockTable({
                       </span>
                     </TableCell>
                     <TableCell className="p-3">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatDateTime(item.updatedAt)}
                       </span>
                     </TableCell>
@@ -263,7 +264,7 @@ export function InventoryStockTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="ui-surface overflow-hidden">
       {content}
     </div>
   );

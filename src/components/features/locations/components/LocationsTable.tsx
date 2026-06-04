@@ -313,9 +313,9 @@ export function LocationsTable({
                                         <TableCell className="px-4 py-3">
                                             <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{warehouseName || "Chưa xác định"}</p>
                                             <div className="mt-1.5 flex flex-wrap gap-1">
-                                                {location.isColdZone && <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">🧊 COLD</span>}
-                                                {location.isHazmatZone && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">⚠️ HAZMAT</span>}
-                                                {location.isHeavyZone && <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 border border-orange-200">🏋️ HEAVY</span>}
+                                                {location.isColdZone && <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">COLD</span>}
+                                                {location.isHazmatZone && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">HAZMAT</span>}
+                                                {location.isHeavyZone && <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 border border-orange-200">HEAVY</span>}
                                                 {!location.isColdZone && !location.isHazmatZone && !location.isHeavyZone && location.zone && (
                                                     <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">{location.zone}</span>
                                                 )}
@@ -326,8 +326,8 @@ export function LocationsTable({
                                         {/* <TableCell className="px-4 py-3">
                                             <LocationTypeBadge type={location.locationType} />
                                         </TableCell> */}
-
-                                        {/* Col 4: Capacity + active state */}
+                                        {/* Col 4: Capacity + active
+ state */}
                                         <TableCell className="px-4 py-3 min-w-[140px]">
                                             <CapacityCell location={location} />
                                             <div className="mt-2 flex items-center gap-1">
