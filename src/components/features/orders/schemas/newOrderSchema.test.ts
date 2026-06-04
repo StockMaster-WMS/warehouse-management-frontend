@@ -29,7 +29,7 @@ describe("newOrderSchema", () => {
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.warehouseId).toContain("Chọn kho xuất");
       expect(result.error.flatten().fieldErrors.priority).toContain(
-        "Độ ưu tiên phải là số nguyên >= 1",
+        "Mức độ ưu tiên không hợp lệ",
       );
     }
   });

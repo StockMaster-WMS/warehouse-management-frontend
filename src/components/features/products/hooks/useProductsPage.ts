@@ -5,6 +5,7 @@ import { apiErrMessage } from "@/types/api";
 import { useDeleteProductMutation, useGetProductsQuery } from "@/store/services/product.service";
 import { useGetCategoriesQuery } from "@/store/services/category.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
+import { useGetSuppliersQuery } from "@/store/services/supplier.service";
 import { PRODUCTS_PAGE_SIZE } from "@/components/features/products/constants";
 
 type DeleteTarget = {
@@ -21,6 +22,7 @@ export function useProductsPageLogic() {
   const [statusFilter, setStatusFilter] = useState<"" | "ACTIVE" | "INACTIVE">("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -36,8 +38,9 @@ export function useProductsPageLogic() {
       status: statusFilter || undefined,
       categoryId: categoryFilter || undefined,
       warehouseId: warehouseFilter || undefined,
+      supplierId: supplierFilter || undefined,
     }),
-    [page, pageSize, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter],
+    [page, pageSize, debouncedKeyword, statusFilter, categoryFilter, warehouseFilter, supplierFilter],
   );
 
   // Query danh sách sản phẩm chính, dùng cho bảng và menu xuất dữ liệu.
@@ -68,16 +71,31 @@ export function useProductsPageLogic() {
     sortDir: "desc",
   });
 
+  const {
+    data: supplierOptionsData,
+    isLoading: suppliersLoading,
+    error: suppliersError,
+    refetch: refetchSuppliers,
+  } = useGetSuppliersQuery({
+    page: 0,
+    size: 200,
+    sort: "name",
+    sortDir: "asc",
+    status: "active",
+  });
+
   // Các cờ được suy ra để dùng cho toolbar, empty state và số lượng bộ lọc đang bật.
   const hasAnyFilter =
     searchInput.trim().length > 0 ||
     Boolean(statusFilter) ||
     Boolean(categoryFilter) ||
-    Boolean(warehouseFilter);
+    Boolean(warehouseFilter) ||
+    Boolean(supplierFilter);
   const advancedCount =
     Number(Boolean(statusFilter)) +
     Number(Boolean(categoryFilter)) +
-    Number(Boolean(warehouseFilter));
+    Number(Boolean(warehouseFilter)) +
+    Number(Boolean(supplierFilter));
 
   // Giới hạn phân trang dùng cho nút trước/sau.
   const canGoPrev = page > 0;
@@ -102,6 +120,7 @@ export function useProductsPageLogic() {
     setStatusFilter("");
     setCategoryFilter("");
     setWarehouseFilter("");
+    setSupplierFilter("");
     setPage(0);
     setAdvancedOpen(false);
   }, []);
@@ -152,6 +171,7 @@ export function useProductsPageLogic() {
     statusFilter,
     categoryFilter,
     warehouseFilter,
+    supplierFilter,
     advancedOpen,
     isDeleteDialogOpen,
     deleteTarget,
@@ -168,6 +188,10 @@ export function useProductsPageLogic() {
     },
     setWarehouseFilter: (warehouse: string | null) => {
       setWarehouseFilter(warehouse ?? "");
+      setPage(0);
+    },
+    setSupplierFilter: (supplier: string | null) => {
+      setSupplierFilter(supplier ?? "");
       setPage(0);
     },
     setAdvancedOpen,
@@ -191,6 +215,10 @@ export function useProductsPageLogic() {
     warehousesLoading,
     warehousesError,
     refetchWarehouses,
+    supplierOptionsData,
+    suppliersLoading,
+    suppliersError,
+    refetchSuppliers,
 
     // Trạng thái bộ lọc được suy ra cho badge UI và empty state.
     hasAnyFilter,

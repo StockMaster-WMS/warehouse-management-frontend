@@ -14,8 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AddressForm } from "@/components/features/AddressForm";
 import { useCreateOrderForm } from "@/components/features/orders";
+import { SALES_ORDER_PRIORITY_OPTIONS } from "@/types/sales-order";
 
 function NewOrderFormContent() {
   const searchParams = useSearchParams();
@@ -188,20 +196,30 @@ function NewOrderFormContent() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-slate-500">
-                    Độ ưu tiên <span className="text-rose-500">*</span>
+                    Mức độ ưu tiên <span className="text-rose-500">*</span>
                   </label>
-                  <Input
-                    type="number"
-                    min={1}
+                  <Select
                     value={priority}
-                    onChange={(e) => {
-                      setPriority(e.target.value);
+                    onValueChange={(value) => {
+                      if (!value) return;
+                      setPriority(value);
                       clearFieldError("priority");
                     }}
-                    placeholder="5"
-                    aria-invalid={Boolean(errors.priority)}
-                    className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
-                  />
+                  >
+                    <SelectTrigger
+                      aria-invalid={Boolean(errors.priority)}
+                      className="border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:ring-indigo-500/30"
+                    >
+                      <SelectValue placeholder="Chọn mức ưu tiên" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SALES_ORDER_PRIORITY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {errors.priority ? <p className="text-xs font-medium text-rose-600">{errors.priority}</p> : null}
                 </div>
               </div>

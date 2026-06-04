@@ -6,6 +6,7 @@ export interface Product {
   categoryId: string;
   categoryName?: string | null;
   primarySupplierId: string | null;
+  primarySupplierName?: string | null;
   baseUnit: string;
   weightKg: number | null;
   volumeCm3: number | null;

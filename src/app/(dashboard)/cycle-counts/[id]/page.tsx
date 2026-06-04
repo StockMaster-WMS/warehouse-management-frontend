@@ -12,6 +12,7 @@ import {
   Save,
   AlertTriangle,
   Info,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,6 +52,7 @@ import {
   DetailErrorState,
 } from "@/components/detail-page";
 import type { StatusConfig } from "@/components/detail-page";
+import { PrintableDocumentModal } from "@/components/features/PrintableDocumentModal";
 
 // ─── Status display helpers ───────────────────────────────────────────────────
 
@@ -132,6 +134,7 @@ export default function CycleCountDetailPage() {
   // Local state: map lineId -> actual count entered by user
   const [actualCounts, setActualCounts] = useState<Record<string, number>>({});
   const [notesByLine, setNotesByLine] = useState<Record<string, string>>({});
+  const [printOpen, setPrintOpen] = useState(false);
   const handleRecordChange = (lineId: string, value: string) => {
     if (value.trim() === "") {
       setActualCounts((prev) => {
@@ -346,6 +349,10 @@ export default function CycleCountDetailPage() {
             >
               <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
+              <Printer className="mr-2 size-4" />
+              In phiếu
             </Button>
 
             {canManageCycleCount && canCancel(status) && (
@@ -694,6 +701,54 @@ export default function CycleCountDetailPage() {
           </Button>
         </div>
       )}
+
+      <PrintableDocumentModal
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        printAreaId="print-area-cycle-count"
+        title="Phiếu kiểm kê"
+        documentNo={count.countNumber || count.id}
+        subtitle={count.title || count.description || undefined}
+        meta={[
+          { label: "Kho", value: count.warehouseName || count.warehouseId },
+          { label: "Phạm vi", value: count.scope },
+          { label: "Khu/Vị trí", value: count.zone || count.locationId || count.productId },
+          { label: "Trạng thái", value: CYCLE_COUNT_STATUS_CONFIG[count.status]?.label ?? count.status },
+          { label: "Ngày tạo", value: formatDate(count.createdAt) },
+          { label: "Ngày lịch", value: formatDate(count.scheduledAt) },
+        ]}
+        columns={[
+          { key: "sku", label: "Mã hàng" },
+          { key: "name", label: "Tên sản phẩm" },
+          { key: "location", label: "Vị trí" },
+          { key: "lot", label: "Lô" },
+          { key: "systemQty", label: "Tồn hệ thống", align: "right" },
+          { key: "countedQty", label: "Số thực tế", align: "right" },
+          { key: "variance", label: "Chênh lệch", align: "right" },
+          { key: "note", label: "Ghi chú" },
+        ]}
+        rows={lines.map((line) => {
+          const systemQty = line.systemQty ?? line.expectedQty ?? 0;
+          const countedQty = line.countedQty ?? line.receivedQty ?? actualCounts[line.id] ?? "";
+          const variance =
+            line.discrepancy ??
+            line.varianceQty ??
+            (typeof countedQty === "number" ? countedQty - systemQty : "");
+
+          return {
+            sku: line.productSku || line.productId,
+            name: line.productName || "Sản phẩm chưa xác định",
+            location: line.locationCode || line.locationId,
+            lot: line.lotNumber,
+            systemQty,
+            countedQty,
+            variance,
+            note: notesByLine[line.id] || line.notes || line.note,
+          };
+        })}
+        note={count.description}
+        signatures={["Người kiểm kê", "Thủ kho", "Người duyệt"]}
+      />
     </DetailPageLayout>
   );
 }

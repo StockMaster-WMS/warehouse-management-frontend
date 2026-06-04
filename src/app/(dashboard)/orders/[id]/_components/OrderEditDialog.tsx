@@ -14,8 +14,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiErrMessage } from "@/types/api";
-import type { SalesOrder } from "@/types/sales-order";
+import { SALES_ORDER_PRIORITY_OPTIONS, type SalesOrder } from "@/types/sales-order";
 import { useUpdateSalesOrderMutation } from "@/store/services/order.service";
 
 type WarehouseOption = { value: string; label: string };
@@ -38,7 +45,7 @@ function buildInitialForm(so: SalesOrder) {
     city: a?.city ?? "",
     country: (a?.country ?? "VN").trim() || "VN",
     warehouseId: so.warehouseId ?? "",
-    priority: String(so.priority ?? 5),
+    priority: String(so.priority ?? 1),
   };
 }
 
@@ -80,7 +87,7 @@ function OrderEditDialogContent({
     }
     const p = Number(priority);
     if (!Number.isInteger(p) || p < 1) {
-      toast.error("Độ ưu tiên phải là số nguyên ≥ 1");
+      toast.error("Mức độ ưu tiên không hợp lệ");
       return;
     }
     try {
@@ -150,8 +157,25 @@ function OrderEditDialogContent({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Độ ưu tiên</label>
-            <Input value={priority} onChange={(e) => setPriority(e.target.value)} inputMode="numeric" />
+            <label className="text-xs font-medium text-muted-foreground">Mức độ ưu tiên</label>
+            <Select
+              value={priority}
+              onValueChange={(value) => {
+                if (!value) return;
+                setPriority(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn mức ưu tiên" />
+              </SelectTrigger>
+              <SelectContent>
+                {SALES_ORDER_PRIORITY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Địa chỉ (dòng 1)</label>

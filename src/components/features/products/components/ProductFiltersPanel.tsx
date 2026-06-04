@@ -10,6 +10,7 @@ import { CategoryTreeSelectItems } from "@/components/features/CategoryTreeSelec
 import type { ApiResponse, PagedResponse } from "@/types/api";
 import type { Category } from "@/types/category";
 import type { Warehouse } from "@/types/warehouse";
+import type { Supplier } from "@/types/supplier";
 
 type OptionResponse<T> = ApiResponse<PagedResponse<T>> | undefined;
 
@@ -22,10 +23,12 @@ interface ProductFiltersPanelProps {
   statusFilter: "" | "ACTIVE" | "INACTIVE";
   categoryFilter: string;
   warehouseFilter: string;
+  supplierFilter: string;
   advancedCount: number;
   onStatusChange: (status: "" | "ACTIVE" | "INACTIVE" | null) => void;
   onCategoryChange: (categoryId: string | null) => void;
   onWarehouseChange: (warehouseId: string | null) => void;
+  onSupplierChange: (supplierId: string | null) => void;
   categoryOptionsData: OptionResponse<Category>;
   categoriesLoading: boolean;
   categoriesError: unknown;
@@ -34,6 +37,10 @@ interface ProductFiltersPanelProps {
   warehousesLoading: boolean;
   warehousesError: unknown;
   onRefetchWarehouses: () => void;
+  supplierOptionsData: OptionResponse<Supplier>;
+  suppliersLoading: boolean;
+  suppliersError: unknown;
+  onRefetchSuppliers: () => void;
 }
 
 export function ProductFiltersPanel({
@@ -41,10 +48,12 @@ export function ProductFiltersPanel({
   statusFilter,
   categoryFilter,
   warehouseFilter,
+  supplierFilter,
   advancedCount,
   onStatusChange,
   onCategoryChange,
   onWarehouseChange,
+  onSupplierChange,
   categoryOptionsData,
   categoriesLoading,
   categoriesError,
@@ -53,9 +62,14 @@ export function ProductFiltersPanel({
   warehousesLoading,
   warehousesError,
   onRefetchWarehouses,
+  supplierOptionsData,
+  suppliersLoading,
+  suppliersError,
+  onRefetchSuppliers,
 }: ProductFiltersPanelProps) {
   const categoryItems = categoryOptionsData?.data?.content;
   const warehouseItems = warehouseOptionsData?.data?.content;
+  const supplierItems = supplierOptionsData?.data?.content;
 
   return (
     <AdvancedFilterPanel
@@ -87,6 +101,16 @@ export function ProductFiltersPanel({
                 <span className="font-semibold text-slate-800 dark:text-slate-100">
                   {findById(warehouseItems, warehouseFilter)?.code ??
                     findById(warehouseItems, warehouseFilter)?.name ??
+                    "—"}
+                </span>
+              </span>
+            ) : null}
+            {supplierFilter ? (
+              <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                NCC:{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-100">
+                  {findById(supplierItems, supplierFilter)?.name ??
+                    findById(supplierItems, supplierFilter)?.code ??
                     "—"}
                 </span>
               </span>
@@ -160,6 +184,48 @@ export function ProductFiltersPanel({
               itemClassName="rounded-lg"
             />
           ) : null}
+        </SelectContent>
+      </Select>
+
+      <Select value={supplierFilter} onValueChange={(v) => onSupplierChange(v)}>
+        <SelectTrigger className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-white sm:max-w-64 sm:w-60 dark:border-slate-800 dark:bg-slate-900">
+          <SelectValue
+            placeholder={
+              suppliersLoading
+                ? "Đang tải NCC..."
+                : suppliersError
+                  ? "Lỗi tải NCC"
+                  : "Tất cả nhà cung cấp"
+            }
+          >
+            {(val) => {
+              if (!val) return "Tất cả nhà cung cấp";
+              const s = findById(supplierItems, val);
+              return s ? `${s.name} (${s.code || "—"})` : "Đang tải…";
+            }}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-72 rounded-xl">
+          {suppliersError ? (
+            <div className="px-2 py-1.5 text-xs text-rose-500">
+              Không tải được danh sách nhà cung cấp.
+              <button
+                type="button"
+                onClick={() => onRefetchSuppliers()}
+                className="ml-1 underline"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : null}
+          <SelectItem value="" className="rounded-lg">
+            Tất cả nhà cung cấp
+          </SelectItem>
+          {supplierItems?.map((s) => (
+            <SelectItem key={s.id} value={s.id} className="rounded-lg">
+              {s.name} {s.code ? `(${s.code})` : ""}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

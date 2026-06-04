@@ -61,9 +61,11 @@ export default function ProductsPage() {
           statusFilter={logic.statusFilter}
           categoryFilter={logic.categoryFilter}
           warehouseFilter={logic.warehouseFilter}
+          supplierFilter={logic.supplierFilter}
           onStatusChange={logic.setStatusFilter}
           onCategoryChange={logic.setCategoryFilter}
           onWarehouseChange={logic.setWarehouseFilter}
+          onSupplierChange={logic.setSupplierFilter}
           categoryOptionsData={logic.categoryOptionsData}
           categoriesLoading={logic.categoriesLoading}
           categoriesError={logic.categoriesError}
@@ -72,6 +74,10 @@ export default function ProductsPage() {
           warehousesLoading={logic.warehousesLoading}
           warehousesError={logic.warehousesError}
           onRefetchWarehouses={logic.refetchWarehouses}
+          supplierOptionsData={logic.supplierOptionsData}
+          suppliersLoading={logic.suppliersLoading}
+          suppliersError={logic.suppliersError}
+          onRefetchSuppliers={logic.refetchSuppliers}
           isFetching={logic.isFetching}
           onRefresh={logic.refetch}
         />

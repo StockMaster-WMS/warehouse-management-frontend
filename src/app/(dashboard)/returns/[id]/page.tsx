@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Loader2,
   Package,
+  Printer,
   RefreshCw,
   Warehouse,
   XCircle,
@@ -67,6 +68,7 @@ import type { StatusConfig } from "@/components/detail-page";
 import { useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 import type { ReturnLine, ReturnStatus, ReturnType } from "@/types/returns";
+import { PrintableDocumentModal } from "@/components/features/PrintableDocumentModal";
 
 const RMA_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
   dateStyle: "short",
@@ -183,6 +185,7 @@ export default function RMADetailPage() {
   const [dispositionNote, setDispositionNote] = useState("");
   const [statusDialog, setStatusDialog] = useState<"reject" | "cancel" | null>(null);
   const [statusReason, setStatusReason] = useState("");
+  const [printOpen, setPrintOpen] = useState(false);
 
   const returnLocationCondition = receiveForm.condition?.trim() || "QUARANTINE";
   const { data: locationsRes, isLoading: locationsLoading, isFetching: locationsFetching } = useGetReturnLocationsQuery(
@@ -458,6 +461,10 @@ export default function RMADetailPage() {
               <RefreshCw className={cn("mr-2 size-4", isFetching && "animate-spin")} />
               Làm mới
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
+              <Printer className="mr-2 size-4" />
+              In phiếu
+            </Button>
             {canReject ? <Button size="sm" variant="outline" onClick={() => { setStatusReason(""); setStatusDialog("reject"); }} disabled={isRejecting}><XCircle className="mr-2 size-4" />Từ chối</Button> : null}
             {canCancel ? <Button size="sm" variant="outline" onClick={() => { setStatusReason(""); setStatusDialog("cancel"); }} disabled={isCancelling}><Ban className="mr-2 size-4" />Hủy</Button> : null}
             {canApprove ? <Button size="sm" onClick={handleApprove} disabled={isApproving}><CheckCircle2 className="mr-2 size-4" />Duyệt</Button> : null}
@@ -602,6 +609,45 @@ export default function RMADetailPage() {
           </DetailSection>
         ) : null}
       </DetailGrid>
+
+      <PrintableDocumentModal
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        printAreaId="print-area-return"
+        title="Phiếu trả hàng"
+        documentNo={displayCode(rma.rmaNumber)}
+        subtitle={RETURN_TYPE_LABEL[rma.returnType]}
+        meta={[
+          { label: "Kho xử lý", value: warehouseLabel },
+          { label: isCustomerReturn ? "Khách hàng" : "Nhà cung cấp", value: isCustomerReturn ? rma.customerName : rma.supplierName },
+          { label: "Đơn liên quan", value: rma.orderNumber || rma.orderId || rma.salesOrderId },
+          { label: "Trạng thái", value: RETURN_STATUS_CONFIG[rma.status]?.label ?? rma.status },
+          { label: "Ngày tạo", value: formatDateTime(rma.createdAt) },
+          { label: "Lý do", value: rma.reason },
+        ]}
+        columns={[
+          { key: "sku", label: "Mã hàng" },
+          { key: "name", label: "Tên sản phẩm" },
+          { key: "lot", label: "Lô" },
+          { key: "expected", label: "Dự kiến", align: "right" },
+          { key: "received", label: isSupplierReturn ? "Đã xuất" : "Đã nhận", align: "right" },
+          { key: "location", label: "Vị trí" },
+          { key: "condition", label: "Tình trạng" },
+          { key: "disposition", label: "Xử lý" },
+        ]}
+        rows={lines.map((line) => ({
+          sku: line.productSku || line.productId,
+          name: line.productName || "Sản phẩm chưa xác định",
+          lot: line.lotNumber,
+          expected: line.expectedQty,
+          received: isSupplierReturn && ["APPROVED", "COMPLETED"].includes(rma.status) ? line.expectedQty : line.receivedQty,
+          location: line.receivedLocationCode || line.returnLocationCode || line.dispositionLocationCode,
+          condition: line.condition ? (CONDITION_LABEL[line.condition] ?? line.condition) : "",
+          disposition: line.dispositionAction ? (DISPOSITION_LABEL[line.dispositionAction] ?? line.dispositionAction) : "",
+        }))}
+        note={rma.note || rma.rejectionReason || rma.cancelReason}
+        signatures={["Người lập phiếu", isCustomerReturn ? "Người nhận hàng" : "Người giao hàng", "Thủ kho"]}
+      />
 
       <Dialog open={Boolean(dispositionLine)} onOpenChange={(open) => !open && closeDispositionDialog()}>
         <DialogContent className="sm:max-w-lg">

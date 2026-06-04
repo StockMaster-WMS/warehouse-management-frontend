@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { SalesOrder } from "@/types/sales-order";
-import { formatShippingShort } from "@/types/sales-order";
+import { formatShippingShort, salesOrderPriorityLabel } from "@/types/sales-order";
 import type { SoItem } from "@/types/so-item";
 import type { Product } from "@/types/product";
 
@@ -203,7 +203,7 @@ export function OrderPrintModal({
                 <span className="font-semibold inline-block w-24">
                   Mức ưu tiên:
                 </span>{" "}
-                {salesOrder.priority || 0}
+                {salesOrderPriorityLabel(salesOrder.priority)}
               </p>
             </div>
           </div>
