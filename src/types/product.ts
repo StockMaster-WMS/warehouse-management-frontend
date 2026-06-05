@@ -25,6 +25,7 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  createdByName?: string | null;
 }
 
 export interface UpdateProductPayload {
@@ -63,7 +64,7 @@ export interface CreateProductPayload {
   isFragile?: boolean;
   isHazmat?: boolean;
   isHeavy?: boolean;
-  createdBy: string;
+  createdBy?: string;
 }
 
 export interface ProductImportRowError {

@@ -71,6 +71,13 @@ export default function ProductDetailPage() {
     return new Date(value).toLocaleString("vi-VN");
   };
 
+  const formatCreator = (name?: string | null, id?: string | null) => {
+    const trimmedName = name?.trim();
+    if (trimmedName) return trimmedName;
+    if (!id || id === "00000000-0000-0000-0000-000000000000") return "Hệ thống";
+    return id;
+  };
+
   const copySku = async (sku: string) => {
     try {
       await navigator.clipboard.writeText(sku);
@@ -175,7 +182,11 @@ export default function ProductDetailPage() {
                   />
                   <ProductInfoField label="Tạo lúc" value={formatDateTime(product.createdAt)} />
                   <ProductInfoField label="Cập nhật lúc" value={formatDateTime(product.updatedAt)} />
-                  <ProductInfoField label="Người tạo" value={product.createdBy || "—"} mono />
+                  <ProductInfoField
+                    label="Người tạo"
+                    value={formatCreator(product.createdByName, product.createdBy)}
+                    mono={!product.createdByName}
+                  />
                 </div>
               </section>
 
