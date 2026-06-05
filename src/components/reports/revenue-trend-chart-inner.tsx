@@ -17,14 +17,16 @@ import type { RevenueTrend } from "./revenue-trend-chart";
 
 export function RevenueTrendChartInner({ data }: { data?: RevenueTrend[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [chartWidth, setChartWidth] = useState(0);
+  const [chartWidth, setChartWidth] = useState<number>();
 
   useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
 
+    const initialWidth = Math.max(1, Math.floor(node.clientWidth));
+    setChartWidth(initialWidth);
+
     const updateWidth = () => setChartWidth(Math.max(1, Math.floor(node.clientWidth)));
-    updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
     observer.observe(node);
@@ -42,7 +44,7 @@ export function RevenueTrendChartInner({ data }: { data?: RevenueTrend[] }) {
 
   return (
     <div ref={containerRef} className="h-64 min-h-64 w-full min-w-0">
-      {chartWidth > 0 ? (
+      {chartWidth ? (
         <BarChart width={chartWidth} height={256} data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
           <XAxis

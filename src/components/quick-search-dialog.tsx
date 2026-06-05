@@ -120,6 +120,7 @@ function QuickSearchDialogContent({
         <div
           className="flex max-h-[min(70vh,32rem)] flex-col outline-none"
           role="combobox"
+          tabIndex={-1}
           aria-controls="quick-search-listbox"
           aria-expanded="true"
           aria-haspopup="listbox"

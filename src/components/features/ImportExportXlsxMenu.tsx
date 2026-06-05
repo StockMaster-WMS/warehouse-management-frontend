@@ -258,7 +258,7 @@ export function ImportExportXlsxMenu({
                   <tbody>
                     {importPreview.dataRows.slice(0, 5).map((row, ri) => (
                       <tr
-                        key={`preview-${ri}`}
+                        key={`preview-${row.join("\u001f") || ri}`}
                         className="border-b border-slate-100 dark:border-slate-800"
                       >
                         {importPreview.headers.map((_, ci) => (

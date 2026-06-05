@@ -430,7 +430,7 @@ export function SoExcelImportDialog({
                       </thead>
                       <tbody>
                         {preview.dataRows.slice(0, 5).map((row, rowIndex) => (
-                          <tr key={`preview-row-${rowIndex}`} className="border-b border-slate-100 dark:border-slate-800">
+                          <tr key={`preview-row-${row.join("\u001f") || rowIndex}`} className="border-b border-slate-100 dark:border-slate-800">
                             {preview.headers.map((_, colIndex) => (
                               <td
                                 key={`preview-cell-${rowIndex}-${colIndex}`}
@@ -546,7 +546,7 @@ export function SoExcelImportDialog({
                   {uploading ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
-                      Đang import...
+                      Đang import…
                     </>
                   ) : (
                     <>

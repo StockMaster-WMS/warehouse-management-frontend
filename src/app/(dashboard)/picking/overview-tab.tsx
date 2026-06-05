@@ -3,7 +3,7 @@
 import React, { Dispatch, useEffect, useMemo, useReducer } from "react";
 // removed card imports
 import { type PickingItem } from "@/types/picking-item";
-import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Users } from "lucide-react";
+import { Archive, Eye, MapPin, ChevronDown, ChevronRight, Package2, Printer, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ import { useGetWarehouseStaffQuery } from "@/store/services/user-management.serv
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import type { ManagedUser } from "@/types/user-management";
 import type { Warehouse } from "@/types/warehouse";
+import { PrintableDocumentModal } from "@/components/features/PrintableDocumentModal";
 
 interface GroupedPicking {
     soNumber: string;
@@ -132,7 +133,9 @@ function assigneeDisplayName(assigneeId: string | null | undefined, assigneeName
 }
 
 function groupAssigneeSummary(group: GroupedPicking, assigneeNameById: Map<string, string>) {
-    const assigneeIds = Array.from(new Set(group.items.map((item) => item.assigneeId).filter(Boolean) as string[]));
+    const assigneeIds = Array.from(
+        new Set(group.items.flatMap((item) => (item.assigneeId ? [item.assigneeId] : []))),
+    );
     if (assigneeIds.length === 0) {
         return "Chưa giao nhân viên";
     }
@@ -163,6 +166,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
     const { searchTerm, selectedId, expandedGroups, advancedOpen, page, pageSize, status, datePreset, assignGroup, assignAssigneeId } = state;
     const dateRange = useMemo(() => getOperationDateRange(datePreset), [datePreset]);
     const [assignTask, { isLoading: isAssigning }] = useAssignPickingTaskMutation();
+    const [printGroup, setPrintGroup] = React.useState<GroupedPicking | null>(null);
     const canAssignPicking = useHasPermissions(PICKING_ASSIGN_ROLES);
     const assignWarehouseId = useMemo(() => getGroupWarehouseId(assignGroup), [assignGroup]);
     const { data: warehousesData } = useGetWarehousesQuery({
@@ -430,6 +434,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                     isLoading={isLoading}
                     onAssignGroup={openAssignDialog}
                     onDispatch={dispatch}
+                    onPrintGroup={setPrintGroup}
                     onToggleGroup={toggleGroup}
                     warehouseById={warehouseById}
                     assigneeNameById={assigneeNameById}
@@ -474,6 +479,42 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                 }}
                 onSelectAssignee={(assignAssigneeId) => dispatch({ assignAssigneeId })}
             />
+            {printGroup ? (
+                <PrintableDocumentModal
+                    open={!!printGroup}
+                    onOpenChange={(open) => {
+                        if (!open) setPrintGroup(null);
+                    }}
+                    printAreaId="print-area-picking"
+                    title="Phiếu picking"
+                    documentNo={printGroup.soNumber}
+                    subtitle="Lệnh lấy hàng xuất kho"
+                    meta={[
+                        { label: "Kho", value: warehouseDisplayName(warehouseById.get(getGroupWarehouseId(printGroup)), getGroupWarehouseId(printGroup)) },
+                        { label: "Trạng thái", value: printGroup.status === "PICKED" ? "Hoàn tất" : printGroup.status === "PARTIAL" ? "Đang lấy" : "Chờ lấy" },
+                        { label: "Tổng SL cần lấy", value: printGroup.totalToPick },
+                        { label: "Đã lấy", value: printGroup.totalPicked },
+                        { label: "Số dòng", value: printGroup.items.length },
+                        { label: "Nhân viên", value: groupAssigneeSummary(printGroup, assigneeNameById) },
+                    ]}
+                    columns={[
+                        { key: "sku", label: "Mã hàng" },
+                        { key: "name", label: "Tên sản phẩm" },
+                        { key: "barcode", label: "Mã vạch" },
+                        { key: "qtyToPick", label: "Cần lấy", align: "right" },
+                        { key: "qtyPicked", label: "Đã lấy", align: "right" },
+                    ]}
+                    rows={printGroup.items.map((item) => ({
+                        sku: item.productSku || item.productCode || item.productId,
+                        name: item.productName || "Sản phẩm chưa xác định",
+                        barcode: item.barcodeEan13,
+                        qtyToPick: item.qtyToPick,
+                        qtyPicked: item.qtyPicked ?? 0,
+                    }))}
+                    note="Nhân viên lấy hàng kiểm tra đúng mã hàng và số lượng trước khi xác nhận hoàn tất."
+                    signatures={["Người lập phiếu", "Nhân viên lấy hàng", "Thủ kho"]}
+                />
+            ) : null}
         </div>
     );
 }
@@ -572,7 +613,7 @@ function AssignStaffDialog({
                             ) : isStaffLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={3} className="py-10 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                        Đang tải nhân viên...
+                                        Đang tải nhân viên…
                                     </TableCell>
                                 </TableRow>
                             ) : isStaffError ? (
@@ -661,6 +702,7 @@ function PickingOverviewTable({
     isLoading,
     onAssignGroup,
     onDispatch,
+    onPrintGroup,
     onToggleGroup,
     warehouseById,
     assigneeNameById,
@@ -672,6 +714,7 @@ function PickingOverviewTable({
     isLoading: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
+    onPrintGroup: (group: GroupedPicking) => void;
     onToggleGroup: (so: string) => void;
     warehouseById: Map<string, Warehouse>;
     assigneeNameById: Map<string, string>;
@@ -704,6 +747,7 @@ function PickingOverviewTable({
                                 isAssigning={isAssigning}
                                 onAssignGroup={onAssignGroup}
                                 onDispatch={onDispatch}
+                                onPrintGroup={onPrintGroup}
                                 onToggleGroup={onToggleGroup}
                                 warehouseById={warehouseById}
                                 assigneeNameById={assigneeNameById}
@@ -751,6 +795,7 @@ function PickingGroupRows({
     isAssigning,
     onAssignGroup,
     onDispatch,
+    onPrintGroup,
     onToggleGroup,
     warehouseById,
     assigneeNameById,
@@ -761,6 +806,7 @@ function PickingGroupRows({
     isAssigning: boolean;
     onAssignGroup: (event: React.MouseEvent, group: GroupedPicking) => void;
     onDispatch: Dispatch<Partial<OverviewState>>;
+    onPrintGroup: (group: GroupedPicking) => void;
     onToggleGroup: (so: string) => void;
     warehouseById: Map<string, Warehouse>;
     assigneeNameById: Map<string, string>;
@@ -803,6 +849,19 @@ function PickingGroupRows({
                     </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right pr-6 flex justify-end gap-2 items-center">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onPrintGroup(group);
+                        }}
+                        className="h-8 gap-1.5 rounded-lg"
+                    >
+                        <Printer className="size-3.5" />
+                        In phiếu
+                    </Button>
                     {canAssignPicking ? (
                         <Button
                             type="button"

@@ -5,6 +5,7 @@ import { ProductFiltersPanel } from "@/components/features/products/components/P
 import type { ApiResponse, PagedResponse } from "@/types/api";
 import type { Category } from "@/types/category";
 import type { Warehouse } from "@/types/warehouse";
+import type { Supplier } from "@/types/supplier";
 
 type ProductsSearchSectionProps = {
     searchInput: string;
@@ -17,9 +18,11 @@ type ProductsSearchSectionProps = {
     statusFilter: "" | "ACTIVE" | "INACTIVE";
     categoryFilter: string;
     warehouseFilter: string;
+    supplierFilter: string;
     onStatusChange: (status: "" | "ACTIVE" | "INACTIVE" | null) => void;
     onCategoryChange: (categoryId: string | null) => void;
     onWarehouseChange: (warehouseId: string | null) => void;
+    onSupplierChange: (supplierId: string | null) => void;
     categoryOptionsData: ApiResponse<PagedResponse<Category>> | undefined;
     categoriesLoading: boolean;
     categoriesError: unknown;
@@ -28,6 +31,10 @@ type ProductsSearchSectionProps = {
     warehousesLoading: boolean;
     warehousesError: unknown;
     onRefetchWarehouses: () => void;
+    supplierOptionsData: ApiResponse<PagedResponse<Supplier>> | undefined;
+    suppliersLoading: boolean;
+    suppliersError: unknown;
+    onRefetchSuppliers: () => void;
     isFetching?: boolean;
     onRefresh: () => void;
     noContainer?: boolean;
@@ -44,9 +51,11 @@ export function ProductsSearchSection({
     statusFilter,
     categoryFilter,
     warehouseFilter,
+    supplierFilter,
     onStatusChange,
     onCategoryChange,
     onWarehouseChange,
+    onSupplierChange,
     categoryOptionsData,
     categoriesLoading,
     categoriesError,
@@ -55,6 +64,10 @@ export function ProductsSearchSection({
     warehousesLoading,
     warehousesError,
     onRefetchWarehouses,
+    supplierOptionsData,
+    suppliersLoading,
+    suppliersError,
+    onRefetchSuppliers,
     isFetching = false,
     onRefresh,
     noContainer = false,
@@ -86,10 +99,12 @@ export function ProductsSearchSection({
                         statusFilter={statusFilter}
                         categoryFilter={categoryFilter}
                         warehouseFilter={warehouseFilter}
+                        supplierFilter={supplierFilter}
                         advancedCount={advancedCount}
                         onStatusChange={onStatusChange}
                         onCategoryChange={onCategoryChange}
                         onWarehouseChange={onWarehouseChange}
+                        onSupplierChange={onSupplierChange}
                         categoryOptionsData={categoryOptionsData}
                         categoriesLoading={categoriesLoading}
                         categoriesError={categoriesError}
@@ -98,6 +113,10 @@ export function ProductsSearchSection({
                         warehousesLoading={warehousesLoading}
                         warehousesError={warehousesError}
                         onRefetchWarehouses={onRefetchWarehouses}
+                        supplierOptionsData={supplierOptionsData}
+                        suppliersLoading={suppliersLoading}
+                        suppliersError={suppliersError}
+                        onRefetchSuppliers={onRefetchSuppliers}
                     />
                 ) : null
             }

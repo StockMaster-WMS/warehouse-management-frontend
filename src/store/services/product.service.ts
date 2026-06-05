@@ -15,6 +15,7 @@ export type GetProductsParams = {
   keyword?: string;
   categoryId?: string;
   warehouseId?: string;
+  supplierId?: string;
   status?: "ACTIVE" | "INACTIVE";
 };
 
@@ -26,6 +27,7 @@ function buildProductsQueryParams(params: GetProductsParams) {
     keyword,
     categoryId,
     warehouseId,
+    supplierId,
     status,
   } = params;
 
@@ -34,16 +36,18 @@ function buildProductsQueryParams(params: GetProductsParams) {
   if (k) query.keyword = k;
   if (categoryId?.trim()) query.categoryId = categoryId.trim();
   if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
+  if (supplierId?.trim()) query.supplierId = supplierId.trim();
   if (status) query.status = status;
   return query;
 }
 
 function buildProductExportParams(params: Omit<GetProductsParams, "page" | "size" | "sort">) {
-  const { keyword, categoryId, warehouseId, status } = params;
+  const { keyword, categoryId, warehouseId, supplierId, status } = params;
   const query: Record<string, string> = {};
   if (keyword?.trim()) query.keyword = keyword.trim();
   if (categoryId?.trim()) query.categoryId = categoryId.trim();
   if (warehouseId?.trim()) query.warehouseId = warehouseId.trim();
+  if (supplierId?.trim()) query.supplierId = supplierId.trim();
   if (status) query.status = status;
   return query;
 }

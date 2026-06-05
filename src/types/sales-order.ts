@@ -35,6 +35,14 @@ export interface SalesOrder {
   updatedAt?: string | null;
 }
 
+export const SALES_ORDER_PRIORITY_OPTIONS = [
+  { value: "1", label: "Ưu tiên cao nhất" },
+  { value: "2", label: "Ưu tiên cao" },
+  { value: "3", label: "Ưu tiên trung bình" },
+  { value: "4", label: "Ưu tiên thấp" },
+  { value: "5", label: "Ưu tiên thấp nhất" },
+] as const;
+
 export type UpdateSalesOrderPayload = {
   soNumber: string;
   customerId?: string | null;
@@ -44,6 +52,11 @@ export type UpdateSalesOrderPayload = {
   priority?: number | null;
   status?: string | null;
 };
+
+export function salesOrderPriorityLabel(priority: number | string | null | undefined): string {
+  const value = String(priority ?? "");
+  return SALES_ORDER_PRIORITY_OPTIONS.find((option) => option.value === value)?.label ?? (value || "—");
+}
 
 export function salesOrderStatusLabel(status: SalesOrderStatus | null | undefined): string {
   switch (status) {

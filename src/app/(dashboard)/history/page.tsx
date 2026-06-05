@@ -133,7 +133,7 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   WAREHOUSE: "Kho",
   LOCATION: "Vị trí",
   USER: "Người dùng",
-  AI: "Trợ lý thông minh",
+  AI: "Trợ lý kho",
   SYSTEM: "Hệ thống",
 };
 

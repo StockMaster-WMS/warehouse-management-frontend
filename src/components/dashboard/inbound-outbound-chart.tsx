@@ -32,7 +32,7 @@ const viNumberFormatter = new Intl.NumberFormat("vi-VN");
 
 export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [chartWidth, setChartWidth] = useState(0);
+  const [chartWidth, setChartWidth] = useState<number>();
   const chartData = useMemo(() => {
     const source = data?.length ? data : EMPTY_DATA;
     return source.map((item) => ({
@@ -45,8 +45,10 @@ export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
     const node = containerRef.current;
     if (!node) return;
 
+    const initialWidth = Math.max(1, Math.floor(node.clientWidth));
+    setChartWidth(initialWidth);
+
     const updateWidth = () => setChartWidth(Math.max(1, Math.floor(node.clientWidth)));
-    updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
     observer.observe(node);
@@ -55,7 +57,7 @@ export function InboundOutboundChart({ data }: InboundOutboundChartProps) {
 
   return (
     <div ref={containerRef} className="h-[320px] min-h-[320px] w-full min-w-0">
-      {chartWidth > 0 ? (
+      {chartWidth ? (
         <ComposedChart
           width={chartWidth}
           height={320}

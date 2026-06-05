@@ -257,7 +257,10 @@ export function AppSidebar() {
 
           <SidebarMenuButton
             render={
-              <a href="mailto:admin@stockmaster.local?subject=Can%20ho%20tro%20StockMaster" />
+              <a
+                href="mailto:admin@stockmaster.local?subject=Can%20ho%20tro%20StockMaster"
+                aria-label="Trợ giúp và hỗ trợ"
+              />
             }
             tooltip="Trợ giúp"
             className="text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-900"

@@ -170,10 +170,11 @@ export function BarcodeScanner({
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      if (duplicateScanTimerRef.current) {
-        clearTimeout(duplicateScanTimerRef.current);
-        duplicateScanTimerRef.current = null;
+      const duplicateScanTimer = duplicateScanTimerRef.current;
+      if (duplicateScanTimer) {
+        clearTimeout(duplicateScanTimer);
       }
+      duplicateScanTimerRef.current = null;
       if (scannerRef.current) {
         const scanner = scannerRef.current;
         scannerRef.current = null;

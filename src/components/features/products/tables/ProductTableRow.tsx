@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { getProductCategoryDisplayName } from "@/lib/product-display";
+import { formatProductBaseUnit, getProductCategoryDisplayName } from "@/lib/product-display";
 import { statusTone } from "@/lib/design-system";
 import {
   DropdownMenu,
@@ -50,6 +50,7 @@ export const ProductTableRow = memo(function ProductTableRow({
     !categoryName && product.categoryId ? "Danh mục chưa xác định" : "";
   const qtyOnHand = product.qtyOnHand ?? product.currentStock;
   const qtyAvailable = product.qtyAvailable ?? product.availableStock;
+  const baseUnitLabel = formatProductBaseUnit(product.baseUnit);
   const isLowStock =
     typeof qtyAvailable === "number" &&
     product.minStockQty != null &&
@@ -94,14 +95,14 @@ export const ProductTableRow = memo(function ProductTableRow({
           </div>
         </TableCell>
         <TableCell className="p-3 text-center align-middle">
-          <span className="text-xs font-medium uppercase text-muted-foreground">
-            {product.baseUnit?.trim() || "—"}
+          <span className="text-xs font-medium text-muted-foreground">
+            {baseUnitLabel}
           </span>
         </TableCell>
         <TableCell className="p-3 text-center align-middle">
           {product.primarySupplierId ? (
-            <span className="text-xs font-medium text-success">
-              Đã gán
+            <span className="line-clamp-2 text-xs font-medium text-success">
+              {product.primarySupplierName?.trim() || "Đã gán"}
             </span>
           ) : (
             <span className="text-xs text-muted-foreground">Chưa gán</span>
@@ -202,8 +203,8 @@ export const ProductTableRow = memo(function ProductTableRow({
             </div>
             <div className="space-y-1">
               <p className="ui-label">Đơn vị</p>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
-                {product.baseUnit?.trim() || "—"}
+              <p className="text-xs font-medium text-muted-foreground">
+                {baseUnitLabel}
               </p>
             </div>
           </div>
@@ -219,7 +220,7 @@ export const ProductTableRow = memo(function ProductTableRow({
               <p className="ui-label">NCC</p>
               <p className="text-xs font-medium">
                 {product.primarySupplierId ? (
-                  <span className="text-success">Đã gán</span>
+                  <span className="text-success">{product.primarySupplierName?.trim() || "Đã gán"}</span>
                 ) : (
                   <span className="text-muted-foreground">Chưa gán</span>
                 )}

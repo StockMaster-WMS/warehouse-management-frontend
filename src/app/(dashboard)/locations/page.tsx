@@ -22,6 +22,10 @@ import { ImportExportXlsxMenu } from "@/components/features/ImportExportXlsxMenu
 import { PermissionControl, useHasPermissions } from "@/components/permission-control";
 import { ADMIN_MANAGER_ROLES } from "@/lib/access-control";
 
+function buildDatedFilename(prefix: string) {
+    return `${prefix}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+}
+
 export default function LocationsPage() {
     const [barcodeLocation, setBarcodeLocation] = useState<Location | null>(null);
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
@@ -94,7 +98,7 @@ export default function LocationsPage() {
                                 ["warehouseCode", "zone", "aisle", "rack", "level", "bin", "locationType", "isActive"],
                                 ["WH-A", "MAIN", "A01", "R01", "1", "B01", "PICKING", "TRUE"],
                             ]}
-                            getExportFilename={() => `locations-${new Date().toISOString().slice(0, 10)}.xlsx`}
+                            getExportFilename={() => buildDatedFilename("locations")}
                             getExportMatrix={() => [
                                 ["code", "warehouse", "zone", "aisle", "rack", "level", "bin", "locationType", "status"],
                                 ...locations.map((location) => [

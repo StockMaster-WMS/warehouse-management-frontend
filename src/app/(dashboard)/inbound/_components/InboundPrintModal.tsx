@@ -1,7 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +39,29 @@ function HeaderInfoLine({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+function formatDateTime(dateVal: string | Date | number | null | undefined) {
+  if (!dateVal) return "—";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "—";
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = d.getHours().toString().padStart(2, "0");
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+  if (typeof dateVal === "string" && dateVal.length === 10) {
+    return `${day}/${month}/${year}`;
+  }
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+let clientPrintedAtSnapshot: string | null = null;
+const subscribePrintedAt = () => () => {};
+const getServerPrintedAt = () => "—";
+const getClientPrintedAt = () => {
+  clientPrintedAtSnapshot ??= formatDateTime(new Date());
+  return clientPrintedAtSnapshot;
+};
+
 export function InboundPrintModal({
   open,
   onOpenChange,
@@ -47,6 +70,12 @@ export function InboundPrintModal({
   locationLabel,
   title = "PHIẾU NHẬP KHO",
 }: InboundPrintModalProps) {
+  const printedAt = useSyncExternalStore(
+    subscribePrintedAt,
+    getClientPrintedAt,
+    getServerPrintedAt,
+  );
+
   const handlePrint = () => {
     const printContent = document.getElementById("print-area-inbound");
     if (!printContent) return;
@@ -96,23 +125,6 @@ export function InboundPrintModal({
   const printableLocationLabel =
     locationLabel || data.locationName || data.locationCode || data.locationId;
 
-  const formatDateTime = (dateVal: string | Date | number | null | undefined) => {
-    if (!dateVal) return "—";
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "—";
-    const day = d.getDate().toString().padStart(2, "0");
-    const month = (d.getMonth() + 1).toString().padStart(2, "0");
-    const year = d.getFullYear();
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    // Depending on precision needed, returning full datetime or just date
-    // Backend gives "2026-04-09", so time might be 00:00. If we just want date:
-    if (typeof dateVal === 'string' && dateVal.length === 10) {
-      return `${day}/${month}/${year}`;
-    }
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] !w-[calc(210mm+1rem)] !max-w-[calc(100vw-1rem)] overflow-auto bg-muted p-2 print:max-h-none print:!w-auto print:!max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:!max-w-[calc(210mm+1rem)]">
@@ -143,13 +155,10 @@ export function InboundPrintModal({
             <div className="space-y-1 rounded-sm bg-slate-50 px-3 py-2 text-sm">
               <HeaderInfoLine
                 label="Ngày in"
-                value={
-                  <span suppressHydrationWarning>
-                    {data.receivedDate ? formatDateTime(data.receivedDate) : formatDateTime(new Date())}
-                  </span>
-                }
+                value={data.receivedDate ? formatDateTime(data.receivedDate) : printedAt}
               />
               <HeaderInfoLine label="Kho nhập" value={warehouseLabel} />
+              <HeaderInfoLine label="Vị trí" value={printableLocationLabel || "—"} />
             </div>
           </div>
 

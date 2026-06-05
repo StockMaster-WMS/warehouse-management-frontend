@@ -66,7 +66,7 @@ export function useCreateOrderForm(warehouseIdFromUrl = "") {
   });
   const [country, setCountry] = useState("VN");
   const [warehouseId, setWarehouseIdState] = useState(warehouseIdFromUrl);
-  const [priority, setPriority] = useState("5");
+  const [priority, setPriority] = useState("1");
   const [errors, setErrors] = useState<NewOrderFormErrors>({});
   const [addressFormKey, setAddressFormKey] = useState(0);
 

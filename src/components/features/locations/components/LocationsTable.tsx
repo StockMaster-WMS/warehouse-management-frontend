@@ -1,16 +1,10 @@
 import {
-    CheckCircle2,
-    CircleOff,
     MapPin,
     MoreHorizontal,
     Pencil,
     Trash2,
     Warehouse,
     Printer,
-    ShoppingCart,
-    Package,
-    ArrowDownToLine,
-    Truck,
     X,
     Info,
 } from "lucide-react";
@@ -32,6 +26,7 @@ import {
 import { formatLocationZoneLine } from "@/components/features/locations/utils";
 import type { Location, LocationOption } from "@/types/location";
 import { Progress } from "@/components/ui/progress";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 function formatDateTime(value?: string | null) {
     if (!value) return "—";
@@ -44,16 +39,16 @@ function LocationTypeBadge({ type }: { type?: string | null }) {
     const lowerType = type.toLowerCase();
     
     if (lowerType.includes('pick')) {
-        return <Badge variant="secondary" className="flex w-max items-center gap-1.5"><ShoppingCart className="size-3" /> {type}</Badge>;
+        return <Badge variant="secondary" className="w-max">{type}</Badge>;
     }
     if (lowerType.includes('reser') || lowerType.includes('stor')) {
-        return <Badge variant="outline" className="flex w-max items-center gap-1.5 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"><Package className="size-3" /> {type}</Badge>;
+        return <Badge variant="outline" className="w-max bg-muted text-muted-foreground">{type}</Badge>;
     }
     if (lowerType.includes('receiv')) {
-        return <Badge className="flex w-max items-center gap-1.5 bg-blue-100 text-blue-800 hover:bg-blue-200 border-none dark:bg-blue-900/30 dark:text-blue-300"><ArrowDownToLine className="size-3" /> {type}</Badge>;
+        return <Badge className="w-max border-none bg-info-soft text-info-foreground hover:bg-info-soft">{type}</Badge>;
     }
     if (lowerType.includes('dispatch') || lowerType.includes('ship')) {
-        return <Badge className="flex w-max items-center gap-1.5 bg-orange-100 text-orange-800 hover:bg-orange-200 border-none dark:bg-orange-900/30 dark:text-orange-300"><Truck className="size-3" /> {type}</Badge>;
+        return <Badge className="w-max border-none bg-warning-soft text-warning-foreground hover:bg-warning-soft">{type}</Badge>;
     }
     return <Badge variant="outline">{type}</Badge>;
 }
@@ -67,17 +62,17 @@ function CapacityCell({ location }: { location: Location | LocationOption }) {
         OCCUPIED:  { label: "Đã dùng",  value: 100, barClass: "[&>div]:bg-rose-500",   textClass: "text-rose-600" },
     };
 
-    const cfg = config[status ?? ""] ?? { label: status ?? "--", value: 0, barClass: "", textClass: "text-slate-400" };
+    const cfg = config[status ?? ""] ?? { label: status ?? "--", value: 0, barClass: "", textClass: "text-muted-foreground" };
 
     return (
         <div className="flex flex-col gap-1.5 w-full">
-            <div className="flex justify-between items-center text-[10px] font-medium text-slate-500">
+            <div className="flex justify-between items-center text-[10px] font-medium text-muted-foreground">
                 <span>{cfg.label}</span>
                 {status && <span className={cfg.textClass}>{cfg.value}%</span>}
             </div>
             <Progress value={cfg.value} className={`h-1.5 ${cfg.barClass}`} />
             {(location.maxWeightKg != null || location.maxVolumeCm3 != null) && (
-                <span className="text-[9px] text-slate-400 leading-none">
+                <span className="text-[9px] text-muted-foreground leading-none">
                     {location.maxWeightKg != null && <>{location.maxWeightKg} kg</>}
                     {location.maxWeightKg != null && location.maxVolumeCm3 != null && " · "}
                     {location.maxVolumeCm3 != null && <>{location.maxVolumeCm3} cm³</>}
@@ -85,6 +80,15 @@ function CapacityCell({ location }: { location: Location | LocationOption }) {
             )}
         </div>
     );
+}
+
+function locationActiveTone(location: Location | LocationOption) {
+    if (location.isActive === false) return "danger";
+    const status = location.status?.toUpperCase();
+    if (status === "AVAILABLE") return "success";
+    if (status === "RESERVED") return "warning";
+    if (status === "OCCUPIED") return "danger";
+    return "neutral";
 }
 
 export function LocationCodeGuide() {
@@ -241,8 +245,8 @@ export function LocationsTable({
             ) : null}
             <div className="hidden md:block">
                 <Table>
-                    <TableHeader>
-                        <TableRow className="bg-slate-50/70 dark:bg-slate-800/50">
+                    <TableHeader className="ui-table-header">
+                        <TableRow>
                             <TableHead className="w-10 px-4 py-3">
                                 {canManageLocations ? (
                                     <Checkbox
@@ -252,11 +256,10 @@ export function LocationsTable({
                                     />
                                 ) : null}
                             </TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[27%]">Vị trí</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[20%]">Kho & Vùng</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">TT</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide w-[15%]">Tạo lúc</TableHead>
-                            <TableHead className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Thao tác</TableHead>
+                            <TableHead className="ui-label w-[30%] px-4 py-3">Vị trí</TableHead>
+                            <TableHead className="ui-label w-[32%] px-4 py-3">Kho & Vùng</TableHead>
+                            <TableHead className="ui-label w-[16%] px-4 py-3">Tạo lúc</TableHead>
+                            <TableHead className="ui-label px-4 py-3 text-right">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -266,15 +269,13 @@ export function LocationsTable({
                                     <TableCell className="px-4 py-3"><Skeleton className="size-4 rounded" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-52" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div></TableCell>
-                                    <TableCell className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                                    <TableCell className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-2 w-full rounded-full" /><Skeleton className="h-3 w-16" /></div></TableCell>
                                     <TableCell className="px-4 py-3"><Skeleton className="h-3 w-28" /></TableCell>
                                     <TableCell className="px-4 py-3"><div className="ml-auto flex w-max gap-1"><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /><Skeleton className="h-8 w-14 rounded-md" /></div></TableCell>
                                 </TableRow>
                             ))
                         ) : errorMessage ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="px-4 py-8 text-center">
+                                <TableCell colSpan={5} className="px-4 py-8 text-center">
                                     <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Không thể tải danh sách vị trí</p>
                                     <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errorMessage}</p>
                                     <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onRetry}>Thử lại</Button>
@@ -293,7 +294,7 @@ export function LocationsTable({
                                 ].filter(Boolean).join(" › ");
 
                                 return (
-                                    <TableRow key={location.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                    <TableRow key={location.id} className="ui-table-row">
                                         <TableCell className="px-4 py-3 align-middle">
                                             {canManageLocations ? (
                                                 <Checkbox
@@ -303,38 +304,29 @@ export function LocationsTable({
                                                 />
                                             ) : null}
                                         </TableCell>
-                                        {/* Col 1: Location code + breadcrumb */}
                                         <TableCell className="px-4 py-3">
                                             <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">{locationCode}</p>
                                             {crumbs && <p className="mt-0.5 font-mono text-[11px] text-slate-400 truncate max-w-[260px]">{crumbs}</p>}
                                         </TableCell>
 
-                                        {/* Col 2: Warehouse + zone badges */}
                                         <TableCell className="px-4 py-3">
-                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{warehouseName || "Chưa xác định"}</p>
-                                            <div className="mt-1.5 flex flex-wrap gap-1">
-                                                {location.isColdZone && <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">🧊 COLD</span>}
-                                                {location.isHazmatZone && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">⚠️ HAZMAT</span>}
-                                                {location.isHeavyZone && <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 border border-orange-200">🏋️ HEAVY</span>}
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="text-xs font-semibold text-foreground/85">{warehouseName || "Chưa xác định"}</p>
+                                                <StatusBadge tone={locationActiveTone(location)} dot={false}>
+                                                    {location.isActive === false ? "Ngừng dùng" : location.status || "—"}
+                                                </StatusBadge>
+                                            </div>
+                                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                                {location.isColdZone && <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">COLD</span>}
+                                                {location.isHazmatZone && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">HAZMAT</span>}
+                                                {location.isHeavyZone && <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 border border-orange-200">HEAVY</span>}
                                                 {!location.isColdZone && !location.isHazmatZone && !location.isHeavyZone && location.zone && (
                                                     <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">{location.zone}</span>
                                                 )}
+                                                <LocationTypeBadge type={location.locationType} />
                                             </div>
-                                        </TableCell>
-
-                                        {/* Col 3: Type */}
-                                        {/* <TableCell className="px-4 py-3">
-                                            <LocationTypeBadge type={location.locationType} />
-                                        </TableCell> */}
-
-                                        {/* Col 4: Capacity + active state */}
-                                        <TableCell className="px-4 py-3 min-w-[140px]">
-                                            <CapacityCell location={location} />
-                                            <div className="mt-2 flex items-center gap-1">
-                                                {location.isActive === false
-                                                    ? <><CircleOff className="size-3 text-rose-400" /><span className="text-[10px] text-rose-500">Ngừng dùng</span></>
-                                                    : <><CheckCircle2 className="size-3 text-emerald-400" /><span className="text-[10px] text-emerald-500">Đang hoạt động</span></>
-                                                }
+                                            <div className="mt-2 max-w-56">
+                                                <CapacityCell location={location} />
                                             </div>
                                         </TableCell>
 

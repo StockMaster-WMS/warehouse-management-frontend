@@ -60,17 +60,8 @@ function SearchableSelect({
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [localQuery, setLocalQuery] = React.useState("");
-  const wasOpenRef = React.useRef(false);
 
   const searchQuery = serverSearch ? (searchQueryProp ?? "") : localQuery;
-
-  React.useEffect(() => {
-    if (wasOpenRef.current && !open) {
-      setLocalQuery("");
-      if (serverSearch) onSearchChange?.("");
-    }
-    wasOpenRef.current = open;
-  }, [open, serverSearch, onSearchChange]);
 
   const filtered = React.useMemo(() => {
     if (serverSearch) return options;
@@ -84,9 +75,18 @@ function SearchableSelect({
 
   const selected = options.find((o) => o.value === value);
 
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+    if (!nextOpen) {
+      setLocalQuery("");
+      if (serverSearch) onSearchChange?.("");
+    }
+  }
+
   function handleSelect(next: string) {
     onValueChange(next);
-    setOpen(false);
+    handleOpenChange(false);
   }
 
   return (
@@ -96,10 +96,7 @@ function SearchableSelect({
         type="button"
         variant="outline"
         disabled={disabled}
-        onClick={() => {
-          setOpen(true);
-          onOpenChange?.(true);
-        }}
+        onClick={() => handleOpenChange(true)}
         className={cn(
           "h-10 w-full justify-between border-slate-200 bg-slate-50/50 px-3 font-normal text-left hover:bg-slate-100/80 dark:border-slate-700 dark:bg-slate-950/50 dark:hover:bg-slate-900",
           !selected && "text-muted-foreground",
@@ -118,10 +115,7 @@ function SearchableSelect({
 
       <Dialog
         open={open}
-        onOpenChange={(nextOpen) => {
-          setOpen(nextOpen);
-          onOpenChange?.(nextOpen);
-        }}
+        onOpenChange={handleOpenChange}
       >
         <DialogContent
           className="flex max-h-[min(85dvh,32rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
@@ -151,15 +145,13 @@ function SearchableSelect({
             ) : filtered.length === 0 ? (
               <p className="px-2 py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
             ) : (
-              <ul className="space-y-0.5" role="listbox">
+              <ul className="space-y-0.5">
                 {filtered.map((o) => {
                   const isSel = o.value === value;
                   return (
                     <li key={o.value}>
                       <button
                         type="button"
-                        role="option"
-                        aria-selected={isSel}
                         onClick={() => handleSelect(o.value)}
                         className={cn(
                           "flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted",

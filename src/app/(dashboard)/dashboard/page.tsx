@@ -234,14 +234,14 @@ export default function DashboardPage() {
 
   const riskItems = useMemo(() => [
     {
-      label: "Picking quá hạn",
+      label: "Lấy hàng quá hạn",
       value: operations?.overduePickingTasks ?? 0,
       href: "/picking",
       icon: Clock,
       tone: (operations?.overduePickingTasks ?? 0) > 0 ? "text-rose-600" : "text-emerald-600",
     },
     {
-      label: "Đơn xuất chưa picking",
+      label: "Đơn xuất chưa lấy",
       value: operations?.outboundOrdersWithoutPicking ?? 0,
       href: "/orders",
       icon: Route,

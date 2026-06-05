@@ -13,6 +13,7 @@ export function PersonalSettings({ gotoProfile }: PersonalSettingsProps) {
   return (
     <div className="space-y-6">
       <button
+        type="button"
         onClick={gotoProfile}
         className="w-full rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/10"
       >

@@ -562,11 +562,12 @@ export default function PurchaseOrderDetailPage() {
   async function handleSubmitGrn(e: React.FormEvent) {
     e.preventDefault();
     const validLines: { poItemId: string; receivedQty: number; locationId: string; note?: string }[] = [];
+    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const line of grnLines) {
       const qty = Number(line.receivedQty.replace(",", "."));
       if (!qty || Number.isNaN(qty) || qty <= 0) continue;
       if (!line.locationId.trim()) {
-        const item = items.find((row) => row.id === line.poItemId);
+        const item = itemsById.get(line.poItemId);
         toast.error(`Vui lòng chọn vị trí nhập cho ${item?.productSku ?? "dòng hàng"}`);
         return;
       }
@@ -580,7 +581,6 @@ export default function PurchaseOrderDetailPage() {
 
     if (validLines.length === 0) { toast.error("Nhập số lượng ít nhất 1 dòng hàng"); return; }
 
-    const itemsById = new Map(items.map((item) => [item.id, item]));
     for (const line of validLines) {
       const item = itemsById.get(line.poItemId);
       if (!item) continue;
