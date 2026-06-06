@@ -295,7 +295,9 @@ export default function RMADetailPage() {
   const handleReceive = async () => {
     if (!selectedLine) return toast.error("Phiếu chưa có dòng hàng để nhận");
     if (rma?.returnType !== "CUSTOMER") return toast.error("Chỉ phiếu khách trả mới dùng thao tác nhận hàng");
-    if (rma?.status !== "APPROVED") return toast.error("Chỉ được nhận hàng sau khi phiếu đã được duyệt");
+    if (!rma || !["APPROVED", "RECEIVED"].includes(rma.status)) {
+      return toast.error("Chỉ được nhận hàng sau khi phiếu đã được duyệt");
+    }
     const receivedQty = Number(quantityInputValue);
     const expectedQty = Number(selectedLine.expectedQty ?? 0);
     if (!Number.isFinite(receivedQty) || receivedQty < 0) return toast.error("Số lượng nhận không hợp lệ");
