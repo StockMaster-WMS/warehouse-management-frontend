@@ -357,5 +357,6 @@ export const {
   useLazyExportStockReportQuery,
   useLazyExportNearExpiryReportQuery,
   useLazyExportLowStockReportQuery,
+  useLazyGetStockListQuery,
   useGetStockMovementsQuery,
 } = stockApi;
