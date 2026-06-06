@@ -23,18 +23,25 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useCreateCycleCountMutation } from "@/store/services/cycle-count.service";
-import { useGetProductsQuery } from "@/store/services/product.service";
+import { useGetStockListQuery } from "@/store/services/stock.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
 import { useGetWarehouseStaffQuery } from "@/store/services/user-management.service";
 import { apiErrMessage } from "@/types/api";
 import { cn } from "@/lib/utils";
 import type { CreateCycleCountPayload } from "@/types/cycle-count";
+
+type FormScope = "WAREHOUSE" | "ZONE" | "PRODUCT";
+
+const SCOPE_LABEL: Record<FormScope, string> = {
+  WAREHOUSE: "Toàn bộ kho",
+  ZONE: "Theo khu vực",
+  PRODUCT: "Theo sản phẩm",
+};
 
 const cycleCountItemSchema = z.object({
   productId: z.string().min(1, "Vui lòng chọn sản phẩm"),
@@ -46,9 +53,8 @@ const formSchema = z.object({
   warehouseId: z.string().min(1, "Vui lòng chọn kho hàng"),
   description: z.string().min(1, "Tên đợt kiểm kê là bắt buộc"),
   assignedTo: z.string().min(1, "Vui lòng chọn nhân viên kiểm kê"),
-  scheduledAt: z.string().optional(),
   mode: z.enum(["SCOPE", "MANUAL"]),
-  scope: z.enum(["WAREHOUSE", "ZONE", "LOCATION", "PRODUCT"]),
+  scope: z.enum(["WAREHOUSE", "ZONE", "PRODUCT"]),
   scopeValue: z.string().optional(),
   items: z.array(cycleCountItemSchema),
 }).superRefine((data, ctx) => {
@@ -85,23 +91,11 @@ function createDefaultValues(): FormValues {
     warehouseId: "",
     description: `Kiểm kê định kỳ - ${new Date().toLocaleDateString("vi-VN")}`,
     assignedTo: "",
-    scheduledAt: "",
     mode: "SCOPE",
     scope: "WAREHOUSE",
     scopeValue: "",
     items: [],
   };
-}
-
-function toIsoWithLocalTimezone(value?: string) {
-  if (!value) return undefined;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return undefined;
-  const pad = (num: number) => String(num).padStart(2, "0");
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absOffset = Math.abs(offsetMinutes);
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
 }
 
 export function CreateCycleCountModal({
@@ -132,7 +126,7 @@ export function CreateCycleCountModal({
   const manualItems = useWatch({ control, name: "items" }) ?? [];
   const { data: staffRes, isLoading: staffLoading } = useGetWarehouseStaffQuery(
     { warehouseId: warehouseId || undefined },
-    { skip: !open },
+    { skip: !open || !warehouseId },
   );
 
   const { fields, append, remove } = useFieldArray({
@@ -140,21 +134,31 @@ export function CreateCycleCountModal({
     name: "items",
   });
 
-  // Fetch products and locations for selects
-  const { data: productsRes, isLoading: productsLoading } = useGetProductsQuery(
-    { warehouseId, size: 1000 },
+  // Product options come from stock rows so "Theo sản phẩm" only shows products in the selected warehouse.
+  const { data: stockProductsRes, isLoading: productsLoading } = useGetStockListQuery(
+    { warehouseId, size: 1000, expand: "product", sort: "updatedAt", sortDir: "desc" },
     { skip: !warehouseId || (mode !== "MANUAL" && scope !== "PRODUCT") }
   );
   const { data: locationsRes, isLoading: locationsLoading } = useGetLocationsListQuery(
     { warehouseId, size: 1000 },
-    { skip: !warehouseId || (mode !== "MANUAL" && !["ZONE", "LOCATION"].includes(scope)) }
+    { skip: !warehouseId || (mode !== "MANUAL" && scope !== "ZONE") }
   );
 
-  const productOptions = (productsRes?.data?.content ?? []).map(p => ({
-    value: p.id,
-    label: p.name,
-    hint: p.sku || undefined
-  }));
+  const productOptions = Array.from(
+    (stockProductsRes?.data?.content ?? []).reduce((map, stock) => {
+      const id = String(stock.product?.id ?? stock.productId ?? "").trim();
+      if (!id || map.has(id)) return map;
+      const sku = stock.product?.sku ?? stock.productSku ?? "";
+      const name = stock.product?.name ?? stock.productName ?? id;
+      map.set(id, {
+        value: id,
+        label: sku ? `${sku} - ${name}` : name,
+        hint: `Tồn: ${Number(stock.qtyOnHand ?? 0).toLocaleString("vi-VN")} | Khả dụng: ${Number(stock.qtyAvailable ?? 0).toLocaleString("vi-VN")}`,
+      });
+      return map;
+    }, new Map<string, { value: string; label: string; hint?: string }>())
+      .values(),
+  ).sort((left, right) => left.label.localeCompare(right.label, "vi", { sensitivity: "base" }));
 
   const locationOptions = (locationsRes?.data?.content ?? []).map(l => ({
     value: l.id,
@@ -178,11 +182,9 @@ export function CreateCycleCountModal({
     ? `${manualItems.length.toLocaleString("vi-VN")} dòng sản phẩm/vị trí`
     : scope === "WAREHOUSE"
       ? "Toàn bộ vị trí và sản phẩm trong kho"
-      : scope === "LOCATION"
-        ? scopeValue ? "1 vị trí đã chọn" : "Chưa chọn vị trí"
-        : scope === "PRODUCT"
-          ? scopeValue ? "1 sản phẩm đã chọn" : "Chưa chọn sản phẩm"
-          : scopeValue ? `Khu vực ${scopeValue}` : "Chưa nhập khu vực";
+      : scope === "PRODUCT"
+        ? scopeValue ? "1 sản phẩm đã chọn" : "Chưa chọn sản phẩm"
+        : scopeValue ? `Khu vực ${scopeValue}` : "Chưa nhập khu vực";
 
   // Reset form when modal opens
   useEffect(() => {
@@ -194,6 +196,10 @@ export function CreateCycleCountModal({
   useEffect(() => {
     setValue("scopeValue", "");
   }, [scope, warehouseId, setValue]);
+
+  useEffect(() => {
+    setValue("assignedTo", "");
+  }, [warehouseId, setValue]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) reset(createDefaultValues());
@@ -209,7 +215,7 @@ export function CreateCycleCountModal({
           warehouseId: values.warehouseId,
           description: values.description,
           assignedTo: values.assignedTo,
-          scheduledAt: toIsoWithLocalTimezone(values.scheduledAt),
+          scheduledAt: undefined,
           scope: values.scope,
           scopeValue: values.scope !== "WAREHOUSE" ? values.scopeValue || null : null,
           items: null,
@@ -219,7 +225,7 @@ export function CreateCycleCountModal({
           warehouseId: values.warehouseId,
           description: values.description,
           assignedTo: values.assignedTo,
-          scheduledAt: toIsoWithLocalTimezone(values.scheduledAt),
+          scheduledAt: undefined,
           scope: null,
           scopeValue: null,
           items: values.items.map((item) => ({
@@ -323,7 +329,7 @@ export function CreateCycleCountModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
                   Nhân viên kiểm kê <span className="text-rose-500">*</span>
@@ -332,10 +338,12 @@ export function CreateCycleCountModal({
                   control={control}
                   name="assignedTo"
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value} disabled={staffLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!warehouseId || staffLoading}>
                       <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20">
                         <span className={cn("truncate text-sm", !selectedStaff && "text-muted-foreground")}>
-                          {staffLoading
+                          {!warehouseId
+                            ? "Chọn kho trước"
+                            : staffLoading
                             ? "Đang tải nhân viên..."
                             : selectedStaff
                               ? `${selectedStaff.fullName || selectedStaff.username}${selectedStaff.email ? ` (${selectedStaff.email})` : ""}`
@@ -355,17 +363,6 @@ export function CreateCycleCountModal({
                 {errors.assignedTo && (
                   <p className="text-[11px] font-medium text-rose-500 ml-2">{errors.assignedTo.message}</p>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
-                  Lịch kiểm kê
-                </Label>
-                <Input
-                  {...register("scheduledAt")}
-                  type="datetime-local"
-                  className="h-12 rounded-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20"
-                />
               </div>
             </div>
 
@@ -408,13 +405,14 @@ export function CreateCycleCountModal({
                         render={({ field }) => (
                           <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger className="min-h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                              <SelectValue placeholder="Chọn phạm vi" />
+                              <span className="truncate text-sm">
+                                {SCOPE_LABEL[field.value as FormScope] ?? "Chọn phạm vi"}
+                              </span>
                             </SelectTrigger>
                             <SelectContent className="rounded-lg">
                               <SelectItem value="WAREHOUSE">Toàn bộ kho</SelectItem>
-                              <SelectItem value="ZONE">Theo khu vực (Zone)</SelectItem>
-                              <SelectItem value="LOCATION">Theo vị trí (Location)</SelectItem>
-                              <SelectItem value="PRODUCT">Theo sản phẩm (Product)</SelectItem>
+                              <SelectItem value="ZONE">Theo khu vực</SelectItem>
+                              <SelectItem value="PRODUCT">Theo sản phẩm</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
@@ -424,7 +422,7 @@ export function CreateCycleCountModal({
                     {scope !== "WAREHOUSE" && (
                       <div className="space-y-2 animate-in slide-in-from-left-2 duration-300">
                         <Label className="text-[11px] font-semibold text-slate-500 ml-1">
-                          {scope === "ZONE" ? "Tên khu vực" : scope === "LOCATION" ? "Vị trí cụ thể" : "Sản phẩm cụ thể"}
+                          {scope === "ZONE" ? "Khu vực kiểm kê" : "Sản phẩm kiểm kê"}
                         </Label>
 
                         {scope === "ZONE" ? (
@@ -446,23 +444,6 @@ export function CreateCycleCountModal({
                               />
                             )}
                           />
-                        ) : scope === "LOCATION" ? (
-                          <Controller
-                            control={control}
-                            name="scopeValue"
-                            render={({ field }) => (
-                              <SearchableSelect
-                                dialogTitle="Chọn vị trí kiểm kê"
-                                options={locationOptions}
-                                value={field.value || ""}
-                                onValueChange={field.onChange}
-                                placeholder="Tìm vị trí..."
-                                className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-                                loading={locationsLoading}
-                                disabled={!warehouseId}
-                              />
-                            )}
-                          />
                         ) : (
                           <Controller
                             control={control}
@@ -474,6 +455,8 @@ export function CreateCycleCountModal({
                                 value={field.value || ""}
                                 onValueChange={field.onChange}
                                 placeholder="Tìm sản phẩm..."
+                                searchPlaceholder="Tìm theo mã hoặc tên sản phẩm..."
+                                emptyText="Kho này chưa có sản phẩm tồn kho"
                                 className="h-10 rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                                 loading={productsLoading}
                                 disabled={!warehouseId}
@@ -497,7 +480,7 @@ export function CreateCycleCountModal({
                         Hệ thống sẽ quét và tạo danh sách kiểm kê cho tất cả sản phẩm thuộc {
                           scope === "WAREHOUSE" ? "toàn bộ kho hàng hiện tại." :
                           scope === "ZONE" ? `khu vực "${scopeValue || '...'}"` :
-                          scope === "LOCATION" ? "vị trí cụ thể mà bạn đã chọn." : "sản phẩm cụ thể mà bạn đã chọn."
+                          "sản phẩm cụ thể mà bạn đã chọn."
                         }
                       </p>
                     </div>
