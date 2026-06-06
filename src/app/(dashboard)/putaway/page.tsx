@@ -392,6 +392,16 @@ export default function PutawayPage() {
     return Array.from(ids);
   }, [tasks]);
 
+  /* ── Dialog state ── */
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<PutawayTask | null>(null);
+  const [actualLocationId, setActualLocationId] = useState("");
+  const [completeErrors, setCompleteErrors] = useState<Record<string, string>>({});
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSuggested, setEditSuggested] = useState("");
+  const [editStatus, setEditStatus] = useState<string>("PENDING");
+
   /* ── Locations lookup ── */
   const activeWarehouseId = activeTask?.warehouseId?.trim() || "";
   const { data: locationsRes, isFetching: locationsFetching } = useGetLocationsQuery(
@@ -422,16 +432,6 @@ export default function PutawayPage() {
     }
     return map;
   }, [poItemsRes]);
-
-  /* ── Dialog state ── */
-  const [completeOpen, setCompleteOpen] = useState(false);
-  const [activeTask, setActiveTask] = useState<PutawayTask | null>(null);
-  const [actualLocationId, setActualLocationId] = useState("");
-  const [completeErrors, setCompleteErrors] = useState<Record<string, string>>({});
-
-  const [editOpen, setEditOpen] = useState(false);
-  const [editSuggested, setEditSuggested] = useState("");
-  const [editStatus, setEditStatus] = useState<string>("PENDING");
 
   const [completeTask, { isLoading: completing }] = useCompletePutawayTaskMutation();
   const [patchTask, { isLoading: patching }] = usePatchPutawayTaskMutation();
