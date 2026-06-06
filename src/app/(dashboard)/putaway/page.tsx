@@ -393,7 +393,11 @@ export default function PutawayPage() {
   }, [tasks]);
 
   /* ── Locations lookup ── */
-  const { data: locationsRes } = useGetLocationsQuery({});
+  const activeWarehouseId = activeTask?.warehouseId?.trim() || "";
+  const { data: locationsRes, isFetching: locationsFetching } = useGetLocationsQuery(
+    { warehouseId: activeWarehouseId },
+    { skip: !activeWarehouseId },
+  );
   const { data: visibleLocationsRes } = useGetLocationsByIdsQuery(visibleLocationIds, {
     skip: visibleLocationIds.length === 0,
   });
@@ -508,7 +512,7 @@ export default function PutawayPage() {
       return;
     }
     if (selectedLocationId && !suggestionIds.has(selectedLocationId)) {
-      setCompleteErrors({ actualLocationId: "Chỉ được chọn vị trí trong danh sách backend gợi ý." });
+      setCompleteErrors({ actualLocationId: "Chỉ được chọn vị trí thuộc kho của nhiệm vụ này." });
       return;
     }
 
@@ -550,7 +554,7 @@ export default function PutawayPage() {
     const nextSuggested = editSuggested.trim();
     const suggestionIds = putawayLocationIds;
     if (nextSuggested && !suggestionIds.has(nextSuggested)) {
-      toast.error("Chỉ được chọn vị trí trong danh sách backend gợi ý.");
+      toast.error("Chỉ được chọn vị trí thuộc kho của nhiệm vụ này.");
       return;
     }
 
@@ -815,7 +819,7 @@ export default function PutawayPage() {
                   value={actualLocationId}
                   onValueChange={setActualLocationId}
                   options={putawayLocationOptions}
-                  loading={suggestionsLoading || suggestionsFetching}
+                  loading={suggestionsLoading || suggestionsFetching || locationsFetching}
                   error={Boolean(completeErrors.actualLocationId)}
                   placeholder={activeTask?.suggestedLocationId ? "Dùng vị trí gợi ý hiện tại" : "Chọn vị trí thực tế"}
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
@@ -881,7 +885,7 @@ export default function PutawayPage() {
                   value={editSuggested}
                   onValueChange={setEditSuggested}
                   options={putawayLocationOptions}
-                  loading={suggestionsLoading || suggestionsFetching}
+                  loading={suggestionsLoading || suggestionsFetching || locationsFetching}
                   placeholder="Chọn vị trí gợi ý"
                   searchPlaceholder="Tìm theo mã vị trí, zone, aisle, rack..."
                   emptyText="Không có vị trí phù hợp cho nhiệm vụ này"

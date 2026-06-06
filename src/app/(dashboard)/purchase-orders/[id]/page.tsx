@@ -97,6 +97,28 @@ const viDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   timeStyle: "short",
 });
 
+function inboundLocationOption(loc: InboundLocationSuggestion) {
+  const zoneLabel = loc.zone ? ` - Zone ${loc.zone}` : "";
+  const typeLabel = loc.locationType ?? "STORAGE";
+  const stockQty = loc.qtyOnHand ?? 0;
+
+  if (loc.existingProductLocation) {
+    return {
+      value: loc.locationId,
+      label: `${loc.locationCode} - Đang có SP (${stockQty})${zoneLabel}`,
+      hint: `Vị trí sẵn có của sản phẩm · ${typeLabel}`,
+    };
+  }
+
+  return {
+    value: loc.locationId,
+    label: `${loc.locationCode} - ${typeLabel}${zoneLabel}`,
+    hint: loc.emptyLocation
+      ? "Vị trí trống"
+      : `Vị trí phù hợp · Tồn hiện tại: ${stockQty}`,
+  };
+}
+
 function formatDateTime(value?: string | null) {
   return value ? viDateTimeFormatter.format(new Date(value)) : "—";
 }
@@ -355,15 +377,9 @@ export default function PurchaseOrderDetailPage() {
   }
 
   function grnLocationOptions(poItemId: string) {
-    return (grnLocationSuggestions[poItemId] ?? []).map((loc) => ({
-      value: loc.locationId,
-      label: `${loc.locationCode} - ${loc.locationType ?? "STORAGE"}${loc.zone ? ` - Zone ${loc.zone}` : ""}`,
-      hint: loc.existingProductLocation
-        ? `Vị trí cũ của sản phẩm · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`
-      : loc.emptyLocation
-          ? "Vị trí trống"
-          : `Vị trí phù hợp · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`,
-    }));
+    return [...(grnLocationSuggestions[poItemId] ?? [])]
+      .sort((left, right) => Number(Boolean(right.existingProductLocation)) - Number(Boolean(left.existingProductLocation)))
+      .map(inboundLocationOption);
   }
 
   function openEditHeaderDialog() {
