@@ -113,7 +113,7 @@ export function OrderSidebar({
                 In phiếu
               </Button>
 
-              {canManageOrder && (status === "DRAFT" || status === "PENDING") ? (
+              {canManageOrder && status === "DRAFT" ? (
                 <Button
                   type="button"
                   variant="outline"
