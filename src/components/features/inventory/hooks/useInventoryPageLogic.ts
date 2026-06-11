@@ -7,12 +7,14 @@ import {
   useGetStockListQuery,
   useGetStockSummaryQuery,
   useGetLowStockAlertsQuery,
+  useGetOutOfStockAlertsQuery,
   useGetNearExpiryAlertsQuery,
   useAdjustStockMutation,
   useAdjustReservedMutation,
   useLazyExportStockReportQuery,
   useLazyExportNearExpiryReportQuery,
   useLazyExportLowStockReportQuery,
+  useLazyExportOutOfStockReportQuery,
 } from "@/store/services/stock.service";
 import { useGetWarehousesQuery } from "@/store/services/warehouse.service";
 import { useGetLocationsListQuery } from "@/store/services/location.service";
@@ -27,7 +29,7 @@ import { downloadBlob } from "@/components/features/inventory/utils";
 import type { StockExpanded } from "@/types/stock";
 import type { Product } from "@/types/product";
 
-export type InventoryTab = "stock" | "low-stock" | "near-expiry";
+export type InventoryTab = "stock" | "low-stock" | "out-of-stock" | "near-expiry";
 
 export function useInventoryPageLogic() {
   const hasWarehouseManagerRole = useHasPermissions(["WAREHOUSE_MANAGER"]);
@@ -130,6 +132,18 @@ export function useInventoryPageLogic() {
   );
   const lowStockItems = useMemo(() => lowStockRes?.data ?? [], [lowStockRes]);
 
+  // ── Out-of-stock alerts ──
+  const {
+    data: outOfStockRes,
+    isLoading: isOutOfStockLoading,
+    error: outOfStockError,
+    refetch: refetchOutOfStock,
+  } = useGetOutOfStockAlertsQuery(
+    { warehouseId: warehouseId || undefined, locationId: locationId || undefined },
+    { skip: activeTab !== "out-of-stock" },
+  );
+  const outOfStockItems = useMemo(() => outOfStockRes?.data ?? [], [outOfStockRes]);
+
   // ── Near expiry alerts ──
   const {
     data: nearExpiryRes,
@@ -157,12 +171,16 @@ export function useInventoryPageLogic() {
       if (!item.product?.name && item.productId) ids.add(item.productId);
     }
 
+    for (const item of outOfStockItems) {
+      if (!item.product?.name && item.productId) ids.add(item.productId);
+    }
+
     for (const item of nearExpiryItems) {
       if (item.productId) ids.add(item.productId);
     }
 
     return Array.from(ids);
-  }, [stockList, lowStockItems, nearExpiryItems]);
+  }, [stockList, lowStockItems, outOfStockItems, nearExpiryItems]);
 
   const { data: displayProductsRes } = useGetProductsByIdsQuery(productIdsForDisplay, {
     skip: productIdsForDisplay.length === 0,
@@ -222,6 +240,11 @@ export function useInventoryPageLogic() {
         .map(withProductFallback)
         .filter(matchesStockKeyword);
     }
+    if (activeTab === "out-of-stock") {
+      return outOfStockItems
+        .map(withProductFallback)
+        .filter(matchesStockKeyword);
+    }
     if (activeTab === "near-expiry") {
       return nearExpiryItems.map(item => ({
         ...item,
@@ -237,16 +260,15 @@ export function useInventoryPageLogic() {
       } as StockExpanded)).filter(matchesStockKeyword);
     }
     return stockList.map(withProductFallback);
-  }, [activeTab, stockList, lowStockItems, nearExpiryItems, displayProductsById, withProductFallback, matchesStockKeyword]);
+  }, [activeTab, stockList, lowStockItems, outOfStockItems, nearExpiryItems, displayProductsById, withProductFallback, matchesStockKeyword]);
 
   const displayTotalElements = useMemo(() => {
-    if (activeTab === "low-stock" || activeTab === "near-expiry") return displayItems.length;
+    if (activeTab === "low-stock" || activeTab === "out-of-stock" || activeTab === "near-expiry") return displayItems.length;
     return stockTotalElements;
   }, [activeTab, stockTotalElements, displayItems.length]);
 
   const displayTotalPages = useMemo(() => {
-    if (activeTab === "low-stock") return 1;
-    if (activeTab === "near-expiry") return 1;
+    if (activeTab === "low-stock" || activeTab === "out-of-stock" || activeTab === "near-expiry") return 1;
     return stockTotalPages;
   }, [activeTab, stockTotalPages]);
 
@@ -259,6 +281,7 @@ export function useInventoryPageLogic() {
   const [triggerExportStock] = useLazyExportStockReportQuery();
   const [triggerExportNearExpiry] = useLazyExportNearExpiryReportQuery();
   const [triggerExportLowStock] = useLazyExportLowStockReportQuery();
+  const [triggerExportOutOfStock] = useLazyExportOutOfStockReportQuery();
 
   // ── Reset page assistants ──
   const handleTabChange = useCallback((tab: InventoryTab) => {
@@ -389,6 +412,23 @@ export function useInventoryPageLogic() {
     }
   };
 
+  const handleExportOutOfStock = async () => {
+    if (isWarehouseManagerOnly && warehouses.length > 1 && !warehouseId) {
+      toast.error("Vui lòng chọn kho trước khi xuất báo cáo.");
+      return;
+    }
+    try {
+      const result = await triggerExportOutOfStock({
+        warehouseId: warehouseId || undefined,
+        locationId: locationId || undefined,
+      }).unwrap();
+      downloadBlob(result, `out-of-stock-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Đã xuất báo cáo hàng hết hàng");
+    } catch (err) {
+      toast.error(apiErrMessage(err, "Không thể xuất báo cáo"));
+    }
+  };
+
   return {
     activeTab, setActiveTab: handleTabChange,
     warehouseId, setWarehouseId: handleWarehouseChange,
@@ -399,16 +439,16 @@ export function useInventoryPageLogic() {
     advancedCount, hasAnyFilter, clearFilters,
     summary, isSummaryLoading,
     displayItems, displayTotalElements, displayTotalPages,
-    isDataLoading: isStockListLoading || isLowStockLoading || isNearExpiryLoading,
+    isDataLoading: isStockListLoading || isLowStockLoading || isOutOfStockLoading || isNearExpiryLoading,
     isDataFetching: isStockListFetching,
-    itemsError: stockListError || lowStockError || nearExpiryError,
+    itemsError: stockListError || lowStockError || outOfStockError || nearExpiryError,
     page, setPage, pageSize, setPageSize, canGoPrev, canGoNext,
     adjustDialogOpen, setAdjustDialogOpen,
     adjustType, adjustForm, setAdjustForm, isAdjusting,
     openAdjustDialog, handleAdjustSubmit,
     adjustLocations, isLocationsLoading,
     adjustProducts, isProductsLoading,
-    handleExportStock, handleExportNearExpiry, handleExportLowStock,
-    refetchAll: () => { refetchStockList(); refetchLowStock(); refetchNearExpiry(); }
+    handleExportStock, handleExportNearExpiry, handleExportLowStock, handleExportOutOfStock,
+    refetchAll: () => { refetchStockList(); refetchLowStock(); refetchOutOfStock(); refetchNearExpiry(); }
   };
 }
