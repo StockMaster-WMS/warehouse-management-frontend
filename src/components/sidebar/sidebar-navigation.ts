@@ -78,7 +78,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSectionConfig[] = [
     items: [
       { label: "Tổng quan kho", href: "/dashboard", icon: LayoutGrid, roles: MANAGEMENT_READ_ROLES },
       // { label: "Thông báo", href: "/notifications", icon: Bell, roles: ALL_ROLES },
-      { label: "Trợ lý thông minh", href: "/ai-assistant", icon: Sparkles, roles: MANAGEMENT_READ_ROLES },
+      { label: "Trợ lý kho", href: "/ai-assistant", icon: Sparkles, roles: MANAGEMENT_READ_ROLES },
     ],
   },
   {

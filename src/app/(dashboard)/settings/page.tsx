@@ -62,7 +62,7 @@ const tabDetails: Record<SettingsTab, { title: string; description: string }> = 
     description: "Thiết lập chế độ màu, mật độ hiển thị, ngôn ngữ và định dạng ngày.",
   },
   ai: {
-    title: "Cấu hình trợ lý thông minh",
+    title: "Cấu hình trợ lý kho",
     description: "Quản lý nhà cung cấp và khóa kết nối dùng cho trợ lý đám mây.",
   },
   security: {
