@@ -41,6 +41,9 @@ const SUGGESTIONS = [
   "Những mã hàng nào đang gần hết hàng?",
   "Đơn xuất nào cần ưu tiên xử lý?",
   "Kiểm tra các đơn nhập đang chờ xếp hàng lên kệ",
+  "Sản phẩm nào tồn kho cao nhất?",
+  "Sản phẩm nào tồn kho thấp nhất?",
+  "HN-TT-COLD-A01-R07-L02-B03 đang chứa gì",
 ];
 
 const INITIAL_MESSAGE: Message = {
@@ -607,10 +610,6 @@ function AiAssistantSidebar({ onAsk }: { onAsk: (question: string) => void }) {
             ))}
           </div>
         </div>
-
-        <AiInfoBlock icon={Boxes} title="Phạm vi hỗ trợ">
-          Tồn kho, đơn hàng, nhập kho, xếp hàng lên kệ, kiểm kê, cảnh báo và báo cáo vận hành.
-        </AiInfoBlock>
         <AiInfoBlock icon={ClipboardList} title="Lưu ý">
           Với số liệu quan trọng, hãy đối chiếu lại trong màn hình nghiệp vụ trước khi ra quyết định.
         </AiInfoBlock>
