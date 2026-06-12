@@ -217,9 +217,12 @@ function AiStructuredMetadata({
 }
 
 function AiActionPanel({ actions }: { actions: Array<Record<string, unknown>> }) {
+  const runnableActions = actions.filter((action) => firstString(action, ["type", "actionType"]) === "MARK_PRODUCTS_OUT_OF_STOCK");
+  if (!runnableActions.length) return null;
+
   return (
     <div className="space-y-2">
-      {actions.map((action, index) => (
+      {runnableActions.map((action, index) => (
         <AiActionCard key={`${firstString(action, ["type", "actionType"])}-${index}`} action={action} />
       ))}
     </div>
@@ -235,7 +238,6 @@ function AiActionCard({ action }: { action: Record<string, unknown> }) {
 
   const actionType = firstString(action, ["type", "actionType"]);
   const title = firstString(action, ["label", "title"]) || actionType;
-  const description = firstString(action, ["description"]);
   const payload = action.payload && typeof action.payload === "object"
     ? action.payload as Record<string, unknown>
     : action;
@@ -265,11 +267,11 @@ function AiActionCard({ action }: { action: Record<string, unknown> }) {
   }
 
   return (
-    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-foreground">{title}</p>
-          {description ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p> : null}
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-xs">
+          <p className="font-semibold text-foreground">{title}</p>
+          <p className="mt-0.5 text-muted-foreground">Kiểm tra danh sách trước khi đổi trạng thái.</p>
         </div>
         {canRun ? (
           <Button
@@ -289,13 +291,9 @@ function AiActionCard({ action }: { action: Record<string, unknown> }) {
         <div className="mt-3 space-y-2 rounded-md border border-border bg-background p-2 text-xs">
           <p className="font-medium text-foreground">{result?.summary || preview.summary}</p>
           <p className="text-muted-foreground">
-            Đủ điều kiện: {preview.eligibleCount}/{preview.candidateCount}; bỏ qua: {preview.skippedCount}
+            Có thể cập nhật {preview.eligibleCount}/{preview.candidateCount} sản phẩm.
+            {preview.skippedCount ? ` Bỏ qua ${preview.skippedCount}.` : ""}
           </p>
-          {preview.warnings.length ? (
-            <div className="space-y-1 text-amber-700">
-              {preview.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-            </div>
-          ) : null}
           {preview.candidates.length ? (
             <div className="max-h-40 overflow-y-auto rounded border border-border">
               {preview.candidates.slice(0, 8).map((candidate) => (
@@ -313,7 +311,7 @@ function AiActionCard({ action }: { action: Record<string, unknown> }) {
             <Button
               type="button"
               size="sm"
-              className="mt-1"
+              className="mt-1 w-full sm:w-auto"
               disabled={isConfirming || preview.eligibleCount === 0}
               onClick={handleConfirm}
             >
