@@ -117,6 +117,8 @@ export default function InventoryPage() {
               onClick={
                 logic.activeTab === "near-expiry"
                   ? logic.handleExportNearExpiry
+                  : logic.activeTab === "out-of-stock"
+                    ? logic.handleExportOutOfStock
                   : logic.activeTab === "low-stock"
                     ? logic.handleExportLowStock
                     : logic.handleExportStock
@@ -127,6 +129,8 @@ export default function InventoryPage() {
                   "mr-1.5 size-4",
                   logic.activeTab === "near-expiry"
                     ? "text-rose-600"
+                    : logic.activeTab === "out-of-stock"
+                      ? "text-red-600"
                     : logic.activeTab === "low-stock"
                       ? "text-amber-600"
                       : "text-emerald-600",
@@ -134,6 +138,8 @@ export default function InventoryPage() {
               />
               {logic.activeTab === "near-expiry"
                 ? "Xuất hết hạn"
+                : logic.activeTab === "out-of-stock"
+                  ? "Xuất hết hàng"
                 : logic.activeTab === "low-stock"
                   ? "Xuất tồn thấp"
                   : "Xuất Excel"}

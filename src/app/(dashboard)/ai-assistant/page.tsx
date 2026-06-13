@@ -5,6 +5,7 @@ import {
   Bot,
   Boxes,
   ClipboardList,
+  CheckCircle2,
   Pause,
   RotateCcw,
   Send,
@@ -15,7 +16,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { AiResponseMetadata, useLazyStreamAiAnswerQuery } from "@/store/services/ai.service";
+import {
+  AiActionRequest,
+  AiActionResponse,
+  AiResponseMetadata,
+  useConfirmAiActionMutation,
+  useLazyStreamAiAnswerQuery,
+  usePreviewAiActionMutation,
+} from "@/store/services/ai.service";
 import { axiosInstance } from "@/lib/axios-instance";
 
 interface Message {
@@ -41,6 +49,9 @@ const SUGGESTIONS = [
   "Những mã hàng nào đang gần hết hàng?",
   "Đơn xuất nào cần ưu tiên xử lý?",
   "Kiểm tra các đơn nhập đang chờ xếp hàng lên kệ",
+  "Sản phẩm nào tồn kho cao nhất?",
+  "Sản phẩm nào tồn kho thấp nhất?",
+  "HN-TT-COLD-A01-R07-L02-B03 đang chứa gì",
 ];
 
 const INITIAL_MESSAGE: Message = {
@@ -122,18 +133,21 @@ function AiStructuredMetadata({
   if (!metadata) return null;
   const candidates = metadata.candidateSuggestions ?? [];
   const rows = metadata.resultRows ?? [];
+  const actions = metadata.actions ?? [];
   const display = metadata.display;
   const columns = display?.columns?.filter((column) =>
     rows.some((row) => row[column] !== undefined && row[column] !== null && String(row[column]).trim() !== ""),
   ) ?? [];
   const visibleRows = rows.slice(0, 8);
 
-  if (!candidates.length && (!visibleRows.length || !columns.length)) {
+  if (!actions.length && !candidates.length && (!visibleRows.length || !columns.length)) {
     return null;
   }
 
   return (
     <div className="space-y-3 border-t border-border/70 pt-3">
+      {actions.length ? <AiActionPanel actions={actions} /> : null}
+
       {candidates.length ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-muted-foreground">
@@ -200,6 +214,133 @@ function AiStructuredMetadata({
       ) : null}
     </div>
   );
+}
+
+function AiActionPanel({ actions }: { actions: Array<Record<string, unknown>> }) {
+  const runnableActions = actions.filter((action) => firstString(action, ["type", "actionType"]) === "MARK_PRODUCTS_OUT_OF_STOCK");
+  if (!runnableActions.length) return null;
+
+  return (
+    <div className="space-y-2">
+      {runnableActions.map((action, index) => (
+        <AiActionCard key={`${firstString(action, ["type", "actionType"])}-${index}`} action={action} />
+      ))}
+    </div>
+  );
+}
+
+function AiActionCard({ action }: { action: Record<string, unknown> }) {
+  const [previewAction, { isLoading: isPreviewing }] = usePreviewAiActionMutation();
+  const [confirmAction, { isLoading: isConfirming }] = useConfirmAiActionMutation();
+  const [preview, setPreview] = useState<AiActionResponse | null>(null);
+  const [result, setResult] = useState<AiActionResponse | null>(null);
+  const [error, setError] = useState("");
+
+  const actionType = firstString(action, ["type", "actionType"]);
+  const title = firstString(action, ["label", "title"]) || actionType;
+  const payload = action.payload && typeof action.payload === "object"
+    ? action.payload as Record<string, unknown>
+    : action;
+  const request = toAiActionRequest(payload, actionType);
+  const canRun = actionType === "MARK_PRODUCTS_OUT_OF_STOCK";
+
+  async function handlePreview() {
+    setError("");
+    setResult(null);
+    try {
+      const response = await previewAction(request).unwrap();
+      setPreview(response);
+    } catch {
+      setError("Không thể xem trước thao tác AI.");
+    }
+  }
+
+  async function handleConfirm() {
+    setError("");
+    try {
+      const response = await confirmAction(request).unwrap();
+      setResult(response);
+      setPreview(response);
+    } catch {
+      setError("Không thể xác nhận thao tác. Bạn cần quyền ADMIN hoặc WAREHOUSE_MANAGER.");
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-xs">
+          <p className="font-semibold text-foreground">{title}</p>
+          <p className="mt-0.5 text-muted-foreground">Kiểm tra danh sách trước khi đổi trạng thái.</p>
+        </div>
+        {canRun ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+            disabled={isPreviewing || isConfirming}
+            onClick={handlePreview}
+          >
+            Xem trước
+          </Button>
+        ) : null}
+      </div>
+
+      {preview ? (
+        <div className="mt-3 space-y-2 rounded-md border border-border bg-background p-2 text-xs">
+          <p className="font-medium text-foreground">{result?.summary || preview.summary}</p>
+          <p className="text-muted-foreground">
+            Có thể cập nhật {preview.eligibleCount}/{preview.candidateCount} sản phẩm.
+            {preview.skippedCount ? ` Bỏ qua ${preview.skippedCount}.` : ""}
+          </p>
+          {preview.candidates.length ? (
+            <div className="max-h-40 overflow-y-auto rounded border border-border">
+              {preview.candidates.slice(0, 8).map((candidate) => (
+                <div key={candidate.sku} className="flex gap-2 border-b border-border px-2 py-1.5 last:border-b-0">
+                  <span className="font-mono text-[11px]">{candidate.sku}</span>
+                  <span className="min-w-0 flex-1 truncate">{candidate.productName}</span>
+                  <span className={cn(candidate.eligible ? "text-emerald-600" : "text-muted-foreground")}>
+                    {candidate.eligible ? "Có thể cập nhật" : "Bỏ qua"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {!result ? (
+            <Button
+              type="button"
+              size="sm"
+              className="mt-1 w-full sm:w-auto"
+              disabled={isConfirming || preview.eligibleCount === 0}
+              onClick={handleConfirm}
+            >
+              <CheckCircle2 className="size-3.5" />
+              Xác nhận cập nhật
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+    </div>
+  );
+}
+
+function toAiActionRequest(payload: Record<string, unknown>, fallbackActionType: string): AiActionRequest {
+  const skuList = Array.isArray(payload.skuList)
+    ? payload.skuList.filter((item): item is string => typeof item === "string")
+    : [];
+  const limitValue = payload.limit;
+  return {
+    actionType: firstString(payload, ["actionType", "type"]) || fallbackActionType,
+    source: firstString(payload, ["source"]) || "AI_SUGGESTION",
+    skuList,
+    targetStatus: firstString(payload, ["targetStatus"]) || "OUT_OF_STOCK",
+    reason: firstString(payload, ["reason"]) || "Người dùng xác nhận thao tác AI",
+    limit: typeof limitValue === "number" ? limitValue : undefined,
+    metadata: payload,
+  };
 }
 
 function firstString(row: Record<string, unknown>, keys: string[]) {
@@ -607,10 +748,6 @@ function AiAssistantSidebar({ onAsk }: { onAsk: (question: string) => void }) {
             ))}
           </div>
         </div>
-
-        <AiInfoBlock icon={Boxes} title="Phạm vi hỗ trợ">
-          Tồn kho, đơn hàng, nhập kho, xếp hàng lên kệ, kiểm kê, cảnh báo và báo cáo vận hành.
-        </AiInfoBlock>
         <AiInfoBlock icon={ClipboardList} title="Lưu ý">
           Với số liệu quan trọng, hãy đối chiếu lại trong màn hình nghiệp vụ trước khi ra quyết định.
         </AiInfoBlock>

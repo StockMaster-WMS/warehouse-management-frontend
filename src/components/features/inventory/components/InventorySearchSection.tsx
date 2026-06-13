@@ -34,6 +34,7 @@ type InventorySearchSectionProps = {
 const ALERT_TYPE_LABELS: Record<InventoryTab, string> = {
   "stock": "Tất cả tồn kho",
   "low-stock": "Tồn kho thấp",
+  "out-of-stock": "Hết hàng",
   "near-expiry": "Sắp hết hạn",
 };
 
@@ -142,6 +143,7 @@ export function InventorySearchSection({
                 <SelectContent className="rounded-xl border border-slate-200 shadow-xl dark:border-slate-800">
                   <SelectItem value="stock" className="rounded-lg">Tất cả tồn kho</SelectItem>
                   <SelectItem value="low-stock" className="rounded-lg">Tồn kho thấp</SelectItem>
+                  <SelectItem value="out-of-stock" className="rounded-lg">Hết hàng</SelectItem>
                   <SelectItem value="near-expiry" className="rounded-lg">Sắp hết hạn</SelectItem>
                 </SelectContent>
               </Select>

@@ -55,6 +55,42 @@ export type AiResponseMetadata = {
   candidateSuggestions?: Array<Record<string, unknown>>;
 };
 
+export type AiActionRequest = {
+  actionType?: string;
+  source?: string;
+  skuList?: string[];
+  targetStatus?: string;
+  reason?: string;
+  limit?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type AiActionCandidate = {
+  sku: string;
+  productName: string;
+  currentStatus: string;
+  targetStatus: string;
+  qtyAvailable: number;
+  minStockQty?: number | null;
+  eligible: boolean;
+  reason: string;
+};
+
+export type AiActionResponse = {
+  actionType: string;
+  status: string;
+  summary: string;
+  requiresConfirmation: boolean;
+  targetStatus: string;
+  candidateCount: number;
+  eligibleCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  candidates: AiActionCandidate[];
+  warnings: string[];
+  metadata: Record<string, unknown>;
+};
+
 export type AiCloudKeyStatus = {
   provider: string;
   label: string;
@@ -110,6 +146,26 @@ export const aiApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<AiCloudKeyStatus>) => response.data,
       invalidatesTags: [
         { type: "AiConfig", id: "PROVIDERS" },
+      ],
+    }),
+    previewAiAction: builder.mutation<AiActionResponse, AiActionRequest>({
+      query: (data) => ({
+        url: "/v1/ai/actions/preview",
+        method: "POST",
+        data,
+      }),
+      transformResponse: (response: ApiResponse<AiActionResponse>) => response.data,
+    }),
+    confirmAiAction: builder.mutation<AiActionResponse, AiActionRequest>({
+      query: (data) => ({
+        url: "/v1/ai/actions/confirm",
+        method: "POST",
+        data,
+      }),
+      transformResponse: (response: ApiResponse<AiActionResponse>) => response.data,
+      invalidatesTags: [
+        { type: "Product", id: "LIST" },
+        { type: "Stock", id: "LIST" },
       ],
     }),
     streamAiAnswer: builder.query<AiStreamResult, AiStreamRequest>({
@@ -249,4 +305,6 @@ export const {
   useGetAiProviderKeyStatusesQuery,
   useUpdateAiCloudKeyMutation,
   useClearAiCloudKeyMutation,
+  usePreviewAiActionMutation,
+  useConfirmAiActionMutation,
 } = aiApi;

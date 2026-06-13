@@ -42,7 +42,9 @@ import {
   useCreateSoItemMutation,
   useUpdateSoItemMutation,
 } from "@/store/services/so-item.service";
+import { useLazyGetStockListQuery } from "@/store/services/stock.service";
 import { parsePositiveNumber } from "./OrderDetailUtils";
+import type { StockExpanded } from "@/types/stock";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const SO_LINES_XLSX_SHEET_NAME = "DongHangXuat";
@@ -114,6 +116,28 @@ function findImportProduct(products: Product[], raw: string): ImportProductRef |
   ) ?? null;
 }
 
+function isUuidLike(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
+function matchesProductRef(product: ImportProductRef, raw: string) {
+  const key = raw.trim().toLowerCase();
+  if (!key) return false;
+  return String(product.id).toLowerCase() === key ||
+    String(product.sku ?? "").toLowerCase() === key ||
+    String(product.name ?? "").trim().toLowerCase() === key;
+}
+
+function stockRowToProductRef(row: StockExpanded): ImportProductRef | null {
+  const id = String(row.product?.id ?? row.productId ?? "").trim();
+  if (!id) return null;
+  return {
+    id,
+    sku: row.product?.sku ?? row.productSku ?? null,
+    name: row.product?.name ?? row.productName ?? null,
+  };
+}
+
 function getHeaderIndex(headers: string[], names: string[]) {
   const normalized = new Map(headers.map((header, index) => [header.trim().toLowerCase(), index]));
   for (const name of names) {
@@ -143,14 +167,56 @@ export function SoExcelImportDialog({
   const [result, setResult] = useState<ImportResult | null>(null);
   const [createSoItem, { isLoading: creating }] = useCreateSoItemMutation();
   const [updateSoItem, { isLoading: updating }] = useUpdateSoItemMutation();
+  const [getStockList] = useLazyGetStockListQuery();
+  const resolvedProductCacheRef = useRef(new Map<string, ImportProductRef | null>());
   const uploading = creating || updating;
 
   function resetState() {
     setStep("upload");
     selectedFileRef.current = null;
+    resolvedProductCacheRef.current.clear();
     setPreview(null);
     setParseError(null);
     setResult(null);
+  }
+
+  async function resolveImportProduct(raw: string): Promise<ImportProductRef | null> {
+    const trimmed = raw.trim();
+    const key = trimmed.toLowerCase();
+    if (!key) return null;
+
+    if (resolvedProductCacheRef.current.has(key)) {
+      return resolvedProductCacheRef.current.get(key) ?? null;
+    }
+
+    try {
+      const stockRes = await getStockList({
+        page: 0,
+        size: 50,
+        sort: "updatedAt",
+        sortDir: "desc",
+        warehouseId: salesOrder.warehouseId,
+        expand: "product",
+        ...(isUuidLike(trimmed) ? { productId: trimmed } : { keyword: trimmed }),
+      }).unwrap();
+
+      const stockProducts = (stockRes.data?.content ?? [])
+        .map(stockRowToProductRef)
+        .filter((product): product is ImportProductRef => product != null);
+      const stockProduct = stockProducts.find((product) => matchesProductRef(product, trimmed));
+
+      if (stockProduct) {
+        resolvedProductCacheRef.current.set(key, stockProduct);
+        return stockProduct;
+      }
+    } catch {
+      // Fall back to the already-loaded product page below so transient stock lookup
+      // errors still surface as row-level import errors rather than aborting the file.
+    }
+
+    const loadedProduct = findImportProduct(importProducts, trimmed);
+    resolvedProductCacheRef.current.set(key, loadedProduct);
+    return loadedProduct;
   }
 
   function handleClose(nextOpen: boolean) {
@@ -250,7 +316,7 @@ export function SoExcelImportDialog({
     for (const [rowIndex, row] of preview.dataRows.entries()) {
       attempted += 1;
       const excelLine = rowIndex + 2;
-      const product = findImportProduct(importProducts, row[productCol] ?? "");
+      const product = await resolveImportProduct(row[productCol] ?? "");
       const qty = parsePositiveNumber(row[qtyCol] ?? "");
       const rawPrice = priceCol != null ? row[priceCol] ?? "" : "";
       const parsedPrice = rawPrice.trim() ? Number(rawPrice.replace(",", ".")) : undefined;

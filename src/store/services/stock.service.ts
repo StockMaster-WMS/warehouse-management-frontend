@@ -233,6 +233,19 @@ const stockApi = baseApi.injectEndpoints({
       providesTags: [{ type: "Stock", id: "LOW_STOCK" }],
     }),
 
+    /** Out-of-stock alerts (qtyAvailable <= 0). */
+    getOutOfStockAlerts: builder.query<ApiResponse<StockExpanded[]>, { warehouseId?: string; locationId?: string } | void>({
+      query: (params) => ({
+        url: "/stocks/alerts/out-of-stock",
+        method: "GET",
+        params: buildFilterParams({
+          warehouseId: params?.warehouseId,
+          locationId: params?.locationId,
+        }),
+      }),
+      providesTags: [{ type: "Stock", id: "OUT_OF_STOCK" }],
+    }),
+
     /** Near expiry alerts (no pagination). */
     getNearExpiryAlerts: builder.query<ApiResponse<NearExpiryStockResponse[]>, GetNearExpiryParams>({
       query: (params) => ({
@@ -259,6 +272,7 @@ const stockApi = baseApi.injectEndpoints({
         { type: "Stock", id: "LIST" },
         { type: "Stock", id: "SUMMARY" },
         { type: "Stock", id: "LOW_STOCK" },
+        { type: "Stock", id: "OUT_OF_STOCK" },
         { type: "StockMovement", id: "LIST" },
       ],
     }),
@@ -273,6 +287,8 @@ const stockApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: "Stock", id: "LIST" },
         { type: "Stock", id: "SUMMARY" },
+        { type: "Stock", id: "LOW_STOCK" },
+        { type: "Stock", id: "OUT_OF_STOCK" },
         { type: "StockMovement", id: "LIST" },
       ],
     }),
@@ -320,6 +336,20 @@ const stockApi = baseApi.injectEndpoints({
       } satisfies ApiQueryArgs),
     }),
 
+    /** Export out-of-stock report as XLSX blob. */
+    exportOutOfStockReport: builder.query<Blob, ExportStockParams>({
+      query: (params) => ({
+        url: "/stocks/reports/out-of-stock-export",
+        method: "GET",
+        params: buildFilterParams({
+          warehouseId: params.warehouseId,
+          locationId: params.locationId,
+          productId: params.productId,
+        }),
+        responseType: "blob",
+      } satisfies ApiQueryArgs),
+    }),
+
     /** Stock movements history (paginated). */
     getStockMovements: builder.query<
       ApiResponse<PagedResponse<StockMovementResponse>>,
@@ -351,11 +381,14 @@ export const {
   useGetStockListQuery,
   useGetStockSummaryQuery,
   useGetLowStockAlertsQuery,
+  useGetOutOfStockAlertsQuery,
   useGetNearExpiryAlertsQuery,
   useAdjustStockMutation,
   useAdjustReservedMutation,
   useLazyExportStockReportQuery,
   useLazyExportNearExpiryReportQuery,
   useLazyExportLowStockReportQuery,
+  useLazyExportOutOfStockReportQuery,
+  useLazyGetStockListQuery,
   useGetStockMovementsQuery,
 } = stockApi;

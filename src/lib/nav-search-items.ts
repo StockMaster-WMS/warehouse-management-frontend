@@ -22,7 +22,7 @@ export const NAV_SEARCH_ITEMS: NavSearchItem[] = [
   },
   {
     id: "ai-assistant",
-    label: "Trợ lý thông minh",
+    label: "Trợ lý kho",
     href: "/ai-assistant",
     group: "Tổng quan",
   },

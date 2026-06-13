@@ -67,7 +67,6 @@ export function InboundPrintModal({
   onOpenChange,
   data,
   warehouseLabel,
-  locationLabel,
   title = "PHIẾU NHẬP KHO",
 }: InboundPrintModalProps) {
   const printedAt = useSyncExternalStore(
@@ -122,9 +121,6 @@ export function InboundPrintModal({
     contentWindow.document.close();
   };
 
-  const printableLocationLabel =
-    locationLabel || data.locationName || data.locationCode || data.locationId;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] !w-[calc(210mm+1rem)] !max-w-[calc(100vw-1rem)] overflow-auto bg-muted p-2 print:max-h-none print:!w-auto print:!max-w-none print:overflow-visible print:border-none print:p-0 print:shadow-none sm:!max-w-[calc(210mm+1rem)]">
@@ -158,7 +154,6 @@ export function InboundPrintModal({
                 value={data.receivedDate ? formatDateTime(data.receivedDate) : printedAt}
               />
               <HeaderInfoLine label="Kho nhập" value={warehouseLabel} />
-              <HeaderInfoLine label="Vị trí" value={printableLocationLabel || "—"} />
             </div>
           </div>
 

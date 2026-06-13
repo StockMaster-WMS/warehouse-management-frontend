@@ -486,7 +486,7 @@ export function OverviewTab({ initialSelectedId }: { initialSelectedId?: string 
                         if (!open) setPrintGroup(null);
                     }}
                     printAreaId="print-area-picking"
-                    title="Phiếu picking"
+                    title="PHIẾU LẤY HÀNG"
                     documentNo={printGroup.soNumber}
                     subtitle="Lệnh lấy hàng xuất kho"
                     meta={[

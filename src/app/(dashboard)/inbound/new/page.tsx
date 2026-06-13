@@ -55,6 +55,28 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 import { statusTone } from "@/lib/design-system";
 
+function inboundLocationOption(loc: InboundLocationSuggestion) {
+  const zoneLabel = loc.zone ? ` - Zone ${loc.zone}` : "";
+  const typeLabel = loc.locationType ?? "STORAGE";
+  const stockQty = loc.qtyOnHand ?? 0;
+
+  if (loc.existingProductLocation) {
+    return {
+      value: loc.locationId,
+      label: `${loc.locationCode} - Đang có SP (${stockQty})${zoneLabel}`,
+      hint: `Vị trí sẵn có của sản phẩm · ${typeLabel}`,
+    };
+  }
+
+  return {
+    value: loc.locationId,
+    label: `${loc.locationCode} - ${typeLabel}${zoneLabel}`,
+    hint: loc.emptyLocation
+      ? "Vị trí trống"
+      : `Vị trí phù hợp · Tồn hiện tại: ${stockQty}`,
+  };
+}
+
 /* ── Step Indicator ─────────────────────────────────────────────────── */
 function StepIndicator({ step }: { step: 1 | 2 }) {
   const steps = [
@@ -349,15 +371,9 @@ function GrnForm({ poId, onBack }: { poId: string; onBack: () => void }) {
       return [];
     }
 
-    return suggestions.map((loc) => ({
-      value: loc.locationId,
-      label: `${loc.locationCode} - ${loc.locationType ?? "STORAGE"}${loc.zone ? ` - Zone ${loc.zone}` : ""}`,
-      hint: loc.existingProductLocation
-        ? `Vị trí cũ của sản phẩm · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`
-        : loc.emptyLocation
-          ? "Vị trí trống"
-          : `Vị trí phù hợp · Tồn hiện tại: ${loc.qtyOnHand ?? 0}`,
-    }));
+    return [...suggestions]
+      .sort((left, right) => Number(Boolean(right.existingProductLocation)) - Number(Boolean(left.existingProductLocation)))
+      .map(inboundLocationOption);
   }
 
   // Auto-focus first qty input

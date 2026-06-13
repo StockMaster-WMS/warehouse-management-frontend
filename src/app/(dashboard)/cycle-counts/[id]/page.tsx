@@ -96,6 +96,21 @@ function formatDate(value?: string | null) {
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("vi-VN");
 }
 
+function scopeLabel(scope?: string | null) {
+  switch (scope) {
+    case "WAREHOUSE":
+      return "Toàn bộ kho";
+    case "ZONE":
+      return "Khu vực";
+    case "PRODUCT":
+      return "Sản phẩm";
+    case "LOCATION":
+      return "Vị trí";
+    default:
+      return "—";
+  }
+}
+
 function buildCycleCountResults(
   lines: readonly CycleCountLine[],
   actualCounts: Record<string, number>,
@@ -337,7 +352,7 @@ export default function CycleCountDetailPage() {
         title={`Đợt kiểm kê: ${count.countNumber || count.id.slice(0, 8) + "..."}`}
         description={
           count.description ||
-          `Phạm vi: ${count.scope ?? "—"} · Kho: ${count.warehouseName || count.warehouseId || "—"}`
+          `Phạm vi: ${scopeLabel(count.scope)} · Kho: ${count.warehouseName || count.warehouseId || "—"}`
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -464,7 +479,7 @@ export default function CycleCountDetailPage() {
           </div>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Phạm vi</p>
-            <p className="mt-1 font-medium">{count.scope ?? "—"}</p>
+            <p className="mt-1 font-medium">{scopeLabel(count.scope)}</p>
           </div>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ngày tạo</p>
@@ -711,10 +726,9 @@ export default function CycleCountDetailPage() {
         subtitle={count.title || count.description || undefined}
         meta={[
           { label: "Kho", value: count.warehouseName || count.warehouseId },
-          { label: "Phạm vi", value: count.scope === "PRODUCT" ? "Sản phẩm" : count.scope === "LOCATION" ? "Vị trí" : count.scope === "ZONE" ? "Khu vực" : count.scope },
+          { label: "Phạm vi", value: scopeLabel(count.scope) },
           { label: "Trạng thái", value: CYCLE_COUNT_STATUS_CONFIG[count.status]?.label ?? count.status },
           { label: "Ngày tạo", value: formatDate(count.createdAt) },
-          { label: "Ngày lịch", value: formatDate(count.scheduledAt) },
         ]}
         columns={[
           { key: "sku", label: "Mã hàng" },
