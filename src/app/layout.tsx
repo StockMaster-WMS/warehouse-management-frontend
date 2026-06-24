@@ -10,6 +10,7 @@ import {
   SITE_TITLE,
   getSiteUrl,
 } from "@/lib/site";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -142,6 +143,7 @@ export default function RootLayout({
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
